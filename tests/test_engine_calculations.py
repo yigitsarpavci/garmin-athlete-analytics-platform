@@ -122,6 +122,50 @@ class TestEngineCalculations(unittest.TestCase):
         self.assertIn("remaining_interval_sessions", tracker["workout_counts"])
         self.assertIn("remaining_strength_sessions", tracker["workout_counts"])
 
+    def test_weekly_schedule_respects_completed_quota(self):
+        """Hafta başında tamamlanan seansların 2 Koşu + 2 Gym kotasından düşülmesini doğrular."""
+        from datetime import datetime
+        from unittest.mock import patch
+
+        ref_now = datetime(2026, 11, 17, 15, 0, 0)  # Salı (16 Kas Pzt + 17 Kas Salı takvim haftası)
+        sample_acts = [
+            {
+                "startTimeLocal": "2026-11-16 10:24:35",
+                "activityType": {"typeKey": "running"},
+                "activityName": "Besiktas Running",
+                "duration": 1807.0,
+                "distance": 5191.2,
+                "calories": 401,
+                "averageHR": 161,
+            },
+            {
+                "startTimeLocal": "2026-11-17 10:35:00",
+                "activityType": {"typeKey": "strength_training"},
+                "activityName": "Strength",
+                "duration": 3194.6,
+                "calories": 340,
+                "averageHR": 112,
+            },
+        ]
+        with patch.object(self.engine, "activities_all", sample_acts):
+            sched, meta = self.engine._build_weekly_schedule_entries(now=ref_now)
+        self.assertEqual(len(sched), 7)
+        self.assertTrue(sched[0]["day"].startswith("16 Kas Pzt"))
+        self.assertEqual(meta["runs_done"], 1)
+        self.assertEqual(meta["gyms_done"], 1)
+        self.assertEqual(meta["rem_runs"], 1)
+        self.assertEqual(meta["rem_gyms"], 1)
+
+        completed_rows = [r for r in sched if "TAMAMLANDI" in r["secondary"]]
+        planned_workouts = [
+            r for r in sched
+            if "TAMAMLANDI" not in r["secondary"]
+            and (r["primary"].startswith("Koşu #") or r["primary"].startswith("Kuvvet #"))
+        ]
+        self.assertEqual(len(completed_rows), 2)
+        self.assertEqual(len(planned_workouts), 2)
+        self.assertEqual(len(completed_rows) + len(planned_workouts), 4)
+
 
 if __name__ == "__main__":
     unittest.main()

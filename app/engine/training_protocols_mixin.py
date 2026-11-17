@@ -34,55 +34,128 @@ class TrainingProtocolsMixin:
         Dört branş (Koşu, Kuvvet/Gym, Yelken, Basketbol) için telemetriye dayalı rehberlik ve stratejileri döner.
 
         Haftalık mikro-döngü kuralları gereği:
-        - Koşu ve Kuvvet haftalık sabit 2+2 takvimini oluşturur.
+        - Koşu ve Kuvvet haftalık sabit 2+2 takvimini oluşturur ve bu haftada tamamlanan seanslar kotadan düşülür.
         - Yelken (ter/elektrolit kaybı, tutuş gücü) ve Basketbol (Zone 4-5 doğal HIIT) spontane
           olarak takip edilir ve telemetrisi dinamik olarak değerlendirilir.
 
         Returns:
             Dict[str, Any]: Her branş için istatistikler, gelişim ilkeleri ve sonraki seans planları.
         """
+        _, week_meta = self._build_weekly_schedule_entries()
+        meta_days = week_meta["days"]
+        runs_done = week_meta["runs_done"]
+        gyms_done = week_meta["gyms_done"]
+        rem_runs = week_meta["rem_runs"]
+        rem_gyms = week_meta["rem_gyms"]
+        tr_months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
+        next_mon = datetime.now() - timedelta(days=datetime.now().weekday()) + timedelta(days=7)
+
+        planned_runs = [d for d in meta_days if d["slot_kind"] in ("zone2", "interval")]
+        running_upcoming: List[Dict[str, str]] = []
+        for d in planned_runs:
+            if d["slot_kind"] == "zone2":
+                running_upcoming.append({
+                    "day": d["day_label"],
+                    "type": "Zone 2 Taban & Aktif Toparlanma",
+                    "title": d["primary"],
+                    "duration": "45-50 dakika",
+                    "target_hr": "140 - 150 bpm",
+                    "target_pace": "6:35 - 6:50 /km",
+                    "details": f"{d['secondary']}. 140-150 bpm nabız tavanını aşmadan (tempo 6:35-6:50 /km) burundan rahat nefesle koşun."
+                })
+            else:
+                running_upcoming.append({
+                    "day": d["day_label"],
+                    "type": "Hız & Laktat Eşiği İntervali",
+                    "title": d["primary"],
+                    "duration": "45 dakika",
+                    "target_hr": "172 - 180 bpm",
+                    "target_pace": "5:15 /km",
+                    "details": "10 dk ısınma (135-145 bpm) + 4 x 1.000m @ 5:15 /km (172-180 bpm, her 1000m arası 3 dk yürüyüş/jog) + 8 dk soğuma."
+                })
+
+        if len(running_upcoming) < 2:
+            mon_label = f"{next_mon.day} {tr_months[next_mon.month - 1]} Pzt (Gelecek Hafta)"
+            running_upcoming.append({
+                "day": mon_label,
+                "type": "Hız & Laktat Eşiği İntervali (Gelecek Hafta)",
+                "title": "Gelecek Hafta Koşu #1 - 5K Hız İntervali (4 x 1.000 m)",
+                "duration": "45 dakika",
+                "target_hr": "172 - 180 bpm",
+                "target_pace": "5:15 /km",
+                "details": "Bu haftanın 2/2 koşu kotası tamamlandıktan sonra yeni haftanın ilk koşusudur: 10 dk ısınma + 4 x 1.000m @ 5:15 /km."
+            })
+
+        next_run_card = running_upcoming[0]
+
+        planned_gyms = [d for d in meta_days if d["slot_kind"] in ("gym_a", "gym_b")]
+        gym_upcoming: List[Dict[str, str]] = []
+        for d in planned_gyms:
+            if d["slot_kind"] == "gym_b":
+                gym_upcoming.append({
+                    "day": d["day_label"],
+                    "type": "Workout B (Bu Haftanın Kalan Son Kuvvet Seansı)",
+                    "title": d["primary"],
+                    "duration": "55 dakika",
+                    "details": "Squat 67.5 kg (5x5, +2.5kg) • Overhead Press 40.0 kg (5x5, tüm setlerde 40kg) • Deadlift 65.0 kg (1x5, +5kg) • Lat Pulldown 45.0 kg (4x12) • Lateral Raise 25 kg • Shrug 45 kg."
+                })
+            else:
+                gym_upcoming.append({
+                    "day": d["day_label"],
+                    "type": "Workout A (Kuvvet #1 - Yeni PR Denemesi)",
+                    "title": d["primary"],
+                    "duration": "55 dakika",
+                    "details": "Squat 67.5 kg (5x5) • Bench Press 52.5 kg (5x5 Yeni PR Denemesi!) • Barbell Row 62.5 kg (5x5, +2.5kg) • Lateral Raise 25 kg • Shrug 45 kg."
+                })
+
+        if len(gym_upcoming) < 2:
+            next_tue = next_mon + timedelta(days=1)
+            tue_label = f"{next_tue.day} {tr_months[next_tue.month - 1]} Salı (Gelecek Hafta)"
+            gym_upcoming.append({
+                "day": tue_label,
+                "type": "Workout A (Gelecek Hafta #1 - Yeni PR Denemesi)",
+                "title": "Göğüs, Sırt & Bacak İlerlemesi",
+                "duration": "55 dakika",
+                "details": "Squat 67.5 kg (5x5) • Bench Press 52.5 kg (5x5 Yeni PR Denemesi!) • Barbell Row 62.5 kg (5x5, +2.5kg) • Lateral Raise 25 kg • Shrug 45 kg."
+            })
+
+        next_gym_card = gym_upcoming[0]
+        next_gym_exercises = [
+            "Back Squat: Isınma + 67.5 kg x 5 tekrar x 5 set (+2.5 kg Artış)",
+            "Overhead Press (OHP): Isınma + 40.0 kg x 5 tekrar x 5 set (Tüm setlerde 40 kg)",
+            "Barbell Deadlift: Isınma + 65.0 kg x 5 tekrar (1 Ana Çalışma Seti, +5.0 kg Artış)",
+            "Lat Pulldown: Isınma + 45.0 kg x 12 tekrar x 4 set",
+            "Lateral Raise: 22.5 - 25.0 kg x 12 tekrar x 3 set",
+            "Dumbbell Shrug: 45.0 kg x 12 tekrar x 3 set"
+        ]
+
         return {
             "running": {
                 "name": "Koşu (Running)",
-                "schedule_status": "Düzenli Program Branşı",
+                "schedule_status": f"Düzenli Program Branşı (Bu Hafta: {runs_done}/2 Yapıldı, {rem_runs} Kaldı)",
                 "current_pace": "5:48 /km (5K: 29:07)",
                 "target_pace": "4:54 /km (5K: <24:30)",
                 "cadence": "162 spm (Harika Form ve Düşük Darbe)",
                 "stats_summary": "15 Koşu • 79,5 km Mesafe • 158 bpm Ortalama Nabız",
                 "how_to_improve": [
                     "80/20 Polarize Model (Mitokondri & Atım Hacmi): Haftalık 2 koşunun 1'ini Zone 2 (140-150 bpm, konuşma temposu) tutarak kalbin sol ventrikül hacmini ve bacak kaslarındaki kılcal damarlanmayı (anjiyogenez) artırın; 1'ini ise laktat eşiğini yukarı çeken hız intervali yapın.",
-                    "Haftada 1 Gün Laktat Eşiği İntervali: Cuma günleri 4x1000m (5:15 /km tempo, 172-180 bpm) yaparak yüksek hız toleransınızı ve aerobik tavanınızı yükseltin.",
+                    "Haftada 1 Gün Laktat Eşiği İntervali: Haftanın hız koşusu gününde 4x1000m (5:15 /km tempo, 172-180 bpm) yaparak yüksek hız toleransınızı ve aerobik tavanınızı yükseltin.",
                     "160+ Kadansı Korumak: Kasım ayında yakaladığınız 162 adım/dk kadans sayesinde yerle temas süreniz 273 ms'ye indi; adımları uzatmak yerine sık adım atarak diz/eklem stresini minimumda tutun.",
                     "Kilo Kaybı Hızlandırması: 87 kg'dan 81 kg'a inişiniz, adımlardaki yerçekimi direncini azaltarak 5K derecenizi 80-90 saniye otomatik olarak hızlandıracaktır."
                 ],
-                "upcoming_sessions": [
-                    {
-                        "day": "18 Kasım Çarşamba (Yarın)",
-                        "type": "Zone 2 Taban & Aktif Toparlanma",
-                        "title": "Koşu #1 - Zone 2 Aerobik Taban",
-                        "duration": "45-50 dakika",
-                        "details": "Salı günü tamamlanan ağır Squat/Bench sonrası bacaklara kan pompalar. 140-150 bpm nabız tavanını aşmayın (tempo 6:35-6:50 /km). Burundan rahat nefes alabilmelisiniz."
-                    },
-                    {
-                        "day": "20 Kasım Cuma",
-                        "type": "Hız & Laktat Eşiği İntervali",
-                        "title": "Koşu #2 - 5K Hız İntervali (4 x 1.000 m)",
-                        "duration": "45 dakika",
-                        "details": "10 dk ısınma (135-145 bpm) + 4 x 1.000m @ 5:15 /km (172-180 bpm, her 1000m arasında 3 dk yürüyüş/jog) + 8 dk soğuma."
-                    }
-                ],
+                "upcoming_sessions": running_upcoming,
                 "next_workout": {
-                    "day": "18 Kasım Çarşamba",
-                    "title": "Koşu #1 - Zone 2 Taban & Aktif Toparlanma",
-                    "duration": "45-50 dakika",
-                    "target_hr": "140 - 150 bpm",
-                    "target_pace": "6:35 - 6:50 /km",
-                    "details": "Düz sahil hattında burundan nefesle rahat tempo."
+                    "day": next_run_card["day"],
+                    "title": next_run_card["title"],
+                    "duration": next_run_card["duration"],
+                    "target_hr": next_run_card["target_hr"],
+                    "target_pace": next_run_card["target_pace"],
+                    "details": next_run_card["details"]
                 }
             },
             "strength": {
                 "name": "Kuvvet Antrenmanı (Strength)",
-                "schedule_status": "Düzenli Program Branşı (A/B 5x5)",
+                "schedule_status": f"Düzenli Program Branşı (A/B 5x5 • Bu Hafta: {gyms_done}/2 Yapıldı, {rem_gyms} Kaldı)",
                 "current_status": "A/B Bölünmüş Rutin (Kasım'da 5 seans tamamlandı)",
                 "goal": "Kilo verme döneminde yağsız kas kütlesini ve omurga/omuz gücünü korumak (Progressive Overload)",
                 "stats_summary": "5 Seans • 4,7 Saat • 1.851 kcal • Squat: 45->65kg (+20kg) • Bench: 50kg • Row: 60kg",
@@ -103,34 +176,12 @@ class TrainingProtocolsMixin:
                         "Dumbbell Shrug: 45.0 kg x 12 tekrar x 3 set"
                     ]
                 },
-                "upcoming_sessions": [
-                    {
-                        "day": "21 Kasım Cumartesi",
-                        "type": "Workout B (Kuvvet #2 - İlerleyen Ağırlıklar)",
-                        "title": "Bacak, Omuz & Arka Zincir Gücü",
-                        "duration": "55 dakika",
-                        "details": "Squat 67.5 kg (5x5, +2.5kg) • Overhead Press 40.0 kg (5x5, tüm setlerde 40kg) • Deadlift 65.0 kg (1x5, +5kg) • Lat Pulldown 45.0 kg (4x12) • Lateral Raise 25 kg • Shrug 45 kg."
-                    },
-                    {
-                        "day": "24 Kasım Salı",
-                        "type": "Workout A (Kuvvet #1 - Yeni PR Denemesi)",
-                        "title": "Göğüs, Sırt & Bacak İlerlemesi",
-                        "duration": "55 dakika",
-                        "details": "Squat 67.5 kg (5x5) • Bench Press 52.5 kg (5x5 Yeni PR Denemesi!) • Barbell Row 62.5 kg (5x5, +2.5kg) • Lateral Raise 25 kg • Shrug 45 kg."
-                    }
-                ],
+                "upcoming_sessions": gym_upcoming,
                 "next_workout": {
-                    "day": "21 Kasım Cumartesi",
-                    "title": "Workout B (Kuvvet #2 - İlerleyen Ağırlıklar)",
-                    "duration": "55 dakika",
-                    "exercises": [
-                        "Back Squat: Isınma + 67.5 kg x 5 tekrar x 5 set (+2.5 kg Artış)",
-                        "Overhead Press (OHP): Isınma + 40.0 kg x 5 tekrar x 5 set (Tüm setlerde 40 kg)",
-                        "Barbell Deadlift: Isınma + 65.0 kg x 5 tekrar (1 Ana Çalışma Seti, +5.0 kg Artış)",
-                        "Lat Pulldown: Isınma + 45.0 kg x 12 tekrar x 4 set",
-                        "Lateral Raise: 22.5 - 25.0 kg x 12 tekrar x 3 set",
-                        "Dumbbell Shrug: 45.0 kg x 12 tekrar x 3 set"
-                    ]
+                    "day": next_gym_card["day"],
+                    "title": next_gym_card["title"],
+                    "duration": next_gym_card["duration"],
+                    "exercises": next_gym_exercises
                 }
             },
             "sailing": {
@@ -192,131 +243,260 @@ class TrainingProtocolsMixin:
         }
 
 
-    def get_weekly_schedule(self):
+    def _build_weekly_schedule_entries(self, now: Optional[datetime] = None) -> Tuple[List[Dict[str, str]], Dict[str, Any]]:
         """
-        Günün tarihine (datetime.now) ve son kaydedilen aktivitelere göre
-        haftalık 2 Koşu + 2 Gym + 3 Dinlenme mikro-döngüsünü dinamik olarak üretir.
-        Gününde tamamlanmış antrenmanları otomatik olarak algılayıp TAMAMLANDI işaretler.
+        Günün tarihine (Pazartesi-Pazar takvim haftası) ve kaydedilen Garmin aktivitelerine
+        göre haftalık 2 Koşu + 2 Gym + 3 Dinlenme kotasını dinamik olarak planlar.
+
+        Tamamlanan koşu ve kuvvet seanslarını haftalık kotadan otomatik düşerek sadece
+        kalan antrenmanları toparlanma günleriyle ayırıp takvime yerleştirir.
         """
-        now = datetime.now()
+        now = now or datetime.now()
         tr_days = ["Pzt", "Salı", "Çar", "Per", "Cuma", "Cmt", "Paz"]
         tr_months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
-        
-        # Haftanın başlangıç çıpası (Salı günleri)
-        weekday = now.weekday()
-        days_from_tuesday = (weekday - 1) % 7
-        tuesday_anchor = now - timedelta(days=days_from_tuesday)
 
-        plan_definitions = [
-            {
-                "offset": 0, "day_name": "Salı",
-                "workout_type": "gym",
-                "plan_primary": "Kuvvet #1 (Workout A: Squat 65kg 5x5 PR, Bench 50kg, Row 60kg)",
-                "plan_secondary": "Lateral Raise 25kg & Dumbbell Shrug 45kg",
-                "target": "115-128 bpm (Zone 1)",
-                "calories": "~2.850 kcal",
-                "macro": "2.450 kcal (175g P / 250g K / 80g Y)"
-            },
-            {
-                "offset": 1, "day_name": "Çarşamba",
-                "workout_type": "running",
-                "plan_primary": "Koşu #1 - Zone 2 Rahat Taban Koşusu (45-50 dk)",
-                "plan_secondary": "Aktif toparlanma (160+ kadans, burundan nefes)",
-                "target": "140-150 bpm (6:35-6:50 /km)",
-                "calories": "~2.950 kcal",
-                "macro": "2.550 kcal (175g P / 275g K / 80g Y)"
-            },
-            {
-                "offset": 2, "day_name": "Perşembe",
-                "workout_type": "rest",
-                "plan_primary": "Tam Dinlenme / Rejenerasyon",
-                "plan_secondary": "Cuma günkü hız intervali öncesi bacak toparlanması & erken uyku",
-                "target": "<100 bpm (Parasempatik gün)",
-                "calories": "~2.500 kcal",
-                "macro": "2.350 kcal (175g P / 220g K / 80g Y)"
-            },
-            {
-                "offset": 3, "day_name": "Cuma",
-                "workout_type": "running",
-                "plan_primary": "Koşu #2 - 5K Hız İntervali (45 dk, 4x1.000m)",
-                "plan_secondary": "5:15 /km tempo, aralarda 3 dk yürüyüş/jog dinlenme",
+        monday_anchor = now - timedelta(days=now.weekday())
+        week_dates = [monday_anchor + timedelta(days=i) for i in range(7)]
+
+        gym_history = self.get_gym_exercise_history().get("sessions", [])
+        gym_type_by_date = {
+            s.get("date"): s.get("workout_type")
+            for s in gym_history
+            if s.get("date")
+        }
+
+        day_acts: List[List[Dict[str, Any]]] = []
+        runs_done_list: List[Dict[str, Any]] = []
+        gyms_done_list: List[Dict[str, Any]] = []
+        last_gym_type: Optional[str] = None
+
+        for d_date in week_dates:
+            d_str = d_date.strftime("%Y-%m-%d")
+            matched = [a for a in self.activities_all if (a.get("startTimeLocal") or "")[:10] == d_str]
+            day_acts.append(matched)
+            for act in matched:
+                sport_key = (act.get("sport") or (act.get("activityType") or {}).get("typeKey") or "").lower()
+                if "running" in sport_key:
+                    runs_done_list.append(act)
+                elif "strength" in sport_key:
+                    gyms_done_list.append(act)
+                    last_gym_type = gym_type_by_date.get(d_str) or last_gym_type
+
+        runs_done = len(runs_done_list)
+        gyms_done = len(gyms_done_list)
+        rem_runs = max(0, 2 - runs_done)
+        rem_gyms = max(0, 2 - gyms_done)
+
+        needed_runs: List[Tuple[str, int]] = []
+        if rem_runs == 2:
+            needed_runs = [("zone2", 1), ("interval", 2)]
+        elif rem_runs == 1:
+            done_hr = runs_done_list[0].get("averageHR") or 0
+            next_kind = "zone2" if done_hr >= 152 else "interval"
+            needed_runs = [(next_kind, runs_done + 1)]
+
+        needed_gyms: List[Tuple[str, int]] = []
+        if rem_gyms == 2:
+            needed_gyms = [("gym_a", 1), ("gym_b", 2)]
+        elif rem_gyms == 1:
+            next_gym = "gym_a" if last_gym_type and "Workout B" in last_gym_type else "gym_b"
+            needed_gyms = [(next_gym, gyms_done + 1)]
+
+        # Kalan antrenmanları sıralı kuyrukta dengele (Koşu / Gym dönüşümlü)
+        needed_queue: List[Tuple[str, int]] = []
+        for idx in range(max(len(needed_runs), len(needed_gyms))):
+            if idx < len(needed_runs):
+                needed_queue.append(needed_runs[idx])
+            if idx < len(needed_gyms):
+                needed_queue.append(needed_gyms[idx])
+
+        open_offsets = [i for i in range(7) if not day_acts[i] and week_dates[i].date() >= now.date()]
+        assigned_slot: Dict[int, Tuple[str, int]] = {}
+
+        if rem_runs == 2 and rem_gyms == 2 and set([1, 2, 4, 5]).issubset(open_offsets):
+            # Haftanın başında (veya demo modunda) klasik Salı/Çar/Cuma/Cmt şablonu
+            assigned_slot = {
+                1: ("gym_a", 1),
+                2: ("zone2", 1),
+                4: ("interval", 2),
+                5: ("gym_b", 2),
+            }
+        elif needed_queue:
+            occupied = {i for i in range(7) if day_acts[i]}
+            remaining = list(needed_queue)
+            # 1. Geçiş: Komşu günlerinde antrenman olmayan izole günlere yerleştir
+            for i in open_offsets:
+                if not remaining:
+                    break
+                if (i - 1) not in occupied and (i + 1) not in occupied:
+                    assigned_slot[i] = remaining.pop(0)
+                    occupied.add(i)
+            # 2. Geçiş: Kalan seansları bir önceki gün boş olan açık günlere dağıt
+            for i in open_offsets:
+                if not remaining:
+                    break
+                if i not in assigned_slot and (i - 1) not in occupied:
+                    assigned_slot[i] = remaining.pop(0)
+                    occupied.add(i)
+            # 3. Geçiş: Haftada çok az açık gün kaldıysa kalan boş günleri kullan
+            for i in open_offsets:
+                if not remaining:
+                    break
+                if i not in assigned_slot:
+                    assigned_slot[i] = remaining.pop(0)
+
+        def _format_completed_day(matched: List[Dict[str, Any]], d_str: str, run_counter: List[int], gym_counter: List[int]) -> Dict[str, str]:
+            titles: List[str] = []
+            details: List[str] = []
+            hr_notes: List[str] = []
+            has_run = False
+            has_gym = False
+            for act in matched:
+                sport_key = (act.get("sport") or (act.get("activityType") or {}).get("typeKey") or "").lower()
+                act_name = act.get("activityName") or "Antrenman"
+                act_time = (act.get("startTimeLocal") or "")[11:16]
+                dur_m = round((act.get("duration") or 0) / 60.0)
+                cal = round(act.get("calories") or 0)
+                avg_hr = round(act.get("averageHR") or 0)
+                dist_m = act.get("distance") or 0
+                if "running" in sport_key:
+                    has_run = True
+                    run_counter[0] += 1
+                    dist_txt = f" ({dist_m / 1000.0:.2f} km)" if dist_m > 0 else ""
+                    titles.append(f"Koşu #{run_counter[0]} • {act_name}{dist_txt}")
+                elif "strength" in sport_key:
+                    has_gym = True
+                    gym_counter[0] += 1
+                    w_type = gym_type_by_date.get(d_str) or "Kuvvet"
+                    titles.append(f"Kuvvet #{gym_counter[0]} • {w_type} (5x5)")
+                else:
+                    titles.append(f"Ek Branş • {act_name}")
+                details.append(f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm)")
+                if avg_hr:
+                    hr_notes.append(f"{avg_hr} bpm ort.")
+            est_cal = "~2.950 kcal" if has_run else ("~2.850 kcal" if has_gym else "~2.900 kcal")
+            macro_txt = "2.500 kcal (175g P / 265g K / 80g Y)" if has_run else "2.450 kcal (175g P / 250g K / 80g Y)"
+            return {
+                "primary": " + ".join(titles),
+                "secondary": " • ".join(details),
+                "target": "Gerçekleşen: " + (", ".join(hr_notes) if hr_notes else "Kaydedildi"),
+                "calories": est_cal,
+                "macro": macro_txt,
+            }
+
+        def _build_planned_slot(slot_kind: str, ordinal: int) -> Dict[str, str]:
+            is_last_run = (rem_runs == 1 and runs_done == 1)
+            is_last_gym = (rem_gyms == 1 and gyms_done == 1)
+            if slot_kind == "gym_a":
+                sec = "Bu haftanın kalan son salon seansı (2/2) • Lateral & Shrug" if is_last_gym else "Lateral Raise 25kg & Dumbbell Shrug 45kg"
+                return {
+                    "primary": f"Kuvvet #{ordinal} (Workout A: Squat 65kg 5x5 PR, Bench 50kg, Row 60kg)",
+                    "secondary": sec,
+                    "target": "115-128 bpm (Zone 1)",
+                    "calories": "~2.850 kcal",
+                    "macro": "2.450 kcal (175g P / 250g K / 80g Y)",
+                }
+            if slot_kind == "gym_b":
+                sec = "Bu haftanın kalan son gym seansı (2/2) • Lat Pulldown 45kg & Shrug" if is_last_gym else "Lat Pulldown 45kg (4x12) & Lateral & Shrug"
+                return {
+                    "primary": f"Kuvvet #{ordinal} (Workout B: Squat 67.5kg, OHP 40kg, Deadlift 65kg)",
+                    "secondary": sec,
+                    "target": "115-130 bpm (Zone 1)",
+                    "calories": "~2.900 kcal",
+                    "macro": "2.500 kcal (180g P / 270g K / 80g Y)",
+                }
+            if slot_kind == "zone2":
+                sec = "Bu haftanın kalan son koşusu (2/2 • 160+ kadans, burundan nefes)" if is_last_run else "Aktif toparlanma (160+ kadans, burundan nefes)"
+                return {
+                    "primary": f"Koşu #{ordinal} - Zone 2 Rahat Taban Koşusu (45-50 dk)",
+                    "secondary": sec,
+                    "target": "140-150 bpm (6:35-6:50 /km)",
+                    "calories": "~2.950 kcal",
+                    "macro": "2.550 kcal (175g P / 275g K / 80g Y)",
+                }
+            sec = "Bu haftanın kalan son koşusu (2/2 • 5:15 /km tempo, 3 dk jog)" if is_last_run else "5:15 /km tempo, aralarda 3 dk yürüyüş/jog dinlenme"
+            return {
+                "primary": f"Koşu #{ordinal} - 5K Hız İntervali (45 dk, 4x1.000m)",
+                "secondary": sec,
                 "target": "170-183 bpm (Zone 4-5)",
                 "calories": "~3.050 kcal",
-                "macro": "2.650 kcal (175g P / 300g K / 80g Y)"
-            },
-            {
-                "offset": 4, "day_name": "Cumartesi",
-                "workout_type": "gym",
-                "plan_primary": "Kuvvet #2 (Workout B: Squat 67.5kg, OHP 40kg, Deadlift 65kg)",
-                "plan_secondary": "Lat Pulldown 45kg (4x12) & Lateral & Shrug",
-                "target": "115-130 bpm (Zone 1)",
-                "calories": "~2.900 kcal",
-                "macro": "2.500 kcal (180g P / 270g K / 80g Y)"
-            },
-            {
-                "offset": 5, "day_name": "Pazar",
-                "workout_type": "active_recovery",
-                "plan_primary": "Aktif Toparlanma / Mobilite & Yürüyüş",
-                "plan_secondary": "Hafif yürüyüş, esneme, nefes egzersizi (NSDR)",
-                "target": "<110 bpm (Zone 1)",
-                "calories": "~2.500 kcal",
-                "macro": "2.350 kcal (175g P / 220g K / 80g Y)"
-            },
-            {
-                "offset": 6, "day_name": "Pazartesi",
-                "workout_type": "rest",
-                "plan_primary": "Tam Dinlenme / Haftalık Toparlanma",
-                "plan_secondary": "Yeni haftaya zinde başlangıç, erken yatış (00:30)",
-                "target": "<100 bpm (Parasempatik gün)",
-                "calories": "~2.450 kcal",
-                "macro": "2.300 kcal (175g P / 210g K / 80g Y)"
+                "macro": "2.650 kcal (175g P / 300g K / 80g Y)",
             }
-        ]
 
-        schedule = []
-        for p in plan_definitions:
-            d_date = tuesday_anchor + timedelta(days=p["offset"])
+        schedule: List[Dict[str, str]] = []
+        meta_days: List[Dict[str, Any]] = []
+        run_counter = [0]
+        gym_counter = [0]
+        total_done = runs_done + gyms_done
+        total_rem = rem_runs + rem_gyms
+
+        for i, d_date in enumerate(week_dates):
             d_str = d_date.strftime("%Y-%m-%d")
             d_name = tr_days[d_date.weekday()]
             m_name = tr_months[d_date.month - 1]
-            
             is_today = (d_str == now.strftime("%Y-%m-%d"))
             is_past = (d_date.date() < now.date())
             is_tomorrow = (d_date.date() == (now + timedelta(days=1)).date())
-            
+
             day_label = f"{d_date.day} {m_name} {d_name}"
             if is_today:
                 day_label += " (Bugün)"
             elif is_tomorrow:
                 day_label += " (Yarın)"
 
-            matched_acts = [a for a in self.activities_all if (a.get("startTimeLocal") or "")[:10] == d_str]
-            primary = p["plan_primary"]
-            secondary = p["plan_secondary"]
-            target = p["target"]
-            cals = p["calories"]
-            macro = p["macro"]
+            slot_kind = "completed"
+            if day_acts[i]:
+                row_data = _format_completed_day(day_acts[i], d_str, run_counter, gym_counter)
+            elif i in assigned_slot:
+                slot_kind, ordinal = assigned_slot[i]
+                row_data = _build_planned_slot(slot_kind, ordinal)
+            elif i == 6:
+                slot_kind = "active_recovery"
+                quota_note = "Haftalık 4/4 antrenman hedefi tamamlandı" if total_done + total_rem >= 4 else "Haftalık kapanış"
+                row_data = {
+                    "primary": "Aktif Toparlanma / Mobilite & Yürüyüş",
+                    "secondary": f"Hafif yürüyüş, esneme, nefes egzersizi (NSDR) • {quota_note}",
+                    "target": "<110 bpm (Zone 1)",
+                    "calories": "~2.500 kcal",
+                    "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
+                }
+            else:
+                slot_kind = "rest"
+                quota_txt = f"Bu hafta {total_done}/4 seans tamamlandı, {total_rem} seans kaldı" if total_done > 0 else "Sonraki antrenman öncesi bacak & MSS toparlanması"
+                sec_txt = "Dinlenme / Tamamlandı" if is_past else f"Kas onarımı & erken uyku (00:30) • {quota_txt}"
+                row_data = {
+                    "primary": "Tam Dinlenme / Rejenerasyon",
+                    "secondary": sec_txt,
+                    "target": "<100 bpm (Parasempatik gün)",
+                    "calories": "~2.450 kcal",
+                    "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
+                }
 
-            if matched_acts:
-                act = matched_acts[0]
-                act_time = (act.get("startTimeLocal") or "")[11:16]
-                dur_m = round((act.get("duration") or 0) / 60.0)
-                cal = act.get("calories") or 0
-                avg_hr = act.get("averageHR") or 0
-                act_name = act.get("activityName") or "Antrenman"
-                secondary = f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm)"
-            elif is_past:
-                secondary = "Dinlenme / Tamamlandı"
-
-            schedule.append({
-                "day": day_label,
-                "primary": primary,
-                "secondary": secondary,
-                "target": target,
-                "calories": cals,
-                "macro": macro
+            entry = {"day": day_label, **row_data}
+            schedule.append(entry)
+            meta_days.append({
+                "date": d_date,
+                "date_str": d_str,
+                "day_label": day_label,
+                "slot_kind": slot_kind,
+                "is_completed": bool(day_acts[i]),
+                **row_data,
             })
 
+        return schedule, {
+            "runs_done": runs_done,
+            "gyms_done": gyms_done,
+            "rem_runs": rem_runs,
+            "rem_gyms": rem_gyms,
+            "days": meta_days,
+        }
+
+    def get_weekly_schedule(self):
+        """
+        Pazartesi-Pazar takvim haftasına ve tamamlanan aktivitelere göre haftalık
+        2 Koşu + 2 Gym + 3 Dinlenme mikro-döngüsünü dinamik olarak üretir.
+        """
+        schedule, _ = self._build_weekly_schedule_entries()
         return schedule
 
 
@@ -343,7 +523,7 @@ class TrainingProtocolsMixin:
                 "category": "gym",
                 "badge": "Workout A",
                 "badge_color": "blue",
-                "status_note": "17 Kasım Seansı Tamamlandı (10:35) • Bir Sonraki Seans: 24 Kasım Salı",
+                "status_note": "17 Kasım Seansı Tamamlandı (10:35) • Bu Hafta 1/2 Gym • Sonraki Workout A: 24 Kasım Salı",
                 "objective": "Nöromüsküler güç inşası, göğüs, bacak, sırt ve yan omuz gelişimi (Progressive Overload).",
                 "warmup": "5 dk dinamik kalça & omuz mobilitesi + Boş bar ile 2x10 Squat ve 2x10 Bench Press hafif ısınma setleri.",
                 "exercises": [
@@ -407,12 +587,37 @@ class TrainingProtocolsMixin:
             },
             {
                 "day_code": "wednesday",
-                "day_title": "Çarşamba: Koşu #1 (Zone 2 Aerobik Taban & Mitokondri İnşası)",
+                "day_title": "Çarşamba: Tam Dinlenme & Nöromüsküler Rejenerasyon",
+                "category": "rest",
+                "badge": "Tam Dinlenme",
+                "badge_color": "slate",
+                "status_note": "Planlanan: 18 Kasım Çarşamba (Pzt Koşu + Salı Workout A Sonrası Toparlanma)",
+                "objective": "Pazartesi (5.19 km koşu) ve Salı (65 kg Squat PR / 7.43 ton) arka arkaya yüklenen bacak kaslarını onarmak ve Perşembe Zone 2 koşusuna taze girmek.",
+                "warmup": "Gerekli değil (Sıfır kardiyovasküler stres).",
+                "exercises": [
+                    {
+                        "num": 1,
+                        "name": "Rejenerasyon Protokolü",
+                        "duration": "Tüm Gün Dinlenme",
+                        "protocol": "Köpük rulo (Foam Roller) ile 10 dk bacak/quad masajı, kalça mobilitesi ve 20 dk hafif yürüyüş.",
+                        "coaching_cue": "Bu hafta halihazırda 2/4 spor tamamlandı (1 Koşu + 1 Gym). Bugün bacaklara ek stres yüklenmez."
+                    }
+                ],
+                "cooldown": "Sirkadiyen uyku hazırlığı: 00:30 öncesi yatış (8 saat tam toparlanma uykusu).",
+                "telemetry_targets": {
+                    "hr_range": "<100 bpm (Parasempatik Toparlanma)",
+                    "est_calories": "~2.500 kcal toplam harcama",
+                    "nutrition": "2.350 kcal alım | 175g Protein | 220g Karbonhidrat | 80g Sağlıklı Yağ | 2.5 - 3.0 L Su"
+                }
+            },
+            {
+                "day_code": "thursday",
+                "day_title": "Perşembe: Koşu #2 (Zone 2 Aerobik Taban - Haftanın Kalan Son Koşusu)",
                 "category": "running",
                 "badge": "Zone 2 Taban",
                 "badge_color": "emerald",
-                "status_note": "Planlanan Seans: 18 Kasım Çarşamba Sabah/Öğleden Sonra",
-                "objective": "Sol karıncık atım hacmini (Stroke Volume) büyütmek, periferik kılcal damar ağını genişletmek ve mitokondri yoğunluğunu artırmak.",
+                "status_note": "Planlanan Seans: 19 Kasım Perşembe (Bu Hafta Kalan Tek Koşu • 2/2)",
+                "objective": "16 Kasım Pazartesi (161 bpm yüksek aerobik koşu) sonrası sol karıncık atım hacmini (Stroke Volume) büyütmek ve haftalık 2/2 koşu kotasını tamamlamak.",
                 "warmup": "5-8 dk dinamik kalça ve ayak bileği mobilitesi (bacak savurma, lunge yürüyüşü, baldır açma).",
                 "exercises": [
                     {
@@ -435,56 +640,28 @@ class TrainingProtocolsMixin:
                 }
             },
             {
-                "day_code": "thursday",
-                "day_title": "Perşembe: Tam Dinlenme & Nöromüsküler Rejenerasyon",
+                "day_code": "friday",
+                "day_title": "Cuma: Tam Dinlenme & Workout B Hazırlığı",
                 "category": "rest",
                 "badge": "Tam Dinlenme",
                 "badge_color": "slate",
-                "status_note": "Planlanan: 19 Kasım Perşembe",
-                "objective": "Cuma günkü 5K Hız İntervali öncesi bacak kaslarındaki mikroyırtıkları tamir etmek, glikojeni depolamak ve merkezi sinir sistemini (MSS) tazelemek.",
-                "warmup": "Gerekli değil (Sıfır kardiyovasküler stres).",
+                "status_note": "Planlanan: 20 Kasım Cuma (Cumartesi Workout B Öncesi)",
+                "objective": "Cumartesi günkü Workout B (Squat 67.5 kg + OHP + Deadlift 65 kg) öncesinde bacakları, bel omurlarını ve MSS'yi tazelemek.",
+                "warmup": "Gerekli değil.",
                 "exercises": [
                     {
                         "num": 1,
-                        "name": "Rejenerasyon Protokolü",
+                        "name": "Hafif Mobilite & Uyku Hazırlığı",
                         "duration": "Tüm Gün Dinlenme",
-                        "protocol": "Köpük rulo (Foam Roller) ile 10 dk bacak masajı, kalça mobilitesi ve 20 dk hafif akşam yürüyüşü.",
-                        "coaching_cue": "Ağır antrenman veya koşu ASLA yapılmaz. Bacaklar Cuma günkü 4x1000m intervallerine %100 taze girmelidir."
+                        "protocol": "10 dk kalça/omuz eklem açma ve hafif akşam yürüyüşü. Ek koşu veya ağırlık yapılmaz.",
+                        "coaching_cue": "Haftalık koşu kotası (2/2) Perşembe tamamlandığı için bugün ekstra koşu koymuyoruz; hedef Cumartesi Workout B PR denemesi."
                     }
                 ],
-                "cooldown": "Sirkadiyen uyku hazırlığı: 00:30 öncesi yatış (Sabah 08:30 uyanış için 8 saat tam döngü).",
+                "cooldown": "Gece 00:30 öncesi yatış ve glikojen dengelemesi.",
                 "telemetry_targets": {
-                    "hr_range": "<100 bpm (Parasempatik Toparlanma)",
-                    "est_calories": "~2.500 kcal toplam harcama",
-                    "nutrition": "2.350 kcal alım | 175g Protein | 220g Karbonhidrat | 80g Sağlıklı Yağ | 2.5 - 3.0 L Su"
-                }
-            },
-            {
-                "day_code": "friday",
-                "day_title": "Cuma: Koşu #2 (5K Hız İntervali - VO2Max & Laktat Eşiği)",
-                "category": "running",
-                "badge": "5K İnterval",
-                "badge_color": "purple",
-                "status_note": "Planlanan Seans: 20 Kasım Cuma",
-                "objective": "Laktat eşiğini yukarı çekmek, kalp kasılma gücünü (kontraktilite) artırmak ve 5K yarış temposunu 5:15 /km altına kalıcı olarak sabitlemek.",
-                "warmup": "10 dk hafif jog @ 135-145 bpm + 3 adet 50 metrelik ivmelenme açılışı (strides) + kalça mobilitesi.",
-                "exercises": [
-                    {
-                        "num": 1,
-                        "name": "4 x 1.000 Metre Hız Tekrarları",
-                        "sets": 4, "reps": "1.000 Metre",
-                        "target_pace": "5:15 /km tempo (Her 1 km tam 5 dk 15 sn sürmeli)",
-                        "target_hr": "172 - 182 bpm (Zone 4 - 5 Laktat Eşiği)",
-                        "rest_between_reps": "Her 1000m tekrarından sonra TAM 3 DAKİKA yavaş yürüyüş / hafif jog",
-                        "cadence_target": "165 - 170 spm",
-                        "coaching_cue": "İlk tekrarda depar atmayın; 5:15 temposunu 4 tekrar boyunca eşit ve ritmik koruyun. Dinlenme sürelerinde oturmayın, yürüyerek laktat asidinin kandan temizlenmesini sağlayın."
-                    }
-                ],
-                "cooldown": "8-10 dk çok hafif toparlanma jogu + derin baldır ve hamstring statik esnemesi.",
-                "telemetry_targets": {
-                    "hr_range": "172 - 183 bpm (Zirve Zone 4-5)",
-                    "est_calories": "~3.050 kcal toplam harcama",
-                    "nutrition": "2.650 kcal alım | 175g Protein | 300g Karbonhidrat (antrenman öncesi ve sonrası zengin) | 80g Yağ | 3.5 L Su + Elektrolit"
+                    "hr_range": "<100 bpm (Parasempatik Gün)",
+                    "est_calories": "~2.450 kcal toplam harcama",
+                    "nutrition": "2.350 kcal alım | 175g Protein | 230g Karbonhidrat | 80g Yağ | 3.0 L Su"
                 }
             },
             {
@@ -493,7 +670,7 @@ class TrainingProtocolsMixin:
                 "category": "gym",
                 "badge": "Workout B",
                 "badge_color": "blue",
-                "status_note": "Planlanan Seans: 21 Kasım Cumartesi",
+                "status_note": "Planlanan Seans: 21 Kasım Cumartesi (Bu Haftanın Kalan Son Kuvvet Seansı • 2/2)",
                 "objective": "Arka zincir (posterior chain), omuz itiş gücü, kanat hipertrofisi ve trapez dayanıklılığı.",
                 "warmup": "5-8 dk dinamik eklem açma + Boş bar ile Squat ve OHP ısınma setleri.",
                 "exercises": [
@@ -564,12 +741,12 @@ class TrainingProtocolsMixin:
             },
             {
                 "day_code": "sunday",
-                "day_title": "Pazar: Aktif Toparlanma, Mobilite & Açık Hava Yürüyüşü",
+                "day_title": "Pazar: Aktif Toparlanma, Mobilite & Haftalık Kapanış",
                 "category": "active_recovery",
                 "badge": "Aktif Dinlenme",
                 "badge_color": "emerald",
-                "status_note": "Planlanan: 22 Kasım Pazar",
-                "objective": "Laktat temizliği, parasempatik tonus artışı, eklem sağlığı ve zihinsel dinlenme.",
+                "status_note": "Planlanan: 22 Kasım Pazar (Haftalık 4/4 Antrenman Kotası Tamamlanır)",
+                "objective": "Haftalık 2 Koşu + 2 Gym hedefi tamamlandıktan sonra laktat temizliği, parasempatik tonus artışı ve eklem sağlığı.",
                 "warmup": "Gerekli değil.",
                 "exercises": [
                     {
@@ -590,27 +767,30 @@ class TrainingProtocolsMixin:
             },
             {
                 "day_code": "monday",
-                "day_title": "Pazartesi: Tam Dinlenme & Haftalık Yenilenme",
-                "category": "rest",
-                "badge": "Tam Dinlenme",
-                "badge_color": "slate",
-                "status_note": "Planlanan: 23 Kasım Pazartesi",
-                "objective": "Yeni haftanın Workout A ve Zone 2 seanslarına merkezi sinir sistemini ve glikojen depolarını tam dolu olarak hazırlamak.",
-                "warmup": "Gerekli değil.",
+                "day_title": "Pazartesi: Koşu #1 - 5K Hız İntervali (Gelecek Hafta Açılışı)",
+                "category": "running",
+                "badge": "5K İnterval",
+                "badge_color": "purple",
+                "status_note": "Bu Hafta 16 Kas Pzt Koşusu (5.19 km) Tamamlandı • Sonraki Açılış: 23 Kasım Pazartesi",
+                "objective": "Gelecek haftanın ilk koşusunda laktat eşiğini yukarı çekmek, kalp kasılma gücünü artırmak ve 5K temposunu 5:15 /km bandına taşımak.",
+                "warmup": "10 dk hafif jog @ 135-145 bpm + 3 adet 50 metrelik ivmelenme açılışı (strides) + kalça mobilitesi.",
                 "exercises": [
                     {
                         "num": 1,
-                        "name": "Tam Dinlenme & Zihinsel Odaklanma",
-                        "duration": "Tüm Gün Dinlenme",
-                        "protocol": "Sıfır egzersiz. Sağlıklı beslenme, hidrasyon ve erken uyku.",
-                        "coaching_cue": "Salı günkü ağır Squat (67.5 kg) ve Bench PR (52.5 kg) denemesine taze girmek için bu gün dinlenmenin hakkını verin."
+                        "name": "4 x 1.000 Metre Hız Tekrarları (Gelecek Hafta Planı)",
+                        "sets": 4, "reps": "1.000 Metre",
+                        "target_pace": "5:15 /km tempo (Her 1 km tam 5 dk 15 sn sürmeli)",
+                        "target_hr": "172 - 182 bpm (Zone 4 - 5 Laktat Eşiği)",
+                        "rest_between_reps": "Her 1000m tekrarından sonra TAM 3 DAKİKA yavaş yürüyüş / hafif jog",
+                        "cadence_target": "165 - 170 spm",
+                        "coaching_cue": "16 Kasım Pazartesi koşusu tamamlandığı için bu reçete gelecek haftanın açılışı (23 Kasım Pazartesi) içindir. 5:15 temposunu 4 tekrar boyunca eşit koruyun."
                     }
                 ],
-                "cooldown": "Gece 00:30 öncesi yatış (Sabah dinlenik nabız ölçümü için stabil sirkadiyen ritim).",
+                "cooldown": "8-10 dk çok hafif toparlanma jogu + derin baldır ve hamstring statik esnemesi.",
                 "telemetry_targets": {
-                    "hr_range": "<100 bpm (Parasempatik Gün)",
-                    "est_calories": "~2.450 kcal toplam harcama",
-                    "nutrition": "2.300 kcal alım | 175g Protein | 210g Karbonhidrat | 80g Yağ | 2.5 L Su"
+                    "hr_range": "172 - 183 bpm (Zirve Zone 4-5)",
+                    "est_calories": "~3.050 kcal toplam harcama",
+                    "nutrition": "2.650 kcal alım | 175g Protein | 300g Karbonhidrat (antrenman öncesi ve sonrası zengin) | 80g Yağ | 3.5 L Su + Elektrolit"
                 }
             }
         ]
@@ -1015,7 +1195,7 @@ class TrainingProtocolsMixin:
                 ),
                 'how_to_reach_productive': (
                     "Productive (Üretken) durumuna geçiş kuralı: Akut yükün tünelin üst bandına (320 - 340) doğru kontrollü artması "
-                    "ve Cuma günkü hız intervali (4x1000m @ 5:15 /km) ile laktat toleransının zorlanarak VO2 Max'in yukarı yönlü trende girmesidir."
+                    "ve haftalık hız intervali (4x1000m @ 5:15 /km) ile laktat toleransının zorlanarak VO2 Max'in yukarı yönlü trende girmesidir."
                 ),
                 'load_focus': load_focus
             },
@@ -1043,11 +1223,11 @@ class TrainingProtocolsMixin:
                 'nutrition_action': '175 - 180 g protein hedefi tamamlanmalı; seans sonrası glikojen sentezi için 250 g kaliteli karbonhidrat.',
                 'sleep_action': 'Growth Hormone (GH) ve testosteron pikini yakalamak için saat 00:30 öncesi yatış (hedef 8+ saat uyku).',
                 'next_session': {
-                    'day': '18 Kasım Çarşamba (Yarın)',
-                    'title': 'Koşu #1 - Zone 2 Taban & Aktif Toparlanma (45 dk)',
+                    'day': '19 Kasım Perşembe (Çarşamba Dinlenme Sonrası)',
+                    'title': 'Koşu #2 - Zone 2 Taban (Bu Haftanın Kalan Son Koşusu, 45-50 dk)',
                     'target_hr': '140 - 150 bpm',
                     'target_pace': '6:35 - 6:50 /km',
-                    'purpose': 'Salı günü tamamlanan 7.43 tonluk ağır Squat/Bench seansı sonrası bacak kaslarındaki laktatı süpürür ve mitokondriyal kılcal damarlanmayı (anjiyogenez) besler.'
+                    'purpose': '16 Kas Pazartesi koşusu (5.19 km) ve Salı tamamlanan 7.43 tonluk ağır Squat/Bench seansı sonrası Çarşamba dinlenilip Perşembe günü bacaklardaki laktat süpürülerek haftalık 2/2 koşu kotası tamamlanır.'
                 }
             }
         }

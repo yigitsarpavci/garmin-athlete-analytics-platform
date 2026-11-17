@@ -10,7 +10,20 @@ function renderWeeklyScheduleTable(scheduleList) {
     tr.onclick = () => {
       if (typeof setTab === 'function') setTab('plan');
       if (typeof setSubTab === 'function') setSubTab('plan', 'protocols');
-      if (typeof selectProtocolDay === 'function') selectProtocolDay(idx);
+      let targetIdx = idx;
+      if (typeof cachedDailyProtocols !== 'undefined' && Array.isArray(cachedDailyProtocols) && cachedDailyProtocols.length) {
+        const dayText = (s.day || '').toLowerCase();
+        const dayMap = [
+          ['pzt', 'monday'], ['sal', 'tuesday'], ['çar', 'wednesday'],
+          ['per', 'thursday'], ['cum', 'friday'], ['cmt', 'saturday'], ['paz', 'sunday']
+        ];
+        const matched = dayMap.find(([tr]) => dayText.includes(tr));
+        if (matched) {
+          const found = cachedDailyProtocols.findIndex(p => p.day_code === matched[1]);
+          if (found >= 0) targetIdx = found;
+        }
+      }
+      if (typeof selectProtocolDay === 'function') selectProtocolDay(targetIdx);
       const targetSec = document.getElementById('dailyProtocolsSection');
       if (targetSec) {
         targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
