@@ -144,8 +144,10 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
 
         # 1. Genel Bakış & Metrikler
         if path == "/api/overview" or path == "/api/metrics":
+            from app.engine.helpers import IS_DEMO_MODE
             self.send_json(200, {
                 **engine.get_latest_metrics(),
+                "is_demo": IS_DEMO_MODE,
                 "schedule": engine.get_weekly_schedule(),
                 "settings": engine.get_garmin_settings_to_fix(),
                 "guidance": engine.get_sports_guidance(),

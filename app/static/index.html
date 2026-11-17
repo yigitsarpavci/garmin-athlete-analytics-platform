@@ -61,8 +61,7 @@
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span> CANLI TELEMETRİ
               </span>
             </div>
-            <p class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Sarp • 22 Yaş • 186 cm • 87,0 kg (<span
-                class="text-emerald-400 font-semibold">-8,0 kg</span>) • 93 Günlük Garmin Verisi</p>
+            <p id="headerAthleteMeta" class="hidden sm:block text-[11px] text-slate-400 font-medium truncate">Sporcu Telemetrisi • Garmin Connect Analitik Motoru</p>
           </div>
         </div>
 
@@ -163,18 +162,17 @@
         class="bg-gradient-to-r from-slate-900 via-slate-850 to-indigo-950 text-white rounded-2xl p-4 shadow-md border border-slate-700/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex items-center space-x-3.5 min-w-0">
           <div class="w-10 h-10 rounded-xl bg-white text-neutral-950 flex items-center justify-center font-bold text-base shadow-sm border border-white/20 shrink-0" id="profileAvatarInitial">
-            S
+            A
           </div>
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
-              <h2 class="text-sm font-extrabold tracking-tight text-white" id="profileNameDisplay">Sarp (Özel Telemetri)
+              <h2 class="text-sm font-extrabold tracking-tight text-white" id="profileNameDisplay">Sporcu Profili
               </h2>
               <span
                 class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap"
-                id="profileBadgeDisplay">Orijinal Garmin Verisi</span>
+                id="profileBadgeDisplay">Garmin Telemetrisi</span>
             </div>
-            <p class="text-xs text-slate-300 mt-0.5" id="profileDescDisplay">Haftalık 2 Koşu + 2 Gym (A/B 5x5) • 87,0 kg
-              → 81,0 kg İdeal Hedef</p>
+            <p class="text-xs text-slate-300 mt-0.5" id="profileDescDisplay">Haftalık 2 Koşu + 2 Gym (A/B 5x5)</p>
           </div>
         </div>
 
@@ -190,7 +188,7 @@
           </button>
           <button onclick="restoreSarpProfile()" id="btnRestoreSarp"
             class="hidden flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs font-medium border border-slate-600 transition">
-            <span>↩ Sarp'ın Orijinal Telemetrisine Dön</span>
+            <span id="btnRestoreSarpLabel">↩ Varsayılan Telemetriye Dön</span>
           </button>
         </div>
       </div>
@@ -207,9 +205,9 @@
               hedefleri, belirtilen antrenman tercihlerine göre anlık olarak hesaplanmıştır.</p>
           </div>
         </div>
-        <button onclick="restoreSarpProfile()"
+        <button onclick="restoreSarpProfile()" id="btnBannerRestore"
           class="text-xs font-bold text-indigo-900 bg-white hover:bg-indigo-100 border border-indigo-300 px-3 py-1.5 rounded-xl transition whitespace-nowrap shadow-xs">
-          Sarp'ın Profili'ne Geri Dön
+          Varsayılan Profile Geri Dön
         </button>
       </div>
 
@@ -540,7 +538,7 @@
       <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
         <div>
           <h3 class="text-lg font-bold text-slate-900">İnteraktif Forma Girme & Performans Simülatörü</h3>
-          <p class="text-xs text-slate-500 mt-1">Boyunuz (186 cm), mevcut kilonuz (87,0 kg) ve koşu telemetrinize dayalı
+          <p class="text-xs text-slate-500 mt-1">Biyometrik profiliniz ve koşu telemetrinize dayalı
             olarak dilediğiniz hedef kilonun kaç günde geleceğini ve 5K derecenizi hesaplayın.</p>
         </div>
 
@@ -1467,7 +1465,7 @@
                   </div>
                   <div>
                     <h3 class="text-sm font-extrabold tracking-tight">Antrenman Tercihleri ve Profil Sihirbazı</h3>
-                    <p class="text-[11px] text-indigo-200 mt-0.5">Sarp'ın planı hazır; başkaları için tercihleri buradan
+                    <p id="prefsModalSubtitle" class="text-[11px] text-indigo-200 mt-0.5">Varsayılan plan hazır; başka sporcular için tercihleri buradan
                       belirleyip anında yeni bir haftalık plan oluşturun.</p>
                   </div>
                 </div>
@@ -2056,7 +2054,7 @@
               style="overscroll-behavior: contain;">
               <div
                 class="bg-white text-slate-800 p-3.5 rounded-2xl rounded-tl-sm border border-slate-200/80 shadow-sm leading-relaxed">
-                Merhaba Sarp! Ben 3 aylık Garmin Connect veritabanına bağlı kişisel spor koçunum. Bugünkü toparlanma
+                <span id="coachGreetingText">Merhaba! Ben 3 aylık Garmin Connect veritabanına bağlı kişisel spor koçunum. Bugünkü toparlanma</span>
                 durumun, antrenman planın, forma girme projeksiyonun veya saat ayarların hakkında bana dilediğini
                 sorabilirsin.
               </div>

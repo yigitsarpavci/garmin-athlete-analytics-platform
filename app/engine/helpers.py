@@ -35,7 +35,8 @@ APP_DIR = os.path.dirname(ENGINE_DIR)
 BASE_DIR = os.path.dirname(APP_DIR)
 _REAL_DATA_DIR = os.path.join(BASE_DIR, "data")
 _SAMPLE_DATA_DIR = os.path.join(BASE_DIR, "sample_data")
-DATA_DIR = _REAL_DATA_DIR if os.path.exists(os.path.join(_REAL_DATA_DIR, "raw_daily_93d.json")) else _SAMPLE_DATA_DIR
+IS_DEMO_MODE = not os.path.exists(os.path.join(_REAL_DATA_DIR, "raw_daily_93d.json"))
+DATA_DIR = _SAMPLE_DATA_DIR if IS_DEMO_MODE else _REAL_DATA_DIR
 
 def fmt_pace_sec(sec: Optional[float]) -> str:
     """

@@ -7,9 +7,9 @@ let chartInstances = {};
 let profilePresets = [];
 let currentActiveProfile = {
   is_sarp: true,
-  athlete_name: "Sarp",
-  profile_badge: "Orijinal Telemetri",
-  description: "Haftalık 2 Koşu + 2 Gym (A/B 5x5) • 87,0 kg → 81,0 kg İdeal Hedef"
+  athlete_name: "Athlete",
+  profile_badge: "Garmin Telemetrisi",
+  description: "Haftalık 2 Koşu + 2 Gym (A/B 5x5)"
 };
 
 // TEMA YÖNETİMİ (PRO ATHLETIC DARK / DAYLIGHT ENGINE)
@@ -91,7 +91,10 @@ async function initApp() {
 
     // 1. Overview Metrikleri
     globalOverview = await safeFetchJson('/api/overview');
-    if (globalOverview) renderOverview(globalOverview);
+    if (globalOverview) {
+      applyAthleteBranding(globalOverview);
+      renderOverview(globalOverview);
+    }
 
     // 2. Branşlar
     globalSports = await safeFetchJson('/api/sports');
@@ -293,9 +296,46 @@ async function submitCustomPlanForm(e) {
 }
 
 
+function applyAthleteBranding(overview) {
+  const isDemo = Boolean(overview && overview.is_demo);
+  const w = overview && overview.weight_kg ? String(overview.weight_kg).replace('.', ',') : (isDemo ? '84,0' : '87,0');
+  const headerMeta = document.getElementById('headerAthleteMeta');
+  const nameDisp = document.getElementById('profileNameDisplay');
+  const badgeDisp = document.getElementById('profileBadgeDisplay');
+  const descDisp = document.getElementById('profileDescDisplay');
+  const avatarInit = document.getElementById('profileAvatarInitial');
+  const btnRestoreLbl = document.getElementById('btnRestoreSarpLabel');
+  const btnBannerRestore = document.getElementById('btnBannerRestore');
+  const prefsSub = document.getElementById('prefsModalSubtitle');
+  const coachGreet = document.getElementById('coachGreetingText');
+
+  if (isDemo) {
+    if (headerMeta) headerMeta.innerHTML = `Demo Athlete • Sentetik Profil • ${w} kg • Örnek Garmin Verisi`;
+    if (avatarInit) avatarInit.textContent = 'D';
+    if (nameDisp) nameDisp.textContent = 'Demo Athlete (Sentetik Telemetri)';
+    if (badgeDisp) badgeDisp.textContent = 'Örnek Demo Verisi';
+    if (descDisp) descDisp.textContent = `Haftalık 2 Koşu + 2 Gym (A/B 5x5) • ${w} kg → 78,0 kg Demo Hedefi`;
+    if (btnRestoreLbl) btnRestoreLbl.textContent = '↩ Demo Telemetrisine Dön';
+    if (btnBannerRestore) btnBannerRestore.textContent = 'Demo Profiline Geri Dön';
+    if (prefsSub) prefsSub.textContent = 'Demo planı hazır; başka sporcular için tercihleri buradan';
+    if (coachGreet) coachGreet.textContent = 'Merhaba! Ben sentetik Garmin Connect veritabanına bağlı yapay zeka spor koçunum. Bugünkü toparlanma';
+  } else {
+    if (headerMeta) headerMeta.innerHTML = `Sarp • 22 Yaş • 186 cm • ${w} kg (<span class="text-emerald-400 font-semibold">-8,0 kg</span>) • 93 Günlük Garmin Verisi`;
+    if (avatarInit) avatarInit.textContent = 'S';
+    if (nameDisp) nameDisp.textContent = 'Sarp (Özel Telemetri)';
+    if (badgeDisp) badgeDisp.textContent = 'Orijinal Garmin Verisi';
+    if (descDisp) descDisp.textContent = `Haftalık 2 Koşu + 2 Gym (A/B 5x5) • ${w} kg → 81,0 kg İdeal Hedef`;
+    if (btnRestoreLbl) btnRestoreLbl.textContent = "↩ Sarp'ın Orijinal Telemetrisine Dön";
+    if (btnBannerRestore) btnBannerRestore.textContent = "Sarp'ın Profili'ne Geri Dön";
+    if (prefsSub) prefsSub.textContent = "Sarp'ın planı hazır; başkaları için tercihleri buradan";
+    if (coachGreet) coachGreet.textContent = 'Merhaba Sarp! Ben 3 aylık Garmin Connect veritabanına bağlı kişisel spor koçunum. Bugünkü toparlanma';
+  }
+}
+
 function applyCustomProfileToUI(plan) {
   currentActiveProfile = plan;
   const isSarp = plan.is_sarp;
+  const isDemo = Boolean(globalOverview && globalOverview.is_demo);
 
   const nameDisp = document.getElementById('profileNameDisplay');
   const badgeDisp = document.getElementById('profileBadgeDisplay');
@@ -305,11 +345,13 @@ function applyCustomProfileToUI(plan) {
   const customBanner = document.getElementById('customProfileBanner');
 
   if (isSarp) {
-    nameDisp.textContent = "Sarp (Özel Telemetri)";
-    badgeDisp.textContent = "Orijinal Garmin Verisi";
+    nameDisp.textContent = isDemo ? "Demo Athlete (Sentetik Telemetri)" : "Sarp (Özel Telemetri)";
+    badgeDisp.textContent = isDemo ? "Örnek Demo Verisi" : "Orijinal Garmin Verisi";
     badgeDisp.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-    descDisp.textContent = "Haftalık 2 Koşu + 2 Gym (A/B 5x5) • 87,0 kg → 81,0 kg İdeal Hedef";
-    avatarInit.textContent = "S";
+    descDisp.textContent = isDemo
+      ? "Haftalık 2 Koşu + 2 Gym (A/B 5x5) • 84,0 kg → 78,0 kg Demo Hedefi"
+      : "Haftalık 2 Koşu + 2 Gym (A/B 5x5) • 87,0 kg → 81,0 kg İdeal Hedef";
+    avatarInit.textContent = isDemo ? "D" : "S";
     avatarInit.className = "w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-base shadow-sm ring-2 ring-white/10";
     if (btnRestore) btnRestore.classList.add('hidden');
     if (customBanner) customBanner.classList.add('hidden');
