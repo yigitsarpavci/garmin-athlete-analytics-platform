@@ -1,0 +1,279 @@
+/* Garmin Athlete OS - Noble Monochrome Design System */
+:root {
+  color-scheme: light dark;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* MONOCHROME NOBLE ATHLETIC PALETTE - OBSIDIAN DARK (DEFAULT) */
+  --bg-base: #090A0C;
+  --bg-surface: #111215;
+  --bg-surface-elevated: #16171C;
+  --bg-surface-hover: #1C1E24;
+  --bg-subtle: rgba(255, 255, 255, 0.04);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-focus: rgba(255, 255, 255, 0.35);
+
+  --text-primary: #EDEDED;
+  --text-secondary: #8E95A5;
+  --text-muted: #555B6C;
+
+  --accent-solid: #FFFFFF;
+  --accent-contrast: #090A0C;
+
+  --scrollbar-track: #090A0C;
+  --scrollbar-thumb: #23252E;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+html:not(.dark) {
+  --bg-base: #F8F9FA;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F1F3F5;
+  --bg-surface-hover: #E9ECEF;
+  --bg-subtle: rgba(0, 0, 0, 0.03);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.14);
+  --border-focus: rgba(0, 0, 0, 0.4);
+
+  --text-primary: #111215;
+  --text-secondary: #5F6675;
+  --text-muted: #8C93A4;
+
+  --accent-solid: #111215;
+  --accent-contrast: #FFFFFF;
+
+  --scrollbar-track: #F8F9FA;
+  --scrollbar-thumb: #D1D5DB;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.font-mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* MONOCHROME SEGMENTED CONTROLS & ACTIVE NAV */
+.active-nav {
+  background-color: var(--accent-solid) !important;
+  color: var(--accent-contrast) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid transparent !important;
+}
+
+/* CARD OVERRIDES - NOBLE SUBTLE SURFACES & DEPTH HIERARCHY */
+html.dark .bg-white,
+html.dark .bg-slate-900,
+html.dark [class*="dark:bg-slate-900"],
+html.dark [class*="bg-[#0d1322]"],
+html.dark [class*="bg-[#070b14]"] {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-100,
+html.dark .bg-slate-200,
+html.dark [class*="dark:bg-slate-800"] {
+  background-color: var(--bg-surface-elevated) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* NORMALIZE LIGHT-ONLY TEXT & BORDERS IN DARK MODE (ZERO EYE FATIGUE) */
+html.dark .text-slate-950,
+html.dark .text-slate-900,
+html.dark .text-gray-900,
+html.dark .text-indigo-950,
+html.dark .text-indigo-900 {
+  color: var(--text-primary) !important;
+}
+html.dark .text-slate-800,
+html.dark .text-slate-700,
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-indigo-800 {
+  color: #CBD5E1 !important;
+}
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-gray-600,
+html.dark .text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+html.dark .text-blue-700,
+html.dark .text-blue-600,
+html.dark .text-indigo-700,
+html.dark .text-indigo-600 {
+  color: #E2E8F0 !important;
+}
+html.dark .text-emerald-700,
+html.dark .text-emerald-600 {
+  color: #6EE7B7 !important;
+}
+html.dark .text-amber-700,
+html.dark .text-amber-600 {
+  color: #FCD34D !important;
+}
+html.dark .text-rose-700,
+html.dark .text-rose-600 {
+  color: #FDA4AF !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300,
+html.dark .border-indigo-200,
+html.dark .border-indigo-300,
+html.dark .border-emerald-200,
+html.dark .border-emerald-300,
+html.dark .border-blue-200,
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-subtle) !important;
+}
+
+html.dark [class*="hover:bg-slate-50"]:hover,
+html.dark [class*="hover:bg-slate-100"]:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* TINTED LIGHT BOXES NORMALIZED FOR DARK MODE */
+html.dark .bg-blue-50,
+html.dark .bg-indigo-50,
+html.dark .bg-emerald-50,
+html.dark .bg-amber-50,
+html.dark .bg-rose-50,
+html.dark .bg-purple-50,
+html.dark [class*="bg-emerald-50/"],
+html.dark [class*="bg-blue-50/"],
+html.dark [class*="bg-indigo-50/"],
+html.dark [class*="bg-amber-50/"],
+html.dark [class*="bg-rose-50/"] {
+  background-color: rgba(255, 255, 255, 0.035) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* PROFESSIONAL CARD ELEVATION & RIM LIGHTING */
+section.rounded-2xl,
+main .rounded-2xl.shadow-sm {
+  border-radius: 18px !important;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+html.dark section.rounded-2xl,
+html.dark main .rounded-2xl.shadow-sm,
+html.dark #decisionCard {
+  box-shadow: 0 8px 30px -6px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+/* PREVENT TEXT OVERLAP & FLEX/GRID BLOWOUT */
+.grid > *,
+.flex > * {
+  min-width: 0;
+}
+main table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+main table td {
+  vertical-align: middle;
+}
+
+/* GRADIENT FLATTENING (REMOVING COLORFUL GRADIENTS FOR NOBLE MONOTONE) */
+html.dark [class*="bg-gradient-to-"] {
+  background-image: none !important;
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* NOBLE MONOCHROME BUTTONS OVERRIDE */
+html.dark button[class*="bg-blue-600"],
+html.dark button[class*="bg-indigo-600"] {
+  background-color: var(--accent-solid) !important;
+  color: var(--accent-contrast) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  font-weight: 600 !important;
+}
+html.dark button[class*="bg-blue-600"]:hover,
+html.dark button[class*="bg-indigo-600"]:hover {
+  background-color: #E2E8F0 !important;
+  color: #090A0C !important;
+}
+
+html.dark button[class*="bg-emerald-600"] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #EDEDED !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+}
+html.dark button[class*="bg-emerald-600"]:hover {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* NOBLE BADGES & PILL CHIPS */
+html.dark [class*="bg-emerald-500/"],
+html.dark [class*="bg-blue-500/"],
+html.dark [class*="bg-indigo-500/"],
+html.dark [class*="bg-amber-500/"],
+html.dark [class*="bg-rose-500/"] {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  color: #D1D5DB !important;
+}
+
+/* NATIVE-LIKE BLURRED MODALS */
+#postWorkoutDebriefModal,
+#activityDetailModal,
+#preferencesModal {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+#postWorkoutDebriefModal > div,
+#activityDetailModal > div,
+#preferencesModal > div {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-medium) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+  border-radius: 16px !important;
+}
+
+/* ACCENT COLOR FOR FORM INPUTS */
+input[type="range"] {
+  accent-color: var(--accent-solid);
+}
+
+/* SCROLLBAR REFINEMENT */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+/* SVG READINESS RING - NOBLE MONOCHROME WITH REST INTERVAL */
+.readiness-ring {
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
