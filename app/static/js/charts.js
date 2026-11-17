@@ -1,14 +1,13 @@
-/* Garmin Athlete IQ — Editorial Telemetry Charts (Track Clay + Forest Moss Palette) */
+/* Garmin Athlete IQ — Editorial Telemetry Charts (Dark Mode Only) */
 function getChartThemeColors() {
-  const isDark = document.documentElement.classList.contains('dark');
   return {
-    isDark,
-    text: isDark ? '#ADA698' : '#5F594F',
-    grid: isDark ? 'rgba(243, 239, 230, 0.08)' : 'rgba(24, 23, 21, 0.08)',
-    primary: isDark ? '#E85B35' : '#C84220',
-    secondary: isDark ? '#4AB984' : '#1F6846',
-    accent: isDark ? '#F3EFE6' : '#181715',
-    barBg: isDark ? 'rgba(232, 91, 53, 0.28)' : 'rgba(200, 66, 32, 0.2)'
+    isDark: true,
+    text: '#ADA698',
+    grid: 'rgba(243, 239, 230, 0.08)',
+    primary: '#E85B35',
+    secondary: '#4AB984',
+    accent: '#F3EFE6',
+    barBg: 'rgba(232, 91, 53, 0.28)'
   };
 }
 
@@ -47,13 +46,17 @@ function updateChartThemes(isDark) {
 
 let chartsLoadingPromise = null;
 
-async function renderCharts() {
-  if (chartInstances.hrv) return;
+async function renderCharts(forceRefresh = false) {
+  if (!forceRefresh && chartInstances.hrv) return;
   if (chartsLoadingPromise) return chartsLoadingPromise;
   chartsLoadingPromise = (async () => {
     try {
       const res = await fetch('/api/charts');
       const c = await res.json();
+      const runsTitleEl = document.getElementById('analyticsRunsTitle');
+      if (runsTitleEl && Array.isArray(c.runs)) {
+        runsTitleEl.textContent = `${c.runs.length} Koşuda Tempo ve Kadans Gelişimi`;
+      }
       const theme = getChartThemeColors();
       const fontMeta = { family: '"IBM Plex Mono", monospace', size: 10 };
 
@@ -61,6 +64,7 @@ async function renderCharts() {
         const el = document.getElementById(id);
         const existing = el && window.Chart && Chart.getChart ? Chart.getChart(el) : null;
         if (existing) existing.destroy();
+        chartInstances = {};
       });
 
       // 1. HRV & RHR

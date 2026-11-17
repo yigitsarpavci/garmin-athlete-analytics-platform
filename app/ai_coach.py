@@ -430,11 +430,23 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
             metrics = custom_profile.get("metrics") or {}
             kcal_txt = f"{metrics.get('target_calories_kcal', 2400)} kcal"
             prot_txt = f"{metrics.get('protein_g', 160)}g protein"
+            z2_cur = "6:35-6:50 /km"
+            z2_tgt = "5:00 /km"
+            z2_date = "Hedef Tarih"
+            gym_prog = {}
         else:
             quota = self._get_weekly_quota_snapshot()
             athlete_label = "Sarp"
-            kcal_txt = "2.400-2.500 kcal"
-            prot_txt = "175-180g protein"
+            latest_m = self.engine.get_latest_metrics() if hasattr(self.engine, "get_latest_metrics") else {}
+            cur_w = float(latest_m.get("weight", 87.0))
+            kcal_txt = f"{round(cur_w * 28)} kcal (~500 kcal açık)"
+            prot_txt = f"~{round(cur_w * 2.0)}g protein"
+            z2_tr = self.engine.get_z2_pace_5min_tracker() if hasattr(self.engine, "get_z2_pace_5min_tracker") else {}
+            z2_cur = z2_tr.get("current_pace", "6:40 /km")
+            z2_tgt = z2_tr.get("target_pace", "5:00 /km")
+            z2_date = z2_tr.get("target_date", "15 Nisan 2027")
+            gym_hist = self.engine.get_gym_exercise_history() if hasattr(self.engine, "get_gym_exercise_history") else {}
+            gym_prog = gym_hist.get("progression", {}) if isinstance(gym_hist, dict) else {}
 
         q_run = quota.get("running", {})
         q_str = quota.get("strength", {})
@@ -462,17 +474,21 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
         if "z2" in q or "zone 2" in q or "pace" in q:
             return (
                 "🎯 **Zone 2 Temposu & Esnek Haftalık Koşu Kotası:**\n"
-                f"Şu anki 145 bpm Zone 2 temponuz 6:35-6:50 /km'dir. 81 kg hedef kilonuza inerken "
-                "80/20 polarize modelle (haftada 1 Zone 2 + 1 hız intervali) Mart-Nisan 2027 döneminde "
-                "145 bpm nabızda 5:00 /km temposuna ilerliyorsunuz.\n"
+                f"Şu anki 145 bpm Zone 2 temponuz {z2_cur}'dir. 81 kg hedef kilonuza inerken "
+                f"80/20 polarize modelle ({z2_date} hedefinde) 145 bpm nabızda {z2_tgt} temposuna ilerliyorsunuz.\n"
                 f"• **Bu Haftaki Koşu Kotası ({week_range}):** {r_done}/{r_target} koşu tamamlandı, geriye {r_rem} koşu kaldı.\n"
                 f"• **Kalan Koşu Türü:** {rem_runs_txt}\n"
                 "• **Esnek Planlama:** Sabit bir güne bağlı kalmadan bacaklarınız taze olduğunda haftanın herhangi bir uygun gününde uygulayabilirsiniz."
             )
         elif any(k in q for k in ("ağırlık", "squat", "bench", "gym", "kuvvet", "workout", "deadlift", "ohp")):
+            sq = gym_prog.get("squat", {})
+            bp = gym_prog.get("bench", {})
+            rw = gym_prog.get("row", {})
             return (
                 "🏋️ **Kuvvet Progresyonu & Esnek Haftalık Gym Kotası:**\n"
-                "Son kayıtta 65 kg Squat 5x5 PR, 50 kg Bench Press 5x5 ve 60 kg Barbell Row 5x5 kilitlendi.\n"
+                f"Son kayıtta Squat {sq.get('max_kg', 65)} kg ({sq.get('next_target', '67.5 kg')}), "
+                f"Bench Press {bp.get('max_kg', 50)} kg ({bp.get('next_target', '52.5 kg')}) ve "
+                f"Barbell Row {rw.get('max_kg', 60)} kg ({rw.get('next_target', '62.5 kg')}) takip edilmektedir.\n"
                 f"• **Bu Haftaki Kuvvet Kotası ({week_range}):** {g_done}/{g_target} kuvvet seansı tamamlandı, geriye {g_rem} seans kaldı.\n"
                 f"• **Kalan Kuvvet Seansı:** {rem_gyms_txt}\n"
                 "• **Esnek Planlama:** Sabit gün zorunluluğu yoktur; merkezi sinir sistemi ve bacaklarınız toparlandığında haftanın uygun bir gününe yerleştirebilirsiniz."

@@ -2,6 +2,13 @@
 
 function renderSleepAnalysis(sData) {
   if (!sData) return;
+  const totalNights = Array.isArray(sData.bedtime_groups)
+    ? sData.bedtime_groups.reduce((acc, g) => acc + (g.count || 0), 0)
+    : 0;
+  const slpSub = document.getElementById('sleepBedtimeSubtitle');
+  if (slpSub && totalNights > 0) {
+    slpSub.textContent = `${totalNights} gecelik uyku kayıtlarının uykuya geçiş saatine göre 3 gruplu analizi:`;
+  }
   const gBody = document.getElementById('bedtimeGroupsBody');
   if (gBody && Array.isArray(sData.bedtime_groups)) {
     gBody.innerHTML = '';
@@ -93,6 +100,10 @@ function renderCorrelations(corrs) {
 function renderPeriods(pData) {
   const container = document.getElementById('periodsContainer');
   if (!container || !pData || !Array.isArray(pData.periods)) return;
+  const titleEl = document.getElementById('analyticsPeriodsTitle');
+  if (titleEl && Array.isArray(pData.weeks)) {
+    titleEl.textContent = `Makro Dönemler ve ${pData.weeks.length} Haftalık Seyir`;
+  }
   container.innerHTML = '';
   pData.periods.forEach((p, idx) => {
     const div = document.createElement('div');
@@ -111,6 +122,22 @@ function renderPeriods(pData) {
     `;
     container.appendChild(div);
   });
+
+  const wBody = document.getElementById('periodsWeeksTableBody');
+  if (wBody && Array.isArray(pData.weeks)) {
+    wBody.innerHTML = pData.weeks.map(w => `
+      <tr class="hover:bg-[var(--bg-subtle)] transition">
+        <td class="py-2.5 px-3 font-mono font-semibold accent-text">${escapeHtml(w.week)}</td>
+        <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(w.start_date)}</td>
+        <td class="py-2.5 px-3 font-mono">${w.act_count} (${w.act_dur_m} dk)</td>
+        <td class="py-2.5 px-3 font-mono">${Number(w.steps || 0).toLocaleString('tr-TR')} <span class="text-[var(--text-muted)]">(${escapeHtml(w.goal_hit)})</span></td>
+        <td class="py-2.5 px-3 font-mono">${w.rhr ?? '--'} / <span class="moss-text">${w.hrv ?? '--'} ms</span></td>
+        <td class="py-2.5 px-3 font-mono">${w.sleep_h ?? '--'} sa (${w.sleep_score ?? '--'})</td>
+        <td class="py-2.5 px-3 font-mono">${w.bb_wake ?? '--'} / ${w.bb_low ?? '--'}</td>
+        <td class="py-2.5 px-3 font-mono font-semibold">${w.max_load ?? 0}</td>
+      </tr>
+    `).join('');
+  }
 }
 
 function renderSettingsAndZones(setData) {

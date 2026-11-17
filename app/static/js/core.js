@@ -161,6 +161,12 @@ async function initApp() {
     const protocolsData = await safeFetchJson('/api/daily-protocols');
     if (protocolsData) renderDailyProtocols(protocolsData);
 
+    chartInstances = {};
+    const analyticsSec = document.getElementById('section-analytics');
+    if (analyticsSec && !analyticsSec.classList.contains('hidden') && typeof renderCharts === 'function') {
+      renderCharts(true);
+    }
+
     runCalculator();
     refreshIcons();
   } catch (err) {

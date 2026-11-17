@@ -203,6 +203,23 @@ function renderOverview(data) {
   if (data.biometrics_93d && typeof render93dBiometrics === 'function') {
     render93dBiometrics(data.biometrics_93d);
   }
+  const calcMaxLbl = document.getElementById('calcMaxWeightLabel');
+  const calcInputEl = document.getElementById('calcTargetInput');
+  if (data.weight !== undefined) {
+    if (calcMaxLbl) calcMaxLbl.textContent = `${Number(data.weight).toFixed(1)} kg`;
+    if (calcInputEl) calcInputEl.max = String(Number(data.weight).toFixed(1));
+  }
+  const runsBadge = document.getElementById('analyticsRunsBadge');
+  if (runsBadge && data.latest_5k) {
+    const m = String(data.latest_5k).match(/\(([^)]+)\)/);
+    runsBadge.textContent = `${m ? m[1] : data.latest_5k} · ${data.latest_cadence || 162} spm`;
+  }
+  const slpBadge = document.getElementById('analyticsSleepBadge');
+  if (slpBadge) {
+    const slpAvg = data.sleep_duration_hours !== undefined ? String(Number(data.sleep_duration_hours).toFixed(2)).replace('.', ',') : '--';
+    const slpSc = data.sleep_score !== undefined ? Math.round(data.sleep_score) : '--';
+    slpBadge.textContent = `Ort: ${slpAvg} sa · ${slpSc}`;
+  }
   renderWeeklyScheduleTable(data.schedule);
   if (data.weekly_quota) renderWeeklyQuotaPanels(data.weekly_quota);
 }
