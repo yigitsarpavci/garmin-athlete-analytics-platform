@@ -2155,7 +2155,7 @@
           <!-- SAĞ ALTTA SABİT AI KOÇ SOHBET PANELİ (FLYOUT) -->
           <div id="aiCoachFlyout"
             class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col z-50 overflow-hidden transition-all duration-300 hidden"
-            style="height: min(560px, calc(100dvh - 5rem));">
+            style="height: min(600px, calc(100dvh - 5rem));">
 
             <!-- CHAT HEADER -->
             <div
@@ -2205,38 +2205,38 @@
             </div>
 
             <!-- HIZLI SORU ÇİPLERİ -->
-            <div
-              class="px-3 py-2 bg-white border-t border-slate-100 flex items-center space-x-1.5 overflow-x-auto custom-scrollbar text-[11px] flex-shrink-0">
-              <button onclick="askCoachPrompt('Bugün hangi antrenmanı yapmalıyım?')"
-                class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 transition">Bugün
+            <div id="coachQuickPrompts"
+              class="coach-chip-bar px-3 py-2.5 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 custom-scrollbar text-[11px] flex-shrink-0">
+              <button type="button" onclick="askCoachPrompt('Bugün hangi antrenmanı yapmalıyım?')"
+                class="coach-chip px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition">Bugün
                 ne yapmalıyım?</button>
-              <button onclick="askCoachPrompt('83 kiloya kaç günde ulaşırım?')"
-                class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 transition">83
+              <button type="button" onclick="askCoachPrompt('83 kiloya kaç günde ulaşırım?')"
+                class="coach-chip px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition">83
                 kg kaç gün?</button>
-              <button onclick="askCoachPrompt('Koşu ve ağırlık sıralaması nasıl olmalı?')"
-                class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 transition">Koşu
+              <button type="button" onclick="askCoachPrompt('Koşu ve ağırlık sıralaması nasıl olmalı?')"
+                class="coach-chip px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition">Koşu
                 vs Ağırlık sırası</button>
-              <button onclick="askCoachPrompt('Günde kaç kalori almalıyım ve ne kadar protein tüketmeliyim?')"
-                class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 transition">Beslenme
-                & Kalori</button>
-              <button onclick="askCoachPrompt('Koşuda 5k derecemi nasıl 24 dakikaya düşürürüm?')"
-                class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 transition">5K
+              <button type="button" onclick="askCoachPrompt('Günde kaç kalori almalıyım ve ne kadar protein tüketmeliyim?')"
+                class="coach-chip px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition">Beslenme
+                &amp; Kalori</button>
+              <button type="button" onclick="askCoachPrompt('Koşuda 5k derecemi nasıl 24 dakikaya düşürürüm?')"
+                class="coach-chip px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition">5K
                 &lt; 24:30 Rehberi</button>
-              <button onclick="askCoachPrompt('Garmin saatimde hangi ayarları düzeltmeliyim?')"
-                class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 transition">Saat
+              <button type="button" onclick="askCoachPrompt('Garmin saatimde hangi ayarları düzeltmeliyim?')"
+                class="coach-chip px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition">Saat
                 ayarları</button>
-              <button onclick="askCoachPrompt('Yelken antrenmanında ne kadar su ve tuz almalıyım?')"
-                class="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 transition">Yelken
+              <button type="button" onclick="askCoachPrompt('Yelken antrenmanında ne kadar su ve tuz almalıyım?')"
+                class="coach-chip px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition">Yelken
                 hidrasyonu</button>
             </div>
 
             <!-- CHAT INPUT -->
-            <div class="p-3 bg-white border-t border-slate-100 flex items-center space-x-2 flex-shrink-0">
+            <div class="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 flex-shrink-0">
               <input type="text" id="chatInputBox" placeholder="Koçunuza bir soru sorun..."
                 onkeydown="if(event.key==='Enter') sendCoachMessage()"
-                class="flex-1 text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
-              <button onclick="sendCoachMessage()"
-                class="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl shadow transition">
+                class="flex-1 min-w-0 text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+              <button type="button" onclick="sendCoachMessage()"
+                class="shrink-0 bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl shadow transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3">
                   </path>

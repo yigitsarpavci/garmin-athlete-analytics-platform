@@ -330,10 +330,26 @@ html.dark #decisionCard {
   box-shadow: 0 8px 30px -6px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
 }
 
-/* PREVENT TEXT OVERLAP & FLEX/GRID BLOWOUT */
+/* PREVENT TEXT OVERLAP & FLEX/GRID BLOWOUT (preserve button intrinsic width!) */
 .grid > *,
-.flex > * {
+.flex > :not(button):not(.nav-tab):not(.subtab-btn):not(.coach-chip) {
   min-width: 0;
+}
+
+/* AI COACH QUICK PREFIX CHIPS (CSS LAYOUT FLEX-WRAP + GAP + SAFE ALIGNMENT) */
+.coach-chip-bar {
+  display: flex;
+  flex-wrap: wrap;
+  flex-wrap: balance;
+  align-items: safe center;
+  gap: 0.375rem;
+  max-block-size: 8.75rem;
+  overflow-y: auto;
+}
+.coach-chip {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  line-height: 1.25;
 }
 main table th {
   font-size: 11px;
