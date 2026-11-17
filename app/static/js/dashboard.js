@@ -278,15 +278,15 @@ function renderSports(sports) {
     const iconName = iconNames[key] || getSportLucideIcon(sp.sport_key || sp.name);
 
     card.innerHTML = `
-      <div class="flex flex-wrap items-start justify-between gap-2.5">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div class="icon-box w-9 h-9">${lucideSvg(iconName, 'w-4 h-4')}</div>
-          <div class="min-w-0">
-            <h4 class="font-editorial text-lg font-medium tracking-tight">${escapeHtml(sp.name)}</h4>
-            <p class="font-mono text-[11px] text-[var(--text-secondary)] break-words mt-0.5">${escapeHtml(sp.stats_summary || sp.current_status || sp.current_pace || '')}</p>
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <div class="icon-box w-9 h-9 shrink-0">${lucideSvg(iconName, 'w-4 h-4')}</div>
+            <h4 class="font-editorial text-lg font-medium tracking-tight leading-snug">${escapeHtml(sp.name)}</h4>
           </div>
+          <span class="stamp-tag ${isExtra ? 'stamp-moss' : 'stamp-accent'}">${escapeHtml(sp.schedule_status || sp.cadence || 'Aktif')}</span>
         </div>
-        <span class="stamp-tag ${isExtra ? 'stamp-moss' : 'stamp-accent'} max-w-full whitespace-normal">${escapeHtml(sp.schedule_status || sp.cadence || 'Aktif')}</span>
+        <p class="font-mono text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(sp.stats_summary || sp.current_status || sp.current_pace || '')}</p>
       </div>
 
       <div class="text-xs text-[var(--text-secondary)] space-y-1.5 tint-panel p-4 leading-relaxed">
