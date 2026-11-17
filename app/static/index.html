@@ -80,6 +80,7 @@
       <!-- SEKME ÇUBUĞU (TÜM EKRAN BOYUTLARINDA TEK NAVİGASYON) -->
       <nav class="flex items-center gap-1 overflow-x-auto custom-scrollbar -mb-px text-xs">
         <button onclick="setTab('overview')" id="nav-overview" class="nav-tab nav-tab-active">Genel Bakış</button>
+        <button onclick="setTab('plan')" id="nav-plan" class="nav-tab">Antrenman Planı</button>
         <button onclick="setTab('calculator')" id="nav-calculator" class="nav-tab">Form Simülatörü</button>
         <button onclick="setTab('sports')" id="nav-sports" class="nav-tab">Branşlar</button>
         <button onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Antrenman Yükü</button>
@@ -403,41 +404,44 @@
         </div>
       </div>
 
-      <!-- FORMA GİRME VE DERECE TAKVİMİ -->
-      <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
+      <!-- HIZLI GEÇİŞ KARTLARI (KALABALIK YERİNE ODAKLI ALT BÖLÜMLER) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <button onclick="setTab('plan'); setSubTab('plan', 'schedule');" class="garmin-card bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 text-left hover:border-[#007CC3] transition flex items-center justify-between gap-3">
           <div>
-            <h3 class="text-base font-bold text-slate-900">Forma Girme ve Hedef Derece Takvimi</h3>
-            <p class="text-xs text-slate-500">Mevcut kilo verme hızınız (-0,89 kg/hafta) ve önerilen dengeli hız (-0,55
-              kg/hafta) simülasyonu</p>
+            <p class="text-xs font-extrabold text-slate-900 dark:text-white">📅 Haftalık Program &amp; Reçete</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">2 Koşu + 2 Gym A/B 5x5 set, ağırlık ve beslenme</p>
           </div>
-          <button onclick="setTab('calculator')"
-            class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center space-x-1">
-            <span>Özel Kilo Hesaplayıcı</span>
-            <span>&rarr;</span>
-          </button>
-        </div>
+          <span class="text-[#007CC3] font-bold text-sm">&rarr;</span>
+        </button>
+        <button onclick="setTab('plan'); setSubTab('plan', 'z2');" class="garmin-card bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 text-left hover:border-emerald-500 transition flex items-center justify-between gap-3">
+          <div>
+            <p class="text-xs font-extrabold text-slate-900 dark:text-white">🎯 Zone 2 @ 5:00 /km Sayacı</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">145 bpm tempo gelişimi, 5 kural ve kilometre taşları</p>
+          </div>
+          <span class="text-emerald-600 font-bold text-sm">&rarr;</span>
+        </button>
+        <button onclick="setTab('calculator'); setSubTab('calculator', 'milestones');" class="garmin-card bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 text-left hover:border-[#FC4C02] transition flex items-center justify-between gap-3">
+          <div>
+            <p class="text-xs font-extrabold text-slate-900 dark:text-white">⚖️ Forma Girme &amp; Derece Takvimi</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Hedef kilo projeksiyonu, 5K süresi ve morfoloji</p>
+          </div>
+          <span class="text-[#FC4C02] font-bold text-sm">&rarr;</span>
+        </button>
+      </div>
 
-        <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200">
-                <th class="py-2.5 px-3">Hedef Aşama</th>
-                <th class="py-2.5 px-3">Hedef Kilo (VKİ)</th>
-                <th class="py-2.5 px-3">Kalan Fark</th>
-                <th class="py-2.5 px-3">Mevcut Hızda (-0,89 kg/hf)</th>
-                <th class="py-2.5 px-3">Önerilen Hızda (-0,55 kg/hf)</th>
-                <th class="py-2.5 px-3">Beklenen 5K Süresi</th>
-                <th class="py-2.5 px-3">VO2 Max / Kondisyon</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 text-slate-700" id="overviewMilestonesBody">
-              <!-- JS ile dolar -->
-            </tbody>
-          </table>
-        </div>
-      </section>
+    </div>
 
+    <!-- 1B. BÖLÜM: ANTRENMAN PLANI (HAFTALIK PROGRAM, GÜNLÜK REÇETE, ZONE 2 SAYACI) -->
+    <div id="section-plan" class="space-y-5 hidden">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="subtab-bar">
+          <button onclick="setSubTab('plan', 'schedule')" data-subtab-group="plan" data-subtab="schedule" class="subtab-btn subtab-btn-active">Haftalık Program</button>
+          <button onclick="setSubTab('plan', 'protocols')" data-subtab-group="plan" data-subtab="protocols" class="subtab-btn">Günlük Detaylı Reçete</button>
+          <button onclick="setSubTab('plan', 'z2')" data-subtab-group="plan" data-subtab="z2" class="subtab-btn">Zone 2 @ 5:00/km Hedefi</button>
+        </div>
+      </div>
+
+      <div data-subpane-group="plan" data-subpane="schedule">
       <!-- HAFTALIK ANTRENMAN VE BESLENME PROGRAMI -->
       <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex items-center justify-between">
@@ -471,6 +475,9 @@
         </div>
       </section>
 
+
+      </div>
+      <div data-subpane-group="plan" data-subpane="protocols" class="hidden">
       <!-- 7 GÜNLÜK DETAYLI EGZERSİZ, SET, TEKRAR VE AĞIRLIK REÇETESİ -->
       <section class="garmin-card bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4" id="dailyProtocolsSection">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -495,6 +502,9 @@
         </div>
       </section>
 
+
+      </div>
+      <div data-subpane-group="plan" data-subpane="z2" class="hidden">
       <!-- ZONE 2 @ 5:00 /KM PACE GERİ SAYIM SAYACI & ANTRENMAN SAYACI (CLEAN GARMIN LIGHT-FIRST CARD) -->
       <section
         class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl p-6 space-y-5 border border-slate-200 dark:border-slate-800 border-l-4 border-l-[#007CC3]">
@@ -545,10 +555,20 @@
         </div>
       </section>
 
+      </div>
     </div>
 
-    <!-- 2. BÖLÜM: FORMA GİRME HESAPLAYICISI (INTERAKTİF SIMULATOR) -->
-    <div id="section-calculator" class="space-y-6 hidden">
+    <!-- 2. BÖLÜM: FORMA GİRME HESAPLAYICISI & DERECE TAKVİMİ -->
+    <div id="section-calculator" class="space-y-5 hidden">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="subtab-bar">
+          <button onclick="setSubTab('calculator', 'sim')" data-subtab-group="calculator" data-subtab="sim" class="subtab-btn subtab-btn-active">İnteraktif Simülatör</button>
+          <button onclick="setSubTab('calculator', 'milestones')" data-subtab-group="calculator" data-subtab="milestones" class="subtab-btn">Hedef Derece Takvimi</button>
+          <button onclick="setSubTab('calculator', 'morph')" data-subtab-group="calculator" data-subtab="morph" class="subtab-btn">Fiziksel Morfoloji</button>
+        </div>
+      </div>
+
+      <div data-subpane-group="calculator" data-subpane="sim">
       <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
         <div>
           <h3 class="text-lg font-bold text-slate-900">İnteraktif Forma Girme & Performans Simülatörü</h3>
@@ -621,6 +641,47 @@
         </div>
       </section>
 
+
+      </div>
+      <div data-subpane-group="calculator" data-subpane="milestones" class="hidden">
+      <!-- FORMA GİRME VE DERECE TAKVİMİ -->
+      <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Forma Girme ve Hedef Derece Takvimi</h3>
+            <p class="text-xs text-slate-500">Mevcut kilo verme hızınız (-0,89 kg/hafta) ve önerilen dengeli hız (-0,55
+              kg/hafta) simülasyonu</p>
+          </div>
+          <button onclick="setSubTab('calculator', 'sim')"
+            class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+            <span>Özel Kilo Hesaplayıcı</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200">
+                <th class="py-2.5 px-3">Hedef Aşama</th>
+                <th class="py-2.5 px-3">Hedef Kilo (VKİ)</th>
+                <th class="py-2.5 px-3">Kalan Fark</th>
+                <th class="py-2.5 px-3">Mevcut Hızda (-0,89 kg/hf)</th>
+                <th class="py-2.5 px-3">Önerilen Hızda (-0,55 kg/hf)</th>
+                <th class="py-2.5 px-3">Beklenen 5K Süresi</th>
+                <th class="py-2.5 px-3">VO2 Max / Kondisyon</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700" id="overviewMilestonesBody">
+              <!-- JS ile dolar -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      </div>
+      <div data-subpane-group="calculator" data-subpane="morph" class="hidden">
       <!-- FİZİKSEL MORFOLOJİ, YAĞ ORANI VE GÖRSEL DÖNÜŞÜM TAKİBİ -->
       <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
@@ -638,16 +699,29 @@
           <!-- JS ile doldurulur -->
         </div>
       </section>
+      </div>
     </div>
 
-    <!-- 3. BÖLÜM: BRANŞLAR VE SIRALAMA (SPORTS & TRAINING) -->
-    <div id="section-sports" class="space-y-6 hidden">
+    <!-- 3. BÖLÜM: BRANŞLAR VE SIRALAMA -->
+    <div id="section-sports" class="space-y-5 hidden">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="subtab-bar">
+          <button onclick="setSubTab('sports', 'cards')" data-subtab-group="sports" data-subtab="cards" class="subtab-btn subtab-btn-active">Branş Özetleri (4)</button>
+          <button onclick="setSubTab('sports', 'gym')" data-subtab-group="sports" data-subtab="gym" class="subtab-btn">Kuvvet & 5x5 Rutini</button>
+          <button onclick="setSubTab('sports', 'seq')" data-subtab-group="sports" data-subtab="seq" class="subtab-btn">Aynı Gün Sırası</button>
+          <button onclick="setSubTab('sports', 'prog')" data-subtab-group="sports" data-subtab="prog" class="subtab-btn">Dinamik İlerleme & Seviyeler</button>
+        </div>
+      </div>
 
+      <div data-subpane-group="sports" data-subpane="cards">
       <!-- 4 BRANŞ KARTI -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="sportsCardsContainer">
         <!-- JS ile 4 branş kartı doldurulur -->
       </div>
 
+
+      </div>
+      <div data-subpane-group="sports" data-subpane="gym" class="hidden">
       <!-- GERÇEK GYM AĞIRLIK VE SET TELEMETRİSİ (GARMIN CONNECT) -->
       <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4" id="gymHistorySection">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
@@ -696,6 +770,9 @@
         </div>
       </section>
 
+
+      </div>
+      <div data-subpane-group="sports" data-subpane="seq" class="hidden">
       <!-- AYNI GÜN KUVVET VE KOŞU SIRALAMASI BİLİMİ -->
       <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div>
@@ -736,6 +813,9 @@
         </div>
       </section>
 
+
+      </div>
+      <div data-subpane-group="sports" data-subpane="prog" class="hidden">
       <!-- DİNAMİK GELİŞİM, SEVİYE ATLAMA VE DOGMATİK OLMAYAN DÖNEMLEME BÖLÜMÜ -->
       <section
         class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-800 border-l-4 border-l-amber-500 p-6 space-y-5"
@@ -771,6 +851,7 @@
           </div>
         </div>
       </section>
+      </div>
     </div>
 
 
@@ -821,6 +902,15 @@
         </div>
       </div>
 
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="subtab-bar">
+          <button onclick="setSubTab('training_load', 'focus')" data-subtab-group="training_load" data-subtab="focus" class="subtab-btn subtab-btn-active">Aylık Yük Odağı</button>
+          <button onclick="setSubTab('training_load', 'weekly')" data-subtab-group="training_load" data-subtab="weekly" class="subtab-btn">14 Haftalık ACWR Trendi</button>
+          <button onclick="setSubTab('training_load', 'top')" data-subtab-group="training_load" data-subtab="top" class="subtab-btn">En Ağır 10 Seans</button>
+        </div>
+      </div>
+
+      <div data-subpane-group="training_load" data-subpane="focus">
       <!-- ACWR VE YÜK DENGESİ DETAY KARTI -->
       <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -888,6 +978,9 @@
         </div>
       </section>
 
+
+      </div>
+      <div data-subpane-group="training_load" data-subpane="weekly" class="hidden">
       <!-- 14 HAFTALIK YÜK VE ACWR GELİŞİM TABLOSU -->
       <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div>
@@ -919,6 +1012,9 @@
         </div>
       </section>
 
+
+      </div>
+      <div data-subpane-group="training_load" data-subpane="top" class="hidden">
       <!-- EN YÜKSEK YÜK ÜRETEN 10 SEANS TABLOSU -->
       <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div>
@@ -949,6 +1045,7 @@
         </div>
       </section>
 
+      </div>
     </div>
 
     <!-- 4. BÖLÜM: AKTİVİTE KAYITLARI (FULL DATABASE - 49 ACTIVITIES) -->
@@ -1039,9 +1136,17 @@
         </div>
       </div>
 
-      <!-- 5. BÖLÜM: SAĞLIK & UYKU (HEALTH & RECOVERY) -->
-      <div id="section-health" class="space-y-6 hidden">
+      <!-- 5. BÖLÜM: SAĞLIK & UYKU (ALT BÖLÜMLERLE DÜZENLENMİŞ) -->
+      <div id="section-health" class="space-y-5 hidden">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="subtab-bar">
+          <button onclick="setSubTab('health', 'clinic')" data-subtab-group="health" data-subtab="clinic" class="subtab-btn subtab-btn-active">Klinik Tarama & Sağlık Yaşı</button>
+          <button onclick="setSubTab('health', 'sleep')" data-subtab-group="health" data-subtab="sleep" class="subtab-btn">Uyku Mimarisi & Sirkadiyen</button>
+          <button onclick="setSubTab('health', 'metrics')" data-subtab-group="health" data-subtab="metrics" class="subtab-btn">16 Temel Biyometrik</button>
+        </div>
+      </div>
 
+        <div data-subpane-group="health" data-subpane="clinic">
         <!-- KLİNİK GENEL SAĞLIK TARAMASI & DOKTOR CHECK-UP RAPORU (CLEAN GARMIN LIGHT-FIRST CARD) -->
         <section
           class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl p-6 space-y-5 border border-slate-200 dark:border-slate-800 border-l-4 border-l-[#007CC3]">
@@ -1112,6 +1217,64 @@
           </div>
         </section>
 
+
+        </div>
+        <div data-subpane-group="health" data-subpane="sleep" class="space-y-5 hidden">
+        <!-- YATIŞ SAATİ VE REM UYKUSU ANALİZİ -->
+        <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Yatış Saatinin REM Uykusu ve Sabah Enerjisine Etkisi</h3>
+            <p class="text-xs text-slate-500">88 gecelik kayıtlar uykuya geçiş saatine göre 3 gruba ayrıldığında
+              toparlanma farkları:</p>
+          </div>
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200">
+                  <th class="py-2.5 px-3">Yatış Saati Grubu</th>
+                  <th class="py-2.5 px-3">Gece Sayısı</th>
+                  <th class="py-2.5 px-3">Toplam Uyku</th>
+                  <th class="py-2.5 px-3">Derin / REM Uyku</th>
+                  <th class="py-2.5 px-3">Uyku Puanı</th>
+                  <th class="py-2.5 px-3">Gece HRV</th>
+                  <th class="py-2.5 px-3">Dinlenik Nabız</th>
+                  <th class="py-2.5 px-3">Sabah Enerji / Hazırlık</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-slate-700" id="bedtimeGroupsBody">
+                <!-- JS ile dolar -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+
+        <!-- EN İYİ VE EN KÖTÜ 6 GECE -->
+        <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <h3 class="text-base font-bold text-slate-900">En İyi 6 ve En Düşük 6 Uyku Gecesinin Karşılaştırması</h3>
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200">
+                  <th class="py-2 px-3">Kategori</th>
+                  <th class="py-2 px-3">Tarih</th>
+                  <th class="py-2 px-3">Yatış Saati</th>
+                  <th class="py-2 px-3">Uyku Puanı</th>
+                  <th class="py-2 px-3">Toplam Süre</th>
+                  <th class="py-2 px-3">Derin / REM</th>
+                  <th class="py-2 px-3">Gece HRV (Nabız)</th>
+                  <th class="py-2 px-3">Sabah Enerji / Hazırlık</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-slate-700" id="sleepNightsBody">
+                <!-- JS ile dolar -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        </div>
+        <div data-subpane-group="health" data-subpane="metrics" class="hidden">
         <!-- 16 TEMEL GÖSTERGE -->
         <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
           <h3 class="text-base font-bold text-slate-900">93 Günlük 16 Temel Sağlık ve Biyometrik Gösterge</h3>
@@ -1232,63 +1395,21 @@
           </div>
         </section>
 
-        <!-- YATIŞ SAATİ VE REM UYKUSU ANALİZİ -->
-        <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-          <div>
-            <h3 class="text-base font-bold text-slate-900">Yatış Saatinin REM Uykusu ve Sabah Enerjisine Etkisi</h3>
-            <p class="text-xs text-slate-500">88 gecelik kayıtlar uykuya geçiş saatine göre 3 gruba ayrıldığında
-              toparlanma farkları:</p>
-          </div>
-          <div class="overflow-x-auto custom-scrollbar">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200">
-                  <th class="py-2.5 px-3">Yatış Saati Grubu</th>
-                  <th class="py-2.5 px-3">Gece Sayısı</th>
-                  <th class="py-2.5 px-3">Toplam Uyku</th>
-                  <th class="py-2.5 px-3">Derin / REM Uyku</th>
-                  <th class="py-2.5 px-3">Uyku Puanı</th>
-                  <th class="py-2.5 px-3">Gece HRV</th>
-                  <th class="py-2.5 px-3">Dinlenik Nabız</th>
-                  <th class="py-2.5 px-3">Sabah Enerji / Hazırlık</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 text-slate-700" id="bedtimeGroupsBody">
-                <!-- JS ile dolar -->
-              </tbody>
-            </table>
-          </div>
-        </section>
 
-        <!-- EN İYİ VE EN KÖTÜ 6 GECE -->
-        <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-          <h3 class="text-base font-bold text-slate-900">En İyi 6 ve En Düşük 6 Uyku Gecesinin Karşılaştırması</h3>
-          <div class="overflow-x-auto custom-scrollbar">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200">
-                  <th class="py-2 px-3">Kategori</th>
-                  <th class="py-2 px-3">Tarih</th>
-                  <th class="py-2 px-3">Yatış Saati</th>
-                  <th class="py-2 px-3">Uyku Puanı</th>
-                  <th class="py-2 px-3">Toplam Süre</th>
-                  <th class="py-2 px-3">Derin / REM</th>
-                  <th class="py-2 px-3">Gece HRV (Nabız)</th>
-                  <th class="py-2 px-3">Sabah Enerji / Hazırlık</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 text-slate-700" id="sleepNightsBody">
-                <!-- JS ile dolar -->
-              </tbody>
-            </table>
-          </div>
-        </section>
-
+        </div>
       </div>
 
-      <!-- 6. BÖLÜM: GRAFİKLER & TRENDLER (DATA SCIENCE & TRENDS) -->
-        <div id="section-analytics" class="space-y-6 hidden">
+      <!-- 6. BÖLÜM: GRAFİKLER & TRENDLER -->
+      <div id="section-analytics" class="space-y-5 hidden">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="subtab-bar">
+          <button onclick="setSubTab('analytics', 'charts')" data-subtab-group="analytics" data-subtab="charts" class="subtab-btn subtab-btn-active">Zaman Serisi Grafikleri</button>
+          <button onclick="setSubTab('analytics', 'corr')" data-subtab-group="analytics" data-subtab="corr" class="subtab-btn">Korelasyon Matrisi</button>
+          <button onclick="setSubTab('analytics', 'periods')" data-subtab-group="analytics" data-subtab="periods" class="subtab-btn">4 Makro Dönem</button>
+        </div>
+      </div>
 
+        <div data-subpane-group="analytics" data-subpane="charts">
           <!-- GRAFİK GRİDİ -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- 1. HRV & Dinlenik Nabız -->
@@ -1340,6 +1461,9 @@
             </div>
           </div>
 
+
+        </div>
+        <div data-subpane-group="analytics" data-subpane="corr" class="hidden">
           <!-- KORELASYONLAR (NEDEN-SONUÇ İLİŞKİLERİ) -->
           <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
             <div>
@@ -1366,6 +1490,9 @@
             </div>
           </section>
 
+
+        </div>
+        <div data-subpane-group="analytics" data-subpane="periods" class="hidden">
           <!-- 4 DÖNEM VE 14 HAFTALIK SEYİR -->
           <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
             <h3 class="text-base font-bold text-slate-900">3 Aylık 4 Makro Dönem ve 14 ISO Haftası Seyri</h3>
@@ -1375,10 +1502,19 @@
           </section>
 
         </div>
+      </div>
 
-        <!-- 7. BÖLÜM: SAAT AYARLARI (GARMIN SETTINGS & ZONES) -->
-          <div id="section-settings" class="space-y-6 hidden">
+        <!-- 7. BÖLÜM: SAAT AYARLARI -->
+        <div id="section-settings" class="space-y-5 hidden">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="subtab-bar">
+          <button onclick="setSubTab('settings', 'fixes')" data-subtab-group="settings" data-subtab="fixes" class="subtab-btn subtab-btn-active">Düzeltilecek 8 Ayar</button>
+          <button onclick="setSubTab('settings', 'zones')" data-subtab-group="settings" data-subtab="zones" class="subtab-btn">Nabız & Güç Bölgeleri</button>
+          <button onclick="setSubTab('settings', 'expansion')" data-subtab-group="settings" data-subtab="expansion" class="subtab-btn">Yüksek Çözünürlüklü Veri</button>
+        </div>
+      </div>
 
+          <div data-subpane-group="settings" data-subpane="fixes">
             <!-- 8 AYAR LİSTESİ -->
             <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
               <div>
@@ -1391,6 +1527,9 @@
               </div>
             </section>
 
+
+          </div>
+          <div data-subpane-group="settings" data-subpane="zones" class="hidden">
             <!-- DOĞRU KALP NABIZ VE GÜÇ BÖLGELERİ TABLOSU -->
             <section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
               <div>
@@ -1417,6 +1556,9 @@
               </div>
             </section>
 
+
+          </div>
+          <div data-subpane-group="settings" data-subpane="expansion" class="hidden">
             <!-- 4. GARMIN'DEN ÇEKTİĞİMİZ VERİLERİ NASIL DAHA FAZLA ARTIRABİLİRİZ? -->
             <section
               class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl p-6 space-y-5 border border-slate-200 dark:border-slate-800 border-l-4 border-l-[#007CC3]">
@@ -1454,6 +1596,7 @@
             </section>
 
           </div>
+        </div>
         </main>
 
         <!-- KİŞİSELLEŞTİRİLMİŞ ANTRENMAN VE PROFİL TERCİHLERİ MODALI -->

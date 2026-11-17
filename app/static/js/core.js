@@ -62,7 +62,7 @@ async function safeFetchJson(url) {
 // SAYFA İLK YÜKLEME
 
 function setTab(tabId) {
-  const tabs = ['overview', 'calculator', 'sports', 'training_load', 'activities', 'health', 'analytics', 'settings'];
+  const tabs = ['overview', 'plan', 'calculator', 'sports', 'training_load', 'activities', 'health', 'analytics', 'settings'];
   tabs.forEach(t => {
     const sec = document.getElementById('section-' + t);
     const nav = document.getElementById('nav-' + t);
@@ -76,6 +76,19 @@ function setTab(tabId) {
   });
 
   if (tabId === 'analytics') {
+    renderCharts();
+  }
+}
+
+function setSubTab(group, paneKey) {
+  document.querySelectorAll(`[data-subpane-group="${group}"]`).forEach(el => {
+    el.classList.toggle('hidden', el.dataset.subpane !== paneKey);
+  });
+  document.querySelectorAll(`[data-subtab-group="${group}"]`).forEach(btn => {
+    const active = btn.dataset.subtab === paneKey;
+    btn.className = active ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
+  });
+  if (group === 'analytics' && paneKey === 'charts') {
     renderCharts();
   }
 }

@@ -8,12 +8,12 @@ function renderWeeklyScheduleTable(scheduleList) {
     tr.className = "hover:bg-blue-50/70 transition cursor-pointer group";
     tr.title = "Günün detaylı antrenman ve beslenme reçetesine gitmek için tıklayın";
     tr.onclick = () => {
+      if (typeof setTab === 'function') setTab('plan');
+      if (typeof setSubTab === 'function') setSubTab('plan', 'protocols');
       if (typeof selectProtocolDay === 'function') selectProtocolDay(idx);
       const targetSec = document.getElementById('dailyProtocolsSection');
       if (targetSec) {
         targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        targetSec.classList.add('ring-2', 'ring-blue-500', 'transition-all');
-        setTimeout(() => targetSec.classList.remove('ring-2', 'ring-blue-500'), 1600);
       }
     };
     tr.innerHTML = `
