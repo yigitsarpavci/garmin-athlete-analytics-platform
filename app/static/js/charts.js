@@ -1,14 +1,14 @@
-/* Garmin Athlete OS - Chart.js Telemetry (Garmin Blue & Strava Orange) */
+/* Garmin Athlete IQ — Precision Telemetry Charts (Zinc + Electric Indigo) */
 function getChartThemeColors() {
   const isDark = document.documentElement.classList.contains('dark');
   return {
     isDark,
-    text: isDark ? '#959CA9' : '#4B5563',
-    grid: isDark ? 'rgba(255, 255, 255, 0.065)' : 'rgba(15, 23, 42, 0.06)',
-    primary: isDark ? '#38BDF8' : '#007CC3',
-    secondary: isDark ? '#FB923C' : '#FC4C02',
-    accent: isDark ? '#34D399' : '#10B981',
-    barBg: isDark ? 'rgba(56, 189, 248, 0.25)' : 'rgba(0, 124, 195, 0.22)'
+    text: isDark ? '#A1A1AA' : '#71717A',
+    grid: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(9, 9, 11, 0.06)',
+    primary: isDark ? '#818CF8' : '#4F46E5',
+    secondary: isDark ? '#34D399' : '#059669',
+    accent: isDark ? '#E4E4E7' : '#27272A',
+    barBg: isDark ? 'rgba(99, 102, 241, 0.25)' : 'rgba(79, 70, 229, 0.16)'
   };
 }
 
@@ -45,35 +45,46 @@ function updateChartThemes(isDark) {
 }
 
 
+let chartsLoadingPromise = null;
+
 async function renderCharts() {
   if (chartInstances.hrv) return;
-  try {
-    const res = await fetch('/api/charts');
-    const c = await res.json();
-    const theme = getChartThemeColors();
+  if (chartsLoadingPromise) return chartsLoadingPromise;
+  chartsLoadingPromise = (async () => {
+    try {
+      const res = await fetch('/api/charts');
+      const c = await res.json();
+      const theme = getChartThemeColors();
+      const fontMeta = { family: '"JetBrains Mono", monospace', size: 10 };
 
-    // 1. HRV & RHR (Noble Monochromatic)
-    chartInstances.hrv = new Chart(document.getElementById('chart-hrv'), {
+      ['chart-hrv', 'chart-runs', 'chart-bb', 'chart-sleep'].forEach(id => {
+        const el = document.getElementById(id);
+        const existing = el && window.Chart && Chart.getChart ? Chart.getChart(el) : null;
+        if (existing) existing.destroy();
+      });
+
+      // 1. HRV & RHR
+      chartInstances.hrv = new Chart(document.getElementById('chart-hrv'), {
       type: 'line',
       data: {
         labels: c.dates,
         datasets: [
-          { label: 'Gece HRV (ms)', data: c.hrv, borderColor: theme.primary, borderWidth: 2, pointRadius: 1, tension: 0.2, yAxisID: 'y' },
-          { label: 'Dinlenik Nabız (bpm)', data: c.rhr, borderColor: theme.secondary, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 1, tension: 0.2, yAxisID: 'y1' }
+          { label: 'Gece HRV (ms)', data: c.hrv, borderColor: theme.primary, borderWidth: 2, pointRadius: 0.5, tension: 0.25, yAxisID: 'y' },
+          { label: 'Dinlenik Nabız (bpm)', data: c.rhr, borderColor: theme.secondary, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0.5, tension: 0.25, yAxisID: 'y1' }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          y: { min: 20, max: 70, ticks: { color: theme.text }, grid: { color: theme.grid }, title: { display: true, text: 'HRV (ms)', color: theme.text, font: { size: 10 } } },
-          y1: { min: 40, max: 70, position: 'right', ticks: { color: theme.text }, grid: { drawOnChartArea: false }, title: { display: true, text: 'RHR (bpm)', color: theme.text, font: { size: 10 } } },
-          x: { ticks: { maxTicksLimit: 10, color: theme.text, font: { size: 9 } }, grid: { color: theme.grid } }
+          y: { min: 20, max: 70, ticks: { color: theme.text, font: fontMeta }, grid: { color: theme.grid }, title: { display: true, text: 'HRV (ms)', color: theme.text, font: fontMeta } },
+          y1: { min: 40, max: 70, position: 'right', ticks: { color: theme.text, font: fontMeta }, grid: { drawOnChartArea: false }, title: { display: true, text: 'RHR (bpm)', color: theme.text, font: fontMeta } },
+          x: { ticks: { maxTicksLimit: 10, color: theme.text, font: fontMeta }, grid: { color: theme.grid } }
         },
-        plugins: { legend: { labels: { boxWidth: 10, color: theme.text, font: { size: 10 } } } }
+        plugins: { legend: { labels: { boxWidth: 10, color: theme.text, font: fontMeta } } }
       }
     });
 
-    // 2. Koşu Temposu ve Kadans (Monochrome Telemetry)
+    // 2. Koşu Temposu ve Kadans
     chartInstances.runs = new Chart(document.getElementById('chart-runs'), {
       type: 'line',
       data: {
@@ -86,11 +97,11 @@ async function renderCharts() {
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          y: { reverse: true, min: 5.0, max: 9.0, ticks: { color: theme.text }, grid: { color: theme.grid }, title: { display: true, text: 'Tempo (dk/km - Hızlı Yukarı)', color: theme.text, font: { size: 10 } } },
-          y1: { min: 120, max: 180, position: 'right', ticks: { color: theme.text }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Kadans', color: theme.text, font: { size: 10 } } },
-          x: { ticks: { color: theme.text, font: { size: 9 } }, grid: { color: theme.grid } }
+          y: { reverse: true, min: 5.0, max: 9.0, ticks: { color: theme.text, font: fontMeta }, grid: { color: theme.grid }, title: { display: true, text: 'Tempo (dk/km)', color: theme.text, font: fontMeta } },
+          y1: { min: 120, max: 180, position: 'right', ticks: { color: theme.text, font: fontMeta }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Kadans', color: theme.text, font: fontMeta } },
+          x: { ticks: { color: theme.text, font: fontMeta }, grid: { color: theme.grid } }
         },
-        plugins: { legend: { labels: { boxWidth: 10, color: theme.text, font: { size: 10 } } } }
+        plugins: { legend: { labels: { boxWidth: 10, color: theme.text, font: fontMeta } } }
       }
     });
 
@@ -100,17 +111,17 @@ async function renderCharts() {
       data: {
         labels: c.dates,
         datasets: [
-          { label: 'Sabah Body Battery', data: c.bb_wake, borderColor: theme.primary, borderWidth: 2, pointRadius: 1, tension: 0.2 },
-          { label: 'Günlük Stres Puanı', data: c.stress, borderColor: theme.secondary, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 1, tension: 0.2 }
+          { label: 'Sabah Body Battery', data: c.bb_wake, borderColor: theme.primary, borderWidth: 2, pointRadius: 0.5, tension: 0.25 },
+          { label: 'Günlük Stres Puanı', data: c.stress, borderColor: theme.secondary, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0.5, tension: 0.25 }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          y: { min: 0, max: 100, ticks: { color: theme.text }, grid: { color: theme.grid } },
-          x: { ticks: { maxTicksLimit: 10, color: theme.text, font: { size: 9 } }, grid: { color: theme.grid } }
+          y: { min: 0, max: 100, ticks: { color: theme.text, font: fontMeta }, grid: { color: theme.grid } },
+          x: { ticks: { maxTicksLimit: 10, color: theme.text, font: fontMeta }, grid: { color: theme.grid } }
         },
-        plugins: { legend: { labels: { boxWidth: 10, color: theme.text, font: { size: 10 } } } }
+        plugins: { legend: { labels: { boxWidth: 10, color: theme.text, font: fontMeta } } }
       }
     });
 
@@ -120,25 +131,26 @@ async function renderCharts() {
       data: {
         labels: c.dates,
         datasets: [
-          { label: 'Uyku Süresi (Saat)', data: c.sleep_durations, backgroundColor: theme.barBg, yAxisID: 'y' },
-          { label: 'Uyku Skoru (0-100)', data: c.sleep_scores, type: 'line', borderColor: theme.primary, borderWidth: 2, pointRadius: 1, yAxisID: 'y1' }
+          { label: 'Uyku Süresi (Saat)', data: c.sleep_durations, backgroundColor: theme.barBg, borderRadius: 4, yAxisID: 'y' },
+          { label: 'Uyku Skoru (0-100)', data: c.sleep_scores, type: 'line', borderColor: theme.primary, borderWidth: 2, pointRadius: 0.5, yAxisID: 'y1' }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          y: { min: 0, max: 10, ticks: { color: theme.text }, grid: { color: theme.grid }, title: { display: true, text: 'Saat', color: theme.text, font: { size: 10 } } },
-          y1: { min: 0, max: 100, position: 'right', ticks: { color: theme.text }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Puan', color: theme.text, font: { size: 10 } } },
-          x: { ticks: { maxTicksLimit: 10, color: theme.text, font: { size: 9 } }, grid: { color: theme.grid } }
+          y: { min: 0, max: 10, ticks: { color: theme.text, font: fontMeta }, grid: { color: theme.grid }, title: { display: true, text: 'Saat', color: theme.text, font: fontMeta } },
+          y1: { min: 0, max: 100, position: 'right', ticks: { color: theme.text, font: fontMeta }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Puan', color: theme.text, font: fontMeta } },
+          x: { ticks: { maxTicksLimit: 10, color: theme.text, font: fontMeta }, grid: { color: theme.grid } }
         },
-        plugins: { legend: { labels: { boxWidth: 10, color: theme.text, font: { size: 10 } } } }
+        plugins: { legend: { labels: { boxWidth: 10, color: theme.text, font: fontMeta } } }
       }
     });
 
-  } catch (err) {
-    console.error(err);
-  }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      chartsLoadingPromise = null;
+    }
+  })();
+  return chartsLoadingPromise;
 }
-
-// 7. AYARLAR & NABIZ BÖLGELERİ
-

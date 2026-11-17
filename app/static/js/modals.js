@@ -1,4 +1,4 @@
-/* Garmin Athlete OS - Modals, Debrief & AI Coach Flyout */
+/* Garmin Athlete IQ — Precision Modals, Debrief & AI Coach Flyout */
 function closeActivityModal() {
   const modal = document.getElementById('activityDetailModal');
   if (modal) {
@@ -7,36 +7,38 @@ function closeActivityModal() {
   }
 }
 
-
 function openActivityModal(act) {
   if (!act) return;
   const modal = document.getElementById('activityDetailModal');
   if (!modal) return;
   document.body.style.overflow = 'hidden';
 
-  const spNames = { 
-    running: 'Koşu', 
-    sailing_v2: 'Yelken', 
-    strength_training: 'Kuvvet Antrenmanı', 
-    basketball: 'Basketbol', 
-    hiking: 'Doğa Yürüyüşü', 
-    rowing_v2: 'Kürek', 
-    walking: 'Yürüyüş' 
+  const spNames = {
+    running: 'Koşu',
+    sailing_v2: 'Yelken',
+    strength_training: 'Kuvvet Antrenmanı',
+    basketball: 'Basketbol',
+    hiking: 'Doğa Yürüyüşü',
+    rowing_v2: 'Kürek',
+    walking: 'Yürüyüş'
   };
-  const spIcons = { 
-    running: '🏃', 
-    sailing_v2: '⛵', 
-    strength_training: '🏋️', 
-    basketball: '🏀', 
-    hiking: '🥾', 
-    rowing_v2: '🚣', 
-    walking: '🚶' 
+  const spIconNames = {
+    running: 'footprints',
+    sailing_v2: 'compass',
+    strength_training: 'dumbbell',
+    basketball: 'trophy',
+    hiking: 'mountain',
+    rowing_v2: 'waves',
+    walking: 'footprints'
   };
 
-  document.getElementById('modalSportIcon').textContent = spIcons[act.sport] || '⚡';
+  const iconEl = document.getElementById('modalSportIcon');
+  if (iconEl) {
+    iconEl.innerHTML = lucideSvg(spIconNames[act.sport] || 'activity', 'w-5 h-5 text-indigo-500 dark:text-indigo-400');
+  }
   document.getElementById('modalActivityTitle').textContent = act.name || (spNames[act.sport] || 'Aktivite');
   document.getElementById('modalSportBadge').textContent = spNames[act.sport] || act.sport;
-  document.getElementById('modalActivitySub').textContent = `${act.date || ''} • ${act.time || ''}`;
+  document.getElementById('modalActivitySub').textContent = `${act.date || ''} · ${act.time || ''}`;
 
   document.getElementById('modalDuration').textContent = act.dur_m ? `${act.dur_m.toFixed(0)} dk` : '--';
   document.getElementById('modalDistance').textContent = act.dist_km > 0 ? `${act.dist_km.toFixed(2)} km` : '--';
@@ -45,24 +47,23 @@ function openActivityModal(act) {
 
   document.getElementById('modalAvgHr').textContent = act.avg_hr ? `${act.avg_hr} bpm` : '--';
   document.getElementById('modalMaxHr').textContent = act.max_hr ? `${act.max_hr} bpm` : '--';
-  
-  // EF = Hız (m/s) / Nabız (bpm)
+
   let efText = '--';
   if (act.dist_km > 0 && act.dur_m > 0 && act.avg_hr > 0) {
     const speedMs = (act.dist_km * 1000) / (act.dur_m * 60);
-    const ef = (speedMs / act.avg_hr) * 60; // m/beat
+    const ef = (speedMs / act.avg_hr) * 60;
     efText = `${ef.toFixed(2)} m/atım`;
   }
   document.getElementById('modalEf').textContent = efText;
-  document.getElementById('modalHydration').textContent = act.water_ml ? `${(act.water_ml).toFixed(0)} mL (${(act.water_ml/1000).toFixed(1)} L)` : 'Normal (~400 mL)';
+  document.getElementById('modalHydration').textContent = act.water_ml ? `${(act.water_ml).toFixed(0)} mL (${(act.water_ml / 1000).toFixed(1)} L)` : 'Normal (~400 mL)';
 
   document.getElementById('modalLoad').textContent = act.load ? act.load.toFixed(1) : '0';
   document.getElementById('modalAeroTe').textContent = act.aTE ? `${act.aTE.toFixed(1)} / 5.0` : '--';
   document.getElementById('modalAnaeroTe').textContent = act.anTE !== undefined && act.anTE !== null ? `${act.anTE.toFixed(1)} / 5.0` : '0.0';
-  
+
   const pwr = act.norm_pwr ? `${act.norm_pwr} W` : (act.avg_pwr ? `${act.avg_pwr} W` : '--');
   const cad = act.cadence ? `${act.cadence.toFixed(0)} spm` : '--';
-  document.getElementById('modalPowerCadence').textContent = `${pwr} • ${cad}`;
+  document.getElementById('modalPowerCadence').textContent = `${pwr} · ${cad}`;
 
   const btnAi = document.getElementById('btnAskAiAboutAct');
   if (btnAi) {
@@ -72,7 +73,7 @@ function openActivityModal(act) {
       const launcher = document.getElementById('aiCoachLauncherBtn');
       if (flyout) flyout.classList.remove('hidden');
       if (launcher) launcher.classList.add('hidden');
-      
+
       const input = document.getElementById('chatInputBox');
       if (input) {
         input.value = `${act.date} tarihindeki ${spNames[act.sport] || act.sport} antrenmanımı (${act.dur_m ? act.dur_m.toFixed(0) : 0} dk, ortalama ${act.avg_hr || 0} bpm nabız, ${act.load ? act.load.toFixed(1) : 0} yük) fizyolojik ve toparlanma açısından analiz eder misin?`;
@@ -81,12 +82,12 @@ function openActivityModal(act) {
     };
   }
 
+  refreshIcons();
   modal.classList.remove('hidden');
 }
 
-// ANTRENMAN SONRASI 5 MADDELİK DEBRIEF RAPORU MODALI
+// POST-WORKOUT DEBRIEF MODAL
 let currentDebriefIdx = 0;
-
 
 async function openDebriefModal(idx = 0) {
   currentDebriefIdx = idx;
@@ -95,17 +96,13 @@ async function openDebriefModal(idx = 0) {
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 
-  // Switch active button styling (noble monochrome)
   const btnGym = document.getElementById('debriefBtnGym');
   const btnRun = document.getElementById('debriefBtnRun');
+  const activeCls = "px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-zinc-900 text-zinc-950 dark:text-zinc-50 border border-zinc-200/80 dark:border-zinc-700 transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5";
+  const idleCls = "px-2.5 py-1 rounded-md font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5";
   if (btnGym && btnRun) {
-    if (idx === 0) {
-      btnGym.className = "px-2.5 py-1 rounded-lg font-bold bg-white text-neutral-950 shadow-xs transition";
-      btnRun.className = "px-2.5 py-1 rounded-lg font-medium text-neutral-400 hover:text-white transition";
-    } else {
-      btnGym.className = "px-2.5 py-1 rounded-lg font-medium text-neutral-400 hover:text-white transition";
-      btnRun.className = "px-2.5 py-1 rounded-lg font-bold bg-white text-neutral-950 shadow-xs transition";
-    }
+    btnGym.className = idx === 0 ? activeCls : idleCls;
+    btnRun.className = idx === 0 ? idleCls : activeCls;
   }
 
   try {
@@ -117,7 +114,6 @@ async function openDebriefModal(idx = 0) {
   }
 }
 
-
 function closeDebriefModal() {
   const modal = document.getElementById('postWorkoutDebriefModal');
   if (modal) {
@@ -125,7 +121,6 @@ function closeDebriefModal() {
     document.body.style.overflow = '';
   }
 }
-
 
 function renderDebriefModalContent(d, idx) {
   if (!d || !d.activity) return;
@@ -137,25 +132,25 @@ function renderDebriefModalContent(d, idx) {
   const gym = d.gym_volume_progression || {};
   const coach = d.executive_coaching_verdict || {};
 
-  // Header
-  document.getElementById('debriefIcon').textContent = a.sport === 'strength_training' ? '🏋️' : (a.sport === 'running' ? '🏃' : '⚡');
+  const iconEl = document.getElementById('debriefIcon');
+  if (iconEl) {
+    const ic = a.sport === 'strength_training' ? 'dumbbell' : (a.sport === 'running' ? 'footprints' : 'zap');
+    iconEl.innerHTML = lucideSvg(ic, 'w-5 h-5 text-indigo-600 dark:text-indigo-400');
+  }
   document.getElementById('debriefTitle').textContent = `${a.name} Seans Debrief Raporu`;
   document.getElementById('debriefBadge').textContent = a.sport === 'strength_training' ? (gym.workout_type || 'Kuvvet') : 'Koşu';
-  document.getElementById('debriefSub').textContent = `${a.date} • ${a.time || ''} • ${a.duration_min} dk Seans • ${a.calories} kcal`;
+  document.getElementById('debriefSub').textContent = `${a.date} · ${a.time || ''} · ${a.duration_min} dk Seans · ${a.calories} kcal`;
 
-  // 1. Training Load
   document.getElementById('debriefSessionLoad').textContent = tl.session_epoc_load || a.load;
   document.getElementById('debriefAcuteChronic').textContent = `${tl.acute_load} / ${tl.chronic_load}`;
   document.getElementById('debriefAcwrRatio').textContent = tl.acwr ? tl.acwr.toFixed(2) : '1.00';
-  document.getElementById('debriefAcwrBadge').textContent = tl.in_sweet_spot ? 'SWEET SPOT (OPTIMAL)' : tl.acwr_status;
+  document.getElementById('debriefAcwrBadge').textContent = tl.in_sweet_spot ? 'SWEET SPOT' : tl.acwr_status;
   document.getElementById('debriefLoadDesc').textContent = tl.interpretation || '';
 
-  // 2. Productive
   document.getElementById('debriefProductiveStatusBadge').textContent = pe.status_tr || pe.status_code;
   document.getElementById('debriefProductiveReason').textContent = pe.status_reason || '';
   document.getElementById('debriefHowToProductive').textContent = pe.how_to_reach_productive || '';
 
-  // 3. Biometrics
   document.getElementById('debriefWeight').textContent = `${bio.weight_kg} kg`;
   document.getElementById('debriefRhr').textContent = `${bio.resting_hr_bpm} bpm`;
   document.getElementById('debriefHrv').textContent = `${bio.overnight_hrv_ms} ms`;
@@ -164,16 +159,15 @@ function renderDebriefModalContent(d, idx) {
   document.getElementById('debriefBb').textContent = `${bio.body_battery_wake} / ${bio.body_battery_current}`;
   document.getElementById('debriefStress').textContent = `${bio.stress_score} Puan`;
 
-  // 4. HR Comparison
   const avgDiff = hrComp.avg_hr_diff !== undefined ? hrComp.avg_hr_diff : 0;
   const diffSign = avgDiff > 0 ? `+${avgDiff}` : `${avgDiff}`;
   const hrBadge = document.getElementById('debriefHrDiffBadge');
   if (avgDiff <= 0) {
-    hrBadge.textContent = `${diffSign} bpm DAHA DÜŞÜK (TASARRUF)`;
-    hrBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+    hrBadge.textContent = `${diffSign} bpm TASARRUF`;
+    hrBadge.className = "font-mono text-[10px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
   } else {
-    hrBadge.textContent = `${diffSign} bpm DAHA YÜKSEK`;
-    hrBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20";
+    hrBadge.textContent = `${diffSign} bpm YÜKSEK`;
+    hrBadge.className = "font-mono text-[10px] font-medium px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20";
   }
 
   document.getElementById('debriefCurHr').textContent = `${a.avg_hr} / ${a.max_hr} bpm`;
@@ -183,7 +177,6 @@ function renderDebriefModalContent(d, idx) {
   document.getElementById('debriefPrevDur').textContent = `${hrComp.previous_dur_m || '--'} dk seans`;
   document.getElementById('debriefHrInsight').textContent = hrComp.insight || '';
 
-  // 5. Gym Volume
   const gymSec = document.getElementById('debriefGymSection');
   const exGrid = document.getElementById('debriefExerciseGrid');
   if (a.sport === 'strength_training' && gym && gym.current_volume_kg) {
@@ -196,9 +189,9 @@ function renderDebriefModalContent(d, idx) {
       exGrid.innerHTML = gym.exercises.map(ex => {
         const setDetails = (ex.sets || []).map(s => `${s.reps}x${s.weight_kg}kg`).join(', ');
         return `
-          <div class="bg-white dark:bg-slate-900/80 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-1">
-            <strong class="text-slate-900 dark:text-white text-xs block truncate">${ex.name}</strong>
-            <p class="text-[11px] text-blue-700 dark:text-blue-400 font-bold">${ex.sets ? ex.sets.length : 0} Set: <span class="font-medium text-slate-700 dark:text-slate-300">${setDetails}</span></p>
+          <div class="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800 space-y-1">
+            <strong class="text-zinc-950 dark:text-zinc-50 text-xs font-semibold block truncate">${ex.name}</strong>
+            <p class="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">${ex.sets ? ex.sets.length : 0} Set: <span class="text-zinc-600 dark:text-zinc-300">${setDetails}</span></p>
           </div>
         `;
       }).join('');
@@ -207,16 +200,16 @@ function renderDebriefModalContent(d, idx) {
     if (gymSec) gymSec.classList.add('hidden');
   }
 
-  // Verdict & Next action
   if (coach) {
     document.getElementById('debriefVerdict').textContent = coach.verdict || '';
     document.getElementById('debriefNutritionAction').textContent = coach.nutrition_action || '';
     if (coach.next_session) {
-      document.getElementById('debriefNextAction').textContent = `📅 ${coach.next_session.day}: ${coach.next_session.title} (${coach.next_session.target_hr}). ${coach.next_session.purpose}`;
+      document.getElementById('debriefNextAction').textContent = `${coach.next_session.day}: ${coach.next_session.title} (${coach.next_session.target_hr}). ${coach.next_session.purpose}`;
     }
   }
-}
 
+  refreshIcons();
+}
 
 function toggleAICoach() {
   const flyout = document.getElementById('aiCoachFlyout');
@@ -233,7 +226,6 @@ function toggleAICoach() {
   }
 }
 
-
 async function sendCoachMessage() {
   const input = document.getElementById('chatInputBox');
   const text = input.value.trim();
@@ -246,7 +238,6 @@ async function sendCoachMessage() {
   appendMessageUI('user', text);
   chatHistory.push({ role: 'user', content: text });
 
-  // Yükleniyor / Düşünüyor animasyonu
   const typingId = appendTypingIndicatorUI();
 
   try {
@@ -271,49 +262,45 @@ async function sendCoachMessage() {
   }
 }
 
-
 function askCoachPrompt(prompt) {
   const flyout = document.getElementById('aiCoachFlyout');
-  flyout.classList.remove('hidden');
+  if (flyout) flyout.classList.remove('hidden');
   document.getElementById('chatInputBox').value = prompt;
   sendCoachMessage();
 }
-
 
 function appendTypingIndicatorUI() {
   const c = document.getElementById('chatMessagesContainer');
   const id = 'typing-' + Date.now();
   const div = document.createElement('div');
   div.id = id;
-  div.className = "bg-white text-slate-500 p-3 rounded-2xl rounded-tl-sm border border-slate-200/90 shadow-sm mr-6 flex items-center space-x-2 text-[11px]";
+  div.className = "bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 p-3 rounded-xl rounded-tl-sm border border-zinc-200/80 dark:border-zinc-800 mr-6 flex items-center gap-2.5 text-[11px]";
   div.innerHTML = `
-        <span class="flex space-x-1">
-          <span class="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-          <span class="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-          <span class="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        <span class="flex gap-1">
+          <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+          <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+          <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
         </span>
-        <span class="font-medium text-slate-600">Garmin telemetrisi ve spor bilimi taranıyor...</span>
+        <span class="font-medium text-zinc-600 dark:text-zinc-300">Garmin telemetrisi ve spor bilimi taranıyor...</span>
       `;
   c.appendChild(div);
   c.scrollTop = c.scrollHeight;
   return id;
 }
 
-
 function removeTypingIndicatorUI(id) {
   const el = document.getElementById(id);
   if (el) el.remove();
 }
 
-
 function appendMessageUI(sender, text, meta = null) {
   const c = document.getElementById('chatMessagesContainer');
   const div = document.createElement('div');
   if (sender === 'user') {
-    div.className = "bg-blue-600 text-white p-3 rounded-2xl rounded-tr-sm self-end ml-6 shadow-sm leading-relaxed";
+    div.className = "bg-indigo-600 text-white p-3 rounded-xl rounded-tr-sm self-end ml-6 leading-relaxed shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]";
     div.textContent = text;
   } else {
-    div.className = "bg-white text-slate-800 p-3.5 rounded-2xl rounded-tl-sm border border-slate-200/90 shadow-sm mr-2 space-y-1.5 leading-relaxed";
+    div.className = "bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 p-3.5 rounded-xl rounded-tl-sm border border-zinc-200/80 dark:border-zinc-800 mr-2 space-y-1.5 leading-relaxed";
     let formatted = text
       .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -326,12 +313,14 @@ function appendMessageUI(sender, text, meta = null) {
     let metaHtml = '';
     if (meta) {
       const isReal = meta.is_real_ai;
-      const badgeClass = isReal ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200';
-      const icon = isReal ? '⚡' : '⚙️';
+      const badgeClass = isReal
+        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700';
+      const iconName = isReal ? 'zap' : 'cpu';
       metaHtml = `
-<div class="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-  <span class="inline-flex items-center px-2 py-0.5 rounded border ${badgeClass} font-semibold">
-    ${icon} ${meta.provider || 'Gerçek AI'}
+<div class="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between font-mono text-[10px] text-zinc-400">
+  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border ${badgeClass} font-medium">
+    ${lucideSvg(iconName, 'w-3 h-3')} ${meta.provider || 'Gerçek AI'}
   </span>
   <span>${meta.response_time_sec ? meta.response_time_sec + ' sn' : ''}</span>
 </div>
@@ -342,11 +331,9 @@ function appendMessageUI(sender, text, meta = null) {
   }
   c.appendChild(div);
   c.scrollTop = c.scrollHeight;
+  refreshIcons();
 }
 
-
-
-// ESC key to close any active modal (accessibility & modern UX)
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeDebriefModal();
@@ -355,7 +342,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Backdrop click (light-dismiss) for all modals
 ['postWorkoutDebriefModal', 'activityDetailModal', 'preferencesModal'].forEach(id => {
   const modalEl = document.getElementById(id);
   if (modalEl) {
