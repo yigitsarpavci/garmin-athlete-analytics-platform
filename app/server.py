@@ -43,7 +43,10 @@ import os
 import sys
 import json
 import math
+import time
+import threading
 import subprocess
+from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import urllib.parse
 from typing import Any, Dict, Optional, Tuple
@@ -58,6 +61,67 @@ from ai_coach import AthleteAICoach
 
 engine = GarminAthleteEngine()
 coach = AthleteAICoach(engine)
+
+SYNC_STATE: Dict[str, Any] = {
+    "last_sync_at": None,
+    "session_valid": True,
+    "last_error": None,
+    "auto_sync_interval_sec": 900,
+}
+_SYNC_LOCK = threading.Lock()
+
+
+def sync_garmin_live() -> Dict[str, Any]:
+    """Garmin Connect verilerini canlı çeker ve motoru tazeler."""
+    fetch_script = os.path.join(BASE_DIR, "src", "fetch_garmin_data.mjs")
+    if not os.path.exists(fetch_script):
+        SYNC_STATE["last_error"] = "fetch_garmin_data.mjs bulunamadı."
+        return {"success": False, "session_expired": False, "message": SYNC_STATE["last_error"]}
+
+    with _SYNC_LOCK:
+        try:
+            res = subprocess.run(["node", fetch_script], capture_output=True, text=True, timeout=90)
+            output = (res.stdout or "") + "\n" + (res.stderr or "")
+            if res.returncode != 0:
+                expired = "401" in output or "Session invalid" in output or "expired" in output.lower()
+                SYNC_STATE["session_valid"] = not expired
+                SYNC_STATE["last_error"] = (
+                    "Garmin Connect oturum çerezleri (401) süresi dolmuş. Lütfen yeniden giriş yapın."
+                    if expired else f"Senkronizasyon hatası (kod {res.returncode})"
+                )
+                return {
+                    "success": False,
+                    "session_expired": expired,
+                    "message": SYNC_STATE["last_error"],
+                }
+
+            engine.load_data()
+            SYNC_STATE["last_sync_at"] = datetime.now().isoformat(timespec="seconds")
+            SYNC_STATE["session_valid"] = True
+            SYNC_STATE["last_error"] = None
+            return {
+                "success": True,
+                "session_expired": False,
+                "last_sync_at": SYNC_STATE["last_sync_at"],
+                "message": "Garmin verileri başarıyla senkronize edildi ve güncellendi!",
+            }
+        except Exception as e:
+            SYNC_STATE["last_error"] = str(e)
+            return {"success": False, "session_expired": False, "message": f"Senkronizasyon hatası: {str(e)}"}
+
+
+def _auto_sync_loop(interval_sec: int = 900) -> None:
+    """Sunucu çalışırken belirli aralıklarla Garmin telemetrisini otomatik yeniler."""
+    daily_file = os.path.join(BASE_DIR, "data", "raw_daily_93d.json")
+    try:
+        age_sec = time.time() - os.path.getmtime(daily_file) if os.path.exists(daily_file) else interval_sec + 1
+        if age_sec > interval_sec:
+            sync_garmin_live()
+    except Exception:
+        pass
+    while True:
+        time.sleep(interval_sec)
+        sync_garmin_live()
 
 class AthleteAppHandler(SimpleHTTPRequestHandler):
     """Garmin Sporcu Platformu HTTP İstek İşleyicisi."""
@@ -213,16 +277,9 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             self.send_json(200, res)
         # 3. Garmin Veri Senkronizasyonu
         elif path == "/api/sync":
-            try:
-                fetch_script = os.path.join(BASE_DIR, "src", "fetch_garmin_data.mjs")
-                if os.path.exists(fetch_script):
-                    res = subprocess.run(["node", fetch_script], capture_output=True, text=True, timeout=60)
-                    engine.load_data()
-                    self.send_json(200, {"success": True, "message": "Garmin verileri başarıyla senkronize edildi ve güncellendi!"})
-                else:
-                    self.send_json(400, {"success": False, "message": "fetch_garmin_data.mjs bulunamadı."})
-            except Exception as e:
-                self.send_json(500, {"success": False, "message": f"Senkronizasyon hatası: {str(e)}"})
+            res = sync_garmin_live()
+            status_code = 200 if res.get("success") else (401 if res.get("session_expired") else 500)
+            self.send_json(status_code, res)
         else:
             self.send_json(404, {"error": "Not found"})
 
@@ -269,15 +326,18 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
 
 def run(port: int = 8085) -> None:
     """
-    Yerel HTTP sunucusunu belirtilen port üzerinden başlatır ve dinlemeye alır.
+    Yerel HTTP sunucusunu belirtilen port üzerinden başlatır, arka plan otomatik
+    Garmin senkronizasyonunu (15 dk aralıkla) devreye alır ve istekleri dinler.
 
     Args:
         port (int): Sunucunun bağlanacağı TCP portu (varsayılan: 8085).
     """
+    threading.Thread(target=_auto_sync_loop, args=(900,), daemon=True).start()
     server_address = ('127.0.0.1', port)
     httpd = HTTPServer(server_address, AthleteAppHandler)
     print(f"\n=======================================================")
     print(f"🚀 Garmin Sporcu Asistanı & Gösterge Paneli Başlatıldı")
+    print(f"🔄 Otomatik Garmin Canlı Senkronizasyon: Aktif (15 dk)")
     print(f"👉 Tarayıcıda açın: http://localhost:{port}")
     print(f"=======================================================\n")
     try:

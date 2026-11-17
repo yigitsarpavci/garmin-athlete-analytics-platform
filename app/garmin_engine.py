@@ -132,6 +132,7 @@ class GarminAthleteEngine(TelemetryMixin, TrainingProtocolsMixin, SimulationHeal
                 "readiness_score": rd.get("score") if isinstance(rd, dict) else None,
                 "acute_load": rd.get("acuteLoad") if isinstance(rd, dict) else None,
                 "recovery_time_min": rd.get("recoveryTime") if isinstance(rd, dict) else None,
+                "recovery_timestamp_local": rd.get("timestampLocal") if isinstance(rd, dict) else None,
                 "acwr_factor_pct": rd.get("acwrFactorPercent") if isinstance(rd, dict) else None,
                 "hrv_weekly_avg": rd.get("hrvWeeklyAverage") if isinstance(rd, dict) else None,
             })

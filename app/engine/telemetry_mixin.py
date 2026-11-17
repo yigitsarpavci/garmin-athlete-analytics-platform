@@ -169,6 +169,20 @@ class TelemetryMixin:
             }
         ]
 
+        raw_rec_min = latest.get("recovery_time_min")
+        rec_ts_str = latest.get("recovery_timestamp_local")
+        if raw_rec_min is not None:
+            rec_min = float(raw_rec_min)
+            if rec_ts_str and latest.get("date") == datetime.now().strftime("%Y-%m-%d"):
+                try:
+                    snap_dt = datetime.fromisoformat(str(rec_ts_str).split(".")[0])
+                    elapsed_min = max(0.0, (datetime.now() - snap_dt).total_seconds() / 60.0)
+                    rec_min = max(0.0, rec_min - elapsed_min)
+                except Exception:
+                    pass
+        else:
+            rec_min = 0.0
+
         return {
             "date": latest["date"],
             "weight": current_weight,
@@ -188,7 +202,7 @@ class TelemetryMixin:
             "acwr_status": "OPTIMAL (Sweet Spot)",
             "training_status": "Form Korunuyor (Maintaining)",
             "training_balance": "BALANCED (Kusursuz Dengeli)",
-            "recovery_time_h": round(float(latest.get("recovery_time_min") or 330) / 60.0, 1),
+            "recovery_time_h": round(rec_min / 60.0, 1),
             "recommendation": rec,
             "milestones": milestone_data,
             "latest_5k": "29:07 (5:48 /km)"
