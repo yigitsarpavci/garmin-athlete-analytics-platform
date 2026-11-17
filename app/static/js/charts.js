@@ -3,12 +3,12 @@ function getChartThemeColors() {
   const isDark = document.documentElement.classList.contains('dark');
   return {
     isDark,
-    text: isDark ? '#94a3b8' : '#475569',
-    grid: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.06)',
-    primary: isDark ? '#FFFFFF' : '#0F172A',
-    secondary: isDark ? '#94A3B8' : '#64748B',
-    accent: isDark ? '#E2E8F0' : '#334155',
-    barBg: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(15, 23, 42, 0.22)'
+    text: isDark ? '#959CA9' : '#5B6270',
+    grid: isDark ? 'rgba(255, 255, 255, 0.065)' : 'rgba(0, 0, 0, 0.06)',
+    primary: isDark ? '#CBD2DE' : '#1C1F26',
+    secondary: isDark ? '#7D8596' : '#64748B',
+    accent: isDark ? '#9CA4B5' : '#334155',
+    barBg: isDark ? 'rgba(203, 210, 222, 0.20)' : 'rgba(28, 31, 38, 0.18)'
   };
 }
 
