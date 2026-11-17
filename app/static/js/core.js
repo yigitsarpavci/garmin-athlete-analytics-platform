@@ -16,7 +16,7 @@ let currentActiveProfile = {
 
 function initTheme() {
   const saved = localStorage.getItem('garmin_app_theme');
-  const isDark = saved !== null ? (saved === 'dark') : true; // Pro athletic dark varsayılan
+  const isDark = saved !== null ? (saved === 'dark') : false; // Garmin Connect & Strava light-first varsayılan
   applyTheme(isDark);
 }
 
@@ -114,7 +114,10 @@ async function initApp() {
 
     // 4. Aktiviteler
     globalActivities = await safeFetchJson('/api/activities');
-    if (globalActivities) renderActivities(globalActivities);
+    if (globalActivities) {
+      renderActivities(globalActivities);
+      renderWeeklyStreak(globalActivities);
+    }
 
     // 5. Uyku Analizi
     const sleepData = await safeFetchJson('/api/sleep-analysis');
@@ -295,6 +298,51 @@ async function submitCustomPlanForm(e) {
   }
 }
 
+
+function renderWeeklyStreak(activities) {
+  const strip = document.getElementById('weeklyStreakStrip');
+  const badge = document.getElementById('weeklyStreakBadge');
+  if (!strip || !Array.isArray(activities) || !activities.length) return;
+
+  const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+  const order = [1, 2, 3, 4, 5, 6, 0]; // Pzt -> Paz
+  const latestStr = (activities[0].date || activities[0].startTimeLocal || '').slice(0, 10);
+  const refDate = latestStr ? new Date(latestStr + 'T12:00:00') : new Date();
+  const refDay = refDate.getDay();
+  const diffToMon = (refDay === 0 ? -6 : 1 - refDay);
+  const monday = new Date(refDate);
+  monday.setDate(refDate.getDate() + diffToMon);
+
+  const dayMap = {};
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const iso = d.toISOString().slice(0, 10);
+    dayMap[iso] = null;
+  }
+
+  activities.forEach(a => {
+    const d = (a.date || a.startTimeLocal || '').slice(0, 10);
+    if (d in dayMap && !dayMap[d]) {
+      const sp = (a.sport || '').toLowerCase();
+      dayMap[d] = sp.includes('run') || sp.includes('koş') ? '🏃' : (sp.includes('sail') || sp.includes('yelken') ? '⛵' : '🏋️');
+    }
+  });
+
+  const activeCount = Object.values(dayMap).filter(Boolean).length;
+  if (badge) badge.textContent = `${activeCount}/7 Gün`;
+
+  const keys = Object.keys(dayMap).sort();
+  strip.innerHTML = keys.map((iso, idx) => {
+    const icon = dayMap[iso];
+    const lbl = dayNames[order[idx]];
+    if (icon) {
+      const bg = icon === '🏃' ? 'bg-[#FC4C02] text-white' : (icon === '⛵' ? 'bg-[#007CC3] text-white' : 'bg-[#111827] text-white');
+      return `<div class="flex flex-col items-center"><span class="text-[10px] text-slate-500 font-semibold mb-1">${lbl}</span><span class="w-7 h-7 rounded-full ${bg} text-xs flex items-center justify-center font-bold shadow-xs">${icon}</span></div>`;
+    }
+    return `<div class="flex flex-col items-center"><span class="text-[10px] text-slate-400 font-semibold mb-1">${lbl}</span><span class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs flex items-center justify-center font-bold">·</span></div>`;
+  }).join('');
+}
 
 function applyAthleteBranding(overview) {
   const isDemo = Boolean(overview && overview.is_demo);

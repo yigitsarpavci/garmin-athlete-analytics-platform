@@ -34,32 +34,43 @@
 }
 
 html:not(.dark) {
-  --bg-base: #F3F4F6;
-  --bg-surface: #FAFAFC;
-  --bg-surface-elevated: #EBEEF2;
-  --bg-surface-hover: #E2E5EB;
-  --bg-subtle: rgba(0, 0, 0, 0.03);
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-medium: rgba(0, 0, 0, 0.14);
-  --border-focus: rgba(0, 0, 0, 0.35);
+  --bg-base: #F5F7FA;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F1F5F9;
+  --bg-surface-hover: #E8EEF5;
+  --bg-subtle: rgba(15, 23, 42, 0.03);
+  --border-subtle: #E5E7EB;
+  --border-medium: #D1D5DB;
+  --border-focus: #007CC3;
 
-  --text-primary: #1C1F26;
-  --text-secondary: #5B6270;
-  --text-muted: #848B9B;
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-muted: #6B7280;
 
-  --accent-solid: #282C35;
-  --accent-contrast: #F3F4F6;
-  --nav-active-bg: #282C35;
-  --nav-active-text: #F3F4F6;
+  --accent-solid: #007CC3;
+  --accent-contrast: #FFFFFF;
+  --strava-orange: #FC4C02;
+  --nav-active-bg: #111827;
+  --nav-active-text: #FFFFFF;
 
-  --semantic-sage: #3D7A62;
-  --semantic-amber: #9E7835;
-  --semantic-rose: #A6525A;
-  --semantic-steel: #4F6480;
+  --semantic-sage: #10B981;
+  --semantic-amber: #F59E0B;
+  --semantic-rose: #EF4444;
+  --semantic-steel: #007CC3;
 
-  --scrollbar-track: #F3F4F6;
-  --scrollbar-thumb: #CBD0DA;
+  --scrollbar-track: #F5F7FA;
+  --scrollbar-thumb: #CBD5E1;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* GARMIN CONNECT & STRAVA CARD ELEVATION IN LIGHT MODE */
+html:not(.dark) .garmin-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+html:not(.dark) .garmin-card:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 body {
