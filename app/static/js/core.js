@@ -66,15 +66,12 @@ function setTab(tabId) {
   tabs.forEach(t => {
     const sec = document.getElementById('section-' + t);
     const nav = document.getElementById('nav-' + t);
-    const mnav = document.getElementById('mnav-' + t);
     if (t === tabId) {
       if (sec) sec.classList.remove('hidden');
-      if (nav) nav.className = "px-3 py-1.5 rounded-lg active-nav transition";
-      if (mnav) mnav.className = "whitespace-nowrap px-3 py-1 rounded-lg text-neutral-900 dark:text-neutral-950 font-bold bg-white shadow-xs";
+      if (nav) nav.classList.add('nav-tab-active');
     } else {
       if (sec) sec.classList.add('hidden');
-      if (nav) nav.className = "px-3 py-1.5 rounded-lg text-neutral-400 hover:text-white transition";
-      if (mnav) mnav.className = "whitespace-nowrap px-3 py-1 rounded-lg text-neutral-400 hover:text-neutral-200";
+      if (nav) nav.classList.remove('nav-tab-active');
     }
   });
 
@@ -117,6 +114,7 @@ async function initApp() {
     if (globalActivities) {
       renderActivities(globalActivities);
       renderWeeklyStreak(globalActivities);
+      renderLatestActivitySummary(globalActivities);
     }
 
     // 5. Uyku Analizi
@@ -299,6 +297,20 @@ async function submitCustomPlanForm(e) {
 }
 
 
+function renderLatestActivitySummary(activities) {
+  const row = document.getElementById('latestActivitySummaryRow');
+  if (!row || !Array.isArray(activities) || !activities.length) return;
+  const a = activities[0];
+  const sp = (a.sport || '').toLowerCase();
+  const icon = sp.includes('run') ? '🏃' : (sp.includes('sail') ? '⛵' : (sp.includes('basket') ? '🏀' : '🏋️'));
+  const dur = a.dur_m ? `${Math.round(a.dur_m)} dk` : '--';
+  const hr = a.avg_hr ? `${a.avg_hr} bpm` : '--';
+  row.innerHTML = `
+    <span class="font-bold text-slate-900 dark:text-white truncate">${icon} ${a.name || a.sport || 'Antrenman'} <span class="text-slate-400 font-normal">(${a.date})</span></span>
+    <span class="text-slate-600 dark:text-slate-300 font-semibold tabular-nums shrink-0 ml-2">${dur} • ${hr}</span>
+  `;
+}
+
 function renderWeeklyStreak(activities) {
   const strip = document.getElementById('weeklyStreakStrip');
   const badge = document.getElementById('weeklyStreakBadge');
@@ -346,7 +358,8 @@ function renderWeeklyStreak(activities) {
 
 function applyAthleteBranding(overview) {
   const isDemo = Boolean(overview && overview.is_demo);
-  const w = overview && overview.weight_kg ? String(overview.weight_kg).replace('.', ',') : (isDemo ? '84,0' : '87,0');
+  const rawW = (overview && (overview.weight !== undefined ? overview.weight : overview.weight_kg)) || (isDemo ? 84.0 : 87.0);
+  const w = String(rawW).replace('.', ',');
   const headerMeta = document.getElementById('headerAthleteMeta');
   const nameDisp = document.getElementById('profileNameDisplay');
   const badgeDisp = document.getElementById('profileBadgeDisplay');

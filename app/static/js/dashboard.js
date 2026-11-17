@@ -3,16 +3,17 @@ function renderWeeklyScheduleTable(scheduleList) {
   const sBody = document.getElementById('overviewScheduleBody');
   if (!sBody || !scheduleList) return;
   sBody.innerHTML = '';
-  scheduleList.forEach(s => {
+  scheduleList.forEach((s, idx) => {
     const tr = document.createElement('tr');
     tr.className = "hover:bg-blue-50/70 transition cursor-pointer group";
     tr.title = "Günün detaylı antrenman ve beslenme reçetesine gitmek için tıklayın";
     tr.onclick = () => {
+      if (typeof selectProtocolDay === 'function') selectProtocolDay(idx);
       const targetSec = document.getElementById('dailyProtocolsSection');
       if (targetSec) {
         targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
         targetSec.classList.add('ring-2', 'ring-blue-500', 'transition-all');
-        setTimeout(() => targetSec.classList.remove('ring-2', 'ring-blue-500'), 2000);
+        setTimeout(() => targetSec.classList.remove('ring-2', 'ring-blue-500'), 1600);
       }
     };
     tr.innerHTML = `
@@ -43,14 +44,78 @@ function setCalcPreset(kg) {
 
 function renderOverview(data) {
   if (!data) return;
+  const curLoad = (data.training_load && data.training_load.current_status) || {};
+  const vo2 = data.training_load && data.training_load.vo2max_current ? data.training_load.vo2max_current : (curLoad.vo2max || '45.4');
+
+  // Top In-Focus Garmin Cards (Canlı)
+  const ifsScore = document.getElementById('inFocusSleepScore');
+  if (ifsScore) ifsScore.textContent = data.sleep_score !== undefined ? Math.round(data.sleep_score) : '--';
+  const ifsHours = document.getElementById('inFocusSleepHours');
+  if (ifsHours && data.sleep_hours !== undefined) {
+    const h = Math.floor(data.sleep_hours);
+    const m = Math.round((data.sleep_hours - h) * 60);
+    ifsHours.textContent = `${h}s ${String(m).padStart(2, '0')}dk`;
+  }
+  const ifsQ = document.getElementById('inFocusSleepQuality');
+  if (ifsQ && data.sleep_score !== undefined) {
+    ifsQ.textContent = data.sleep_score >= 80 ? 'Good Quality' : (data.sleep_score >= 65 ? 'Fair Quality' : 'Low Quality');
+  }
+  const ifsRhrHrv = document.getElementById('inFocusSleepRhrHrv');
+  if (ifsRhrHrv) ifsRhrHrv.textContent = `Dinlenik HR: ${data.resting_hr ?? '--'} bpm • HRV: ${data.overnight_hrv ?? '--'} ms`;
+
+  const ifsStatus = document.getElementById('inFocusTrainingStatus');
+  if (ifsStatus && (curLoad.status_tr || data.training_status)) {
+    const rawSt = curLoad.status_tr || data.training_status;
+    const paren = rawSt.match(/\(([^)]+)\)/);
+    ifsStatus.textContent = paren ? paren[1] : rawSt;
+  }
+  const ifsSub = document.getElementById('inFocusStatusSub');
+  if (ifsSub) {
+    const acwrVal = curLoad.acwr !== undefined ? Number(curLoad.acwr).toFixed(2) : Number(data.acwr || 1.0).toFixed(2);
+    const bal = (data.training_balance || '').split('(')[0].trim() || 'Balanced';
+    ifsSub.textContent = `ACWR ${acwrVal} • ${bal} HRV`;
+  }
+  const ifsVo2 = document.getElementById('inFocusVo2Max');
+  if (ifsVo2) ifsVo2.textContent = vo2;
+
+  // 4 KPI Kartı (Canlı ve Tutarı)
   const kw = document.getElementById('kpi-weight');
-  if (kw) kw.textContent = data.weight + " kg";
+  if (kw && data.weight !== undefined) kw.textContent = String(data.weight).replace('.', ',') + ' kg';
+  const kwb = document.getElementById('kpi-weight-badge');
+  if (kwb && data.total_loss_kg !== undefined) kwb.textContent = `-${String(data.total_loss_kg).replace('.', ',')} kg`;
+  const kwbmi = document.getElementById('kpi-weight-bmi');
+  if (kwbmi && data.bmi !== undefined) kwbmi.innerHTML = `VKİ: <strong class="text-slate-700 dark:text-slate-300">${data.bmi}</strong>`;
+
   const k5 = document.getElementById('kpi-5k');
-  if (k5 && data.latest_5k) k5.textContent = data.latest_5k.split(' ')[0];
-  const kl = document.getElementById('kpi-load');
-  if (kl) kl.textContent = data.acute_load || "260";
+  const k5p = document.getElementById('kpi-5k-pace');
+  if (k5 && data.latest_5k) {
+    const parts = data.latest_5k.split(' ');
+    k5.textContent = parts[0] || '--:--';
+    if (k5p && parts.length > 1) k5p.textContent = parts.slice(1).join(' ');
+  }
+
   const ke = document.getElementById('kpi-ef');
-  if (ke) ke.textContent = "1.03";
+  const efVal = data.guidance && data.guidance.running && data.guidance.running.efficiency_factor ? data.guidance.running.efficiency_factor : '1.03';
+  if (ke) ke.textContent = efVal;
+  const kehrv = document.getElementById('kpi-ef-hrv');
+  if (kehrv) kehrv.innerHTML = `Gece HRV: <strong class="text-slate-800 dark:text-slate-200">${data.overnight_hrv ?? '--'} ms</strong>`;
+  const kerhr = document.getElementById('kpi-ef-rhr');
+  if (kerhr) kerhr.textContent = `RHR: ${data.resting_hr ?? '--'} bpm`;
+
+  const acuteVal = curLoad.acute_load !== undefined ? curLoad.acute_load : (data.acute_load || 279);
+  const chronicVal = curLoad.chronic_load !== undefined ? curLoad.chronic_load : (data.chronic_load || 279);
+  const acwrNum = curLoad.acwr !== undefined ? Number(curLoad.acwr) : Number(data.acwr || 1.0);
+  const tMin = curLoad.tunnel_min ? Math.round(curLoad.tunnel_min) : 223;
+  const tMax = curLoad.tunnel_max ? Math.round(curLoad.tunnel_max) : 419;
+
+  const kl = document.getElementById('kpi-load');
+  if (kl) kl.textContent = acuteVal;
+  const klb = document.getElementById('kpi-acwr-badge');
+  if (klb) klb.textContent = `ACWR ${acwrNum.toFixed(2)}`;
+  const klt = document.getElementById('kpi-tunnel-text');
+  if (klt) klt.innerHTML = `Tünel: ${tMin} - ${tMax} (<strong class="text-emerald-600 dark:text-emerald-400 font-bold">Optimal</strong>)`;
+  const klc = document.getElementById('kpi-chronic-text');
+  if (klc) klc.textContent = `Kronik: ${chronicVal}`;
 
   const score = data.readiness_score || 77;
   const heroVal = document.getElementById('heroReadinessVal');
@@ -210,7 +275,7 @@ function renderGymHistory(gym) {
   <span class="font-bold text-slate-800 text-xs">${item.name}</span>
   <span class="text-[10px] font-bold text-blue-700 bg-blue-100/80 px-1.5 py-0.5 rounded">${item.delta}</span>
 </div>
-<p class="text-[11px] text-slate-500 truncate" title="${item.history.join(' → ')}">${item.history.slice(-2).join(' → ')}</p>
+<p class="text-[11px] text-slate-500 leading-snug" title="${item.history.join(' → ')}">${item.history.slice(-2).join(' → ')}</p>
 <p class="text-[11px] font-semibold text-emerald-700 pt-0.5 border-t border-slate-200/60">🎯 Hedef: ${item.next_target}</p>
           `;
       progGrid.appendChild(div);
@@ -301,16 +366,16 @@ function renderTrainingLoad(tl) {
       tr.className = "hover:bg-slate-50/80 transition";
       const acwrColor = (w.acwr >= 0.8 && w.acwr <= 1.3) ? "text-emerald-700 font-black" : ((w.acwr > 1.5) ? "text-rose-700 font-black" : "text-amber-700 font-bold");
       tr.innerHTML = `
-<td class="py-2.5 px-3 font-semibold text-slate-900">${w.date}</td>
-<td class="py-2.5 px-3 font-bold text-blue-900">${w.status_tr}</td>
-<td class="py-2.5 px-3 font-extrabold text-slate-900">${w.acute_load}</td>
-<td class="py-2.5 px-3 text-slate-600">${w.chronic_load}</td>
-<td class="py-2.5 px-3 ${acwrColor}">${w.acwr.toFixed(2)}</td>
-<td class="py-2.5 px-3 text-slate-500">${w.acwr_status}</td>
-<td class="py-2.5 px-3 text-blue-700 font-medium">${w.low_aero}</td>
-<td class="py-2.5 px-3 text-amber-700 font-medium">${w.high_aero}</td>
-<td class="py-2.5 px-3 text-rose-700 font-medium">${w.anaerobic}</td>
-<td class="py-2.5 px-3 font-semibold text-slate-800">${w.balance_tr}</td>
+<td class="py-2 px-2 font-semibold text-slate-900 whitespace-nowrap">${w.date}</td>
+<td class="py-2 px-2 font-bold text-blue-900">${w.status_tr}</td>
+<td class="py-2 px-2 font-extrabold text-slate-900 tabular-nums">${w.acute_load}</td>
+<td class="py-2 px-2 text-slate-600 tabular-nums">${w.chronic_load}</td>
+<td class="py-2 px-2 ${acwrColor} tabular-nums">${w.acwr.toFixed(2)}</td>
+<td class="py-2 px-2 text-slate-500">${w.acwr_status}</td>
+<td class="py-2 px-2 text-blue-700 font-medium tabular-nums">${w.low_aero}</td>
+<td class="py-2 px-2 text-amber-700 font-medium tabular-nums">${w.high_aero}</td>
+<td class="py-2 px-2 text-rose-700 font-medium tabular-nums">${w.anaerobic}</td>
+<td class="py-2 px-2 font-semibold text-slate-800">${w.balance_tr}</td>
           `;
       wBody.appendChild(tr);
     });
@@ -448,32 +513,35 @@ function filterActivities(sport) {
 
 function renderActivities(acts) {
   updateActivityStatsSummary(acts);
+  if (currentSportFilter === 'all' && (!document.getElementById('actSearchInput') || !document.getElementById('actSearchInput').value.trim())) {
+    const titleEl = document.getElementById('activitiesSectionTitle');
+    if (titleEl && acts) titleEl.textContent = `Aktivite Telemetri Günlüğü (${acts.length} Seans)`;
+    const allBtn = document.getElementById('af-all');
+    if (allBtn && acts) allBtn.textContent = `Tümü (${acts.length})`;
+  }
   const aBody = document.getElementById('activitiesTableBody');
   if (!aBody) return;
   aBody.innerHTML = '';
   (acts || []).forEach(a => {
     const tr = document.createElement('tr');
-    tr.className = "hover:bg-blue-50/70 dark:hover:bg-slate-800/60 transition cursor-pointer group";
+    tr.className = "hover:bg-blue-50/70 dark:hover:bg-slate-800/60 transition cursor-pointer group text-[11px]";
     tr.title = "Aktivite detaylarını ve sensör telemetrisini açmak için tıklayın";
     tr.onclick = () => openActivityModal(a);
     const spNames = { running: 'Koşu', sailing_v2: 'Yelken', strength_training: 'Kuvvet', basketball: 'Basketbol', hiking: 'Doğa Yürüyüşü', rowing_v2: 'Kürek', walking: 'Yürüyüş' };
     const teDisplay = a.aTE ? `<span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">A:${a.aTE.toFixed(1)}</span> / <span class="text-[11px] font-semibold text-rose-600 dark:text-rose-400">An:${(a.anTE || 0).toFixed(1)}</span>` : '--';
     tr.innerHTML = `
-          <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white whitespace-nowrap flex items-center justify-between">
-<span>${a.date} <span class="text-slate-400 dark:text-slate-500 font-normal">${a.time || ''}</span></span>
-<span class="text-[10px] text-blue-500 opacity-0 group-hover:opacity-100 transition ml-1">🔍</span>
-          </td>
-          <td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">${spNames[a.sport] || a.sport}</span></td>
-          <td class="py-2 px-3 font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate max-w-[140px]">${a.name || '--'}</td>
-          <td class="py-2 px-3 text-slate-600 dark:text-slate-300 tabular-nums">${a.dur_m.toFixed(0)} dk</td>
-          <td class="py-2 px-3 font-semibold text-blue-600 dark:text-blue-400 tabular-nums">${a.dist_km > 0 ? a.dist_km.toFixed(2) + ' km' : '--'}</td>
-          <td class="py-2 px-3 font-bold text-slate-800 dark:text-slate-200 tabular-nums">${a.pace_str || '--'}</td>
-          <td class="py-2 px-3 text-slate-700 dark:text-slate-300 tabular-nums">${a.avg_hr} / ${a.max_hr} bpm</td>
-          <td class="py-2 px-3 text-slate-600 dark:text-slate-400 tabular-nums">${a.norm_pwr ? a.norm_pwr + ' W' : '--'}</td>
-          <td class="py-2 px-3 text-slate-600 dark:text-slate-400 tabular-nums">${a.cadence ? a.cadence.toFixed(0) : '--'}</td>
-          <td class="py-2 px-3 font-bold text-slate-900 dark:text-white tabular-nums">${a.load ? a.load.toFixed(1) : '0'}</td>
-          <td class="py-2 px-3">${teDisplay}</td>
-          <td class="py-2 px-3 text-slate-600 dark:text-slate-400 tabular-nums">${a.cal} kcal ${a.water_ml ? '(' + (a.water_ml / 1000).toFixed(1) + 'L)' : ''}</td>
+          <td class="py-2 px-2 font-semibold text-slate-900 dark:text-white whitespace-nowrap">${a.date} <span class="text-slate-400 dark:text-slate-500 font-normal">${a.time || ''}</span></td>
+          <td class="py-2 px-2 whitespace-nowrap"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">${spNames[a.sport] || a.sport}</span></td>
+          <td class="py-2 px-2 font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">${a.name || '--'}</td>
+          <td class="py-2 px-2 text-slate-600 dark:text-slate-300 tabular-nums whitespace-nowrap">${a.dur_m.toFixed(0)} dk</td>
+          <td class="py-2 px-2 font-semibold text-blue-600 dark:text-blue-400 tabular-nums whitespace-nowrap">${a.dist_km > 0 ? a.dist_km.toFixed(2) + ' km' : '--'}</td>
+          <td class="py-2 px-2 font-bold text-slate-800 dark:text-slate-200 tabular-nums whitespace-nowrap">${a.pace_str || '--'}</td>
+          <td class="py-2 px-2 text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap">${a.avg_hr} / ${a.max_hr}</td>
+          <td class="py-2 px-2 text-slate-600 dark:text-slate-400 tabular-nums whitespace-nowrap">${a.norm_pwr ? a.norm_pwr + ' W' : '--'}</td>
+          <td class="py-2 px-2 text-slate-600 dark:text-slate-400 tabular-nums whitespace-nowrap">${a.cadence ? a.cadence.toFixed(0) : '--'}</td>
+          <td class="py-2 px-2 font-bold text-slate-900 dark:text-white tabular-nums whitespace-nowrap">${a.load ? a.load.toFixed(1) : '0'}</td>
+          <td class="py-2 px-2 whitespace-nowrap">${teDisplay}</td>
+          <td class="py-2 px-2 text-slate-600 dark:text-slate-400 tabular-nums whitespace-nowrap">${a.cal} kcal${a.water_ml ? ' (' + (a.water_ml / 1000).toFixed(1) + 'L)' : ''}</td>
         `;
     aBody.appendChild(tr);
   });
@@ -639,51 +707,51 @@ function renderZ2Tracker(data) {
   if (!data) return;
   const kpi = document.getElementById('z2KpiGrid');
   kpi.innerHTML = `
-        <div class="bg-indigo-900/50 p-3 rounded-xl border border-indigo-700/50">
-          <p class="text-[10px] text-indigo-300 font-semibold uppercase">Mevcut 145 bpm</p>
-          <p class="text-xl font-black text-white mt-0.5">${data.current_pace}</p>
-          <p class="text-[10px] text-indigo-200 mt-0.5">EF: ${data.current_efficiency_factor} m/atım</p>
+        <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Mevcut 145 bpm</p>
+          <p class="text-xl font-black text-slate-900 dark:text-white mt-0.5">${data.current_pace}</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">EF: ${data.current_efficiency_factor} m/atım</p>
         </div>
-        <div class="bg-emerald-900/40 p-3 rounded-xl border border-emerald-700/50">
-          <p class="text-[10px] text-emerald-300 font-semibold uppercase">Hedef 145 bpm</p>
-          <p class="text-xl font-black text-emerald-300 mt-0.5">${data.target_pace}</p>
-          <p class="text-[10px] text-emerald-200 mt-0.5">EF: ${data.target_efficiency_factor} m/atım (+%33)</p>
+        <div class="bg-emerald-50/70 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800">
+          <p class="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold uppercase">Hedef 145 bpm</p>
+          <p class="text-xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">${data.target_pace}</p>
+          <p class="text-[10px] text-emerald-700 dark:text-emerald-200 mt-0.5">EF: ${data.target_efficiency_factor} m/atım (+%33)</p>
         </div>
-        <div class="bg-indigo-900/50 p-3 rounded-xl border border-indigo-700/50">
-          <p class="text-[10px] text-indigo-300 font-semibold uppercase">Kalan Hız Farkı</p>
-          <p class="text-xl font-black text-amber-300 mt-0.5">-${data.pace_gap_sec_per_km} sn/km</p>
-          <p class="text-[10px] text-indigo-200 mt-0.5">${data.target_date} Hedefi</p>
+        <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Kalan Hız Farkı</p>
+          <p class="text-xl font-black text-amber-600 dark:text-amber-300 mt-0.5">-${data.pace_gap_sec_per_km} sn/km</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${data.target_date} Hedefi</p>
         </div>
-        <div class="bg-indigo-900/50 p-3 rounded-xl border border-indigo-700/50">
-          <p class="text-[10px] text-indigo-300 font-semibold uppercase">Kalan Gün Sayısı</p>
-          <p class="text-xl font-black text-white mt-0.5">~${data.remaining_days} Gün</p>
-          <p class="text-[10px] text-emerald-300 mt-0.5">20 Hafta Planı</p>
+        <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Kalan Gün Sayısı</p>
+          <p class="text-xl font-black text-slate-900 dark:text-white mt-0.5">~${data.remaining_days} Gün</p>
+          <p class="text-[10px] text-emerald-600 dark:text-emerald-300 mt-0.5">20 Hafta Planı</p>
         </div>
-        <div class="bg-indigo-900/50 p-3 rounded-xl border border-indigo-700/50 col-span-2 sm:col-span-1">
-          <p class="text-[10px] text-indigo-300 font-semibold uppercase">Kalan Antrenmanlar</p>
-          <p class="text-xs font-bold text-white mt-0.5"><span class="text-emerald-400 font-black">${data.workout_counts.remaining_zone2_sessions}</span> Z2 • <span class="text-blue-400 font-black">${data.workout_counts.remaining_interval_sessions}</span> İnt</p>
-          <p class="text-[10px] text-slate-300 mt-0.5">${data.workout_counts.remaining_strength_sessions} A/B 5x5 Gym</p>
+        <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 col-span-2 sm:col-span-1">
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Kalan Antrenmanlar</p>
+          <p class="text-xs font-bold text-slate-900 dark:text-white mt-0.5"><span class="text-emerald-600 dark:text-emerald-400 font-black">${data.workout_counts.remaining_zone2_sessions}</span> Z2 • <span class="text-[#007CC3] dark:text-blue-400 font-black">${data.workout_counts.remaining_interval_sessions}</span> İnt</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${data.workout_counts.remaining_strength_sessions} A/B 5x5 Gym</p>
         </div>
       `;
 
   const gr = document.getElementById('z2GoldenRulesContainer');
   gr.innerHTML = data.golden_rules.map(r => `
-        <div class="bg-slate-900/50 p-2.5 rounded-lg border border-indigo-800/40">
-          <p class="font-bold text-white">${r.rule}</p>
-          <p class="text-[11px] text-indigo-200 mt-0.5">${r.why}</p>
+        <div class="bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
+          <p class="font-bold text-slate-900 dark:text-white">${r.rule}</p>
+          <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">${r.why}</p>
         </div>
       `).join('');
 
   const ms = document.getElementById('z2MilestonesContainer');
   ms.innerHTML = data.timeline_milestones.map(m => `
-        <div class="bg-slate-900/50 p-2.5 rounded-lg border border-indigo-800/40 flex items-center justify-between">
+        <div class="bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
           <div>
-<p class="font-bold text-white">${m.period}</p>
-<p class="text-[11px] text-indigo-200">${m.status}</p>
+<p class="font-bold text-slate-900 dark:text-white">${m.period}</p>
+<p class="text-[11px] text-slate-600 dark:text-slate-300">${m.status}</p>
           </div>
-          <div class="text-right">
-<span class="text-xs font-black text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">${m.pace}</span>
-<p class="text-[10px] text-slate-400 mt-0.5">${m.weight}</p>
+          <div class="text-right shrink-0">
+<span class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/20 px-2 py-0.5 rounded dark:border-emerald-500/30">${m.pace}</span>
+<p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${m.weight}</p>
           </div>
         </div>
       `).join('');
@@ -719,13 +787,13 @@ function renderHealthScreening(data) {
 
   const pGrid = document.getElementById('healthPillarsGrid');
   pGrid.innerHTML = data.pillars.map(p => `
-        <div class="bg-white/5 border border-white/10 rounded-xl p-3.5 space-y-2">
-          <div class="flex items-center justify-between">
-<h5 class="text-xs font-bold text-white">${p.name}</h5>
-<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-${p.badge_color}-500/20 text-${p.badge_color}-300 border border-${p.badge_color}-500/30">${p.badge}</span>
+        <div class="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+<h5 class="text-xs font-bold text-slate-900 dark:text-white">${p.name}</h5>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-${p.badge_color}-500/20 dark:text-${p.badge_color}-300 dark:border-${p.badge_color}-500/30 shrink-0">${p.badge}</span>
           </div>
-          <p class="text-xs font-black text-blue-300">${p.value}</p>
-          <p class="text-[11px] text-slate-300 leading-relaxed">${p.clinical_notes}</p>
+          <p class="text-xs font-black text-[#007CC3] dark:text-blue-300">${p.value}</p>
+          <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">${p.clinical_notes}</p>
         </div>
       `).join('');
 }
@@ -743,10 +811,10 @@ function renderGarminExpansion(data) {
   if (!data) return;
   const c = document.getElementById('garminExpansionCardsContainer');
   c.innerHTML = data.new_high_resolution_channels.map(ch => `
-        <div class="bg-slate-800/90 p-4 rounded-xl border border-slate-700 space-y-2">
-          <h4 class="text-xs font-bold text-emerald-400">${ch.channel}</h4>
-          <p class="text-xs text-slate-300 leading-relaxed">${ch.detail}</p>
-          <p class="text-[11px] text-blue-300 bg-slate-900/60 p-2 rounded-lg border border-slate-700/60">💡 <strong class="text-blue-200">Faydası:</strong> ${ch.benefit}</p>
+        <div class="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+          <h4 class="text-xs font-bold text-emerald-700 dark:text-emerald-400">${ch.channel}</h4>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${ch.detail}</p>
+          <p class="text-[11px] text-[#007CC3] dark:text-blue-300 bg-white dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200 dark:border-slate-700/60">💡 <strong class="text-slate-800 dark:text-blue-200">Faydası:</strong> ${ch.benefit}</p>
         </div>
       `).join('');
 }
@@ -763,35 +831,35 @@ function renderProgressionAssessment(data) {
   if (grid) {
     grid.innerHTML = `
           <!-- 1. GÜN ARTTIRMA KARTI -->
-          <div class="bg-slate-900/70 p-4 rounded-xl border border-indigo-800/80 space-y-2">
-<div class="flex items-center justify-between">
-  <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Hacim & Gün Artırma</span>
-  <span class="text-[10px] font-black px-2 py-0.5 rounded-full ${vp.can_increase_days ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'}">${vp.verdict || '--'}</span>
+          <div class="bg-slate-50 dark:bg-slate-900/70 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+<div class="flex items-center justify-between gap-2">
+  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-indigo-300">Hacim & Gün Artırma</span>
+  <span class="text-[10px] font-black px-2 py-0.5 rounded-full ${vp.can_increase_days ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-blue-50 text-[#007CC3] border border-blue-200 dark:bg-blue-500/20 dark:text-blue-300'}">${vp.verdict || '--'}</span>
 </div>
-<p class="text-xs font-bold text-white">${vp.current_days} &rarr; <span class="text-amber-300">${vp.next_level_days}</span></p>
-<p class="text-[11px] text-slate-300 leading-relaxed">${vp.advice || ''}</p>
+<p class="text-xs font-bold text-slate-900 dark:text-white">${vp.current_days} &rarr; <span class="text-[#007CC3] dark:text-amber-300">${vp.next_level_days}</span></p>
+<p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">${vp.advice || ''}</p>
           </div>
 
           <!-- 2. STİL VE DÖNEMLEME DEĞİŞİMİ KARTI -->
-          <div class="bg-slate-900/70 p-4 rounded-xl border border-indigo-800/80 space-y-2">
-<div class="flex items-center justify-between">
-  <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Stil & Rutin Değişimi</span>
-  <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40">${st.verdict || '--'}</span>
+          <div class="bg-slate-50 dark:bg-slate-900/70 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+<div class="flex items-center justify-between gap-2">
+  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-indigo-300">Stil & Rutin Değişimi</span>
+  <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 text-[#007CC3] border border-blue-200 dark:bg-blue-500/20 dark:text-blue-300">${st.verdict || '--'}</span>
 </div>
-<p class="text-xs font-bold text-white">Mevcut: <span class="text-emerald-300">${st.current_style}</span></p>
-<p class="text-[11px] text-slate-300 leading-relaxed">${st.advice || ''}</p>
-<p class="text-[10px] text-indigo-200 bg-indigo-950/80 p-1.5 rounded border border-indigo-800/50">🏃 ${st.running_style_advice || ''}</p>
+<p class="text-xs font-bold text-slate-900 dark:text-white">Mevcut: <span class="text-emerald-700 dark:text-emerald-300">${st.current_style}</span></p>
+<p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">${st.advice || ''}</p>
+<p class="text-[10px] text-slate-700 dark:text-indigo-200 bg-white dark:bg-indigo-950/80 p-1.5 rounded border border-slate-200 dark:border-indigo-800/50">🏃 ${st.running_style_advice || ''}</p>
           </div>
 
           <!-- 3. DELOAD VE AŞIRI YORGUNLUK KARTI -->
-          <div class="bg-slate-900/70 p-4 rounded-xl border border-indigo-800/80 space-y-2">
-<div class="flex items-center justify-between">
-  <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Deload & Esneklik</span>
-  <span class="text-[10px] font-black px-2 py-0.5 rounded-full ${fd.needs_deload ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}">${fd.status || '--'}</span>
+          <div class="bg-slate-50 dark:bg-slate-900/70 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+<div class="flex items-center justify-between gap-2">
+  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-indigo-300">Deload & Esneklik</span>
+  <span class="text-[10px] font-black px-2 py-0.5 rounded-full ${fd.needs_deload ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-300' : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300'}">${fd.status || '--'}</span>
 </div>
-<p class="text-xs font-bold text-white">${fd.needs_deload ? 'Hacmi %40 Düşür' : 'Tam Güç & Kondisyon Aktif'}</p>
-<p class="text-[11px] text-slate-300 leading-relaxed">${fd.note || ''}</p>
-<p class="text-[10px] text-amber-200/80 bg-amber-950/40 p-1.5 rounded border border-amber-800/40">⚖️ <strong>Dogmatik Olmama Kuralı:</strong> Vücut yorgunluk ve düşük HRV verdiğinde seans asla zorlanmaz; hafif yürüyüş ve esnemeye çevrilir.</p>
+<p class="text-xs font-bold text-slate-900 dark:text-white">${fd.needs_deload ? 'Hacmi %40 Düşür' : 'Tam Güç & Kondisyon Aktif'}</p>
+<p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">${fd.note || ''}</p>
+<p class="text-[10px] text-amber-800 dark:text-amber-200/80 bg-amber-50 dark:bg-amber-950/40 p-1.5 rounded border border-amber-200 dark:border-amber-800/40">⚖️ <strong>Dogmatik Olmama Kuralı:</strong> Vücut yorgunluk ve düşük HRV verdiğinde seans asla zorlanmaz; hafif yürüyüş ve esnemeye çevrilir.</p>
           </div>
         `;
   }
@@ -800,24 +868,50 @@ function renderProgressionAssessment(data) {
   if (tiersGrid && data.athlete_levels) {
     const tiers = Object.values(data.athlete_levels);
     tiersGrid.innerHTML = tiers.map(t => `
-          <div class="bg-slate-900/80 p-3 rounded-lg border border-indigo-800/60 space-y-1.5">
-<p class="font-black text-indigo-300 text-xs">${t.level_tr.split('(')[0]}</p>
-<p class="text-[10px] text-slate-400 font-semibold">${t.recommended_split}</p>
-<p class="text-[11px] text-slate-200 leading-snug">🏃 <strong>Koşu:</strong> ${t.running_approach.split('.')[0]}</p>
-<p class="text-[11px] text-slate-200 leading-snug">🏋️ <strong>Kuvvet:</strong> ${t.strength_approach.split('.')[0]}</p>
-<p class="text-[10px] text-emerald-300 bg-emerald-950/50 p-1.5 rounded border border-emerald-800/40 mt-1">🚪 <strong>Geçiş Eşiği:</strong> ${t.progression_gate}</p>
+          <div class="bg-white dark:bg-slate-900/80 p-3 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5">
+<p class="font-black text-[#007CC3] dark:text-indigo-300 text-xs">${t.level_tr.split('(')[0]}</p>
+<p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">${t.recommended_split}</p>
+<p class="text-[11px] text-slate-700 dark:text-slate-200 leading-snug">🏃 <strong>Koşu:</strong> ${t.running_approach.split('.')[0]}</p>
+<p class="text-[11px] text-slate-700 dark:text-slate-200 leading-snug">🏋️ <strong>Kuvvet:</strong> ${t.strength_approach.split('.')[0]}</p>
+<p class="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 p-1.5 rounded border border-emerald-200 dark:border-emerald-800/40 mt-1">🚪 <strong>Geçiş Eşiği:</strong> ${t.progression_gate}</p>
           </div>
         `).join('');
   }
 }
 
-    // 8.7. DETAYLI GÜNLÜK ANTRENMAN PROTOKOLLERİ RENDER
+    // 8.7. DETAYLI GÜNLÜK ANTRENMAN PROTOKOLLERİ RENDER (SEKME FİLTRELİ)
+    let cachedDailyProtocols = [];
+    let selectedProtocolMode = 'upcoming';
+
+    function selectProtocolDay(mode) {
+      selectedProtocolMode = mode;
+      renderDailyProtocols(cachedDailyProtocols);
+    }
 
     function renderDailyProtocols(protocols) {
       const container = document.getElementById('dailyProtocolsContainer');
+      const tabsEl = document.getElementById('protocolDayTabs');
       if (!container || !protocols || !Array.isArray(protocols)) return;
+      cachedDailyProtocols = protocols;
 
-      container.innerHTML = protocols.map(p => {
+      if (tabsEl) {
+        const activeCls = 'px-3 py-1.5 rounded-xl font-bold bg-[#111827] text-white dark:bg-white dark:text-neutral-950 transition';
+        const idleCls = 'px-3 py-1.5 rounded-xl font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition';
+        const shortDay = (t) => (t || '').split(':')[0].trim().slice(0, 3);
+        tabsEl.innerHTML = `
+          <button onclick="selectProtocolDay('upcoming')" class="${selectedProtocolMode === 'upcoming' ? activeCls : idleCls}">Bugün &amp; Sıradaki (2)</button>
+          ${protocols.map((p, idx) => `<button onclick="selectProtocolDay(${idx})" class="${selectedProtocolMode === idx ? activeCls : idleCls}">${shortDay(p.day_title)}</button>`).join('')}
+          <button onclick="selectProtocolDay('all')" class="${selectedProtocolMode === 'all' ? activeCls : idleCls}">Tümü (${protocols.length})</button>
+        `;
+      }
+
+      const visibleProtocols = selectedProtocolMode === 'all'
+        ? protocols
+        : (selectedProtocolMode === 'upcoming'
+          ? protocols.slice(0, 2)
+          : (protocols[selectedProtocolMode] ? [protocols[selectedProtocolMode]] : protocols.slice(0, 2)));
+
+      container.innerHTML = visibleProtocols.map(p => {
         let exerciseHtml = '';
         if (p.category === 'gym') {
           exerciseHtml = `

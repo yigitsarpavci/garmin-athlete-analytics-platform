@@ -42,114 +42,54 @@
 
 <body class="h-full flex flex-col bg-[#F5F7FA] dark:bg-[#070b14] text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
 
-  <!-- ÜST SABİT NAVİGASYON (GARMIN CONNECT + STRAVA HYBRİD) -->
-  <header class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] flex-shrink-0">
-    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between min-h-16 py-2 gap-3">
-
-        <!-- LOGO & PROFİL -->
-        <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#007CC3] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-            ⚡
-          </div>
+  <!-- ÜST SABİT NAVİGASYON (GARMIN CONNECT + STRAVA: ÜST SATIR MARKA/AKSİYON, ALT SATIR SEKMELER) -->
+  <header class="bg-white/95 dark:bg-slate-900/95 backdrop-blur text-slate-900 dark:text-white sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-14 gap-4">
+        <!-- LOGO & SPORCU -->
+        <div class="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+          <div class="w-9 h-9 rounded-xl bg-[#007CC3] text-white flex items-center justify-center font-bold text-sm shrink-0">⚡</div>
           <div class="min-w-0">
             <div class="flex items-center gap-2">
-              <h1 class="text-xs sm:text-sm font-extrabold tracking-tight text-slate-900 dark:text-white truncate">
-                GARMIN ATHLETE IQ
-              </h1>
-              <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30 whitespace-nowrap">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span> CANLI TELEMETRİ
+              <h1 class="text-xs sm:text-sm font-extrabold tracking-tight whitespace-nowrap">GARMIN ATHLETE IQ</h1>
+              <span class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 whitespace-nowrap">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>CANLI
               </span>
             </div>
-            <p id="headerAthleteMeta" class="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">Sporcu Telemetrisi • Garmin Connect Analitik Motoru</p>
+            <p id="headerAthleteMeta" class="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[52vw]">Sporcu Telemetrisi • Garmin Connect Analitik Motoru</p>
           </div>
         </div>
 
-        <!-- ORTA TABLAR (ANA BÖLÜMLER - >=1024px) -->
-        <nav class="hidden lg:flex items-center space-x-1 bg-slate-100/80 dark:bg-white/[0.04] p-1 rounded-xl border border-slate-200/80 dark:border-white/[0.08] text-xs overflow-x-auto custom-scrollbar min-w-0">
-          <button onclick="setTab('overview')" id="nav-overview"
-            class="whitespace-nowrap px-2.5 py-1.5 rounded-lg active-nav transition">Genel Bakış</button>
-          <button onclick="setTab('calculator')" id="nav-calculator"
-            class="whitespace-nowrap px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Form Simülatörü</button>
-          <button onclick="setTab('sports')" id="nav-sports"
-            class="whitespace-nowrap px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Branşlar (4)</button>
-          <button onclick="setTab('training_load')" id="nav-training_load"
-            class="whitespace-nowrap px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Firstbeat Yük</button>
-          <button onclick="setTab('activities')" id="nav-activities"
-            class="whitespace-nowrap px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Aktiviteler (49)</button>
-          <button onclick="setTab('health')" id="nav-health"
-            class="whitespace-nowrap px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Sağlık & Uyku</button>
-          <button onclick="setTab('analytics')" id="nav-analytics"
-            class="whitespace-nowrap px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Analitik</button>
-          <button onclick="setTab('settings')" id="nav-settings"
-            class="whitespace-nowrap px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">Saat Ayarları (8)</button>
-        </nav>
-
-        <!-- SAĞ BUTONLAR -->
-        <div class="flex items-center space-x-2 shrink-0">
-          <!-- TEMA DEĞİŞTİRİCİ -->
-          <button onclick="toggleTheme()" id="themeToggleBtn"
-            class="flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 transition"
-            title="Koyu / Aydınlık Görünüm">
+        <!-- AKSİYONLAR -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="toggleTheme()" id="themeToggleBtn" class="header-btn" title="Koyu / Aydınlık Görünüm">
             <span id="themeToggleIcon">🌙</span>
-            <span id="themeToggleText" class="hidden xl:inline text-[11px]">Koyu</span>
+            <span id="themeToggleText" class="hidden xl:inline">Koyu</span>
           </button>
-
-          <!-- VERİ SENKRONİZASYONU -->
-          <button onclick="syncGarminData()" id="syncBtn"
-            class="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-700 transition">
-            <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-              </path>
-            </svg>
+          <button onclick="syncGarminData()" id="syncBtn" class="header-btn" title="Garmin Connect verilerini şimdi eşitle">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             <span class="hidden xl:inline">Eşitle</span>
           </button>
-
-          <!-- ANTRENMAN SONRASI DEBRIEF RAPORU -->
-          <button onclick="openDebriefModal(0)" id="btnPostWorkoutDebrief"
-            class="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.07] dark:hover:bg-white/[0.12] text-slate-700 dark:text-neutral-200 px-3 py-1.5 rounded-xl text-xs font-medium border border-slate-200 dark:border-white/[0.12] transition whitespace-nowrap"
-            title="Antrenman Sonrası 5 Maddelik Telemetri ve Gelişim Kontrolü">
-            <span>📋</span>
-            <span class="hidden md:inline">Son Seans</span>
-          </button>
-
-          <!-- AI KOÇ -->
-          <button onclick="toggleAICoach()"
-            class="flex items-center space-x-1.5 bg-[#FC4C02] hover:bg-[#E04400] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs transition whitespace-nowrap">
-            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
-              </path>
-            </svg>
+          <button onclick="toggleAICoach()" id="aiCoachHeaderBtn" class="inline-flex items-center gap-1.5 bg-[#FC4C02] hover:bg-[#E04400] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
             <span>AI Koç</span>
           </button>
         </div>
-
       </div>
+
+      <!-- SEKME ÇUBUĞU (TÜM EKRAN BOYUTLARINDA TEK NAVİGASYON) -->
+      <nav class="flex items-center gap-1 overflow-x-auto custom-scrollbar -mb-px text-xs">
+        <button onclick="setTab('overview')" id="nav-overview" class="nav-tab nav-tab-active">Genel Bakış</button>
+        <button onclick="setTab('calculator')" id="nav-calculator" class="nav-tab">Form Simülatörü</button>
+        <button onclick="setTab('sports')" id="nav-sports" class="nav-tab">Branşlar</button>
+        <button onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Antrenman Yükü</button>
+        <button onclick="setTab('activities')" id="nav-activities" class="nav-tab">Aktiviteler</button>
+        <button onclick="setTab('health')" id="nav-health" class="nav-tab">Sağlık &amp; Uyku</button>
+        <button onclick="setTab('analytics')" id="nav-analytics" class="nav-tab">Analitik</button>
+        <button onclick="setTab('settings')" id="nav-settings" class="nav-tab">Saat Ayarları</button>
+      </nav>
     </div>
   </header>
-
-  <!-- MOBİL & TABLET NAVİGASYON ÇUBUĞU (<1024px) -->
-  <div
-    class="lg:hidden bg-slate-900/95 border-b border-white/[0.08] px-4 py-2 overflow-x-auto custom-scrollbar flex space-x-2 text-xs">
-    <button onclick="setTab('overview')" id="mnav-overview"
-      class="whitespace-nowrap px-3 py-1 rounded-lg text-neutral-950 font-bold bg-white shadow-xs">Genel Bakış</button>
-    <button onclick="setTab('calculator')" id="mnav-calculator"
-      class="whitespace-nowrap px-3 py-1 rounded-lg text-neutral-400 hover:text-white">Form Simülatörü</button>
-    <button onclick="setTab('sports')" id="mnav-sports"
-      class="whitespace-nowrap px-3 py-1 rounded-lg text-neutral-400 hover:text-white">Branşlar</button>
-    <button onclick="setTab('training_load')" id="mnav-training_load"
-      class="whitespace-nowrap px-3 py-1 rounded-lg text-neutral-400 hover:text-white">Yük & ACWR</button>
-    <button onclick="setTab('activities')" id="mnav-activities"
-      class="whitespace-nowrap px-3 py-1 rounded-lg text-neutral-400 hover:text-white">Aktiviteler</button>
-    <button onclick="setTab('health')" id="mnav-health"
-      class="whitespace-nowrap px-3 py-1 rounded-lg text-neutral-400 hover:text-white">Sağlık & Uyku</button>
-    <button onclick="setTab('analytics')" id="mnav-analytics"
-      class="whitespace-nowrap px-3 py-1 rounded-lg text-neutral-400 hover:text-white">Grafikler</button>
-    <button onclick="setTab('settings')" id="mnav-settings"
-      class="whitespace-nowrap px-3 py-1 rounded-lg text-neutral-400 hover:text-white">Ayarlar</button>
-  </div>
 
   <!-- ANA İÇERİK ALANI -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -157,29 +97,29 @@
     <!-- 1. BÖLÜM: GENEL BAKIŞ (OVERVIEW) -->
     <div id="section-overview" class="space-y-6">
 
-      <!-- AKTİF SPORCU PROFİLİ & TERCİH SEÇİCİ BARI -->
+      <!-- AKTİF SPORCU PROFİLİ & TERCİH SEÇİCİ BARI (GARMIN/STRAVA CLEAN LIGHT CARD) -->
       <div
-        class="bg-gradient-to-r from-slate-900 via-slate-850 to-indigo-950 text-white rounded-2xl p-4 shadow-md border border-slate-700/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div class="flex items-center space-x-3.5 min-w-0">
-          <div class="w-10 h-10 rounded-xl bg-white text-neutral-950 flex items-center justify-center font-bold text-base shadow-sm border border-white/20 shrink-0" id="profileAvatarInitial">
+        class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl px-4 py-3 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center space-x-3 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-neutral-950 flex items-center justify-center font-bold text-sm shrink-0" id="profileAvatarInitial">
             A
           </div>
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
-              <h2 class="text-sm font-extrabold tracking-tight text-white" id="profileNameDisplay">Sporcu Profili
+              <h2 class="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white" id="profileNameDisplay">Sporcu Profili
               </h2>
               <span
-                class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap"
+                class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30 whitespace-nowrap"
                 id="profileBadgeDisplay">Garmin Telemetrisi</span>
             </div>
-            <p class="text-xs text-slate-300 mt-0.5" id="profileDescDisplay">Haftalık 2 Koşu + 2 Gym (A/B 5x5)</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate" id="profileDescDisplay">Haftalık 2 Koşu + 2 Gym (A/B 5x5)</p>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 shrink-0">
           <button onclick="openPreferencesModal()"
-            class="flex items-center space-x-1.5 bg-white text-neutral-950 hover:bg-neutral-200 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition whitespace-nowrap">
-            <svg class="w-4 h-4 text-neutral-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold transition whitespace-nowrap">
+            <svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
               </path>
@@ -259,23 +199,15 @@
             </div>
           </div>
 
-          <!-- 4'LÜ MİKRO METRİK BARI -->
-          <div class="grid grid-cols-4 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
-            <div class="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl">
-              <span class="text-[10px] text-slate-500 block font-medium">HRV</span>
-              <span class="text-xs font-bold text-slate-900 dark:text-white tabular-nums">44 ms</span>
+          <!-- STRAVA STİLİ SON AKTİVİTE ÖZETİ (TEKRARSIZ & CANLI) -->
+          <div onclick="openDebriefModal(0)" class="pt-3 border-t border-slate-100 dark:border-slate-800 cursor-pointer group">
+            <div class="flex items-center justify-between text-[11px] mb-1">
+              <span class="font-semibold text-slate-400 uppercase tracking-wider">Son Aktivite</span>
+              <span class="font-semibold text-[#007CC3] group-hover:underline">Debrief Aç &rarr;</span>
             </div>
-            <div class="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl">
-              <span class="text-[10px] text-slate-500 block font-medium">RHR</span>
-              <span class="text-xs font-bold text-slate-900 dark:text-white tabular-nums">53 bpm</span>
-            </div>
-            <div class="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl">
-              <span class="text-[10px] text-slate-500 block font-medium">Uyku</span>
-              <span class="text-xs font-bold text-[#007CC3] dark:text-blue-400 tabular-nums">82</span>
-            </div>
-            <div class="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl">
-              <span class="text-[10px] text-slate-500 block font-medium">ACWR</span>
-              <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">0.95</span>
+            <div id="latestActivitySummaryRow" class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 px-3 py-2 rounded-xl text-xs">
+              <span class="font-bold text-slate-900 dark:text-white truncate">Yükleniyor...</span>
+              <span class="text-slate-500 dark:text-slate-400 tabular-nums shrink-0 ml-2">--</span>
             </div>
           </div>
         </div>
@@ -290,11 +222,11 @@
                 <span class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
                   <span class="text-[#007CC3]">☾</span> Uyku Skoru
                 </span>
-                <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Good Quality</span>
+                <span id="inFocusSleepQuality" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Good Quality</span>
               </div>
               <div class="flex items-baseline gap-4 mb-3">
-                <span class="text-3xl font-extrabold text-slate-900 dark:text-white tabular-nums">82</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">Süre: <strong class="text-slate-800 dark:text-slate-200">6s 23dk</strong></span>
+                <span id="inFocusSleepScore" class="text-3xl font-extrabold text-slate-900 dark:text-white tabular-nums">--</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400">Süre: <strong id="inFocusSleepHours" class="text-slate-800 dark:text-slate-200">--</strong></span>
               </div>
               <!-- Garmin Connect Sleep Stage Mini Bars -->
               <div class="flex items-end gap-1 h-10 pt-1">
@@ -311,7 +243,7 @@
               </div>
               <div class="flex justify-between text-[10px] text-slate-400 mt-1.5 font-medium">
                 <span>Deep · Light · REM</span>
-                <span>Gece HRV Dengeli</span>
+                <span id="inFocusSleepRhrHrv">Dinlenik HR: -- bpm</span>
               </div>
             </div>
 
@@ -325,12 +257,12 @@
               </div>
               <div class="flex items-center justify-between mb-3">
                 <div>
-                  <span class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Maintaining</span>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Optimal Load • Balanced HRV</p>
+                  <span id="inFocusTrainingStatus" class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Maintaining</span>
+                  <p id="inFocusStatusSub" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Optimal Load • Balanced HRV</p>
                 </div>
                 <div class="text-right">
                   <span class="text-[10px] text-slate-400 uppercase font-semibold block">VO2 Max</span>
-                  <span class="text-lg font-extrabold text-slate-900 dark:text-white tabular-nums">45.4</span>
+                  <span id="inFocusVo2Max" class="text-lg font-extrabold text-slate-900 dark:text-white tabular-nums">--</span>
                 </div>
               </div>
               <!-- Garmin Connect Segmented Status Timeline -->
@@ -400,15 +332,15 @@
             <span class="text-xs text-slate-400 group-hover:text-blue-500 transition">↗</span>
           </div>
           <div class="flex items-baseline space-x-2 mt-2">
-            <span class="text-2xl font-black text-slate-900 dark:text-white tabular-nums" id="kpi-weight">87,0 kg</span>
-            <span class="text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full tabular-nums">-8,0 kg</span>
+            <span class="text-2xl font-black text-slate-900 dark:text-white tabular-nums" id="kpi-weight">-- kg</span>
+            <span id="kpi-weight-badge" class="text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full tabular-nums">--</span>
           </div>
           <!-- PROGRESS BAR -->
           <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-2.5 overflow-hidden">
             <div class="bg-gradient-to-r from-emerald-500 to-blue-500 h-1.5 rounded-full" style="width: 58%"></div>
           </div>
           <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex justify-between">
-            <span>DSÖ Normal (86.45): <strong class="text-slate-700 dark:text-slate-300">550 g kaldı</strong></span>
+            <span id="kpi-weight-bmi">VKİ: --</span>
             <span class="text-blue-600 dark:text-blue-400 font-bold">Hedef: 81 kg</span>
           </p>
         </div>
@@ -420,8 +352,8 @@
             <span class="text-xs text-slate-400 group-hover:text-blue-500 transition">↗</span>
           </div>
           <div class="flex items-baseline space-x-2 mt-2">
-            <span class="text-2xl font-black text-blue-700 dark:text-blue-400 tabular-nums" id="kpi-5k">29:07</span>
-            <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 tabular-nums">(5:48 /km)</span>
+            <span class="text-2xl font-black text-blue-700 dark:text-blue-400 tabular-nums" id="kpi-5k">--:--</span>
+            <span id="kpi-5k-pace" class="text-xs font-semibold text-slate-600 dark:text-slate-400 tabular-nums">(-- /km)</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-2.5 overflow-hidden">
             <div class="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full" style="width: 72%"></div>
@@ -439,15 +371,15 @@
             <span class="text-xs text-slate-400 group-hover:text-blue-500 transition">↗</span>
           </div>
           <div class="flex items-baseline space-x-2 mt-2">
-            <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400 tabular-nums" id="kpi-ef">1.03</span>
+            <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400 tabular-nums" id="kpi-ef">--</span>
             <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">m/atım (EF)</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-2.5 overflow-hidden">
             <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-1.5 rounded-full" style="width: 65%"></div>
           </div>
           <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex justify-between">
-            <span>Ağustos: 0.79 (<strong class="text-emerald-600 dark:text-emerald-400 font-bold">+%30 Debi</strong>)</span>
-            <span class="text-slate-700 dark:text-slate-300 font-semibold">44 ms HRV</span>
+            <span id="kpi-ef-hrv">Gece HRV: -- ms</span>
+            <span id="kpi-ef-rhr" class="text-slate-700 dark:text-slate-300 font-semibold">RHR: -- bpm</span>
           </p>
         </div>
 
@@ -458,15 +390,15 @@
             <span class="text-xs text-slate-400 group-hover:text-blue-500 transition">↗</span>
           </div>
           <div class="flex items-baseline space-x-2 mt-2">
-            <span class="text-2xl font-black text-slate-900 dark:text-white tabular-nums" id="kpi-load">260</span>
-            <span class="text-xs font-extrabold text-blue-700 bg-blue-100 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 rounded-full tabular-nums">ACWR 0.95</span>
+            <span class="text-2xl font-black text-slate-900 dark:text-white tabular-nums" id="kpi-load">--</span>
+            <span id="kpi-acwr-badge" class="text-xs font-extrabold text-blue-700 bg-blue-100 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 rounded-full tabular-nums">ACWR --</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-2.5 overflow-hidden">
             <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full" style="width: 78%"></div>
           </div>
           <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex justify-between">
-            <span>Tünel: 200 - 340 (<strong class="text-emerald-600 dark:text-emerald-400 font-bold">Optimal</strong>)</span>
-            <span class="text-slate-700 dark:text-slate-300 font-semibold">Kronik: 275</span>
+            <span id="kpi-tunnel-text">Tünel: -- (<strong class="text-emerald-600 dark:text-emerald-400 font-bold">Optimal</strong>)</span>
+            <span id="kpi-chronic-text" class="text-slate-700 dark:text-slate-300 font-semibold">Kronik: --</span>
           </p>
         </div>
       </div>
@@ -539,19 +471,23 @@
         </div>
       </section>
 
-      <!-- 7 GÜNLÜK DETAYLI EGZERSİZ, SET, TEKRAR VE AĞIRLIK REÇETESİ (LATERAL RAISE & SHRUG DAHİL) -->
-      <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5" id="dailyProtocolsSection">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+      <!-- 7 GÜNLÜK DETAYLI EGZERSİZ, SET, TEKRAR VE AĞIRLIK REÇETESİ -->
+      <section class="garmin-card bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4" id="dailyProtocolsSection">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div>
             <div class="flex items-center space-x-2">
-              <span class="bg-indigo-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">GÜNLÜK DETAYLI REÇETE</span>
-              <h3 class="text-base font-bold text-slate-900">7 Günlük Antrenman Detayları: Egzersiz, Set, Tekrar ve Kilo Hedefleri</h3>
+              <span class="bg-[#007CC3] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">GÜNLÜK DETAYLI REÇETE</span>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white">7 Günlük Antrenman Detayları: Egzersiz, Set ve Kilo Hedefleri</h3>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Her günün amacı, ısınma protokolü, kaldırılacak kesin ağırlıklar (Progressive Overload), koşu nabız/tempoları ve beslenmesi:</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Program tablosundan bir güne tıklayın veya aşağıdaki gün sekmelerinden filtreleyin:</p>
           </div>
-          <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
-            Lateral Raise & Shrug Dahil
+          <span class="text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 shrink-0">
+            Lateral Raise &amp; Shrug Dahil
           </span>
+        </div>
+
+        <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs">
+          <!-- JS ile gün filtreleri dolar -->
         </div>
 
         <div class="space-y-4" id="dailyProtocolsContainer">
@@ -559,23 +495,21 @@
         </div>
       </section>
 
-      <!-- ZONE 2 @ 5:00 /KM PACE GERİ SAYIM SAYACI & ANTRENMAN SAYACI -->
+      <!-- ZONE 2 @ 5:00 /KM PACE GERİ SAYIM SAYACI & ANTRENMAN SAYACI (CLEAN GARMIN LIGHT-FIRST CARD) -->
       <section
-        class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-xl space-y-5 border border-indigo-900/60">
+        class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl p-6 space-y-5 border border-slate-200 dark:border-slate-800 border-l-4 border-l-[#007CC3]">
         <div
-          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-indigo-800/60 pb-4">
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
             <div class="flex items-center space-x-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <h3 class="text-lg font-black tracking-tight text-white">Zone 2 @ 5:00 /km Pace Hedefi ve Geri Sayım
-                Sayacı</h3>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <h3 class="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Zone 2 @ 5:00 /km Pace Hedefi ve Geri Sayım Sayacı</h3>
             </div>
-            <p class="text-xs text-indigo-200 mt-1">145 bpm nabızda 6:40 /km'den 5:00 /km'ye iniş takvimi, kalan gün ve
-              seans metrikleri</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">145 bpm nabızda 6:40 /km'den 5:00 /km'ye iniş takvimi, kalan gün ve seans metrikleri</p>
           </div>
           <div class="flex items-center space-x-2">
             <span
-              class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+              class="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
               <span>✓</span>
               <span>Haftalık 2 Koşu (1 Z2 + 1 İnt) + 2 Gym Aktif</span>
             </span>
@@ -589,8 +523,8 @@
 
         <!-- 5 ALTIN TAVSİYE & ZAMAN ÇİZELGESİ -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
-          <div class="bg-indigo-900/40 border border-indigo-800/60 rounded-xl p-4 space-y-3">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center space-x-1.5">
+          <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-4 space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
               <span>🎯</span>
               <span>5:00 Pace'e Ulaşmak İçin 5 Altın Tavsiye</span>
             </h4>
@@ -599,8 +533,8 @@
             </div>
           </div>
 
-          <div class="bg-indigo-900/40 border border-indigo-800/60 rounded-xl p-4 space-y-3">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center space-x-1.5">
+          <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-4 space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
               <span>📅</span>
               <span>Dönemsel Adaptasyon ve Hız Kilometre Taşları</span>
             </h4>
@@ -804,20 +738,18 @@
 
       <!-- DİNAMİK GELİŞİM, SEVİYE ATLAMA VE DOGMATİK OLMAYAN DÖNEMLEME BÖLÜMÜ -->
       <section
-        class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl border border-indigo-800 p-6 shadow-md space-y-5"
+        class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl border border-slate-200 dark:border-slate-800 border-l-4 border-l-amber-500 p-6 space-y-5"
         id="progressionAssessmentSection">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-800/60 pb-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div>
             <div class="flex items-center space-x-2">
-              <span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full">DİNAMİK GELİŞİM
-                MOTORU</span>
-              <h3 class="text-base font-bold text-white">Dogmatik Olmayan Seviye, Gün Artırma ve Stil Geçiş Analizi</h3>
+              <span class="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-black px-2 py-0.5 rounded-full">DİNAMİK GELİŞİM MOTORU</span>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white">Dogmatik Olmayan Seviye, Gün Artırma ve Stil Geçiş Analizi</h3>
             </div>
-            <p class="text-xs text-indigo-200 mt-1">Antrenman programı taşa kazınmış sabit bir kalıp değildir.
-              Telemetrinize göre gün artırma, stil değiştirme ve deload zamanlaması:</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Antrenman programı taşa kazınmış sabit bir kalıp değildir. Telemetrinize göre gün artırma, stil değiştirme ve deload zamanlaması:</p>
           </div>
           <span
-            class="text-xs font-bold bg-indigo-800/80 text-indigo-200 px-3 py-1 rounded-full border border-indigo-700"
+            class="text-xs font-bold bg-blue-50 text-[#007CC3] px-3 py-1 rounded-full border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
             id="progressionTierBadge">
             Orta Seviye Atlet
           </span>
@@ -829,8 +761,8 @@
         </div>
 
         <!-- 4 SEVİYE SPORCU YAKLAŞIMI TABLOSU -->
-        <div class="bg-indigo-950/70 border border-indigo-800/60 rounded-xl p-4 space-y-3">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center space-x-1.5">
+        <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-4 space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
             <span>🗺️</span>
             <span>Her Seviye İçin Bilimsel Antrenman ve Dönemleme Çerçevesi</span>
           </h4>
@@ -968,16 +900,16 @@
           <table class="w-full text-left text-xs border-collapse">
             <thead>
               <tr class="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200">
-                <th class="py-2.5 px-3">Hafta Bitiş</th>
-                <th class="py-2.5 px-3">Antrenman Durumu</th>
-                <th class="py-2.5 px-3">Akut Yük (ATL)</th>
-                <th class="py-2.5 px-3">Kronik Yük (CTL)</th>
-                <th class="py-2.5 px-3">ACWR Oranı</th>
-                <th class="py-2.5 px-3">ACWR Durumu</th>
-                <th class="py-2.5 px-3">Düşük Aerobik</th>
-                <th class="py-2.5 px-3">Yüksek Aerobik</th>
-                <th class="py-2.5 px-3">Anaerobik</th>
-                <th class="py-2.5 px-3">Yük Dengesi</th>
+                <th class="py-2 px-2">Hafta</th>
+                <th class="py-2 px-2">Durum</th>
+                <th class="py-2 px-2">ATL (7G)</th>
+                <th class="py-2 px-2">CTL (28G)</th>
+                <th class="py-2 px-2">ACWR</th>
+                <th class="py-2 px-2">Seviye</th>
+                <th class="py-2 px-2">Düşük Aer.</th>
+                <th class="py-2 px-2">Yüksek Aer.</th>
+                <th class="py-2 px-2">Anaerobik</th>
+                <th class="py-2 px-2">Yük Dengesi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700" id="trainingLoadWeeklyBody">
@@ -1025,7 +957,7 @@
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <div class="flex items-center space-x-2">
-                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Aktivite Telemetri Günlüğü (49 Seans)</h3>
+                <h3 id="activitiesSectionTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Aktivite Telemetri Günlüğü</h3>
                 <span class="text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">Sensör Bazlı</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">01 Ağustos - 17 Kasım 2026 arasındaki tüm spor aktivitelerinin saniye bazlı sensör telemetrisi</p>
@@ -1085,18 +1017,18 @@
             <table class="w-full text-left text-xs border-collapse">
               <thead class="sticky top-0 bg-slate-100 dark:bg-slate-800 z-10">
                 <tr class="text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
-                  <th class="py-2.5 px-3">Tarih</th>
-                  <th class="py-2.5 px-3">Branş</th>
-                  <th class="py-2.5 px-3">Aktivite Adı</th>
-                  <th class="py-2.5 px-3">Süre</th>
-                  <th class="py-2.5 px-3">Mesafe</th>
-                  <th class="py-2.5 px-3">Tempo / Hız</th>
-                  <th class="py-2.5 px-3">Ort / Maks Nabız</th>
-                  <th class="py-2.5 px-3">Güç (W)</th>
-                  <th class="py-2.5 px-3">Kadans</th>
-                  <th class="py-2.5 px-3">Yük</th>
-                  <th class="py-2.5 px-3">Antrenman Etkisi (TE)</th>
-                  <th class="py-2.5 px-3">Kalori (Ter)</th>
+                  <th class="py-2 px-2">Tarih</th>
+                  <th class="py-2 px-2">Branş</th>
+                  <th class="py-2 px-2">Aktivite Adı</th>
+                  <th class="py-2 px-2">Süre</th>
+                  <th class="py-2 px-2">Mesafe</th>
+                  <th class="py-2 px-2">Tempo</th>
+                  <th class="py-2 px-2">Ort/Maks HR</th>
+                  <th class="py-2 px-2">Güç</th>
+                  <th class="py-2 px-2">Kadans</th>
+                  <th class="py-2 px-2">Yük</th>
+                  <th class="py-2 px-2">TE (A/An)</th>
+                  <th class="py-2 px-2">Kalori (Ter)</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200" id="activitiesTableBody">
@@ -1110,36 +1042,34 @@
       <!-- 5. BÖLÜM: SAĞLIK & UYKU (HEALTH & RECOVERY) -->
       <div id="section-health" class="space-y-6 hidden">
 
-        <!-- KLİNİK GENEL SAĞLIK TARAMASI & DOKTOR CHECK-UP RAPORU -->
+        <!-- KLİNİK GENEL SAĞLIK TARAMASI & DOKTOR CHECK-UP RAPORU (CLEAN GARMIN LIGHT-FIRST CARD) -->
         <section
-          class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl space-y-5 border border-blue-700/50">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/10 pb-4">
+          class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl p-6 space-y-5 border border-slate-200 dark:border-slate-800 border-l-4 border-l-[#007CC3]">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div class="flex items-center space-x-3">
               <div
-                class="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-2xl shadow-inner">
+                class="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 text-[#007CC3] dark:bg-blue-500/20 dark:border-blue-400/40 flex items-center justify-center text-xl">
                 🩺
               </div>
               <div>
-                <div class="flex items-center space-x-2">
-                  <h3 class="text-lg font-black tracking-tight text-white">Klinik Egzersiz Fizyolojisi & Genel Sağlık
-                    Taraması</h3>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Klinik Egzersiz Fizyolojisi & Genel Sağlık Taraması</h3>
                   <span
-                    class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                    class="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
                     Doktor Onaylı Check-Up
                   </span>
                 </div>
-                <p class="text-xs text-blue-200 mt-0.5">Garmin biyometrik telemetrisi üzerinden kardiyovasküler, otonom,
-                  metabolik ve pulmoner tarama</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Garmin biyometrik telemetrisi üzerinden kardiyovasküler, otonom, metabolik ve pulmoner tarama</p>
               </div>
             </div>
 
-            <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20 text-right">
-              <p class="text-[10px] uppercase tracking-wider text-blue-300 font-bold">Klinik Hekim Kararı</p>
-              <p class="text-sm font-black text-emerald-300" id="doctorVerdictTitle">A-1 Sınıfı Üstün Atletik Rezerv</p>
+            <div class="bg-emerald-50/80 dark:bg-slate-800/80 px-4 py-2.5 rounded-xl border border-emerald-200 dark:border-slate-700 text-right">
+              <p class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">Klinik Hekim Kararı</p>
+              <p class="text-sm font-black text-emerald-700 dark:text-emerald-300" id="doctorVerdictTitle">A-1 Sınıfı Üstün Atletik Rezerv</p>
             </div>
           </div>
 
-          <p class="text-xs text-slate-200 leading-relaxed bg-white/5 p-3.5 rounded-xl border border-white/10"
+          <p class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60"
             id="doctorSummaryText">
             Yükleniyor...
           </p>
@@ -1151,34 +1081,32 @@
 
           <!-- SAĞLIK YAŞI (FITNESS AGE) ENTEGRASYONU -->
           <div
-            class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/15 flex flex-col md:flex-row items-center justify-between gap-4">
+            class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center space-x-3.5">
               <div
-                class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center justify-center text-2xl font-black">
+                class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/30 flex items-center justify-center text-xl font-black">
                 🧬
               </div>
               <div>
-                <p class="text-[11px] font-bold text-blue-200 uppercase tracking-wider">Garmin Biyolojik Sağlık Yaşı
-                  (Fitness Age)</p>
+                <p class="text-[11px] font-bold text-[#007CC3] dark:text-blue-300 uppercase tracking-wider">Garmin Biyolojik Sağlık Yaşı (Fitness Age)</p>
                 <div class="flex items-baseline space-x-2 mt-0.5">
-                  <span class="text-2xl font-black text-white" id="fitnessAgeValue">19,5 Yaş</span>
+                  <span class="text-2xl font-black text-slate-900 dark:text-white" id="fitnessAgeValue">19,5 Yaş</span>
                   <span
-                    class="text-xs font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">-2.5
-                    Yaş Daha Genç!</span>
-                  <span class="text-xs text-slate-300 font-medium">(Kronolojik Yaş: 22)</span>
+                    class="text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full dark:border-emerald-500/30">-2.5 Yaş Daha Genç!</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-300 font-medium">(Kronolojik Yaş: 22)</span>
                 </div>
               </div>
             </div>
 
             <div class="flex items-center space-x-3 text-xs">
               <div class="text-right">
-                <p class="text-[10px] text-slate-300">Ulaşılabilir En Düşük Sınır</p>
-                <p class="text-base font-extrabold text-emerald-300">18,0 Yaş</p>
+                <p class="text-[10px] text-slate-500 dark:text-slate-300">Ulaşılabilir En Düşük Sınır</p>
+                <p class="text-base font-extrabold text-emerald-700 dark:text-emerald-300">18,0 Yaş</p>
               </div>
-              <div class="h-8 w-px bg-white/20"></div>
-              <div class="text-left text-[11px] text-blue-200">
+              <div class="h-8 w-px bg-slate-200 dark:bg-white/20"></div>
+              <div class="text-left text-[11px] text-slate-600 dark:text-blue-200">
                 <p>🎯 81 kg atletik forma ulaşıldığında</p>
-                <p class="text-emerald-300 font-semibold">18 yaş biyolojik kondisyon kilidi açılır.</p>
+                <p class="text-emerald-700 dark:text-emerald-300 font-semibold">18 yaş biyolojik kondisyon kilidi açılır.</p>
               </div>
             </div>
           </div>
@@ -1491,18 +1419,17 @@
 
             <!-- 4. GARMIN'DEN ÇEKTİĞİMİZ VERİLERİ NASIL DAHA FAZLA ARTIRABİLİRİZ? -->
             <section
-              class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-xl space-y-5 border border-slate-700/80">
-              <div class="flex items-center justify-between border-b border-slate-700/80 pb-4">
+              class="garmin-card bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-2xl p-6 space-y-5 border border-slate-200 dark:border-slate-800 border-l-4 border-l-[#007CC3]">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div>
-                  <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                  <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                     <span>📡</span>
-                    <span>4. Garmin'den Çektiğimiz Verileri Nasıl Daha Fazla Artırabiliriz?</span>
+                    <span>Garmin Telemetri Derinliğini Artırma Rehberi</span>
                   </h3>
-                  <p class="text-xs text-slate-300 mt-0.5">Mevcut özet telemetrisini yüksek çözünürlüklü FIT, 5
-                    dakikalık HRV ve biyomekanik akışına genişletme rehberi</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Mevcut özet telemetrisini yüksek çözünürlüklü FIT, 5 dakikalık HRV ve biyomekanik akışına genişletme mimarisi</p>
                 </div>
                 <span
-                  class="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-bold px-3 py-1 rounded-xl">
+                  class="bg-blue-50 text-[#007CC3] border border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-400/30 text-xs font-bold px-3 py-1 rounded-xl">
                   Veri Mühendisliği Mimarisi
                 </span>
               </div>
@@ -1511,16 +1438,16 @@
                 <!-- JS ile dolar -->
               </div>
 
-              <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-xs space-y-2">
-                <p class="font-bold text-emerald-400">🚀 Uygulama ve Entegrasyon Adımları:</p>
-                <ul class="list-disc ml-4 space-y-1 text-slate-300">
+              <div class="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-2">
+                <p class="font-bold text-emerald-700 dark:text-emerald-400">🚀 Uygulama ve Entegrasyon Adımları:</p>
+                <ul class="list-disc ml-4 space-y-1 text-slate-700 dark:text-slate-300">
                   <li><strong>FIT Dosyalarının Otomatik Çekilmesi:</strong> Her yeni aktiviteden sonra <code
-                      class="bg-slate-900 px-1.5 py-0.5 rounded text-blue-300">download-fit</code> çağrılarak yerel
+                      class="bg-slate-200 dark:bg-slate-900 px-1.5 py-0.5 rounded text-[#007CC3] dark:text-blue-300">download-fit</code> çağrılarak yerel
                     dosya deposuna binary FIT kaydedilir.</li>
                   <li><strong>Python Fitparse Katmanı:</strong> FIT dosyası çözülerek saniye saniye nabız, watt, eğim ve
                     Running Dynamics zaman serileri çıkartılır.</li>
                   <li><strong>Yüksek Çözünürlüklü HRV Eğrisi:</strong> Garmin <code
-                      class="bg-slate-900 px-1.5 py-0.5 rounded text-blue-300">hrv-service</code> ile gece boyunca 5
+                      class="bg-slate-200 dark:bg-slate-900 px-1.5 py-0.5 rounded text-[#007CC3] dark:text-blue-300">hrv-service</code> ile gece boyunca 5
                     dakikalık bloklar halinde parasempatik toparlanma eğrisi çizdirilir.</li>
                 </ul>
               </div>
@@ -1778,12 +1705,6 @@
               </div>
             </div>
           </div>
-
-          <!-- SAĞ ALTTA SABİT AI KOÇ AÇMA BUTONU -->
-          <button id="aiCoachLauncherBtn" onclick="toggleAICoach()" class="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-3 rounded-full shadow-2xl flex items-center space-x-2 font-bold text-xs hover:scale-105 active:scale-95 transition-all border border-blue-400/40">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>🤖 AI Koç</span>
-          </button>
 
           <!-- DETAYLI AKTİVİTE TELEMETRİSİ MODALI -->
           <div id="activityDetailModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto hidden">

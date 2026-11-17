@@ -1,14 +1,14 @@
-/* Garmin Athlete OS - Monochrome Chart.js Telemetry */
+/* Garmin Athlete OS - Chart.js Telemetry (Garmin Blue & Strava Orange) */
 function getChartThemeColors() {
   const isDark = document.documentElement.classList.contains('dark');
   return {
     isDark,
-    text: isDark ? '#959CA9' : '#5B6270',
-    grid: isDark ? 'rgba(255, 255, 255, 0.065)' : 'rgba(0, 0, 0, 0.06)',
-    primary: isDark ? '#CBD2DE' : '#1C1F26',
-    secondary: isDark ? '#7D8596' : '#64748B',
-    accent: isDark ? '#9CA4B5' : '#334155',
-    barBg: isDark ? 'rgba(203, 210, 222, 0.20)' : 'rgba(28, 31, 38, 0.18)'
+    text: isDark ? '#959CA9' : '#4B5563',
+    grid: isDark ? 'rgba(255, 255, 255, 0.065)' : 'rgba(15, 23, 42, 0.06)',
+    primary: isDark ? '#38BDF8' : '#007CC3',
+    secondary: isDark ? '#FB923C' : '#FC4C02',
+    accent: isDark ? '#34D399' : '#10B981',
+    barBg: isDark ? 'rgba(56, 189, 248, 0.25)' : 'rgba(0, 124, 195, 0.22)'
   };
 }
 
