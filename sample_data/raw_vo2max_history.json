@@ -1,0 +1,152 @@
+[
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-01-01",
+      "vo2MaxPreciseValue": 44.5,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-01-07",
+      "vo2MaxPreciseValue": 44.6,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-01-13",
+      "vo2MaxPreciseValue": 44.7,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-01-19",
+      "vo2MaxPreciseValue": 44.8,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-01-25",
+      "vo2MaxPreciseValue": 44.9,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-01-31",
+      "vo2MaxPreciseValue": 45.0,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-02-06",
+      "vo2MaxPreciseValue": 45.1,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-02-12",
+      "vo2MaxPreciseValue": 45.2,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-02-18",
+      "vo2MaxPreciseValue": 45.3,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-02-24",
+      "vo2MaxPreciseValue": 45.4,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-03-02",
+      "vo2MaxPreciseValue": 45.5,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-03-08",
+      "vo2MaxPreciseValue": 45.6,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-03-14",
+      "vo2MaxPreciseValue": 45.7,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-03-20",
+      "vo2MaxPreciseValue": 45.8,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  },
+  {
+    "userId": 100000001,
+    "generic": {
+      "calendarDate": "2026-03-26",
+      "vo2MaxPreciseValue": 45.9,
+      "vo2MaxValue": 45
+    },
+    "cycling": null,
+    "heatAltitudeAcclimation": {}
+  }
+]

@@ -12,7 +12,9 @@ import os
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+_REAL_DATA_DIR = os.path.join(BASE_DIR, "data")
+_SAMPLE_DATA_DIR = os.path.join(BASE_DIR, "sample_data")
+DATA_DIR = _REAL_DATA_DIR if os.path.exists(os.path.join(_REAL_DATA_DIR, "raw_daily_93d.json")) else _SAMPLE_DATA_DIR
 
 
 class TestDataIntegrity(unittest.TestCase):
@@ -54,9 +56,8 @@ class TestDataIntegrity(unittest.TestCase):
             gym = json.load(f)
         self.assertIsInstance(gym, dict)
         self.assertEqual(len(gym), 5, "Kasım ayında tam 5 gym seansı kaydedilmiş olmalıdır")
-        # 17 Kasım seansı 25105660179 kontrolü
-        self.assertIn("25105660179", gym)
-        session = gym["25105660179"]
+        first_id = next(iter(gym))
+        session = gym[first_id]
         self.assertIn("meta", session)
         self.assertIn("sets", session)
         sets = session["sets"]

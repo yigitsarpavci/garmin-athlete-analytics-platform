@@ -1,0 +1,1137 @@
+{
+  "9000000002": {
+    "meta": {
+      "activityId": 9000000002,
+      "activityName": "Full Body Strength 5x5",
+      "userProfileId": 100000001,
+      "summaryDTO": {
+        "startTimeLocal": "2026-03-17T17:30:00.0",
+        "duration": 3200.0,
+        "averageHR": 115.0,
+        "maxHR": 146.0,
+        "calories": 410.0,
+        "trainingEffect": 2.1
+      }
+    },
+    "sets": [
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 0
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 1
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 2
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 3
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 4
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 47500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 5
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 47500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 6
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 47500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 7
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 47500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 8
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 47500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 9
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 10
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 11
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 12
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 13
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 14
+      }
+    ]
+  },
+  "9000000004": {
+    "meta": {
+      "activityId": 9000000004,
+      "activityName": "Full Body Strength 5x5",
+      "userProfileId": 100000001,
+      "summaryDTO": {
+        "startTimeLocal": "2026-03-20T17:30:00.0",
+        "duration": 3200.0,
+        "averageHR": 115.0,
+        "maxHR": 146.0,
+        "calories": 410.0,
+        "trainingEffect": 2.1
+      }
+    },
+    "sets": [
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 0
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 1
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 2
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 3
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 4
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 50000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 5
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 50000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 6
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 50000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 7
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 50000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 8
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 50000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 9
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 10
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 11
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 12
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 13
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 14
+      }
+    ]
+  },
+  "9000000006": {
+    "meta": {
+      "activityId": 9000000006,
+      "activityName": "Full Body Strength 5x5",
+      "userProfileId": 100000001,
+      "summaryDTO": {
+        "startTimeLocal": "2026-03-23T17:30:00.0",
+        "duration": 3200.0,
+        "averageHR": 115.0,
+        "maxHR": 146.0,
+        "calories": 410.0,
+        "trainingEffect": 2.1
+      }
+    },
+    "sets": [
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 0
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 1
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 2
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 3
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 4
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 52500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 5
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 52500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 6
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 52500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 7
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 52500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 8
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 52500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 9
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 10
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 11
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 12
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 13
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 60000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 14
+      }
+    ]
+  },
+  "9000000008": {
+    "meta": {
+      "activityId": 9000000008,
+      "activityName": "Full Body Strength 5x5",
+      "userProfileId": 100000001,
+      "summaryDTO": {
+        "startTimeLocal": "2026-03-26T17:30:00.0",
+        "duration": 3200.0,
+        "averageHR": 115.0,
+        "maxHR": 146.0,
+        "calories": 410.0,
+        "trainingEffect": 2.1
+      }
+    },
+    "sets": [
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 67500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 0
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 67500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 1
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 67500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 2
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 67500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 3
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 67500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 4
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 5
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 6
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 7
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 8
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 55000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 9
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 10
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 11
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 12
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 13
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 62500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 14
+      }
+    ]
+  },
+  "9000000010": {
+    "meta": {
+      "activityId": 9000000010,
+      "activityName": "Full Body Strength 5x5",
+      "userProfileId": 100000001,
+      "summaryDTO": {
+        "startTimeLocal": "2026-03-29T17:30:00.0",
+        "duration": 3200.0,
+        "averageHR": 115.0,
+        "maxHR": 146.0,
+        "calories": 410.0,
+        "trainingEffect": 2.1
+      }
+    },
+    "sets": [
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 70000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 0
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 70000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 1
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 70000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 2
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 70000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 3
+      },
+      {
+        "exercises": [
+          {
+            "category": "SQUAT",
+            "name": "BARBELL_BACK_SQUAT",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 70000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 4
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 5
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 6
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 7
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 8
+      },
+      {
+        "exercises": [
+          {
+            "category": "BENCH_PRESS",
+            "name": "BARBELL_BENCH_PRESS",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 57500.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 9
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 10
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 11
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 12
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 13
+      },
+      {
+        "exercises": [
+          {
+            "category": "ROW",
+            "name": "BENT_OVER_ROW",
+            "probability": 100.0
+          }
+        ],
+        "repetitionCount": 5,
+        "weight": 65000.0,
+        "duration": 35.0,
+        "setType": "ACTIVE",
+        "messageIndex": 14
+      }
+    ]
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "2026-01-01": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-01-08": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-01-15": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-01-22": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-01-29": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-02-05": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-02-12": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-02-19": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-02-26": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-03-05": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-03-12": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-03-19": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-03-26": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  },
+  "2026-04-02": {
+    "userId": 100000001,
+    "mostRecentVO2Max": {
+      "userId": 100000001,
+      "generic": {
+        "calendarDate": "2026-04-03",
+        "vo2MaxPreciseValue": 46.0,
+        "vo2MaxValue": 46
+      },
+      "cycling": null
+    },
+    "mostRecentTrainingLoadBalance": {
+      "metricsTrainingLoadBalanceDTOMap": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "monthlyLoadAerobicLow": 320.0,
+          "monthlyLoadAerobicHigh": 210.0,
+          "monthlyLoadAnaerobic": 95.0,
+          "trainingBalanceFeedbackPhrase": "AEROBIC_LOW_SHORTAGE"
+        }
+      }
+    },
+    "mostRecentTrainingStatus": {
+      "latestTrainingStatusData": {
+        "100000001": {
+          "calendarDate": "2026-04-03",
+          "trainingStatus": 4,
+          "trainingStatusFeedbackPhrase": "PRODUCTIVE_6",
+          "acuteTrainingLoadDTO": {
+            "dailyTrainingLoadAcute": 280,
+            "dailyTrainingLoadChronic": 270,
+            "acwrPercent": 104,
+            "dailyAcuteChronicWorkloadRatio": 1.04
+          }
+        }
+      }
+    },
+    "heatAltitudeAcclimationDTO": {}
+  }
+}
