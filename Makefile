@@ -1,4 +1,4 @@
-.PHONY: run test fetch report clean
+.PHONY: run test fetch clean
 
 PORT ?= 8085
 
@@ -9,10 +9,7 @@ test:
 	python3 -B tests/run_tests.py
 
 fetch:
-	./scripts/generate_report.sh --fetch
-
-report:
-	./scripts/generate_report.sh
+	node ./scripts/fetch_garmin_data.mjs
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true

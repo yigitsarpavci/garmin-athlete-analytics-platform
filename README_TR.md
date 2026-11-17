@@ -1,6 +1,6 @@
 # Garmin Connect Çoklu-Branş Sporcu Performans ve Analitik Platformu
 
-Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve Firstbeat algoritmaları) toplanan 93 günlük ham telemetriyi ($N=93$ gün, 49 spor aktivitesi, 88 uyku ve HRV gecesi, 124 salon seti) işleyen; spor bilimlerine dayalı dinamik dönemleme, yapay zeka koçluğu, 8 sayfalık yönetici PDF raporu ve **tam teşekküllü modern bir sporcu gösterge paneli (Web Dashboard)** sunan uçtan uca entegre bir sistemdir.
+Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve Firstbeat algoritmaları) toplanan ham telemetriyi ($N=93$ gün, çoklu branş aktiviteleri, uyku ve HRV geceleri, vücut ağırlığı ve salon setleri) işleyen; spor bilimlerine dayalı dinamik dönemleme, yapay zeka koçluğu ve **tam teşekküllü karanlık mod sporcu gösterge paneli (Web Dashboard)** sunan uçtan uca entegre bir sistemdir.
 
 ---
 
@@ -44,13 +44,10 @@ make test           # veya python3 tests/run_tests.py
 ```
 *Tüm matematiksel formüller, veri bütünlüğü, sporcu ilkeleri ve REST API uç noktaları otomatik doğrulanır.*
 
-### 3. Yönetici PDF Raporunu Derleme
+### 3. Canlı Garmin Connect Telemetrisini Güncelleme
 ```bash
-# 9 sayfalık güncel PDF raporunu reports/ altına derler:
-make report         # veya ./scripts/generate_report.sh
-
-# Garmin Connect'ten en son telemetriyi çekerek baştan derlemek için:
-make fetch          # veya ./scripts/generate_report.sh --fetch
+# Garmin Connect üzerinden son aktiviteler, uyku, tartı/kilo ve salon setlerini çeker:
+make fetch          # veya node ./scripts/fetch_garmin_data.mjs
 ```
 
 ---
@@ -64,25 +61,21 @@ garmin-athlete-analytics-platform/
 │   ├── garmin_engine.py              # Performans, ACWR ve Progresyon Motoru
 │   ├── athlete_principles.py         # Sporcu İlkeleri (Single Source of Truth)
 │   ├── ai_coach.py                   # Gerçek AI Entegrasyonlu Koçluk Modülü
-│   ├── engine/                       # Modüler analitik hesaplama katmanları
-│   └── static/                       # Chart.js & Tailwind CSS Web Paneli
+│   ├── engine/                       # Modüler telemetri, kota, morfoloji katmanları
+│   └── static/                       # Karanlık mod modüler Web Paneli
 ├── sample_data/                      # GitHub klonları için sentetik demo verileri
 ├── data/                             # Yerel canlı Garmin verileri (gitignored)
-│   ├── archive/                      # Tekil aktivite arşiv JSON kayıtları
-│   └── exports/                      # Çıktı alınan CSV tabloları
-├── reports/                          # Yerel PDF ve LaTeX raporları (gitignored)
-├── scripts/                          # Veri Çekme, Başlatma & Raporlama Araçları
+│   └── archive/                      # Tekil aktivite arşiv JSON kayıtları
+├── scripts/                          # Veri Çekme ve Başlatma Araçları
 │   ├── run_app.sh                    # Web paneli başlatıcı
-│   ├── generate_report.sh            # PDF derleme ve canlı veri çekme betiği
-│   ├── fetch_garmin_data.mjs         # Garmin Connect MCP veri çekme modülü
-│   └── build_latex_report.py         # LaTeX rapor ve CSV derleyici
-├── tests/                            # Otomatik Test Süiti (29 Test)
+│   └── fetch_garmin_data.mjs         # Garmin Connect MCP veri çekme modülü
+├── tests/                            # Otomatik Test Süiti
 │   ├── run_tests.py
 │   ├── test_engine_calculations.py
 │   ├── test_athlete_principles.py
 │   ├── test_api_endpoints.py
 │   └── test_data_integrity.py
-├── Makefile                          # Kısayol komutları (run, test, fetch, report)
+├── Makefile                          # Kısayol komutları (run, test, fetch)
 ├── README.md                         # İngilizce dokümantasyon
 └── README_TR.md                      # Türkçe dokümantasyon
 ```

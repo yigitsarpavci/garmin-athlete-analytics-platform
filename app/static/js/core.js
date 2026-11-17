@@ -24,38 +24,24 @@ function lucideSvg(name, cls = 'w-4 h-4') {
   return `<i data-lucide="${name}" class="${cls}" aria-hidden="true"></i>`;
 }
 
-// TEMA YÖNETİMİ (ZINC LIGHT / DARK ENGINE)
+// TEMA YÖNETİMİ (KİLİT FULL DARK MODE)
 
 function initTheme() {
-  const saved = localStorage.getItem('garmin_app_theme');
-  const isDark = saved !== null ? (saved === 'dark') : false;
-  applyTheme(isDark);
+  applyTheme(true);
 }
 
-function applyTheme(isDark) {
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-  const icon = document.getElementById('themeToggleIcon');
-  const text = document.getElementById('themeToggleText');
-  if (icon) {
-    icon.innerHTML = isDark
-      ? lucideSvg('sun', 'w-3.5 h-3.5 text-zinc-300')
-      : lucideSvg('moon', 'w-3.5 h-3.5 text-zinc-600');
-  }
-  if (text) text.textContent = isDark ? 'Aydınlık' : 'Koyu';
-  localStorage.setItem('garmin_app_theme', isDark ? 'dark' : 'light');
+function applyTheme() {
+  document.documentElement.classList.add('dark');
+  document.documentElement.classList.remove('light');
+  localStorage.setItem('garmin_app_theme', 'dark');
   refreshIcons();
   if (typeof updateChartThemes === 'function') {
-    updateChartThemes(isDark);
+    updateChartThemes(true);
   }
 }
 
 function toggleTheme() {
-  const isDarkNow = document.documentElement.classList.contains('dark');
-  applyTheme(!isDarkNow);
+  applyTheme(true);
 }
 
 initTheme();
@@ -185,7 +171,7 @@ async function initApp() {
 async function syncGarminData() {
   const btn = document.getElementById('syncBtn');
   if (btn) {
-    btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 animate-spin text-indigo-500')}<span class="hidden xl:inline">Eşitleniyor...</span>`;
+    btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 animate-spin accent-text')}<span class="hidden xl:inline">Eşitleniyor...</span>`;
     refreshIcons();
   }
   try {
@@ -201,7 +187,7 @@ async function syncGarminData() {
     alert("Senkronizasyon hatası: " + e);
   } finally {
     if (btn) {
-      btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400')}<span class="hidden xl:inline">Eşitle</span>`;
+      btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden xl:inline">Eşitle</span>`;
       refreshIcons();
     }
   }
@@ -221,8 +207,8 @@ function renderPresetBadges() {
   const c = document.getElementById('presetBadgesContainer');
   if (!c || !profilePresets.length) return;
   c.innerHTML = profilePresets.map(p => `
-        <button type="button" onclick="applyPresetToForm('${p.id}')" class="px-3 py-1.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 hover:border-indigo-500 dark:hover:border-indigo-500 text-zinc-900 dark:text-zinc-100 font-medium text-[11px] flex items-center gap-1.5 transition-all duration-200 active:scale-[0.98]">
-          ${lucideSvg(p.is_current_athlete ? 'activity' : 'zap', 'w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400')}
+        <button type="button" onclick="applyPresetToForm('${p.id}')" class="btn-secondary text-[11px] px-2.5 py-1.5">
+          ${lucideSvg(p.is_current_athlete ? 'activity' : 'zap', 'w-3.5 h-3.5 accent-text')}
           <span>${p.name}</span>
         </button>
       `).join('');
@@ -231,17 +217,23 @@ function renderPresetBadges() {
 
 function openPreferencesModal() {
   const modal = document.getElementById('preferencesModal');
-  if (modal) {
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+  if (modal && !modal.open) {
+    if (typeof modal.showModal === 'function') {
+      modal.showModal();
+    } else {
+      modal.setAttribute('open', '');
+    }
   }
 }
 
 function closePreferencesModal() {
   const modal = document.getElementById('preferencesModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    document.body.style.overflow = '';
+  if (modal && modal.open) {
+    if (typeof modal.close === 'function') {
+      modal.close();
+    } else {
+      modal.removeAttribute('open');
+    }
   }
 }
 
@@ -309,21 +301,34 @@ async function submitCustomPlanForm(e) {
   }
 }
 
+function getSportLucideIcon(sportStr) {
+  const sp = (sportStr || '').toLowerCase();
+  if (sp.includes('run') || sp.includes('koş')) return 'footprints';
+  if (sp.includes('sail') || sp.includes('yelken')) return 'compass';
+  if (sp.includes('basket')) return 'trophy';
+  if (sp.includes('ski') || sp.includes('snow') || sp.includes('kayak')) return 'snowflake';
+  if (sp.includes('hike') || sp.includes('doğa') || sp.includes('mount')) return 'mountain';
+  if (sp.includes('swim') || sp.includes('row') || sp.includes('yüz') || sp.includes('kürek')) return 'waves';
+  if (sp.includes('cycl') || sp.includes('bik') || sp.includes('bisik')) return 'bike';
+  if (sp.includes('walk') || sp.includes('yürü')) return 'footprints';
+  if (sp.includes('strength') || sp.includes('kuvvet') || sp.includes('gym')) return 'dumbbell';
+  return 'activity';
+}
+
 function renderLatestActivitySummary(activities) {
   const row = document.getElementById('latestActivitySummaryRow');
   if (!row || !Array.isArray(activities) || !activities.length) return;
   const a = activities[0];
-  const sp = (a.sport || '').toLowerCase();
-  const iconName = sp.includes('run') ? 'footprints' : (sp.includes('sail') ? 'compass' : (sp.includes('basket') ? 'trophy' : 'dumbbell'));
+  const iconName = getSportLucideIcon(a.sport || a.sport_tr || a.name);
   const dur = a.dur_m ? `${Math.round(a.dur_m)} dk` : '--';
   const hr = a.avg_hr ? `${a.avg_hr} bpm` : '--';
   row.innerHTML = `
-    <span class="font-medium text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-2">
-      ${lucideSvg(iconName, 'w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0')}
-      <span class="truncate">${a.name || a.sport || 'Antrenman'}</span>
-      <span class="font-mono text-[10px] text-zinc-400 font-normal">(${a.date})</span>
+    <span class="font-medium truncate flex items-center gap-2">
+      ${lucideSvg(iconName, 'w-3.5 h-3.5 accent-text shrink-0')}
+      <span class="truncate">${a.name || a.sport_tr || a.sport || 'Antrenman'}</span>
+      <span class="font-mono text-[10px] text-[var(--text-muted)] font-normal">(${a.date})</span>
     </span>
-    <span class="font-mono text-[11px] text-zinc-600 dark:text-zinc-300 font-medium tabular-nums shrink-0 ml-2">${dur} · ${hr}</span>
+    <span class="font-mono text-[11px] text-[var(--text-secondary)] font-medium tabular-nums shrink-0 ml-2">${dur} · ${hr}</span>
   `;
   refreshIcons();
 }
@@ -354,7 +359,10 @@ function renderWeeklyStreak(activities) {
     const d = (a.date || a.startTimeLocal || '').slice(0, 10);
     if (d in dayMap && !dayMap[d]) {
       const sp = (a.sport || '').toLowerCase();
-      dayMap[d] = sp.includes('run') || sp.includes('koş') ? 'run' : (sp.includes('sail') || sp.includes('yelken') ? 'sail' : 'gym');
+      dayMap[d] = {
+        isRun: sp.includes('run') || sp.includes('koş'),
+        icon: getSportLucideIcon(a.sport || a.sport_tr || a.name)
+      };
     }
   });
 
@@ -363,16 +371,15 @@ function renderWeeklyStreak(activities) {
 
   const keys = Object.keys(dayMap).sort();
   strip.innerHTML = keys.map((iso, idx) => {
-    const kind = dayMap[iso];
+    const info = dayMap[iso];
     const lbl = dayNames[order[idx]];
-    if (kind) {
-      const ic = kind === 'run' ? 'footprints' : (kind === 'sail' ? 'compass' : 'dumbbell');
-      const cls = kind === 'run'
-        ? 'bg-indigo-600 text-white border border-indigo-500'
-        : 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border border-zinc-800 dark:border-zinc-200';
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-zinc-500 font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-lg ${cls} flex items-center justify-center">${lucideSvg(ic, 'w-3.5 h-3.5')}</span></div>`;
+    if (info) {
+      const cls = info.isRun
+        ? 'accent-bg border border-[var(--accent)]'
+        : 'bg-[var(--text-primary)] text-[var(--bg-surface)] border border-[var(--text-primary)]';
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] ${cls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
     }
-    return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-zinc-400 font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800/70 border border-zinc-200/70 dark:border-zinc-800 text-zinc-400 font-mono text-xs flex items-center justify-center">·</span></div>`;
+    return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-muted)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
   }).join('');
   refreshIcons();
 }
@@ -380,6 +387,8 @@ function renderWeeklyStreak(activities) {
 function applyAthleteBranding(overview) {
   const isDemo = Boolean(overview && overview.is_demo);
   const rawW = (overview && (overview.weight !== undefined ? overview.weight : overview.weight_kg)) || (isDemo ? 84.0 : 87.0);
+  const lossKg = (overview && overview.total_loss_kg !== undefined) ? String(overview.total_loss_kg).replace('.', ',') : '8,0';
+  const targetW = (overview && overview.target_weight !== undefined) ? String(overview.target_weight).replace('.', ',') : (isDemo ? '78,0' : '81,0');
   const w = String(rawW).replace('.', ',');
   const headerMeta = document.getElementById('headerAthleteMeta');
   const nameDisp = document.getElementById('profileNameDisplay');
@@ -392,21 +401,21 @@ function applyAthleteBranding(overview) {
   const coachGreet = document.getElementById('coachGreetingText');
 
   if (isDemo) {
-    if (headerMeta) headerMeta.innerHTML = `Demo Athlete · Sentetik Profil · ${w} kg · Örnek Garmin Verisi`;
+    if (headerMeta) headerMeta.textContent = `Demo Athlete · Sentetik Profil · ${w} kg · Örnek Garmin Verisi`;
     if (avatarInit) avatarInit.textContent = 'D';
     if (nameDisp) nameDisp.textContent = 'Demo Athlete (Sentetik Telemetri)';
     if (badgeDisp) badgeDisp.textContent = 'Örnek Demo Verisi';
-    if (descDisp) descDisp.textContent = `Haftalık 2 Koşu + 2 Gym (A/B 5x5) · ${w} kg → 78,0 kg Demo Hedefi`;
+    if (descDisp) descDisp.textContent = `Haftalık 2 Koşu + 2 Kuvvet (Esnek Gün · A/B 5x5) · ${w} kg → ${targetW} kg Hedefi`;
     if (btnRestoreLbl) btnRestoreLbl.textContent = 'Demo Telemetrisine Dön';
     if (btnBannerRestore) btnBannerRestore.textContent = 'Demo Profiline Geri Dön';
     if (prefsSub) prefsSub.textContent = 'Demo planı hazır; başka sporcular için tercihleri buradan';
     if (coachGreet) coachGreet.textContent = 'Merhaba! Ben sentetik Garmin Connect veritabanına bağlı yapay zeka spor koçunum. Bugünkü toparlanma';
   } else {
-    if (headerMeta) headerMeta.innerHTML = `Sarp · 22 Yaş · 186 cm · ${w} kg (<span class="text-emerald-600 dark:text-emerald-400 font-medium">-8,0 kg</span>) · 93 Günlük Garmin Verisi`;
+    if (headerMeta) headerMeta.innerHTML = `Sarp · 22 Yaş · 186 cm · ${w} kg (<span class="moss-text font-medium">-${lossKg} kg</span>) · 93G Telemetri`;
     if (avatarInit) avatarInit.textContent = 'S';
-    if (nameDisp) nameDisp.textContent = 'Sarp (Özel Telemetri)';
-    if (badgeDisp) badgeDisp.textContent = 'Orijinal Garmin Verisi';
-    if (descDisp) descDisp.textContent = `Haftalık 2 Koşu + 2 Gym (A/B 5x5) · ${w} kg → 81,0 kg İdeal Hedef`;
+    if (nameDisp) nameDisp.textContent = 'Sarp (Kişisel Telemetri)';
+    if (badgeDisp) badgeDisp.textContent = 'Garmin Connect Verisi';
+    if (descDisp) descDisp.textContent = `Haftalık 2 Koşu + 2 Kuvvet (Esnek Gün · A/B 5x5) · ${w} kg → ${targetW} kg İdeal Hedef`;
     if (btnRestoreLbl) btnRestoreLbl.textContent = "Orijinal Telemetriye Dön";
     if (btnBannerRestore) btnBannerRestore.textContent = "Sarp'ın Profili'ne Geri Dön";
     if (prefsSub) prefsSub.textContent = "Varsayılan plan hazır; başkaları için tercihleri buradan";
@@ -425,35 +434,47 @@ function applyCustomProfileToUI(plan) {
   const avatarInit = document.getElementById('profileAvatarInitial');
   const btnRestore = document.getElementById('btnRestoreSarp');
   const customBanner = document.getElementById('customProfileBanner');
+  const kpiTarget = document.getElementById('kpi-weight-target');
+  const svgTarget = document.getElementById('svgPaceTargetWeight');
+  const svgCur = document.getElementById('svgPaceCurWeight');
 
   if (isSarp) {
-    nameDisp.textContent = isDemo ? "Demo Athlete (Sentetik Telemetri)" : "Sarp (Özel Telemetri)";
-    badgeDisp.textContent = isDemo ? "Örnek Demo Verisi" : "Orijinal Garmin Verisi";
-    badgeDisp.className = "font-mono text-[10px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20";
-    descDisp.textContent = isDemo
-      ? "Haftalık 2 Koşu + 2 Gym (A/B 5x5) · 84,0 kg → 78,0 kg Demo Hedefi"
-      : "Haftalık 2 Koşu + 2 Gym (A/B 5x5) · 87,0 kg → 81,0 kg İdeal Hedef";
-    avatarInit.textContent = isDemo ? "D" : "S";
-    avatarInit.className = "w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-semibold text-sm shrink-0";
+    if (globalOverview) applyAthleteBranding(globalOverview);
+    if (badgeDisp) badgeDisp.className = "stamp-tag stamp-moss";
+    if (avatarInit) avatarInit.className = "w-9 h-9 rounded-[3px] accent-bg flex items-center justify-center font-mono font-semibold text-sm shrink-0";
     if (btnRestore) btnRestore.classList.add('hidden');
     if (customBanner) customBanner.classList.add('hidden');
+    if (globalOverview && typeof renderOverview === 'function') renderOverview(globalOverview);
   } else {
     const m = plan.metrics || {};
-    nameDisp.textContent = plan.athlete_name + " (Özel Tercihler)";
-    badgeDisp.textContent = `${m.weekly_running_days || 0} Koşu + ${m.weekly_gym_days || 0} Gym`;
-    badgeDisp.className = "font-mono text-[10px] font-medium px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20";
-    descDisp.textContent = `${m.current_weight_kg || 80} kg → ${m.target_weight_kg || 75} kg (${m.days_to_goal || 0} Gün, ${m.target_calories_kcal || 2400} kcal/gün)`;
-    avatarInit.textContent = (plan.athlete_name || "M").charAt(0).toUpperCase();
-    avatarInit.className = "w-9 h-9 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 flex items-center justify-center font-semibold text-sm shrink-0";
+    if (nameDisp) nameDisp.textContent = plan.athlete_name + " (Özel Tercihler)";
+    if (badgeDisp) {
+      badgeDisp.textContent = `${m.weekly_running_days || 0} Koşu + ${m.weekly_gym_days || 0} Gym`;
+      badgeDisp.className = "stamp-tag stamp-accent";
+    }
+    if (descDisp) descDisp.textContent = `${m.current_weight_kg || 80} kg → ${m.target_weight_kg || 75} kg (${m.days_to_goal || 0} Gün, ${m.target_calories_kcal || 2400} kcal/gün)`;
+    if (avatarInit) {
+      avatarInit.textContent = (plan.athlete_name || "M").charAt(0).toUpperCase();
+      avatarInit.className = "w-9 h-9 rounded-[3px] bg-[var(--text-primary)] text-[var(--bg-surface)] flex items-center justify-center font-mono font-semibold text-sm shrink-0";
+    }
     if (btnRestore) btnRestore.classList.remove('hidden');
     if (customBanner) {
       customBanner.classList.remove('hidden');
-      document.getElementById('customBannerTitle').textContent = `${plan.athlete_name.toUpperCase()} İÇİN ÖZEL PLAN AKTİF`;
-      document.getElementById('customBannerText').textContent = `Haftalık mikro-döngü, ${m.weekly_running_days} gün koşu ve ${m.weekly_gym_days} gün salon tercihine göre güncellenmiştir. Günlük hedef: ${m.target_calories_kcal} kcal (${m.protein_g}g Protein).`;
+      const bannerTitle = document.getElementById('customBannerTitle');
+      const bannerText = document.getElementById('customBannerText');
+      if (bannerTitle) bannerTitle.textContent = `${(plan.athlete_name || '').toUpperCase()} İÇİN ÖZEL PLAN AKTİF`;
+      if (bannerText) bannerText.textContent = `Haftalık esnek kota, ${m.weekly_running_days} koşu ve ${m.weekly_gym_days} kuvvet seansı tercihine göre güncellenmiştir. Günlük hedef: ${m.target_calories_kcal} kcal (${m.protein_g}g Protein).`;
     }
+    if (kpiTarget && m.target_weight_kg) kpiTarget.textContent = `Hedef: ${m.target_weight_kg} kg`;
+    if (svgTarget && m.target_weight_kg) svgTarget.textContent = `${m.target_weight_kg} kg Hedef`;
+    if (svgCur && m.current_weight_kg) svgCur.textContent = `${m.current_weight_kg} kg Mevcut`;
   }
 
   renderWeeklyScheduleTable(plan.schedule);
+  const quotaPayload = plan.quota_summary || plan.weekly_quota || (globalOverview && globalOverview.weekly_quota);
+  if (quotaPayload && typeof renderWeeklyQuotaPanels === 'function') {
+    renderWeeklyQuotaPanels(quotaPayload);
+  }
 }
 
 async function restoreSarpProfile() {
@@ -468,6 +489,9 @@ async function restoreSarpProfile() {
   } catch (e) {
     if (globalOverview && globalOverview.schedule) {
       renderWeeklyScheduleTable(globalOverview.schedule);
+    }
+    if (globalOverview && globalOverview.weekly_quota && typeof renderWeeklyQuotaPanels === 'function') {
+      renderWeeklyQuotaPanels(globalOverview.weekly_quota);
     }
   }
 }

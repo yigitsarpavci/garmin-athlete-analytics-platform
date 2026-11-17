@@ -166,6 +166,172 @@ class TestEngineCalculations(unittest.TestCase):
         self.assertEqual(len(planned_workouts), 2)
         self.assertEqual(len(completed_rows) + len(planned_workouts), 4)
 
+    def test_weekly_quota_summary_states(self):
+        """get_weekly_quota_summary() metodunun 1+1, 0+0 (+spontane) ve 2+2 senaryolarını doğrular."""
+        from unittest.mock import patch
+
+        ref_now = datetime(2026, 11, 17, 15, 0, 0)  # 16 Kas – 22 Kas haftası
+        run_1 = {
+            "startTimeLocal": "2026-11-16 10:24:35",
+            "activityType": {"typeKey": "running"},
+            "activityName": "Besiktas Running",
+            "duration": 1807.0,
+            "distance": 5191.2,
+            "calories": 401,
+            "averageHR": 161,
+        }
+        gym_1 = {
+            "startTimeLocal": "2026-11-17 10:35:00",
+            "activityType": {"typeKey": "strength_training"},
+            "activityName": "Strength",
+            "duration": 3194.6,
+            "calories": 340,
+            "averageHR": 112,
+        }
+        sailing_1 = {
+            "startTimeLocal": "2026-11-18 14:00:00",
+            "activityType": {"typeKey": "sailing_v2"},
+            "activityName": "Bosphorus Sailing",
+            "duration": 7200.0,
+            "calories": 650,
+            "averageHR": 124,
+        }
+
+        # 1) 1 Koşu + 1 Kuvvet tamamlandı
+        with patch.object(self.engine, "activities_all", [run_1, gym_1]):
+            q_half = self.engine.get_weekly_quota_summary(now=ref_now)
+        self.assertEqual(q_half["week_range"], "16 Kas – 22 Kas")
+        self.assertEqual(q_half["total"]["target"], 4)
+        self.assertEqual(q_half["total"]["completed"], 2)
+        self.assertEqual(q_half["total"]["remaining"], 2)
+        self.assertFalse(q_half["total"]["is_complete"])
+        self.assertEqual(q_half["running"]["completed"], 1)
+        self.assertEqual(q_half["running"]["remaining"], 1)
+        self.assertEqual(q_half["running"]["remaining_items"][0]["slot_kind"], "zone2")
+        self.assertEqual(q_half["strength"]["completed"], 1)
+        self.assertEqual(q_half["strength"]["remaining"], 1)
+        self.assertEqual(q_half["strength"]["remaining_items"][0]["slot_kind"], "gym_b")
+        self.assertEqual(q_half["spontaneous"]["count"], 0)
+        self.assertIn("1 Koşu + 1 Kuvvet", q_half["headline"])
+        self.assertIn("Zone 2", q_half["headline"])
+        self.assertIn("Workout B", q_half["headline"])
+
+        # 2) 0 Koşu + 0 Kuvvet (+ 1 spontane Yelken kotadan yemez)
+        with patch.object(self.engine, "activities_all", [sailing_1]):
+            q_zero = self.engine.get_weekly_quota_summary(now=ref_now)
+        self.assertEqual(q_zero["total"]["completed"], 0)
+        self.assertEqual(q_zero["total"]["remaining"], 4)
+        self.assertEqual(q_zero["total"]["progress_pct"], 0)
+        self.assertEqual(len(q_zero["running"]["remaining_items"]), 2)
+        self.assertEqual(len(q_zero["strength"]["remaining_items"]), 2)
+        self.assertEqual(q_zero["spontaneous"]["count"], 1)
+        self.assertEqual(q_zero["spontaneous"]["items"][0]["sport_tr"], "Yelken")
+
+        # 3) 2 Koşu + 2 Kuvvet tamamlandı
+        run_2 = {**run_1, "startTimeLocal": "2026-11-19 09:00:00", "averageHR": 144}
+        gym_2 = {**gym_1, "startTimeLocal": "2026-11-21 11:00:00"}
+        with patch.object(self.engine, "activities_all", [run_1, gym_1, run_2, gym_2]):
+            q_full = self.engine.get_weekly_quota_summary(now=ref_now)
+        self.assertEqual(q_full["total"]["completed"], 4)
+        self.assertEqual(q_full["total"]["remaining"], 0)
+        self.assertEqual(q_full["total"]["progress_pct"], 100)
+        self.assertTrue(q_full["total"]["is_complete"])
+        self.assertEqual(q_full["running"]["remaining_items"], [])
+        self.assertEqual(q_full["strength"]["remaining_items"], [])
+        self.assertEqual(q_full["remaining_items"], [])
+        self.assertIn("tamamlandı", q_full["headline"].lower())
+
+        # Esnek model doğrulaması: debrief ve reçetelerde sabit Perşembe/Cumartesi zorunluluğu yok
+        debrief = self.engine.get_post_workout_debrief(0)
+        self.assertIn("weekly_quota", debrief)
+        self.assertNotIn("19 Kasım Perşembe", debrief["executive_coaching_verdict"]["next_session"]["day"])
+
+    def test_monday_reset_with_last_week_deficit_adaptation(self):
+        """Pazartesi 0/2 sıfırlamasını korurken geçen hafta eksik kalan türlerin yeni haftada öne alınmasını doğrular."""
+        from unittest.mock import patch
+
+        ref_mon = datetime(2026, 11, 23, 10, 0, 0)  # Yeni Pazartesi (geçen hafta: 16–22 Kas)
+        # Geçen hafta yalnızca 1 rahat koşu (144 bpm -> Zone 2) ve 1 Workout A yapılmış;
+        # yani Hız İntervali (1) ve Workout B (25005174809 yok, A yapılmış) eksik kalmış!
+        prev_week_acts = [
+            {
+                "startTimeLocal": "2026-11-18 09:00:00",
+                "activityType": {"typeKey": "running"},
+                "activityName": "Zone 2 Base",
+                "duration": 2700.0,
+                "distance": 6800.0,
+                "calories": 420,
+                "averageHR": 144,
+            },
+            {
+                "startTimeLocal": "2026-11-19 18:00:00",
+                "activityType": {"typeKey": "strength_training"},
+                "activityName": "Workout A Only",
+                "duration": 3100.0,
+                "calories": 330,
+                "averageHR": 114,
+            },
+        ]
+        sample_gym_hist = {
+            "sessions": [{"date": "2026-11-19", "workout_type": "Workout A", "exercises": [], "total_volume_kg": 7000}],
+            "progression": {},
+        }
+        with patch.object(self.engine, "activities_all", prev_week_acts), \
+             patch.object(self.engine, "get_gym_exercise_history", return_value=sample_gym_hist):
+            q = self.engine.get_weekly_quota_summary(now=ref_mon)
+
+        # Pazartesi borç eklemez: kota daima 0/2 koşu + 0/2 kuvvet açılır (toplam 4)
+        self.assertEqual(q["total"]["target"], 4)
+        self.assertEqual(q["running"]["target"], 2)
+        self.assertEqual(q["running"]["completed"], 0)
+        self.assertEqual(q["running"]["remaining"], 2)
+        self.assertEqual(q["strength"]["target"], 2)
+        self.assertEqual(q["strength"]["completed"], 0)
+        self.assertEqual(q["strength"]["remaining"], 2)
+        # Geçen haftadan eksik kalan İnterval ve Workout B ilk sıraya önceliklendirilmeli
+        self.assertEqual(q["running"]["remaining_items"][0]["slot_kind"], "interval")
+        self.assertEqual(q["strength"]["remaining_items"][0]["slot_kind"], "gym_b")
+        self.assertIn("5K Hız İntervali", q["last_week_adaptation"]["missed_sessions"])
+        self.assertIn("Workout B", q["last_week_adaptation"]["missed_sessions"])
+
+    def test_unknown_sport_dynamic_weight_and_anaerobic_focus(self):
+        """Preset dışı sporları (Kayak), dinamik kilo/tarih değişimini ve Anaerobik Load Focus önceliğini doğrular."""
+        from unittest.mock import patch
+
+        tl = self.engine.get_training_load_analytics()
+        self.assertEqual(tl["load_focus"]["primary_deficit"], "anaerobic")
+        self.assertIn("Anaerobik", tl["load_focus"]["recommended_focus_label"])
+
+        # Yeni tarih geçtiğinde Zone 2 otomatik bir sonraki kademeye (4:45 /km) geçmeli
+        z2_future = self.engine.get_z2_pace_5min_tracker(now=datetime(2027, 4, 20, 12, 0, 0))
+        self.assertTrue(z2_future["goal_auto_advanced"])
+        self.assertEqual(z2_future["target_pace"], "4:45 /km")
+
+        # Kayak gibi preset dışı spor hem kotada spontane hem spor kartlarında desteklenmeli
+        ski_acts = [
+            {
+                "startTimeLocal": "2026-11-18 11:00:00",
+                "activityType": {"typeKey": "resort_skiing"},
+                "activityName": "Uludağ Kayak",
+                "duration": 7200.0,
+                "distance": 18500.0,
+                "calories": 780,
+                "averageHR": 136,
+                "activityTrainingLoad": 95.0,
+            }
+        ]
+        with patch.object(self.engine, "activities_all", ski_acts):
+            q_ski = self.engine.get_weekly_quota_summary(now=datetime(2026, 11, 18, 15, 0, 0))
+        self.assertEqual(q_ski["spontaneous"]["count"], 1)
+        self.assertEqual(q_ski["spontaneous"]["items"][0]["sport_tr"], "Kayak")
+
+        # Güncel kilo düştüğünde morfoloji aşamalarının dinamik güncellenmesi
+        with patch.object(self.engine, "get_current_weight", return_value=83.0):
+            morph = self.engine.get_physique_morphology_tracker(now=datetime(2026, 12, 1, 10, 0, 0))
+        self.assertEqual(morph["current"]["weight_kg"], 83.0)
+        self.assertEqual(morph["stages"][1]["target_kg"], 81.0)
+        self.assertGreater(morph["stages"][1]["days_remaining"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

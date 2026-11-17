@@ -157,6 +157,56 @@ async function main() {
     }
     fs.writeFileSync(path.join(DATA_DIR, "raw_training_status_weekly.json"), JSON.stringify(weeklyStatus, null, 2));
 
+    console.log(`[5/6] Tartı ve vücut kompozisyonu verileri çekiliyor...`);
+    try {
+      const weightData = await client.get("weight-service/weight/dateRange", {
+        startDate: formatDate(startDate),
+        endDate: todayStr,
+      });
+      if (weightData) {
+        fs.writeFileSync(
+          path.join(DATA_DIR, "raw_weight.json"),
+          JSON.stringify(weightData, null, 2)
+        );
+      }
+    } catch (e) {
+      console.warn("Tartı/kilo verisi çekilemedi:", e.message);
+    }
+
+    console.log(`[6/6] Kuvvet antrenmanı egzersiz setleri çekiliyor...`);
+    try {
+      const gymSetsPath = path.join(DATA_DIR, "raw_gym_exercise_sets.json");
+      let existingGymSets = {};
+      if (fs.existsSync(gymSetsPath)) {
+        try {
+          existingGymSets = JSON.parse(fs.readFileSync(gymSetsPath, "utf-8")) || {};
+        } catch (e) {
+          existingGymSets = {};
+        }
+      }
+      const strengthActs = Array.isArray(acts)
+        ? acts.filter((a) => {
+            const tKey = (a?.activityType?.typeKey || "").toLowerCase();
+            return tKey.includes("strength") || tKey.includes("fitness_equipment");
+          })
+        : [];
+      for (const act of strengthActs) {
+        const aid = String(act?.activityId || "");
+        if (!aid || existingGymSets[aid]?.sets?.length) continue;
+        try {
+          const exSets = await client.get(`activity-service/activity/${aid}/exerciseSets`);
+          if (exSets) {
+            existingGymSets[aid] = exSets;
+          }
+        } catch (e) {
+          console.warn(`Salon seti çekilemedi (${aid}):`, e.message);
+        }
+      }
+      fs.writeFileSync(gymSetsPath, JSON.stringify(existingGymSets, null, 2));
+    } catch (e) {
+      console.warn("Salon egzersiz setleri çekilemedi:", e.message);
+    }
+
     console.log("Tüm Garmin verileri başarıyla güncellendi.");
   } finally {
     await client.close();

@@ -1,17 +1,36 @@
-/* Garmin Athlete IQ — Precision Modals, Debrief & AI Coach Flyout */
-function closeActivityModal() {
-  const modal = document.getElementById('activityDetailModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    document.body.style.overflow = '';
+/* Garmin Athlete IQ — Native Top-Layer <dialog> Modals, Debrief & Coach Flyout */
+let chatHistory = [];
+
+function openDialogNative(dialogEl) {
+  if (!dialogEl) return;
+  if (!dialogEl.open) {
+    if (typeof dialogEl.showModal === 'function') {
+      dialogEl.showModal();
+    } else {
+      dialogEl.setAttribute('open', '');
+    }
   }
+}
+
+function closeDialogNative(dialogEl) {
+  if (!dialogEl) return;
+  if (dialogEl.open) {
+    if (typeof dialogEl.close === 'function') {
+      dialogEl.close();
+    } else {
+      dialogEl.removeAttribute('open');
+    }
+  }
+}
+
+function closeActivityModal() {
+  closeDialogNative(document.getElementById('activityDetailModal'));
 }
 
 function openActivityModal(act) {
   if (!act) return;
   const modal = document.getElementById('activityDetailModal');
   if (!modal) return;
-  document.body.style.overflow = 'hidden';
 
   const spNames = {
     running: 'Koşu',
@@ -20,7 +39,12 @@ function openActivityModal(act) {
     basketball: 'Basketbol',
     hiking: 'Doğa Yürüyüşü',
     rowing_v2: 'Kürek',
-    walking: 'Yürüyüş'
+    walking: 'Yürüyüş',
+    resort_skiing: 'Kayak',
+    skiing: 'Kayak',
+    swimming: 'Yüzme',
+    cycling: 'Bisiklet',
+    tennis: 'Tenis'
   };
   const spIconNames = {
     running: 'footprints',
@@ -29,15 +53,20 @@ function openActivityModal(act) {
     basketball: 'trophy',
     hiking: 'mountain',
     rowing_v2: 'waves',
-    walking: 'footprints'
+    walking: 'footprints',
+    resort_skiing: 'snowflake',
+    skiing: 'snowflake',
+    swimming: 'waves',
+    cycling: 'bike'
   };
 
+  const sportLabel = act.sport_tr || spNames[act.sport] || String(act.sport || 'Aktivite').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const iconEl = document.getElementById('modalSportIcon');
   if (iconEl) {
-    iconEl.innerHTML = lucideSvg(spIconNames[act.sport] || 'activity', 'w-5 h-5 text-indigo-500 dark:text-indigo-400');
+    iconEl.innerHTML = lucideSvg(spIconNames[act.sport] || 'activity', 'w-5 h-5 accent-text');
   }
-  document.getElementById('modalActivityTitle').textContent = act.name || (spNames[act.sport] || 'Aktivite');
-  document.getElementById('modalSportBadge').textContent = spNames[act.sport] || act.sport;
+  document.getElementById('modalActivityTitle').textContent = act.name || sportLabel;
+  document.getElementById('modalSportBadge').textContent = sportLabel;
   document.getElementById('modalActivitySub').textContent = `${act.date || ''} · ${act.time || ''}`;
 
   document.getElementById('modalDuration').textContent = act.dur_m ? `${act.dur_m.toFixed(0)} dk` : '--';
@@ -83,7 +112,7 @@ function openActivityModal(act) {
   }
 
   refreshIcons();
-  modal.classList.remove('hidden');
+  openDialogNative(modal);
 }
 
 // POST-WORKOUT DEBRIEF MODAL
@@ -93,16 +122,13 @@ async function openDebriefModal(idx = 0) {
   currentDebriefIdx = idx;
   const modal = document.getElementById('postWorkoutDebriefModal');
   if (!modal) return;
-  modal.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+  openDialogNative(modal);
 
   const btnGym = document.getElementById('debriefBtnGym');
   const btnRun = document.getElementById('debriefBtnRun');
-  const activeCls = "px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-zinc-900 text-zinc-950 dark:text-zinc-50 border border-zinc-200/80 dark:border-zinc-700 transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5";
-  const idleCls = "px-2.5 py-1 rounded-md font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5";
   if (btnGym && btnRun) {
-    btnGym.className = idx === 0 ? activeCls : idleCls;
-    btnRun.className = idx === 0 ? idleCls : activeCls;
+    btnGym.className = idx === 0 ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
+    btnRun.className = idx === 0 ? 'subtab-btn' : 'subtab-btn subtab-btn-active';
   }
 
   try {
@@ -115,11 +141,7 @@ async function openDebriefModal(idx = 0) {
 }
 
 function closeDebriefModal() {
-  const modal = document.getElementById('postWorkoutDebriefModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    document.body.style.overflow = '';
-  }
+  closeDialogNative(document.getElementById('postWorkoutDebriefModal'));
 }
 
 function renderDebriefModalContent(d, idx) {
@@ -134,11 +156,11 @@ function renderDebriefModalContent(d, idx) {
 
   const iconEl = document.getElementById('debriefIcon');
   if (iconEl) {
-    const ic = a.sport === 'strength_training' ? 'dumbbell' : (a.sport === 'running' ? 'footprints' : 'zap');
-    iconEl.innerHTML = lucideSvg(ic, 'w-5 h-5 text-indigo-600 dark:text-indigo-400');
+    const ic = a.sport === 'strength_training' ? 'dumbbell' : (a.sport === 'running' ? 'footprints' : (String(a.sport || '').includes('ski') ? 'snowflake' : 'zap'));
+    iconEl.innerHTML = lucideSvg(ic, 'w-5 h-5 accent-text');
   }
   document.getElementById('debriefTitle').textContent = `${a.name} Seans Debrief Raporu`;
-  document.getElementById('debriefBadge').textContent = a.sport === 'strength_training' ? (gym.workout_type || 'Kuvvet') : 'Koşu';
+  document.getElementById('debriefBadge').textContent = a.sport === 'strength_training' ? (gym.workout_type || 'Kuvvet') : (a.sport_tr || (a.sport === 'running' ? 'Koşu' : 'Branş'));
   document.getElementById('debriefSub').textContent = `${a.date} · ${a.time || ''} · ${a.duration_min} dk Seans · ${a.calories} kcal`;
 
   document.getElementById('debriefSessionLoad').textContent = tl.session_epoc_load || a.load;
@@ -164,10 +186,10 @@ function renderDebriefModalContent(d, idx) {
   const hrBadge = document.getElementById('debriefHrDiffBadge');
   if (avgDiff <= 0) {
     hrBadge.textContent = `${diffSign} bpm TASARRUF`;
-    hrBadge.className = "font-mono text-[10px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+    hrBadge.className = "stamp-tag stamp-moss";
   } else {
     hrBadge.textContent = `${diffSign} bpm YÜKSEK`;
-    hrBadge.className = "font-mono text-[10px] font-medium px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20";
+    hrBadge.className = "stamp-tag stamp-crimson";
   }
 
   document.getElementById('debriefCurHr').textContent = `${a.avg_hr} / ${a.max_hr} bpm`;
@@ -189,9 +211,9 @@ function renderDebriefModalContent(d, idx) {
       exGrid.innerHTML = gym.exercises.map(ex => {
         const setDetails = (ex.sets || []).map(s => `${s.reps}x${s.weight_kg}kg`).join(', ');
         return `
-          <div class="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200/80 dark:border-zinc-800 space-y-1">
-            <strong class="text-zinc-950 dark:text-zinc-50 text-xs font-semibold block truncate">${ex.name}</strong>
-            <p class="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">${ex.sets ? ex.sets.length : 0} Set: <span class="text-zinc-600 dark:text-zinc-300">${setDetails}</span></p>
+          <div class="surface-card p-3 space-y-1">
+            <strong class="text-xs font-semibold block truncate">${ex.name}</strong>
+            <p class="font-mono text-[11px] accent-text font-medium">${ex.sets ? ex.sets.length : 0} Set: <span class="text-[var(--text-secondary)]">${setDetails}</span></p>
           </div>
         `;
       }).join('');
@@ -274,14 +296,14 @@ function appendTypingIndicatorUI() {
   const id = 'typing-' + Date.now();
   const div = document.createElement('div');
   div.id = id;
-  div.className = "bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 p-3 rounded-xl rounded-tl-sm border border-zinc-200/80 dark:border-zinc-800 mr-6 flex items-center gap-2.5 text-[11px]";
+  div.className = "surface-card p-3 mr-6 flex items-center gap-2.5 text-[11px] text-[var(--text-secondary)]";
   div.innerHTML = `
         <span class="flex gap-1">
-          <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-          <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-          <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+          <span class="w-1.5 h-1.5 accent-bg rounded-sm animate-bounce" style="animation-delay: 0ms"></span>
+          <span class="w-1.5 h-1.5 accent-bg rounded-sm animate-bounce" style="animation-delay: 150ms"></span>
+          <span class="w-1.5 h-1.5 accent-bg rounded-sm animate-bounce" style="animation-delay: 300ms"></span>
         </span>
-        <span class="font-medium text-zinc-600 dark:text-zinc-300">Garmin telemetrisi ve spor bilimi taranıyor...</span>
+        <span class="font-medium text-[var(--text-primary)]">Garmin telemetrisi ve spor bilimi taranıyor...</span>
       `;
   c.appendChild(div);
   c.scrollTop = c.scrollHeight;
@@ -293,38 +315,80 @@ function removeTypingIndicatorUI(id) {
   if (el) el.remove();
 }
 
+function formatCoachMarkdown(rawText) {
+  const esc = String(rawText ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const applyInline = (s) => s
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^\*])\*([^*]+?)\*(?!\*)/g, '$1<em>$2</em>');
+
+  const lines = esc.split(/\r?\n/);
+  const blocks = [];
+  let inList = false;
+  let paraLines = [];
+
+  const flushPara = () => {
+    if (paraLines.length) {
+      blocks.push(`<p>${paraLines.map(applyInline).join('<br>')}</p>`);
+      paraLines = [];
+    }
+  };
+  const closeList = () => {
+    if (inList) {
+      blocks.push('</ul>');
+      inList = false;
+    }
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const listMatch = trimmed.match(/^(?:•|-|\*|\d+\.)\s+(.*)$/);
+    if (!trimmed) {
+      flushPara();
+      closeList();
+    } else if (listMatch) {
+      flushPara();
+      if (!inList) {
+        blocks.push('<ul>');
+        inList = true;
+      }
+      blocks.push(`<li>${applyInline(listMatch[1])}</li>`);
+    } else {
+      closeList();
+      paraLines.push(trimmed);
+    }
+  }
+  flushPara();
+  closeList();
+  return blocks.join('');
+}
+
 function appendMessageUI(sender, text, meta = null) {
   const c = document.getElementById('chatMessagesContainer');
   const div = document.createElement('div');
   if (sender === 'user') {
-    div.className = "bg-indigo-600 text-white p-3 rounded-xl rounded-tr-sm self-end ml-6 leading-relaxed shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]";
+    div.className = "accent-bg chat-message-bubble p-3 rounded-[3px] self-end ml-6";
     div.textContent = text;
   } else {
-    div.className = "bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 p-3.5 rounded-xl rounded-tl-sm border border-zinc-200/80 dark:border-zinc-800 mr-2 space-y-1.5 leading-relaxed";
-    let formatted = text
-      .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/^• (.*?)$/gm, '<li class="ml-2.5 list-disc">$1</li>')
-      .replace(/^- (.*?)$/gm, '<li class="ml-2.5 list-disc">$1</li>')
-      .replace(/\n\n/g, '<br><br>')
-      .replace(/\n/g, '<br>');
+    div.className = "surface-card chat-message-bubble p-3.5 mr-2 space-y-2";
+    const formatted = formatCoachMarkdown(text);
 
     let metaHtml = '';
     if (meta) {
       const isReal = meta.is_real_ai;
-      const badgeClass = isReal
-        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700';
+      const badgeClass = isReal ? 'stamp-tag stamp-moss' : 'stamp-tag';
       const iconName = isReal ? 'zap' : 'cpu';
       metaHtml = `
-<div class="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between font-mono text-[10px] text-zinc-400">
-  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border ${badgeClass} font-medium">
-    ${lucideSvg(iconName, 'w-3 h-3')} ${meta.provider || 'Gerçek AI'}
+<div class="pt-2 mt-2 border-t border-[var(--border-subtle)] flex items-center justify-between font-mono text-[10px] text-[var(--text-muted)]">
+  <span class="${badgeClass}">
+    ${lucideSvg(iconName, 'w-3 h-3')} ${escapeHtml(meta.provider || 'Gerçek AI')}
   </span>
   <span>${meta.response_time_sec ? meta.response_time_sec + ' sn' : ''}</span>
 </div>
-          `;
+      `;
     }
 
     div.innerHTML = formatted + metaHtml;
@@ -334,25 +398,17 @@ function appendMessageUI(sender, text, meta = null) {
   refreshIcons();
 }
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeDebriefModal();
-    closeActivityModal();
-    closePreferencesModal();
+/* Fallback light dismiss for dialog[closedby="any"] in browsers lacking HTMLDialogElement.prototype.closedBy */
+if (!('closedBy' in HTMLDialogElement.prototype)) {
+  const outside = (e, dialog) => {
+    const r = dialog.getBoundingClientRect();
+    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+  };
+  for (const dialog of document.querySelectorAll('dialog[closedby="any"]')) {
+    let pressedOutside = false;
+    dialog.addEventListener('pointerdown', (e) => { pressedOutside = outside(e, dialog); });
+    dialog.addEventListener('pointerup', (e) => { if (pressedOutside && outside(e, dialog)) dialog.close(); });
   }
-});
-
-['postWorkoutDebriefModal', 'activityDetailModal', 'preferencesModal'].forEach(id => {
-  const modalEl = document.getElementById(id);
-  if (modalEl) {
-    modalEl.addEventListener('click', (e) => {
-      if (e.target === modalEl) {
-        if (id === 'postWorkoutDebriefModal') closeDebriefModal();
-        else if (id === 'activityDetailModal') closeActivityModal();
-        else if (id === 'preferencesModal') closePreferencesModal();
-      }
-    });
-  }
-});
+}
 
 window.addEventListener('DOMContentLoaded', initApp);

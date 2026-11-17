@@ -1,64 +1,108 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Garmin Veri ve Performans Hesaplama Motoru (Ana Orkestratör)
-93 günlük günlük sağlık özetleri, 88 gecelik uyku ve HRV kayıtları ve 49 antrenmanı
-bütünleşik bir analitik yapıda işler; modüler Mixin mimarisiyle yönetilir.
+Garmin Veri ve Performans Hesaplama Motoru (Ana Orkestratör).
+Ham Garmin Connect telemetrisini (günlük özetler, uyku, HRV, tartı/kilo, egzersiz setleri
+ve tüm çoklu branş aktiviteleri) yükler ve modüler Mixin sınıflarıyla analitiğe sunar.
 """
 
 import json
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
-import numpy as np
 import pandas as pd
 
 try:
-    from engine.helpers import fmt_pace_sec, fmt_clock, DATA_DIR
+    from engine.helpers import fmt_pace_sec, fmt_clock, DATA_DIR, format_sport_tr, classify_sport_bucket
     from engine.telemetry_mixin import TelemetryMixin
+    from engine.sleep_analytics_mixin import SleepAnalyticsMixin
     from engine.training_protocols_mixin import TrainingProtocolsMixin
     from engine.simulation_health_mixin import SimulationHealthMixin
 except ImportError:
-    from app.engine.helpers import fmt_pace_sec, fmt_clock, DATA_DIR
+    from app.engine.helpers import fmt_pace_sec, fmt_clock, DATA_DIR, format_sport_tr, classify_sport_bucket
     from app.engine.telemetry_mixin import TelemetryMixin
+    from app.engine.sleep_analytics_mixin import SleepAnalyticsMixin
     from app.engine.training_protocols_mixin import TrainingProtocolsMixin
     from app.engine.simulation_health_mixin import SimulationHealthMixin
 
 
-class GarminAthleteEngine(TelemetryMixin, TrainingProtocolsMixin, SimulationHealthMixin):
-    """
-    Garmin Çoklu Spor Biyometrik ve Telemetri Hesaplama Motoru.
-
-    Bu sınıf; TelemetryMixin, TrainingProtocolsMixin ve SimulationHealthMixin
-    bileşenlerini birleştirerek 93 günlük biyometri, 49 aktivite ve Firstbeat yük
-    telemetrisi üzerinde analitik hesaplamalar sunar.
-    """
+class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocolsMixin, SimulationHealthMixin):
+    """Garmin Çoklu Spor Biyometrik ve Telemetri Hesaplama Motoru."""
 
     def __init__(self, data_dir: str = DATA_DIR) -> None:
-        """
-        Motoru sporcu sabitleri ve belirtilen veri dizini ile ilklendirir.
-
-        Args:
-            data_dir (str): Ham JSON ve CSV verilerinin bulunduğu dizin yolu.
-        """
         self.data_dir = data_dir
         self.height_cm = 186.0
         self.height_m2 = (self.height_cm / 100.0) ** 2
         self.age = 22
         self.load_data()
 
+    def get_weight_history(self) -> List[Dict[str, Any]]:
+        """raw_weight.json (Garmin weight-service) içinden tarih sıralı tartı kayıtlarını döner."""
+        entries: List[Dict[str, Any]] = []
+        raw = getattr(self, "weight_raw", None) or {}
+        if isinstance(raw, dict):
+            candidates = raw.get("dailyWeightSummaries") or raw.get("dateWeightList") or []
+            for item in candidates:
+                if not isinstance(item, dict):
+                    continue
+                latest = item.get("latestWeight") if isinstance(item.get("latestWeight"), dict) else item
+                w_val = latest.get("weight")
+                dt_str = (item.get("summaryDate") or latest.get("calendarDate") or "")[:10]
+                if w_val and dt_str:
+                    w_kg = float(w_val) / 1000.0 if float(w_val) > 300 else float(w_val)
+                    entries.append({"date": dt_str, "weight_kg": round(w_kg, 2)})
+        elif isinstance(raw, list):
+            for item in raw:
+                if isinstance(item, dict) and item.get("weight") and item.get("calendarDate"):
+                    w_val = float(item["weight"])
+                    w_kg = w_val / 1000.0 if w_val > 300 else w_val
+                    entries.append({"date": str(item["calendarDate"])[:10], "weight_kg": round(w_kg, 2)})
+        entries.sort(key=lambda x: x["date"])
+        return entries
+
+    def get_start_weight(self) -> float:
+        """Başlangıç kilosunu canlı tartı geçmişi varsa ilk kayıttan, yoksa baz değerden döner."""
+        hist = self.get_weight_history()
+        if hist and hist[0]["date"] < "2026-10-01":
+            return hist[0]["weight_kg"]
+        return 95.0
+
+    def get_current_weight(self, date_str: Optional[str] = None) -> float:
+        """Garmin weight-service kaydı varsa güncel kiloyu dinamik döner; yoksa tarihsel güvenli yedeğe düşer."""
+        hist = self.get_weight_history()
+        if hist:
+            if date_str:
+                eligible = [e for e in hist if e["date"] <= date_str]
+                if eligible:
+                    return eligible[-1]["weight_kg"]
+            return hist[-1]["weight_kg"]
+
+        # Summaries içinde varsa yakala
+        for dt in reversed(self.dates if hasattr(self, "dates") else []):
+            if date_str and dt > date_str:
+                continue
+            s = self.summaries.get(dt, {}) if isinstance(self.summaries.get(dt), dict) else {}
+            w_g = s.get("bodyWeightInGrams") or s.get("weight")
+            if w_g and float(w_g) > 0:
+                return round(float(w_g) / 1000.0 if float(w_g) > 300 else float(w_g), 2)
+
+        if date_str:
+            if date_str >= "2026-11-01":
+                return 87.0
+            if date_str >= "2026-10-01":
+                return 91.0
+            return 95.0
+        return 87.0
 
     def load_data(self) -> None:
-        """
-        Veri dizinindeki ham telemetri dosyalarını (günlük, uyku, aktivite, yük) okur
-        ve Pandas DataFrame ile indekslenmiş sözlük yapılarına dönüştürür.
-        """
+        """Ham telemetri dosyalarını (günlük, uyku, aktivite, yük, VO2, tartı) yükler."""
         daily_path = os.path.join(self.data_dir, "raw_daily_93d.json")
         sleep_path = os.path.join(self.data_dir, "raw_sleep_stats.json")
         acts_path = os.path.join(self.data_dir, "raw_activities.json")
         ts_latest_path = os.path.join(self.data_dir, "raw_training_status_latest.json")
         ts_weekly_path = os.path.join(self.data_dir, "raw_training_status_weekly.json")
         vo2_path = os.path.join(self.data_dir, "raw_vo2max_history.json")
+        weight_path = os.path.join(self.data_dir, "raw_weight.json")
 
         self.daily_raw = json.load(open(daily_path, encoding="utf-8")) if os.path.exists(daily_path) else {"summaries": {}, "readiness": {}}
         self.sleep_stats = json.load(open(sleep_path, encoding="utf-8")) if os.path.exists(sleep_path) else {}
@@ -66,12 +110,12 @@ class GarminAthleteEngine(TelemetryMixin, TrainingProtocolsMixin, SimulationHeal
         self.training_status_latest = json.load(open(ts_latest_path, encoding="utf-8")) if os.path.exists(ts_latest_path) else {}
         self.training_status_weekly = json.load(open(ts_weekly_path, encoding="utf-8")) if os.path.exists(ts_weekly_path) else {}
         self.vo2max_history = json.load(open(vo2_path, encoding="utf-8")) if os.path.exists(vo2_path) else []
+        self.weight_raw = json.load(open(weight_path, encoding="utf-8")) if os.path.exists(weight_path) else {}
 
         self.summaries = self.daily_raw.get("summaries", {})
         self.readiness = self.daily_raw.get("readiness", {})
         self.dates = sorted(self.summaries.keys())
 
-        # DataFrame Oluştur
         rows = []
         for dt in self.dates:
             s = self.summaries.get(dt, {})
@@ -138,7 +182,6 @@ class GarminAthleteEngine(TelemetryMixin, TrainingProtocolsMixin, SimulationHeal
             })
         self.df = pd.DataFrame(rows)
 
-        # Aktiviteler DataFrame'i
         act_rows = []
         for a in self.activities_all:
             dt_local = a.get("startTimeLocal", "")
@@ -149,11 +192,12 @@ class GarminAthleteEngine(TelemetryMixin, TrainingProtocolsMixin, SimulationHeal
             dur_s = a.get("duration") or 0
             dist_m = a.get("distance") or 0
             spd = a.get("averageSpeed") or 0
-            pace_s = (1000.0 / spd) if (t_key == "running" and spd > 0) else None
+            is_paced = ("running" in t_key.lower()) or any(tok in t_key.lower() for tok in ("hiking", "walking", "ski"))
+            pace_s = (1000.0 / spd) if (is_paced and dist_m > 200 and spd > 0) else None
             z1, z2, z3, z4, z5 = (a.get(f"hrTimeInZone_{i}") or 0 for i in range(1, 6))
             ztot = z1 + z2 + z3 + z4 + z5
 
-            w_kg = 87.0 if dt_date >= "2026-11-01" else (91.0 if dt_date >= "2026-10-01" else 95.0)
+            w_kg = self.get_current_weight(dt_date)
             npwr = a.get("normPower")
             w_per_kg = (npwr / w_kg) if (npwr and w_kg) else None
             avg_hr = a.get("averageHR") or 0
@@ -165,8 +209,10 @@ class GarminAthleteEngine(TelemetryMixin, TrainingProtocolsMixin, SimulationHeal
                 "time": dt_local[11:16],
                 "month": dt_date[:7],
                 "in_3m": dt_date >= self.dates[0] if self.dates else True,
-                "name": a.get("activityName") or t_key,
+                "name": a.get("activityName") or format_sport_tr(t_key),
                 "sport": t_key,
+                "sport_tr": format_sport_tr(t_key, a.get("activityName") or ""),
+                "bucket": classify_sport_bucket(t_key),
                 "dur_m": dur_s / 60.0,
                 "dist_km": dist_m / 1000.0,
                 "cal": a.get("calories") or 0,
@@ -200,4 +246,3 @@ class GarminAthleteEngine(TelemetryMixin, TrainingProtocolsMixin, SimulationHeal
             })
         self.adf = pd.DataFrame(act_rows)
         self.adf_3m = self.adf[self.adf["in_3m"]].copy() if not self.adf.empty else self.adf
-

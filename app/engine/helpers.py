@@ -38,6 +38,99 @@ _SAMPLE_DATA_DIR = os.path.join(BASE_DIR, "sample_data")
 IS_DEMO_MODE = not os.path.exists(os.path.join(_REAL_DATA_DIR, "raw_daily_93d.json"))
 DATA_DIR = _SAMPLE_DATA_DIR if IS_DEMO_MODE else _REAL_DATA_DIR
 
+TR_DAYS = ["Pzt", "Salı", "Çar", "Per", "Cuma", "Cmt", "Paz"]
+TR_MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
+
+SPORT_TR_MAP: Dict[str, str] = {
+    "running": "Koşu",
+    "treadmill_running": "Koşu Bandı",
+    "trail_running": "Patika Koşusu",
+    "track_running": "Pist Koşusu",
+    "strength_training": "Kuvvet",
+    "fitness_equipment": "Fitness & Kuvvet",
+    "sailing_v2": "Yelken",
+    "sailing": "Yelken",
+    "basketball": "Basketbol",
+    "resort_skiing": "Kayak",
+    "backcountry_skiing": "Tur Kayağı",
+    "cross_country_skiing": "Kros Kayak",
+    "skate_skiing": "Kayak (Serbest)",
+    "skiing": "Kayak",
+    "alpine_skiing": "Alp Disiplini Kayak",
+    "snowboarding": "Snowboard",
+    "winter_sports": "Kış Sporu",
+    "cycling": "Bisiklet",
+    "indoor_cycling": "Salon Bisikleti",
+    "mountain_biking": "Dağ Bisikleti",
+    "swimming": "Yüzme",
+    "lap_swimming": "Havuz Yüzme",
+    "open_water_swimming": "Açık Su Yüzme",
+    "hiking": "Doğa Yürüyüşü",
+    "walking": "Yürüyüş",
+    "rowing_v2": "Kürek",
+    "indoor_rowing": "Kürek Ergometresi",
+    "tennis": "Tenis",
+    "padel": "Padel",
+    "squash": "Squash",
+    "pilates": "Pilates",
+    "yoga": "Yoga",
+    "cardio": "Kardiyo",
+    "elliptical": "Eliptik",
+    "stair_climbing": "Merdiven Çıkışı",
+    "breathwork": "Nefes Egzersizi",
+    "hiit": "HIIT",
+}
+
+SPORT_ICON_MAP: Dict[str, str] = {
+    "running": "footprints",
+    "strength": "dumbbell",
+    "sailing": "compass",
+    "basketball": "trophy",
+    "skiing": "snowflake",
+    "snow": "snowflake",
+    "winter": "snowflake",
+    "hiking": "mountain",
+    "cycling": "bike",
+    "biking": "bike",
+    "swimming": "waves",
+    "rowing": "waves",
+    "walking": "footprints",
+}
+
+
+def format_sport_tr(sport_key: Optional[str], fallback_name: str = "") -> str:
+    """Herhangi bir Garmin typeKey spor kodunu Türkçe etikete dönüştürür."""
+    raw = (sport_key or "").strip().lower()
+    if not raw:
+        return fallback_name or "Antrenman"
+    if raw in SPORT_TR_MAP:
+        return SPORT_TR_MAP[raw]
+    for k, label in SPORT_TR_MAP.items():
+        if k in raw:
+            return label
+    cleaned = raw.replace("_v2", "").replace("_", " ").strip().title()
+    return cleaned or fallback_name or "Antrenman"
+
+
+def classify_sport_bucket(sport_key: Optional[str]) -> str:
+    """Aktiviteyi kota kovası açısından sınıflar ('running', 'strength' veya 'spontaneous')."""
+    raw = (sport_key or "").strip().lower()
+    if "running" in raw:
+        return "running"
+    if "strength" in raw or "fitness_equipment" in raw:
+        return "strength"
+    return "spontaneous"
+
+
+def get_sport_icon(sport_key: Optional[str]) -> str:
+    """Bilinmeyen branşlar dahil tüm Garmin sporları için uygun Lucide ikonu döner."""
+    raw = (sport_key or "").strip().lower()
+    for token, icon in SPORT_ICON_MAP.items():
+        if token in raw:
+            return icon
+    return "activity"
+
+
 def fmt_pace_sec(sec: Optional[float]) -> str:
     """
     Saniye cinsinden tempo değerini standart 'dakika:saniye' (örn. 5:48 /km) formatına dönüştürür.

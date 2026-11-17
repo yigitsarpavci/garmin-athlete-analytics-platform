@@ -3,13 +3,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests: 29 Passed](https://img.shields.io/badge/Tests-29%20Passed%20(100%25)-success)](tests/run_tests.py)
-[![Report: LaTeX PDF](https://img.shields.io/badge/Report-LaTeX%20PDF%20Generator-navy)](scripts/build_latex_report.py)
+[![Tests: Passed](https://img.shields.io/badge/Tests-Passed%20(100%25)-success)](tests/run_tests.py)
 [![Architecture: MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-purple)](https://modelcontextprotocol.io)
 
-An end-to-end athletic performance intelligence and biometric telemetry platform. It ingests 93 days ($N=93$ days, 49 multi-sport activities, 88 sleep/HRV nights, 124 gym sets) of raw Garmin Connect sensor data via the **Model Context Protocol (MCP)**, executing Tim Gabbett Acute:Chronic Workload Ratio (ACWR) injury risk modeling, Firstbeat training status algorithms, dynamic multi-sport periodization, and an automated 9-page publication-grade LaTeX executive report generator.
+An end-to-end athletic performance intelligence and biometric telemetry platform. It ingests 93 days ($N=93$ days, 49+ multi-sport activities, 88+ sleep/HRV nights, and resistance sets) of raw Garmin Connect sensor data via the **Model Context Protocol (MCP)**, executing Tim Gabbett Acute:Chronic Workload Ratio (ACWR) injury risk modeling, Firstbeat training status algorithms, dynamic multi-sport weekly quota adaptation, and live dark-mode physiological analytics.
 
-> **Turkish Documentation:** Detaylı Türkçe dokümantasyon ve rapor rehberi için [README_TR.md](README_TR.md) dosyasına göz atabilirsiniz.
+> **Turkish Documentation:** Detaylı Türkçe dokümantasyon için [README_TR.md](README_TR.md) dosyasına göz atabilirsiniz.
 
 ---
 
@@ -20,8 +19,6 @@ An end-to-end athletic performance intelligence and biometric telemetry platform
 - [System Architecture](#system-architecture)
 - [Scientific & Mathematical Formulations](#scientific--mathematical-formulations)
 - [5-Point Post-Workout Debrief Protocol](#5-point-post-workout-debrief-protocol)
-- [Interactive Web Dashboard](#interactive-web-dashboard)
-- [Automated 9-Page LaTeX Executive Report](#automated-9-page-latex-executive-report)
 - [Tech Stack](#tech-stack)
 - [Verification & Test Suite](#verification--test-suite)
 - [REST API Reference](#rest-api-reference)
@@ -36,9 +33,9 @@ An end-to-end athletic performance intelligence and biometric telemetry platform
 Commercial fitness trackers generate massive streams of biometric telemetry (heart rate variability, excess post-exercise oxygen consumption, cadence, sleep architecture), yet companion mobile apps present this data through fragmented, superficial scores without actionable training periodization. Conversely, academic exercise physiology frameworks (Gabbett ACWR, polarized 80/20 endurance splits, linear progressive overload) require labor-intensive manual logging.
 
 **Garmin Athlete Analytics Platform** bridges this gap:
-1. **IoT Sensor Ingestion:** Connects directly to Garmin Connect via the Model Context Protocol (MCP) to extract raw high-resolution activity, sleep, HRV, and resistance training telemetry.
-2. **Deterministic Physiology Engine:** Computes acute and chronic workload ratios, cardiac efficiency factors, energy expenditure, and progressive overload weights without heuristic guesswork.
-3. **Dual Delivery Interface:** Serves both a reactive, low-latency web dashboard for daily athlete interaction and an automated, 9-page publication-grade LaTeX PDF report for longitudinal athletic and medical reviews.
+1. **IoT Sensor Ingestion:** Connects directly to Garmin Connect via the Model Context Protocol (MCP) to extract raw high-resolution activity, sleep, HRV, body weight, and resistance training telemetry.
+2. **Deterministic Physiology Engine:** Computes acute and chronic workload ratios, cardiac efficiency factors, energy expenditure, dynamic morphology projections, and progressive overload weights without heuristic guesswork.
+3. **Live Dark-Mode Telemetry Dashboard:** Serves a reactive, low-latency web workspace backed by modular Python analytics engines and automatic 15-minute live Garmin sync.
 
 ---
 
@@ -93,10 +90,9 @@ flowchart TD
     end
 
     subgraph Presentation & Delivery
-        E -->|REST API| K[FastAPI / Python Web Server :8085]
-        K --> L[Reactive Web UI Chart.js / Dark Mode]
-        E -->|LaTeX Generation| M[build_latex_report.py]
-        M -->|Tectonic / XeLaTeX| N[9-Page Executive PDF Report]
+        E -->|REST API| K[Python HTTP Server :8085]
+        K --> L[Live Dark-Mode Telemetry Dashboard]
+        E -->|Live Coaching Context| M[AI Athletic Coach]
     end
 ```
 
@@ -132,29 +128,13 @@ Following every session, the platform benchmarks live telemetry against baseline
 
 ---
 
-## Automated 9-Page LaTeX Executive Report
-
-The platform compiles an extensive, publication-grade 9-page PDF report locally via `./scripts/generate_report.sh` (or `make report`; personal biometric data and generated PDFs are excluded from version control via `.gitignore` for privacy) featuring:
-- **Page 1:** Executive Summary, 3 Primary Takeaways, BMI & Target Weight Projections ($87.0 \rightarrow 81.0\text{ kg}$), and 4-Phase Chronology.
-- **Page 2:** Longitudinal Monthly & 14-Week Telemetry Tables.
-- **Page 3:** Autonomic Nervous System (ANS), HRV Sleep Balance, and Pearson Correlation Analysis.
-- **Page 4:** Sleep Architecture (Best vs. Worst 6 Nights) & 20-Run Longitudinal Period Analysis.
-- **Page 5:** Concurrent Training Interference & Workout-Run Ordering Analysis (Running before vs. after lifting: $+7\text{ bpm}$ cardiac penalty).
-- **Page 6:** Nautical Sailing ($N=22$), Basketball ($N=3$), and Resistance Training Analysis with Hydration/Electrolyte Alerts.
-- **Page 7:** 8 Essential Garmin Smartwatch Sensor Calibrations & **Table 8.1: Weekly Integrated 2 Run + 2 Gym Schedule**.
-- **Page 8:** Multi-Sport Progression Roadmaps and Gabbett ACWR Load Tunnel Curves.
-- **Page 9:** 5-Point Post-Workout Debrief Telemetry Table, Running Comparison, and Sports Medicine Executive Sign-Off Box.
-
----
-
 ## Tech Stack
 
-- **Backend & API:** Python 3.12, FastAPI, Uvicorn, Asynchronous HTTP.
-- **Data Ingestion:** Model Context Protocol (MCP), `@etweisberg/garmin-connect-mcp`, JSON parsing.
-- **Analytics & Math:** NumPy, SciPy (Pearson correlation), Pandas, Custom Exercise Physiology Engine.
-- **Frontend & Visualization:** Modern Semantic HTML5, Vanilla JavaScript (ES6+), Chart.js 4.4, CSS3 Custom Properties (Dark/Light Athletic Themes).
-- **Document Compilation:** XeLaTeX / Tectonic Compiler, TikZ, PGFPlots, Booktabs, Microtype.
-- **Testing & QA:** Python `unittest`, Playwright Browser Automation, TagChecker HTML parser.
+- **Backend & API:** Python 3.12, Modular Telemetry & Quota Engine, Standard Library HTTP Server.
+- **Data Ingestion:** Model Context Protocol (MCP), `@etweisberg/garmin-connect-mcp`, live weight & exercise sets ingestion.
+- **Analytics & Math:** NumPy, Pandas, Gabbett ACWR, Dynamic Morphology & Exercise Physiology Engine.
+- **Frontend & Visualization:** Semantic HTML5, Vanilla ES6+ Modules, Chart.js, Dark-Mode Telemetry Design System.
+- **Testing & QA:** Python `unittest`, Playwright Browser Automation.
 
 ---
 
@@ -224,7 +204,7 @@ OK
 
 ### Prerequisites
 - Python 3.10+
-- (Optional) `tectonic` for compiling LaTeX reports: `brew install tectonic`
+- (Optional) Node.js 18+ for live Garmin Connect telemetry sync (`make fetch`)
 - (Optional) Google GenAI or OpenAI API key for live AI coaching:
   ```bash
   export GEMINI_API_KEY="your-gemini-api-key"
@@ -243,11 +223,10 @@ Open your browser at `http://localhost:8085`.
 make test         # or python3 tests/run_tests.py
 ```
 
-### 3. Compile the 9-Page Executive PDF Report
+### 3. Sync Fresh Telemetry from Garmin Connect
 ```bash
-make report       # or ./scripts/generate_report.sh
+make fetch        # or node ./scripts/fetch_garmin_data.mjs
 ```
-The compiled document will be output locally to `reports/Garmin_3_Aylik_Detayli_Veri_Analizi_Raporu.pdf`.
 
 ---
 
@@ -256,31 +235,27 @@ The compiled document will be output locally to `reports/Garmin_3_Aylik_Detayli_
 ```
 garmin-athlete-analytics-platform/
 ├── app/                              # Web server, analytics engine & UI
-│   ├── server.py                     # Asynchronous REST API server
+│   ├── server.py                     # REST API and static asset server
 │   ├── garmin_engine.py              # Sports science & ACWR orchestrator
 │   ├── athlete_principles.py         # Single source of truth training rules
 │   ├── ai_coach.py                   # Multi-provider LLM coaching service
-│   ├── engine/                       # Modular calculation mixins
-│   └── static/                       # Responsive Chart.js web dashboard
+│   ├── engine/                       # Modular telemetry, quota & morphology mixins
+│   └── static/                       # Dark-mode modular web dashboard
 ├── sample_data/                      # Synthetic demo telemetry for quickstarts
 ├── data/                             # Local Garmin telemetry JSONs (gitignored)
-│   ├── archive/                      # Archived single-activity raw JSONs
-│   └── exports/                      # Generated CSV metric exports
-├── reports/                          # Local LaTeX/PDF reports (gitignored)
-├── scripts/                          # Automation & reporting pipeline
+│   └── archive/                      # Archived single-activity raw JSONs
+├── scripts/                          # Live sync & launch scripts
 │   ├── run_app.sh                    # Web application launcher
-│   ├── generate_report.sh            # Telemetry fetch & PDF compiler
-│   ├── fetch_garmin_data.mjs         # Garmin Connect MCP ingestion script
-│   └── build_latex_report.py         # Dynamic XeLaTeX/Tectonic report builder
-├── tests/                            # 29-test unit & integration suite
+│   └── fetch_garmin_data.mjs         # Garmin Connect MCP ingestion script
+├── tests/                            # Automated unit & API test suite
 │   ├── run_tests.py
 │   ├── test_engine_calculations.py
 │   ├── test_api_endpoints.py
 │   ├── test_data_integrity.py
 │   └── test_athlete_principles.py
-├── Makefile                          # Unified build, test, and run shortcuts
-├── README.md                         # Comprehensive English documentation
-├── README_TR.md                      # Comprehensive Turkish documentation
+├── Makefile                          # Unified run, test, and fetch shortcuts
+├── README.md                         # English documentation
+├── README_TR.md                      # Turkish documentation
 └── LICENSE                           # MIT License
 ```
 

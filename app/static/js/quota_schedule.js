@@ -1,0 +1,468 @@
+/* Garmin Athlete IQ — Flexible Weekly Quota Ledger, Adaptive Carryover & Daily Protocols */
+
+function escapeHtml(val) {
+  return String(val ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function resolveProtocolIndex(slotKind, dayCode, fallbackText = '', fallbackIdx = 0) {
+  if (typeof cachedDailyProtocols === 'undefined' || !Array.isArray(cachedDailyProtocols) || !cachedDailyProtocols.length) {
+    return fallbackIdx;
+  }
+  if (dayCode) {
+    const byCode = cachedDailyProtocols.findIndex(p => p.day_code === dayCode);
+    if (byCode >= 0) return byCode;
+  }
+  const kindToCode = {
+    gym_a: 'tuesday',
+    gym: 'tuesday',
+    gym_b: 'saturday',
+    zone2: 'thursday',
+    run: 'thursday',
+    interval: 'monday',
+    tempo: 'monday',
+    active_recovery: 'sunday',
+    rest: 'wednesday'
+  };
+  if (slotKind && kindToCode[slotKind]) {
+    const mapped = cachedDailyProtocols.findIndex(p => p.day_code === kindToCode[slotKind]);
+    if (mapped >= 0) return mapped;
+  }
+  const lower = (fallbackText || '').toLowerCase();
+  if (lower.includes('workout b')) {
+    const bIdx = cachedDailyProtocols.findIndex(p => p.day_code === 'saturday');
+    if (bIdx >= 0) return bIdx;
+  }
+  if (lower.includes('workout a')) {
+    const aIdx = cachedDailyProtocols.findIndex(p => p.day_code === 'tuesday');
+    if (aIdx >= 0) return aIdx;
+  }
+  if (lower.includes('zone 2')) {
+    const zIdx = cachedDailyProtocols.findIndex(p => p.day_code === 'thursday');
+    if (zIdx >= 0) return zIdx;
+  }
+  if (lower.includes('interval') || lower.includes('interva') || lower.includes('hız')) {
+    const iIdx = cachedDailyProtocols.findIndex(p => p.day_code === 'monday');
+    if (iIdx >= 0) return iIdx;
+  }
+  const dayMap = [
+    ['pzt', 'monday'], ['sal', 'tuesday'], ['çar', 'wednesday'],
+    ['per', 'thursday'], ['cum', 'friday'], ['cmt', 'saturday'], ['paz', 'sunday']
+  ];
+  const matched = dayMap.find(([trCode]) => lower.includes(trCode));
+  if (matched) {
+    const found = cachedDailyProtocols.findIndex(p => p.day_code === matched[1]);
+    if (found >= 0) return found;
+  }
+  return fallbackIdx;
+}
+
+function openQuotaItemRecipe(slotKind, dayCode) {
+  if (typeof setTab === 'function') setTab('plan');
+  if (typeof setSubTab === 'function') setSubTab('plan', 'protocols');
+  const targetIdx = resolveProtocolIndex(slotKind, dayCode, '', 'upcoming');
+  if (typeof selectProtocolDay === 'function') selectProtocolDay(targetIdx);
+  const targetSec = document.getElementById('dailyProtocolsSection');
+  if (targetSec) {
+    targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
+  const target = bucket.target ?? 0;
+  const completed = bucket.completed ?? 0;
+  const remaining = bucket.remaining ?? 0;
+  const pct = Math.max(0, Math.min(100, bucket.progress_pct ?? (target > 0 ? Math.round((Math.min(completed, target) / target) * 100) : 0)));
+  const isDone = target > 0 && remaining === 0;
+  const completedLabels = Array.isArray(bucket.completed_labels) ? bucket.completed_labels : [];
+  const remItems = Array.isArray(bucket.remaining_items) ? bucket.remaining_items : [];
+  const remTypesText = remItems.map(i => i.short_label || i.type || i.badge).filter(Boolean).join(' + ');
+
+  const doneHtml = completedLabels.length
+    ? `<div class="space-y-1 pt-1">
+        ${completedLabels.map(lbl => `<p class="text-[11px] moss-text font-medium flex items-start gap-1.5 break-words"><span class="shrink-0">✓</span><span>${escapeHtml(lbl)}</span></p>`).join('')}
+      </div>`
+    : '';
+
+  const remHtml = remaining > 0 && remItems.length
+    ? `<div class="space-y-1.5 pt-1">
+        <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">
+          Kalan: <strong class="text-[var(--text-primary)]">${remaining}</strong>${remTypesText ? ` (${escapeHtml(remTypesText)})` : ''}
+        </p>
+        <div class="space-y-1.5">
+          ${remItems.map(item => {
+            const meta = item.target_pace || item.duration || '';
+            const dayCode = escapeHtml(item.protocol_day_code || '');
+            const slotKind = escapeHtml(item.slot_kind || '');
+            const detail = item.target_hr || item.exercises_summary || item.coaching_note || '';
+            const prioBadge = item.prioritized_from_last_week
+              ? `<span class="stamp-tag stamp-ochre">GEÇEN HAFTADAN ÖNCELİKLİ</span>`
+              : '';
+            return `<button type="button" onclick="openQuotaItemRecipe('${slotKind}', '${dayCode}')" class="w-full text-left tint-panel px-2.5 py-2 hover:border-[var(--border-hover)] transition flex items-center justify-between gap-2 group">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="stamp-tag stamp-accent">${escapeHtml(item.short_label || item.badge || item.type || 'Kalan')}</span>
+                  ${prioBadge}
+                  ${meta ? `<span class="font-mono text-[10px] text-[var(--text-secondary)]">${escapeHtml(meta)}</span>` : ''}
+                </div>
+                ${detail ? `<p class="text-[11px] text-[var(--text-secondary)] mt-1 leading-snug break-words">${escapeHtml(detail)}</p>` : ''}
+              </div>
+              ${lucideSvg('arrow-right', 'w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] shrink-0 transition')}
+            </button>`;
+          }).join('')}
+        </div>
+      </div>`
+    : `<p class="text-[11px] ${isDone ? 'moss-text font-medium' : 'text-[var(--text-secondary)]'} pt-1">
+        ${isDone ? '✓ Bu haftanın kotası tamamlandı.' : escapeHtml(bucket.status_text || 'Kota tanımlanmadı.')}
+      </p>`;
+
+  return `
+    <div class="tint-panel p-4 space-y-2.5 flex flex-col justify-between min-w-0">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+            ${lucideSvg(iconName, 'w-3.5 h-3.5 accent-text shrink-0')}
+            <span>${escapeHtml(label)}</span>
+          </span>
+          <span class="stamp-tag ${isDone ? 'stamp-moss' : 'stamp-accent'} tabular-nums">${completed} / ${target} Tamamlandı</span>
+        </div>
+        <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5 overflow-hidden rounded-[1px]">
+          <div class="${isDone ? 'bg-[var(--moss)]' : barColorClass} h-1.5 transition-all duration-500" style="width: ${pct}%"></div>
+        </div>
+        ${doneHtml}
+      </div>
+      ${remHtml}
+    </div>
+  `;
+}
+
+function buildSpontaneousCard(spont) {
+  const count = spont.count ?? 0;
+  const items = Array.isArray(spont.items) ? spont.items : [];
+  const labels = Array.isArray(spont.labels) ? spont.labels : [];
+  const sportTrLookup = {
+    sailing: 'Yelken', basketball: 'Basketbol', swimming: 'Yüzme',
+    cycling: 'Bisiklet', tennis: 'Tenis', pilates: 'Pilates / Mobilite',
+    resort_skiing: 'Kayak', hiking: 'Doğa Yürüyüşü', walking: 'Yürüyüş'
+  };
+
+  let bodyHtml = `<p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(spont.status_text || 'Bu hafta henüz spontane branş kaydı yok.')}</p>`;
+  if (items.length > 0) {
+    bodyHtml = `
+      <div class="space-y-1.5">
+        ${items.map(it => `
+          <div class="surface-card p-2.5 text-[11px] space-y-0.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold text-[var(--text-primary)] truncate">${escapeHtml(it.sport_tr || sportTrLookup[it.sport] || 'Ek Branş')} · ${escapeHtml(it.title || '')}</span>
+              <span class="font-mono text-[10px] moss-text shrink-0">${escapeHtml(it.day_label || it.date || '')}</span>
+            </div>
+            <p class="font-mono text-[10px] text-[var(--text-secondary)]">${it.duration_min ? `${it.duration_min} dk` : ''}${it.avg_hr ? ` · ${it.avg_hr} bpm` : ''}${it.calories ? ` · ${it.calories} kcal` : ''}</p>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else if (labels.length > 0) {
+    bodyHtml = `
+      <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(spont.status_text || '')}</p>
+      <div class="flex flex-wrap gap-1.5 pt-1">
+        ${labels.map(l => `<span class="stamp-tag">${escapeHtml(sportTrLookup[l] || l)}</span>`).join('')}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="tint-panel p-4 space-y-2.5 flex flex-col justify-between min-w-0">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+            ${lucideSvg('compass', 'w-3.5 h-3.5 moss-text shrink-0')}
+            <span>Spontane Branşlar</span>
+          </span>
+          <span class="stamp-tag ${count > 0 ? 'stamp-moss' : ''} tabular-nums">${count} Seans</span>
+        </div>
+        ${bodyHtml}
+      </div>
+      <p class="font-mono text-[10px] text-[var(--text-muted)] pt-2 border-t border-[var(--border-subtle)]">Yelken, Basketbol, Kayak veya diğer saat branşları sabit kota kaplamaz; otomatik işlenir.</p>
+    </div>
+  `;
+}
+
+function buildQuotaLedgerHtml(quota) {
+  const total = quota.total || { target: 4, completed: 0, remaining: 4, progress_pct: 0, is_complete: false };
+  const run = quota.running || { target: 2, completed: 0, remaining: 2, progress_pct: 0, completed_labels: [], remaining_items: [] };
+  const str = quota.strength || { target: 2, completed: 0, remaining: 2, progress_pct: 0, completed_labels: [], remaining_items: [] };
+  const spont = quota.spontaneous || { count: 0, items: [], labels: [] };
+  const weekRange = quota.week_range || 'Bu Hafta';
+  const totalBadgeCls = total.is_complete ? 'stamp-moss' : 'stamp-accent';
+  const adapt = quota.last_week_adaptation || null;
+  const hasMissedCarry = adapt && Array.isArray(adapt.missed_sessions) && adapt.missed_sessions.length > 0;
+
+  const adaptHtml = adapt && adapt.adaptation_note
+    ? `<div class="${hasMissedCarry ? 'tint-ochre-panel' : 'tint-moss-panel'} px-3 py-2 text-[11px] flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          ${lucideSvg(hasMissedCarry ? 'refresh-cw' : 'check', `w-3.5 h-3.5 shrink-0 ${hasMissedCarry ? 'ochre-text' : 'moss-text'}`)}
+          <span class="${hasMissedCarry ? 'ochre-text font-medium' : 'moss-text'} leading-snug">${escapeHtml(adapt.adaptation_note)}</span>
+        </div>
+        ${adapt.monday_reset_enforced ? '<span class="font-mono text-[10px] text-[var(--text-secondary)] shrink-0">Pzt 0/2 Temiz Açılış</span>' : ''}
+      </div>`
+    : '';
+
+  return `
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-3 border-b border-[var(--border-subtle)]">
+      <div class="space-y-1 min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)] flex items-center gap-1.5">
+            ${lucideSvg('check-square', 'w-3.5 h-3.5 accent-text shrink-0')}
+            <span>Haftalık Kota &amp; Kalan Seanslar</span>
+          </span>
+          <span class="stamp-tag">${escapeHtml(weekRange)}</span>
+          ${quota.is_custom && quota.athlete_name ? `<span class="stamp-tag stamp-accent">${escapeHtml(quota.athlete_name)}</span>` : ''}
+        </div>
+        <h3 class="font-editorial text-base sm:text-lg font-medium leading-snug text-[var(--text-primary)]">${escapeHtml(quota.headline || '')}</h3>
+      </div>
+      <div class="flex items-center gap-2 shrink-0 self-start sm:self-center">
+        <span class="stamp-tag ${totalBadgeCls} tabular-nums">${total.completed} / ${total.target} Tamamlandı</span>
+      </div>
+    </div>
+
+    ${adaptHtml}
+    ${quota.flexibility_note ? `<p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(quota.flexibility_note)}</p>` : ''}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[var(--accent)]')}
+      ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
+      ${buildSpontaneousCard(spont)}
+    </div>
+  `;
+}
+
+function renderWeeklyQuotaPanels(quota) {
+  if (!quota || !quota.total) return;
+
+  const html = buildQuotaLedgerHtml(quota);
+  const overviewPanel = document.getElementById('weeklyQuotaPanel');
+  if (overviewPanel) overviewPanel.innerHTML = html;
+
+  const planPanel = document.getElementById('planQuotaSummary');
+  if (planPanel) planPanel.innerHTML = html;
+
+  if (typeof refreshIcons === 'function') refreshIcons();
+}
+
+function renderWeeklyScheduleTable(scheduleList) {
+  const sBody = document.getElementById('overviewScheduleBody');
+  if (!sBody || !scheduleList) return;
+  sBody.innerHTML = '';
+  scheduleList.forEach((s, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-[var(--bg-subtle)] transition cursor-pointer group";
+    tr.title = "Bu esnek kota seansının detaylı antrenman ve beslenme reçetesine gitmek için tıklayın";
+    tr.onclick = () => {
+      if (typeof setTab === 'function') setTab('plan');
+      if (typeof setSubTab === 'function') setSubTab('plan', 'protocols');
+      const targetIdx = resolveProtocolIndex(s.slot_kind, s.protocol_day_code, `${s.primary || ''} ${s.day || ''}`, idx);
+      if (typeof selectProtocolDay === 'function') selectProtocolDay(targetIdx);
+      const targetSec = document.getElementById('dailyProtocolsSection');
+      if (targetSec) {
+        targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    const isDone = Boolean(s.is_completed) || (s.secondary || '').includes('TAMAMLANDI');
+    const slotKind = s.slot_kind || '';
+    const isQuotaSlot = !isDone && (
+      ['zone2', 'interval', 'tempo', 'gym_a', 'gym_b', 'gym', 'run'].includes(slotKind)
+      || (s.primary || '').startsWith('Koşu #')
+      || (s.primary || '').startsWith('Kuvvet #')
+    );
+    const slotBadge = isDone
+      ? '<span class="stamp-tag stamp-moss">TAMAMLANDI</span>'
+      : (isQuotaSlot
+        ? '<span class="stamp-tag stamp-accent">ESNEK KOTA</span>'
+        : '<span class="stamp-tag">REJENERASYON</span>');
+
+    tr.innerHTML = `
+      <td class="py-3 px-4 font-semibold group-hover:text-[var(--accent)] transition">
+        <div class="flex items-center justify-between gap-2">
+          <div class="space-y-1 min-w-0">
+            <span class="block">${escapeHtml(s.day)}</span>
+            ${slotBadge}
+          </div>
+          ${lucideSvg('arrow-right', 'w-3.5 h-3.5 accent-text opacity-0 group-hover:opacity-100 transition shrink-0')}
+        </div>
+      </td>
+      <td class="py-3 px-4 font-medium">${escapeHtml(s.primary)}</td>
+      <td class="py-3 px-4 ${isDone ? 'font-mono moss-text font-semibold' : 'text-[var(--text-secondary)]'}">${escapeHtml(s.secondary)}</td>
+      <td class="py-3 px-4 font-mono text-[11px] font-medium accent-text whitespace-nowrap">${escapeHtml(s.target)}</td>
+      <td class="py-3 px-4 font-mono text-[11px] text-[var(--text-secondary)] whitespace-nowrap">${escapeHtml(s.calories)}</td>
+      <td class="py-3 px-4 font-mono text-[11px] text-[var(--text-secondary)]">${escapeHtml(s.macro)}</td>
+    `;
+    sBody.appendChild(tr);
+  });
+  if (typeof refreshIcons === 'function') refreshIcons();
+}
+
+let cachedDailyProtocols = [];
+let selectedProtocolMode = 'upcoming';
+
+function selectProtocolDay(mode) {
+  selectedProtocolMode = mode;
+  renderDailyProtocols(cachedDailyProtocols);
+}
+
+function getProtocolTabLabel(p) {
+  const byCode = {
+    tuesday: 'Gym A',
+    wednesday: 'Dinlenme',
+    thursday: 'Zone 2',
+    friday: 'Hazırlık',
+    saturday: 'Gym B',
+    sunday: 'Toparlanma',
+    monday: 'İnterval'
+  };
+  if (p.day_code && byCode[p.day_code]) return byCode[p.day_code];
+  return p.slot_label || p.badge || 'Reçete';
+}
+
+function getQuotaStatusStamp(quotaStatus) {
+  if (quotaStatus === 'remaining') return '<span class="stamp-tag stamp-accent">KALAN KOTA</span>';
+  if (quotaStatus === 'completed') return '<span class="stamp-tag stamp-moss">TAMAMLANDI</span>';
+  return '<span class="stamp-tag">ESNEK ŞABLON</span>';
+}
+
+function renderDailyProtocols(protocols) {
+  const container = document.getElementById('dailyProtocolsContainer');
+  const tabsEl = document.getElementById('protocolDayTabs');
+  if (!container || !protocols || !Array.isArray(protocols)) return;
+  cachedDailyProtocols = protocols;
+
+  const remainingProtocols = protocols.filter(p => p.quota_status === 'remaining');
+
+  if (tabsEl) {
+    const activeCls = 'btn-primary text-xs px-3 py-1.5';
+    const idleCls = 'btn-secondary text-xs px-3 py-1.5';
+    tabsEl.innerHTML = `
+      <button type="button" onclick="selectProtocolDay('upcoming')" class="${selectedProtocolMode === 'upcoming' ? activeCls : idleCls}">Kalanlar (${remainingProtocols.length})</button>
+      ${protocols.map((p, idx) => `<button type="button" onclick="selectProtocolDay(${idx})" class="${selectedProtocolMode === idx ? activeCls : idleCls}">${escapeHtml(getProtocolTabLabel(p))}</button>`).join('')}
+      <button type="button" onclick="selectProtocolDay('all')" class="${selectedProtocolMode === 'all' ? activeCls : idleCls}">Tümü (${protocols.length})</button>
+    `;
+  }
+
+  let emptyBannerHtml = '';
+  let visibleProtocols;
+  if (selectedProtocolMode === 'all') {
+    visibleProtocols = protocols;
+  } else if (selectedProtocolMode === 'upcoming') {
+    if (remainingProtocols.length > 0) {
+      visibleProtocols = remainingProtocols;
+    } else {
+      emptyBannerHtml = `
+        <div class="tint-moss-panel p-4 text-xs flex items-center justify-between gap-2 flex-wrap">
+          <span class="font-semibold moss-text">✓ Bu haftanın antrenman kotası tamamlandı!</span>
+          <span class="text-[var(--text-secondary)]">Yeni döngü için temel şablonlar aşağıdadır.</span>
+        </div>
+      `;
+      visibleProtocols = [protocols[0], protocols[2]].filter(Boolean);
+    }
+  } else {
+    visibleProtocols = protocols[selectedProtocolMode] ? [protocols[selectedProtocolMode]] : (remainingProtocols.length ? remainingProtocols : protocols.slice(0, 2));
+  }
+
+  container.innerHTML = emptyBannerHtml + visibleProtocols.map(p => {
+    let exerciseHtml = '';
+    if (p.category === 'gym') {
+      exerciseHtml = `
+<div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region custom-scrollbar mt-3">
+  <table class="w-full text-left text-xs">
+    <thead>
+      <tr>
+        <th class="py-2.5 px-3">#</th>
+        <th class="py-2.5 px-3">Egzersiz</th>
+        <th class="py-2.5 px-3">Set x Tekrar</th>
+        <th class="py-2.5 px-3">Mevcut &amp; Hedef Ağırlık</th>
+        <th class="py-2.5 px-3">Dinlenme &amp; RPE</th>
+        <th class="py-2.5 px-3">Koçluk İpucu</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-[var(--border-subtle)]">
+      ${(p.exercises || []).map(ex => `
+        <tr class="hover:bg-[var(--bg-subtle)]">
+          <td class="py-2.5 px-3 font-mono font-semibold text-[var(--text-muted)]">${ex.num}</td>
+          <td class="py-2.5 px-3 font-semibold">${escapeHtml(ex.name)}</td>
+          <td class="py-2.5 px-3 font-mono font-semibold accent-text">${ex.sets} x ${ex.reps}</td>
+          <td class="py-2.5 px-3">
+            <span class="stamp-tag stamp-moss">${escapeHtml(ex.target_weight)}</span>
+            ${ex.current_achieved ? `<p class="font-mono text-[10px] text-[var(--text-muted)] mt-1">Son: ${escapeHtml(ex.current_achieved)}</p>` : ''}
+          </td>
+          <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(ex.rest_sec)} <span class="text-[var(--text-muted)]">(${escapeHtml(ex.target_rpe || 'RPE 8')})</span></td>
+          <td class="py-2.5 px-3 text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(ex.coaching_cue)}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+</div>
+      `;
+    } else if (p.category === 'running') {
+      const runEx = (p.exercises || [])[0] || {};
+      exerciseHtml = `
+<div class="tint-panel p-4 space-y-3 mt-3">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+    <div>
+      <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Süre / Mesafe</p>
+      <p class="font-mono font-bold text-sm mt-0.5">${escapeHtml(runEx.duration || (runEx.sets + ' x ' + runEx.reps))}</p>
+      ${runEx.distance_est ? `<p class="font-mono text-[10px] text-[var(--text-muted)]">${escapeHtml(runEx.distance_est)}</p>` : ''}
+    </div>
+    <div>
+      <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Hedef Nabız</p>
+      <p class="font-mono font-bold moss-text text-sm mt-0.5">${escapeHtml(runEx.target_hr)}</p>
+    </div>
+    <div>
+      <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Hedef Tempo</p>
+      <p class="font-mono font-bold accent-text text-sm mt-0.5">${escapeHtml(runEx.target_pace)}</p>
+    </div>
+    <div>
+      <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Hedef Kadans</p>
+      <p class="font-mono font-bold text-sm mt-0.5">${escapeHtml(runEx.cadence_target)}</p>
+    </div>
+  </div>
+  <p class="text-xs text-[var(--text-secondary)] pt-2.5 border-t border-[var(--border-subtle)]"><strong class="text-[var(--text-primary)] font-semibold">Koçluk Talimatı:</strong> ${escapeHtml(runEx.coaching_cue)}</p>
+</div>
+      `;
+    } else {
+      const restEx = (p.exercises || [])[0] || {};
+      exerciseHtml = `
+<div class="tint-panel p-4 space-y-1 mt-3 text-xs">
+  <p class="font-semibold">${escapeHtml(restEx.protocol)}</p>
+  <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(restEx.coaching_cue)}</p>
+</div>
+      `;
+    }
+
+    return `
+      <div class="surface-card surface-card-interactive p-5 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="stamp-tag stamp-accent">${escapeHtml(p.badge)}</span>
+            ${getQuotaStatusStamp(p.quota_status)}
+            <h4 class="font-editorial text-base font-medium tracking-tight">${escapeHtml(p.day_title)}</h4>
+          </div>
+          <span class="font-mono text-[11px] text-[var(--text-secondary)]">${escapeHtml(p.status_note)}</span>
+        </div>
+
+        <p class="text-xs text-[var(--text-secondary)] leading-relaxed"><strong class="text-[var(--text-primary)] font-semibold">Seans Hedefi:</strong> ${escapeHtml(p.objective)}</p>
+        <p class="text-xs text-[var(--text-secondary)] tint-panel p-2.5"><strong class="text-[var(--text-primary)] font-semibold">Isınma &amp; Mobilite:</strong> ${escapeHtml(p.warmup)}</p>
+
+        ${exerciseHtml}
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)]">
+          <p><strong class="text-[var(--text-primary)]">Soğuma:</strong> ${escapeHtml(p.cooldown)}</p>
+          <p class="font-mono font-medium tint-panel px-2.5 py-1">${escapeHtml(p.telemetry_targets ? p.telemetry_targets.nutrition : '')}</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+  if (typeof refreshIcons === 'function') refreshIcons();
+}

@@ -152,6 +152,7 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
                 **engine.get_latest_metrics(),
                 "is_demo": IS_DEMO_MODE,
                 "schedule": engine.get_weekly_schedule(),
+                "weekly_quota": engine.get_weekly_quota_summary(),
                 "settings": engine.get_garmin_settings_to_fix(),
                 "guidance": engine.get_sports_guidance(),
                 "training_load": engine.get_training_load_analytics()
