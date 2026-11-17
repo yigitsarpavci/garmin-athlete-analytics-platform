@@ -58,6 +58,10 @@ BASE_DIR = os.path.dirname(APP_DIR)
 sys.path.insert(0, APP_DIR)
 from garmin_engine import GarminAthleteEngine
 from ai_coach import AthleteAICoach
+try:
+    from engine.helpers import IS_DEMO_MODE
+except ImportError:
+    from app.engine.helpers import IS_DEMO_MODE
 
 engine = GarminAthleteEngine()
 coach = AthleteAICoach(engine)
@@ -144,7 +148,6 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
 
         # 1. Genel Bakış & Metrikler
         if path == "/api/overview" or path == "/api/metrics":
-            from app.engine.helpers import IS_DEMO_MODE
             self.send_json(200, {
                 **engine.get_latest_metrics(),
                 "is_demo": IS_DEMO_MODE,
