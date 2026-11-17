@@ -14,7 +14,8 @@ import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
-SRC_DIR = os.path.join(BASE_DIR, "src")
+EXPORTS_DIR = os.path.join(DATA_DIR, "exports")
+REPORTS_DIR = os.path.join(BASE_DIR, "reports")
 
 # -------------------------------------------------------------------------
 # 1. Veri Yükleme ve Birleştirme
@@ -168,10 +169,9 @@ for a in acts_all:
 adf = pd.DataFrame(act_rows)
 adf_3m = adf[adf["in_3m"]].copy()
 
-df.to_csv(os.path.join(DATA_DIR, "garmin_93gun_gunluk_veri.csv"), index=False)
-adf.to_csv(os.path.join(DATA_DIR, "garmin_aktiviteler_detay.csv"), index=False)
-df.to_csv(os.path.join(BASE_DIR, "garmin_93gun_gunluk_veri.csv"), index=False)
-adf.to_csv(os.path.join(BASE_DIR, "garmin_aktiviteler_detay.csv"), index=False)
+os.makedirs(EXPORTS_DIR, exist_ok=True)
+df.to_csv(os.path.join(EXPORTS_DIR, "garmin_93gun_gunluk_veri.csv"), index=False)
+adf.to_csv(os.path.join(EXPORTS_DIR, "garmin_aktiviteler_detay.csv"), index=False)
 
 # -------------------------------------------------------------------------
 # 2. Biçimlendirme Yardımcıları
@@ -1137,7 +1137,8 @@ Sporcunun her antrenman sonrasında takip ettiği 5 maddelik altın kontrol prot
 \end{document}
 """
 
-tex_path = os.path.join(SRC_DIR, "report.tex")
+os.makedirs(REPORTS_DIR, exist_ok=True)
+tex_path = os.path.join(REPORTS_DIR, "report.tex")
 with open(tex_path, "w", encoding="utf-8") as f:
     f.write(tex_content)
 

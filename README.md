@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Tests: 29 Passed](https://img.shields.io/badge/Tests-29%20Passed%20(100%25)-success)](tests/run_tests.py)
-[![Report: LaTeX PDF](https://img.shields.io/badge/Report-LaTeX%20PDF%20Generator-navy)](src/build_latex_report.py)
+[![Report: LaTeX PDF](https://img.shields.io/badge/Report-LaTeX%20PDF%20Generator-navy)](scripts/build_latex_report.py)
 [![Architecture: MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-purple)](https://modelcontextprotocol.io)
 
 An end-to-end athletic performance intelligence and biometric telemetry platform. It ingests 93 days ($N=93$ days, 49 multi-sport activities, 88 sleep/HRV nights, 124 gym sets) of raw Garmin Connect sensor data via the **Model Context Protocol (MCP)**, executing Tim Gabbett Acute:Chronic Workload Ratio (ACWR) injury risk modeling, Firstbeat training status algorithms, dynamic multi-sport periodization, and an automated 9-page publication-grade LaTeX executive report generator.
@@ -134,7 +134,7 @@ Following every session, the platform benchmarks live telemetry against baseline
 
 ## Automated 9-Page LaTeX Executive Report
 
-The platform compiles an extensive, publication-grade 9-page PDF report locally via `./generate_report.sh` (personal biometric data and generated PDFs are excluded from version control via `.gitignore` for privacy) featuring:
+The platform compiles an extensive, publication-grade 9-page PDF report locally via `./scripts/generate_report.sh` (or `make report`; personal biometric data and generated PDFs are excluded from version control via `.gitignore` for privacy) featuring:
 - **Page 1:** Executive Summary, 3 Primary Takeaways, BMI & Target Weight Projections ($87.0 \rightarrow 81.0\text{ kg}$), and 4-Phase Chronology.
 - **Page 2:** Longitudinal Monthly & 14-Week Telemetry Tables.
 - **Page 3:** Autonomic Nervous System (ANS), HRV Sleep Balance, and Pearson Correlation Analysis.
@@ -234,20 +234,20 @@ OK
 
 ### 1. Launch the Web Dashboard
 ```bash
-./run_app.sh
+make run          # or ./scripts/run_app.sh
 ```
 Open your browser at `http://localhost:8085`.
 
 ### 2. Run All Tests
 ```bash
-python3 tests/run_tests.py
+make test         # or python3 tests/run_tests.py
 ```
 
 ### 3. Compile the 9-Page Executive PDF Report
 ```bash
-./generate_report.sh
+make report       # or ./scripts/generate_report.sh
 ```
-The compiled document will be output locally to `Garmin_3_Aylik_Detayli_Veri_Analizi_Raporu.pdf`.
+The compiled document will be output locally to `reports/Garmin_3_Aylik_Detayli_Veri_Analizi_Raporu.pdf`.
 
 ---
 
@@ -255,33 +255,33 @@ The compiled document will be output locally to `Garmin_3_Aylik_Detayli_Veri_Ana
 
 ```
 garmin-athlete-analytics-platform/
-├── app/
-│   ├── server.py                 # FastAPI asynchronous REST backend
-│   ├── garmin_engine.py          # Core sports science & ACWR analytical engine
-│   ├── athlete_principles.py     # 4-tier periodization & 7-day workout rules
-│   ├── ai_coach.py               # Dual-provider LLM AI coaching service
-│   └── static/
-│       └── index.html            # Responsive Chart.js athletic web dashboard
-├── data/
-│   ├── raw_activities.json       # 49 raw multi-sport activity records
-│   ├── raw_daily_93d.json        # 93 days of 24h biometric sensor telemetry
-│   ├── raw_sleep_stats.json      # 88 nights of sleep stages & HRV telemetry
-│   └── raw_gym_exercise_sets.json# 124 logged resistance sets & reps
-├── src/
-│   ├── build_latex_report.py     # Dynamic XeLaTeX/Tectonic report generator
-│   └── report.tex                # Formatted publication report source
-├── tests/
-│   ├── run_tests.py              # Unified test runner
+├── app/                              # Web server, analytics engine & UI
+│   ├── server.py                     # Asynchronous REST API server
+│   ├── garmin_engine.py              # Sports science & ACWR orchestrator
+│   ├── athlete_principles.py         # Single source of truth training rules
+│   ├── ai_coach.py                   # Multi-provider LLM coaching service
+│   ├── engine/                       # Modular calculation mixins
+│   └── static/                       # Responsive Chart.js web dashboard
+├── sample_data/                      # Synthetic demo telemetry for quickstarts
+├── data/                             # Local Garmin telemetry JSONs (gitignored)
+│   ├── archive/                      # Archived single-activity raw JSONs
+│   └── exports/                      # Generated CSV metric exports
+├── reports/                          # Local LaTeX/PDF reports (gitignored)
+├── scripts/                          # Automation & reporting pipeline
+│   ├── run_app.sh                    # Web application launcher
+│   ├── generate_report.sh            # Telemetry fetch & PDF compiler
+│   ├── fetch_garmin_data.mjs         # Garmin Connect MCP ingestion script
+│   └── build_latex_report.py         # Dynamic XeLaTeX/Tectonic report builder
+├── tests/                            # 29-test unit & integration suite
+│   ├── run_tests.py
 │   ├── test_engine_calculations.py
 │   ├── test_api_endpoints.py
 │   ├── test_data_integrity.py
 │   └── test_athlete_principles.py
-├── generate_report.sh            # One-click report compilation script
-├── run_app.sh                    # Web application launch script
-├── Garmin_3_Aylik_Detayli_Veri_Analizi_Raporu.pdf # 9-page executive PDF
-├── README.md                     # Comprehensive English documentation
-├── README_TR.md                  # Comprehensive Turkish documentation
-└── LICENSE                       # MIT License
+├── Makefile                          # Unified build, test, and run shortcuts
+├── README.md                         # Comprehensive English documentation
+├── README_TR.md                      # Comprehensive Turkish documentation
+└── LICENSE                           # MIT License
 ```
 
 ---

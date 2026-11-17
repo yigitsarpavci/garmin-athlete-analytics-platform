@@ -5,7 +5,7 @@
 # ==============================================================================
 
 PORT=${1:-8085}
-APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "==> Garmin Sporcu Asistanı Başlatılıyor..."
 echo "==> Port: $PORT"

@@ -12,10 +12,9 @@ env/
 .playwright-mcp/
 
 # Personal Garmin Biometric Data & Generated Reports (kept locally only)
-data/*.json
-data/*.csv
+data/
+reports/
 Garmin_3_Aylik_Detayli_Veri_Analizi_Raporu.pdf
-src/report.tex
 report.pdf
 
 # Editor & System

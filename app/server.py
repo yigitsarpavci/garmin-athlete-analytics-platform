@@ -77,7 +77,7 @@ _SYNC_LOCK = threading.Lock()
 
 def sync_garmin_live() -> Dict[str, Any]:
     """Garmin Connect verilerini canlı çeker ve motoru tazeler."""
-    fetch_script = os.path.join(BASE_DIR, "src", "fetch_garmin_data.mjs")
+    fetch_script = os.path.join(BASE_DIR, "scripts", "fetch_garmin_data.mjs")
     if not os.path.exists(fetch_script):
         SYNC_STATE["last_error"] = "fetch_garmin_data.mjs bulunamadı."
         return {"success": False, "session_expired": False, "message": SYNC_STATE["last_error"]}

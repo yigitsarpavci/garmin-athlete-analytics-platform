@@ -32,7 +32,7 @@ Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve First
 ### 1. Web Uygulamasını Başlatma
 ```bash
 # Web panelini başlatın (Port: 8085)
-./run_app.sh
+make run            # veya ./scripts/run_app.sh
 
 # Tarayıcınızda açın:
 http://localhost:8085
@@ -40,17 +40,17 @@ http://localhost:8085
 
 ### 2. Test Süitini Çalıştırma (%100 Kapsam)
 ```bash
-python3 tests/run_tests.py
+make test           # veya python3 tests/run_tests.py
 ```
-*Tüm matematiksel formüller, veri bütünlüğü, sporcu ilkeleri ve REST API uç noktaları (28 test) otomatik doğrulanır.*
+*Tüm matematiksel formüller, veri bütünlüğü, sporcu ilkeleri ve REST API uç noktaları otomatik doğrulanır.*
 
 ### 3. Yönetici PDF Raporunu Derleme
 ```bash
-# 8 sayfalık tam bütçeli PDF raporunu derler:
-./generate_report.sh
+# 9 sayfalık güncel PDF raporunu reports/ altına derler:
+make report         # veya ./scripts/generate_report.sh
 
-# Garmin Connect'ten en son teleometriyi çekerek baştan derlemek için:
-./generate_report.sh --fetch
+# Garmin Connect'ten en son telemetriyi çekerek baştan derlemek için:
+make fetch          # veya ./scripts/generate_report.sh --fetch
 ```
 
 ---
@@ -58,44 +58,33 @@ python3 tests/run_tests.py
 ## 📂 Dizin Yapısı
 
 ```
-garminmcp/
-├── Garmin_3_Aylik_Detayli_Veri_Analizi_Raporu.pdf  # 8 sayfalık güncel sporcu raporu
-├── generate_report.sh                              # PDF derleme ve veri çekme betiği
-├── run_app.sh                                      # İnteraktif web asistanı başlatıcı
-├── README.md                                       # Proje dokümantasyonu
-├── AGENTS.md                                       # Sistem hafızası ve koçluk kuralları
-│
-├── app/                                            # Web ve Analitik Motoru
-│   ├── server.py                                   # REST API ve HTTP Sunucusu
-│   ├── garmin_engine.py                            # Performans, ACWR ve Progresyon Motoru
-│   ├── athlete_principles.py                       # Sporcu İlkeleri (Single Source of Truth)
-│   ├── ai_coach.py                                 # Gerçek AI Entegrasyonlu Koçluk Modülü
-│   └── static/
-│       └── index.html                              # Tailwind CSS + Chart.js Gösterge Paneli
-│
-├── tests/                                          # Kapsamlı Otomatik Test Süiti
-│   ├── run_tests.py                                # Birleşik Test Koşucusu
-│   ├── test_engine_calculations.py                 # Matematiksel Hesaplama Testleri
-│   ├── test_athlete_principles.py                  # Sporcu Hafızası ve Kural Testleri
-│   ├── test_api_endpoints.py                       # REST API Entegrasyon Testleri
-│   └── test_data_integrity.py                      # Ham Sensör Verisi Bütünlük Testleri
-│
-├── src/                                            # LaTeX Raporlama Kaynakları
-│   ├── build_latex_report.py                       # LaTeX rapor ve veri derleyici
-│   ├── fetch_garmin_data.mjs                       # Garmin MCP veri çekme modülü
-│   ├── report.tex                                  # XeLaTeX kaynak dosyası
-│   └── report.pdf                                  # Derlenmiş PDF raporu
-│
-└── data/                                           # Ham Sensör Kayıtları ve CSV'ler
-    ├── raw_daily_93d.json                          # 93 günlük sağlık ve hazırlık özetleri
-    ├── raw_sleep_stats.json                        # 88 gecelik detaylı uyku ve HRV verileri
-    ├── raw_activities.json                         # 49 antrenmanın ham telemetrisi
-    ├── raw_gym_exercise_sets.json                  # Kasım ayı 124 salon seti ve ağırlıkları
-    ├── raw_training_status_latest.json             # Anlık Firstbeat Training Status
-    ├── raw_training_status_weekly.json             # 14 haftalık kronik yük dökümü
-    ├── raw_vo2max_history.json                     # VO2Max gelişim geçmişi
-    ├── garmin_93gun_gunluk_veri.csv                # Günlük metrikler tablosu
-    └── garmin_aktiviteler_detay.csv                # Aktivite metrikleri tablosu
+garmin-athlete-analytics-platform/
+├── app/                              # Web Uygulaması, Motor & Arayüz
+│   ├── server.py                     # REST API ve HTTP Sunucusu
+│   ├── garmin_engine.py              # Performans, ACWR ve Progresyon Motoru
+│   ├── athlete_principles.py         # Sporcu İlkeleri (Single Source of Truth)
+│   ├── ai_coach.py                   # Gerçek AI Entegrasyonlu Koçluk Modülü
+│   ├── engine/                       # Modüler analitik hesaplama katmanları
+│   └── static/                       # Chart.js & Tailwind CSS Web Paneli
+├── sample_data/                      # GitHub klonları için sentetik demo verileri
+├── data/                             # Yerel canlı Garmin verileri (gitignored)
+│   ├── archive/                      # Tekil aktivite arşiv JSON kayıtları
+│   └── exports/                      # Çıktı alınan CSV tabloları
+├── reports/                          # Yerel PDF ve LaTeX raporları (gitignored)
+├── scripts/                          # Veri Çekme, Başlatma & Raporlama Araçları
+│   ├── run_app.sh                    # Web paneli başlatıcı
+│   ├── generate_report.sh            # PDF derleme ve canlı veri çekme betiği
+│   ├── fetch_garmin_data.mjs         # Garmin Connect MCP veri çekme modülü
+│   └── build_latex_report.py         # LaTeX rapor ve CSV derleyici
+├── tests/                            # Otomatik Test Süiti (29 Test)
+│   ├── run_tests.py
+│   ├── test_engine_calculations.py
+│   ├── test_athlete_principles.py
+│   ├── test_api_endpoints.py
+│   └── test_data_integrity.py
+├── Makefile                          # Kısayol komutları (run, test, fetch, report)
+├── README.md                         # İngilizce dokümantasyon
+└── README_TR.md                      # Türkçe dokümantasyon
 ```
 
 ---
