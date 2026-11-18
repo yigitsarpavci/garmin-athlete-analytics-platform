@@ -227,16 +227,28 @@ class SleepAnalyticsMixin:
 
         def _period_stats(start_d: str, end_d: str) -> Dict[str, Any]:
             sub_df = self.df[(self.df["date"] >= start_d) & (self.df["date"] <= end_d)]
-            sub_acts = self.adf[(self.adf["date"] >= start_d) & (self.adf["date"] <= end_d)]
+            has_acts = not self.adf.empty and "date" in self.adf.columns
+            sub_acts = self.adf[(self.adf["date"] >= start_d) & (self.adf["date"] <= end_d)] if has_acts else pd.DataFrame()
             avg_load = int(round(float(sub_df["acute_load"].mean()))) if not sub_df.empty and sub_df["acute_load"].notna().any() else 0
             avg_hrv = round(float(sub_df["hrv_night"].mean()), 1) if not sub_df.empty and sub_df["hrv_night"].notna().any() else 0.0
             avg_slp = f"{sub_df['sleep_h'].mean():.2f} sa".replace(".", ",") if not sub_df.empty and sub_df["sleep_h"].notna().any() else "--"
             return {"avg_load": avg_load, "avg_hrv": avg_hrv, "avg_sleep": avg_slp, "sub_df": sub_df, "sub_acts": sub_acts}
 
-        p1 = _period_stats("2026-08-17", "2026-08-30")
-        p2 = _period_stats("2026-08-31", "2026-09-27")
-        p3 = _period_stats("2026-09-28", "2026-11-01")
-        p4 = _period_stats("2026-11-02", latest_dt)
+        if latest_dt < "2026-08-01" and len(self.dates) >= 4:
+            dates_sorted = sorted(self.dates)
+            n = len(dates_sorted)
+            i1 = max(1, min(14, n // 6))
+            i2 = max(i1 + 1, min(42, n // 2))
+            i3 = max(i2 + 1, min(77, (n * 4) // 5))
+            p1 = _period_stats(dates_sorted[0], dates_sorted[i1 - 1])
+            p2 = _period_stats(dates_sorted[i1], dates_sorted[i2 - 1])
+            p3 = _period_stats(dates_sorted[i2], dates_sorted[i3 - 1])
+            p4 = _period_stats(dates_sorted[i3], latest_dt)
+        else:
+            p1 = _period_stats("2026-08-17", "2026-08-30")
+            p2 = _period_stats("2026-08-31", "2026-09-27")
+            p3 = _period_stats("2026-09-28", "2026-11-01")
+            p4 = _period_stats("2026-11-02", latest_dt)
 
         p4_acts = p4["sub_acts"]
         p4_st_cnt = int((p4_acts["sport"] == "strength_training").sum()) if not p4_acts.empty else 0
@@ -290,7 +302,12 @@ class SleepAnalyticsMixin:
         for idx_w, (wk_start, grp) in enumerate(df_wk.groupby("week_start"), 1):
             wk_end = grp["date"].max()
             wk_acts = self.adf_3m[(self.adf_3m["date"] >= wk_start) & (self.adf_3m["date"] <= wk_end)] if not self.adf_3m.empty else pd.DataFrame()
-            goal_hit = int((grp["steps"] >= grp["step_goal"]).sum()) if "step_goal" in grp.columns else 0
+            if "step_goal" in grp.columns:
+                g_num = pd.to_numeric(grp["step_goal"], errors="coerce").fillna(10000)
+                s_num = pd.to_numeric(grp["steps"], errors="coerce").fillna(0)
+                goal_hit = int((s_num >= g_num).sum())
+            else:
+                goal_hit = 0
             weeks.append({
                 "week": f"H{idx_w:02d}",
                 "start_date": wk_start[5:],
@@ -342,11 +359,12 @@ class SleepAnalyticsMixin:
         run_secs = [0.0] * 5
         all_secs = [0.0] * 5
         acts = getattr(self, "activities_all", []) or []
+        min_act_cutoff = min("2026-08-01", self.dates[0]) if getattr(self, "dates", None) else "2026-01-01"
         for a in acts:
             if not isinstance(a, dict):
                 continue
             dt_date = (a.get("startTimeLocal") or "")[:10]
-            if dt_date and dt_date < "2026-08-01":
+            if dt_date and dt_date < min_act_cutoff:
                 continue
             is_run = "running" in ((a.get("activityType") or {}).get("typeKey") or "").lower()
             for idx in range(5):

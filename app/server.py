@@ -116,6 +116,8 @@ def sync_garmin_live() -> Dict[str, Any]:
 
 def _auto_sync_loop(interval_sec: int = 900) -> None:
     """Sunucu çalışırken belirli aralıklarla Garmin telemetrisini otomatik yeniler."""
+    if IS_DEMO_MODE:
+        return
     daily_file = os.path.join(BASE_DIR, "data", "raw_daily_93d.json")
     try:
         age_sec = time.time() - os.path.getmtime(daily_file) if os.path.exists(daily_file) else interval_sec + 1
@@ -343,7 +345,10 @@ def run(port: int = 8085) -> None:
     httpd = HTTPServer(server_address, AthleteAppHandler)
     print(f"\n=======================================================")
     print(f"🚀 Garmin Sporcu Asistanı & Gösterge Paneli Başlatıldı")
-    print(f"🔄 Otomatik Garmin Canlı Senkronizasyon: Aktif (15 dk)")
+    if IS_DEMO_MODE:
+        print(f"🧪 Mod: DEMO / MOCK VERİ (sample_data) — Canlı senkronizasyon devre dışı")
+    else:
+        print(f"🔄 Otomatik Garmin Canlı Senkronizasyon: Aktif (15 dk)")
     print(f"👉 Tarayıcıda açın: http://localhost:{port}")
     print(f"=======================================================\n")
     try:
@@ -353,5 +358,6 @@ def run(port: int = 8085) -> None:
         httpd.server_close()
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8085
+    pos_args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    port = int(pos_args[0]) if pos_args else 8085
     run(port)

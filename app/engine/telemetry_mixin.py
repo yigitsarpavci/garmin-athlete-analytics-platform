@@ -57,7 +57,9 @@ class TelemetryMixin:
             max_v = float(ser.max())
             extra_note = note
             if col == "steps" and "step_goal" in self.df.columns:
-                hit = int((self.df["steps"] >= self.df["step_goal"]).sum())
+                goals = pd.to_numeric(self.df["step_goal"], errors="coerce").fillna(10000)
+                steps_num = pd.to_numeric(self.df["steps"], errors="coerce").fillna(0)
+                hit = int((steps_num >= goals).sum())
                 pct = round(hit / max(1, n_days) * 100)
                 extra_note = f"{n_days} günün {hit}'inde hedef aşıldı (%{pct})"
             elif col == "dist_km":

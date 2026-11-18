@@ -9,6 +9,7 @@ aynı gün sıra analizleri ve branş gelişim stratejilerini üretir.
 
 import json
 import os
+import sys
 import math
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any, Tuple, Union
@@ -35,7 +36,11 @@ APP_DIR = os.path.dirname(ENGINE_DIR)
 BASE_DIR = os.path.dirname(APP_DIR)
 _REAL_DATA_DIR = os.path.join(BASE_DIR, "data")
 _SAMPLE_DATA_DIR = os.path.join(BASE_DIR, "sample_data")
-IS_DEMO_MODE = not os.path.exists(os.path.join(_REAL_DATA_DIR, "raw_daily_93d.json"))
+_FORCE_DEMO = (
+    os.environ.get("GARMIN_DEMO_MODE", "").strip().lower() in ("1", "true", "yes", "demo", "mock")
+    or ("--demo" in sys.argv)
+)
+IS_DEMO_MODE = _FORCE_DEMO or not os.path.exists(os.path.join(_REAL_DATA_DIR, "raw_daily_93d.json"))
 DATA_DIR = _SAMPLE_DATA_DIR if IS_DEMO_MODE else _REAL_DATA_DIR
 
 TR_DAYS = ["Pzt", "Salı", "Çar", "Per", "Cuma", "Cmt", "Paz"]

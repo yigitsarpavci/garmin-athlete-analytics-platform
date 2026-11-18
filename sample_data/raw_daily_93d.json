@@ -21,7 +21,13 @@
       "sleepingSeconds": 28156,
       "moderateIntensityMinutes": 26,
       "vigorousIntensityMinutes": 15,
-      "bodyWeightInGrams": 84000
+      "bodyWeightInGrams": 84000,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-02": {
       "userProfileId": 100000001,
@@ -44,7 +50,13 @@
       "sleepingSeconds": 26007,
       "moderateIntensityMinutes": 47,
       "vigorousIntensityMinutes": 28,
-      "bodyWeightInGrams": 83970
+      "bodyWeightInGrams": 83970,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-03": {
       "userProfileId": 100000001,
@@ -67,7 +79,13 @@
       "sleepingSeconds": 28463,
       "moderateIntensityMinutes": 42,
       "vigorousIntensityMinutes": 18,
-      "bodyWeightInGrams": 83940
+      "bodyWeightInGrams": 83940,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-04": {
       "userProfileId": 100000001,
@@ -90,7 +108,13 @@
       "sleepingSeconds": 25353,
       "moderateIntensityMinutes": 32,
       "vigorousIntensityMinutes": 18,
-      "bodyWeightInGrams": 83910
+      "bodyWeightInGrams": 83910,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-05": {
       "userProfileId": 100000001,
@@ -113,7 +137,13 @@
       "sleepingSeconds": 26101,
       "moderateIntensityMinutes": 42,
       "vigorousIntensityMinutes": 38,
-      "bodyWeightInGrams": 83880
+      "bodyWeightInGrams": 83880,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-06": {
       "userProfileId": 100000001,
@@ -136,7 +166,13 @@
       "sleepingSeconds": 27284,
       "moderateIntensityMinutes": 37,
       "vigorousIntensityMinutes": 23,
-      "bodyWeightInGrams": 83850
+      "bodyWeightInGrams": 83850,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-07": {
       "userProfileId": 100000001,
@@ -159,7 +195,13 @@
       "sleepingSeconds": 26852,
       "moderateIntensityMinutes": 48,
       "vigorousIntensityMinutes": 33,
-      "bodyWeightInGrams": 83820
+      "bodyWeightInGrams": 83820,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-08": {
       "userProfileId": 100000001,
@@ -182,7 +224,13 @@
       "sleepingSeconds": 28158,
       "moderateIntensityMinutes": 44,
       "vigorousIntensityMinutes": 17,
-      "bodyWeightInGrams": 83790
+      "bodyWeightInGrams": 83790,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-09": {
       "userProfileId": 100000001,
@@ -205,7 +253,13 @@
       "sleepingSeconds": 28261,
       "moderateIntensityMinutes": 30,
       "vigorousIntensityMinutes": 29,
-      "bodyWeightInGrams": 83760
+      "bodyWeightInGrams": 83760,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-10": {
       "userProfileId": 100000001,
@@ -228,7 +282,13 @@
       "sleepingSeconds": 24704,
       "moderateIntensityMinutes": 44,
       "vigorousIntensityMinutes": 25,
-      "bodyWeightInGrams": 83730
+      "bodyWeightInGrams": 83730,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-11": {
       "userProfileId": 100000001,
@@ -251,7 +311,13 @@
       "sleepingSeconds": 25730,
       "moderateIntensityMinutes": 29,
       "vigorousIntensityMinutes": 36,
-      "bodyWeightInGrams": 83700
+      "bodyWeightInGrams": 83700,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-12": {
       "userProfileId": 100000001,
@@ -274,7 +340,13 @@
       "sleepingSeconds": 27968,
       "moderateIntensityMinutes": 46,
       "vigorousIntensityMinutes": 35,
-      "bodyWeightInGrams": 83670
+      "bodyWeightInGrams": 83670,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-13": {
       "userProfileId": 100000001,
@@ -297,7 +369,13 @@
       "sleepingSeconds": 24758,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 37,
-      "bodyWeightInGrams": 83640
+      "bodyWeightInGrams": 83640,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-14": {
       "userProfileId": 100000001,
@@ -320,7 +398,13 @@
       "sleepingSeconds": 28572,
       "moderateIntensityMinutes": 32,
       "vigorousIntensityMinutes": 40,
-      "bodyWeightInGrams": 83610
+      "bodyWeightInGrams": 83610,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-15": {
       "userProfileId": 100000001,
@@ -343,7 +427,13 @@
       "sleepingSeconds": 27479,
       "moderateIntensityMinutes": 50,
       "vigorousIntensityMinutes": 18,
-      "bodyWeightInGrams": 83580
+      "bodyWeightInGrams": 83580,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-16": {
       "userProfileId": 100000001,
@@ -366,7 +456,13 @@
       "sleepingSeconds": 24820,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 39,
-      "bodyWeightInGrams": 83550
+      "bodyWeightInGrams": 83550,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-17": {
       "userProfileId": 100000001,
@@ -389,7 +485,13 @@
       "sleepingSeconds": 27036,
       "moderateIntensityMinutes": 38,
       "vigorousIntensityMinutes": 37,
-      "bodyWeightInGrams": 83520
+      "bodyWeightInGrams": 83520,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-18": {
       "userProfileId": 100000001,
@@ -412,7 +514,13 @@
       "sleepingSeconds": 25168,
       "moderateIntensityMinutes": 26,
       "vigorousIntensityMinutes": 33,
-      "bodyWeightInGrams": 83490
+      "bodyWeightInGrams": 83490,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-19": {
       "userProfileId": 100000001,
@@ -435,7 +543,13 @@
       "sleepingSeconds": 26716,
       "moderateIntensityMinutes": 43,
       "vigorousIntensityMinutes": 34,
-      "bodyWeightInGrams": 83460
+      "bodyWeightInGrams": 83460,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-20": {
       "userProfileId": 100000001,
@@ -458,7 +572,13 @@
       "sleepingSeconds": 25772,
       "moderateIntensityMinutes": 46,
       "vigorousIntensityMinutes": 35,
-      "bodyWeightInGrams": 83430
+      "bodyWeightInGrams": 83430,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-21": {
       "userProfileId": 100000001,
@@ -481,7 +601,13 @@
       "sleepingSeconds": 26701,
       "moderateIntensityMinutes": 36,
       "vigorousIntensityMinutes": 24,
-      "bodyWeightInGrams": 83400
+      "bodyWeightInGrams": 83400,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-22": {
       "userProfileId": 100000001,
@@ -504,7 +630,13 @@
       "sleepingSeconds": 25645,
       "moderateIntensityMinutes": 28,
       "vigorousIntensityMinutes": 38,
-      "bodyWeightInGrams": 83370
+      "bodyWeightInGrams": 83370,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-23": {
       "userProfileId": 100000001,
@@ -527,7 +659,13 @@
       "sleepingSeconds": 25456,
       "moderateIntensityMinutes": 45,
       "vigorousIntensityMinutes": 28,
-      "bodyWeightInGrams": 83340
+      "bodyWeightInGrams": 83340,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-24": {
       "userProfileId": 100000001,
@@ -550,7 +688,13 @@
       "sleepingSeconds": 25616,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 37,
-      "bodyWeightInGrams": 83310
+      "bodyWeightInGrams": 83310,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-25": {
       "userProfileId": 100000001,
@@ -573,7 +717,13 @@
       "sleepingSeconds": 26744,
       "moderateIntensityMinutes": 46,
       "vigorousIntensityMinutes": 18,
-      "bodyWeightInGrams": 83280
+      "bodyWeightInGrams": 83280,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-26": {
       "userProfileId": 100000001,
@@ -596,7 +746,13 @@
       "sleepingSeconds": 28072,
       "moderateIntensityMinutes": 50,
       "vigorousIntensityMinutes": 36,
-      "bodyWeightInGrams": 83250
+      "bodyWeightInGrams": 83250,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-27": {
       "userProfileId": 100000001,
@@ -619,7 +775,13 @@
       "sleepingSeconds": 26564,
       "moderateIntensityMinutes": 32,
       "vigorousIntensityMinutes": 15,
-      "bodyWeightInGrams": 83220
+      "bodyWeightInGrams": 83220,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-28": {
       "userProfileId": 100000001,
@@ -642,7 +804,13 @@
       "sleepingSeconds": 25644,
       "moderateIntensityMinutes": 33,
       "vigorousIntensityMinutes": 20,
-      "bodyWeightInGrams": 83190
+      "bodyWeightInGrams": 83190,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-29": {
       "userProfileId": 100000001,
@@ -665,7 +833,13 @@
       "sleepingSeconds": 25063,
       "moderateIntensityMinutes": 47,
       "vigorousIntensityMinutes": 28,
-      "bodyWeightInGrams": 83160
+      "bodyWeightInGrams": 83160,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-30": {
       "userProfileId": 100000001,
@@ -688,7 +862,13 @@
       "sleepingSeconds": 25720,
       "moderateIntensityMinutes": 48,
       "vigorousIntensityMinutes": 24,
-      "bodyWeightInGrams": 83130
+      "bodyWeightInGrams": 83130,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-01-31": {
       "userProfileId": 100000001,
@@ -711,7 +891,13 @@
       "sleepingSeconds": 27165,
       "moderateIntensityMinutes": 37,
       "vigorousIntensityMinutes": 32,
-      "bodyWeightInGrams": 83100
+      "bodyWeightInGrams": 83100,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-01": {
       "userProfileId": 100000001,
@@ -734,7 +920,13 @@
       "sleepingSeconds": 25394,
       "moderateIntensityMinutes": 34,
       "vigorousIntensityMinutes": 31,
-      "bodyWeightInGrams": 83070
+      "bodyWeightInGrams": 83070,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-02": {
       "userProfileId": 100000001,
@@ -757,7 +949,13 @@
       "sleepingSeconds": 28430,
       "moderateIntensityMinutes": 38,
       "vigorousIntensityMinutes": 35,
-      "bodyWeightInGrams": 83040
+      "bodyWeightInGrams": 83040,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-03": {
       "userProfileId": 100000001,
@@ -780,7 +978,13 @@
       "sleepingSeconds": 26492,
       "moderateIntensityMinutes": 30,
       "vigorousIntensityMinutes": 40,
-      "bodyWeightInGrams": 83010
+      "bodyWeightInGrams": 83010,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-04": {
       "userProfileId": 100000001,
@@ -803,7 +1007,13 @@
       "sleepingSeconds": 28325,
       "moderateIntensityMinutes": 44,
       "vigorousIntensityMinutes": 38,
-      "bodyWeightInGrams": 82980
+      "bodyWeightInGrams": 82980,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-05": {
       "userProfileId": 100000001,
@@ -826,7 +1036,13 @@
       "sleepingSeconds": 28669,
       "moderateIntensityMinutes": 45,
       "vigorousIntensityMinutes": 22,
-      "bodyWeightInGrams": 82950
+      "bodyWeightInGrams": 82950,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-06": {
       "userProfileId": 100000001,
@@ -849,7 +1065,13 @@
       "sleepingSeconds": 25951,
       "moderateIntensityMinutes": 47,
       "vigorousIntensityMinutes": 21,
-      "bodyWeightInGrams": 82920
+      "bodyWeightInGrams": 82920,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-07": {
       "userProfileId": 100000001,
@@ -872,7 +1094,13 @@
       "sleepingSeconds": 27816,
       "moderateIntensityMinutes": 40,
       "vigorousIntensityMinutes": 15,
-      "bodyWeightInGrams": 82890
+      "bodyWeightInGrams": 82890,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-08": {
       "userProfileId": 100000001,
@@ -895,7 +1123,13 @@
       "sleepingSeconds": 28678,
       "moderateIntensityMinutes": 25,
       "vigorousIntensityMinutes": 27,
-      "bodyWeightInGrams": 82860
+      "bodyWeightInGrams": 82860,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-09": {
       "userProfileId": 100000001,
@@ -918,7 +1152,13 @@
       "sleepingSeconds": 28211,
       "moderateIntensityMinutes": 29,
       "vigorousIntensityMinutes": 29,
-      "bodyWeightInGrams": 82830
+      "bodyWeightInGrams": 82830,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-10": {
       "userProfileId": 100000001,
@@ -941,7 +1181,13 @@
       "sleepingSeconds": 28552,
       "moderateIntensityMinutes": 25,
       "vigorousIntensityMinutes": 38,
-      "bodyWeightInGrams": 82800
+      "bodyWeightInGrams": 82800,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-11": {
       "userProfileId": 100000001,
@@ -964,7 +1210,13 @@
       "sleepingSeconds": 28579,
       "moderateIntensityMinutes": 46,
       "vigorousIntensityMinutes": 18,
-      "bodyWeightInGrams": 82770
+      "bodyWeightInGrams": 82770,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-12": {
       "userProfileId": 100000001,
@@ -987,7 +1239,13 @@
       "sleepingSeconds": 27774,
       "moderateIntensityMinutes": 37,
       "vigorousIntensityMinutes": 37,
-      "bodyWeightInGrams": 82740
+      "bodyWeightInGrams": 82740,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-13": {
       "userProfileId": 100000001,
@@ -1010,7 +1268,13 @@
       "sleepingSeconds": 25036,
       "moderateIntensityMinutes": 36,
       "vigorousIntensityMinutes": 32,
-      "bodyWeightInGrams": 82710
+      "bodyWeightInGrams": 82710,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-14": {
       "userProfileId": 100000001,
@@ -1033,7 +1297,13 @@
       "sleepingSeconds": 28267,
       "moderateIntensityMinutes": 30,
       "vigorousIntensityMinutes": 38,
-      "bodyWeightInGrams": 82680
+      "bodyWeightInGrams": 82680,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-15": {
       "userProfileId": 100000001,
@@ -1056,7 +1326,13 @@
       "sleepingSeconds": 27804,
       "moderateIntensityMinutes": 35,
       "vigorousIntensityMinutes": 15,
-      "bodyWeightInGrams": 82650
+      "bodyWeightInGrams": 82650,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-16": {
       "userProfileId": 100000001,
@@ -1079,7 +1355,13 @@
       "sleepingSeconds": 26265,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 22,
-      "bodyWeightInGrams": 82620
+      "bodyWeightInGrams": 82620,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-17": {
       "userProfileId": 100000001,
@@ -1102,7 +1384,13 @@
       "sleepingSeconds": 26693,
       "moderateIntensityMinutes": 34,
       "vigorousIntensityMinutes": 36,
-      "bodyWeightInGrams": 82590
+      "bodyWeightInGrams": 82590,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-18": {
       "userProfileId": 100000001,
@@ -1125,7 +1413,13 @@
       "sleepingSeconds": 26277,
       "moderateIntensityMinutes": 35,
       "vigorousIntensityMinutes": 18,
-      "bodyWeightInGrams": 82560
+      "bodyWeightInGrams": 82560,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-19": {
       "userProfileId": 100000001,
@@ -1148,7 +1442,13 @@
       "sleepingSeconds": 26290,
       "moderateIntensityMinutes": 34,
       "vigorousIntensityMinutes": 22,
-      "bodyWeightInGrams": 82530
+      "bodyWeightInGrams": 82530,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-20": {
       "userProfileId": 100000001,
@@ -1171,7 +1471,13 @@
       "sleepingSeconds": 25540,
       "moderateIntensityMinutes": 25,
       "vigorousIntensityMinutes": 33,
-      "bodyWeightInGrams": 82500
+      "bodyWeightInGrams": 82500,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-21": {
       "userProfileId": 100000001,
@@ -1194,7 +1500,13 @@
       "sleepingSeconds": 25139,
       "moderateIntensityMinutes": 29,
       "vigorousIntensityMinutes": 19,
-      "bodyWeightInGrams": 82470
+      "bodyWeightInGrams": 82470,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-22": {
       "userProfileId": 100000001,
@@ -1217,7 +1529,13 @@
       "sleepingSeconds": 28212,
       "moderateIntensityMinutes": 34,
       "vigorousIntensityMinutes": 33,
-      "bodyWeightInGrams": 82440
+      "bodyWeightInGrams": 82440,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-23": {
       "userProfileId": 100000001,
@@ -1240,7 +1558,13 @@
       "sleepingSeconds": 25982,
       "moderateIntensityMinutes": 25,
       "vigorousIntensityMinutes": 28,
-      "bodyWeightInGrams": 82410
+      "bodyWeightInGrams": 82410,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-24": {
       "userProfileId": 100000001,
@@ -1263,7 +1587,13 @@
       "sleepingSeconds": 26320,
       "moderateIntensityMinutes": 38,
       "vigorousIntensityMinutes": 18,
-      "bodyWeightInGrams": 82380
+      "bodyWeightInGrams": 82380,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-25": {
       "userProfileId": 100000001,
@@ -1286,7 +1616,13 @@
       "sleepingSeconds": 25718,
       "moderateIntensityMinutes": 39,
       "vigorousIntensityMinutes": 37,
-      "bodyWeightInGrams": 82350
+      "bodyWeightInGrams": 82350,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-26": {
       "userProfileId": 100000001,
@@ -1309,7 +1645,13 @@
       "sleepingSeconds": 24911,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 22,
-      "bodyWeightInGrams": 82320
+      "bodyWeightInGrams": 82320,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-27": {
       "userProfileId": 100000001,
@@ -1332,7 +1674,13 @@
       "sleepingSeconds": 28270,
       "moderateIntensityMinutes": 45,
       "vigorousIntensityMinutes": 30,
-      "bodyWeightInGrams": 82290
+      "bodyWeightInGrams": 82290,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-02-28": {
       "userProfileId": 100000001,
@@ -1355,7 +1703,13 @@
       "sleepingSeconds": 25000,
       "moderateIntensityMinutes": 39,
       "vigorousIntensityMinutes": 17,
-      "bodyWeightInGrams": 82260
+      "bodyWeightInGrams": 82260,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-01": {
       "userProfileId": 100000001,
@@ -1378,7 +1732,13 @@
       "sleepingSeconds": 27663,
       "moderateIntensityMinutes": 44,
       "vigorousIntensityMinutes": 39,
-      "bodyWeightInGrams": 82230
+      "bodyWeightInGrams": 82230,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-02": {
       "userProfileId": 100000001,
@@ -1401,7 +1761,13 @@
       "sleepingSeconds": 26660,
       "moderateIntensityMinutes": 47,
       "vigorousIntensityMinutes": 20,
-      "bodyWeightInGrams": 82200
+      "bodyWeightInGrams": 82200,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-03": {
       "userProfileId": 100000001,
@@ -1424,7 +1790,13 @@
       "sleepingSeconds": 26939,
       "moderateIntensityMinutes": 38,
       "vigorousIntensityMinutes": 30,
-      "bodyWeightInGrams": 82170
+      "bodyWeightInGrams": 82170,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-04": {
       "userProfileId": 100000001,
@@ -1447,7 +1819,13 @@
       "sleepingSeconds": 26888,
       "moderateIntensityMinutes": 25,
       "vigorousIntensityMinutes": 24,
-      "bodyWeightInGrams": 82140
+      "bodyWeightInGrams": 82140,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-05": {
       "userProfileId": 100000001,
@@ -1470,7 +1848,13 @@
       "sleepingSeconds": 27790,
       "moderateIntensityMinutes": 39,
       "vigorousIntensityMinutes": 25,
-      "bodyWeightInGrams": 82110
+      "bodyWeightInGrams": 82110,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-06": {
       "userProfileId": 100000001,
@@ -1493,7 +1877,13 @@
       "sleepingSeconds": 25946,
       "moderateIntensityMinutes": 40,
       "vigorousIntensityMinutes": 16,
-      "bodyWeightInGrams": 82080
+      "bodyWeightInGrams": 82080,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-07": {
       "userProfileId": 100000001,
@@ -1516,7 +1906,13 @@
       "sleepingSeconds": 25964,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 30,
-      "bodyWeightInGrams": 82050
+      "bodyWeightInGrams": 82050,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-08": {
       "userProfileId": 100000001,
@@ -1539,7 +1935,13 @@
       "sleepingSeconds": 28697,
       "moderateIntensityMinutes": 42,
       "vigorousIntensityMinutes": 16,
-      "bodyWeightInGrams": 82020
+      "bodyWeightInGrams": 82020,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-09": {
       "userProfileId": 100000001,
@@ -1562,7 +1964,13 @@
       "sleepingSeconds": 27153,
       "moderateIntensityMinutes": 25,
       "vigorousIntensityMinutes": 16,
-      "bodyWeightInGrams": 81990
+      "bodyWeightInGrams": 81990,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-10": {
       "userProfileId": 100000001,
@@ -1585,7 +1993,13 @@
       "sleepingSeconds": 25346,
       "moderateIntensityMinutes": 44,
       "vigorousIntensityMinutes": 27,
-      "bodyWeightInGrams": 81960
+      "bodyWeightInGrams": 81960,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-11": {
       "userProfileId": 100000001,
@@ -1608,7 +2022,13 @@
       "sleepingSeconds": 25994,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 29,
-      "bodyWeightInGrams": 81930
+      "bodyWeightInGrams": 81930,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-12": {
       "userProfileId": 100000001,
@@ -1631,7 +2051,13 @@
       "sleepingSeconds": 27824,
       "moderateIntensityMinutes": 43,
       "vigorousIntensityMinutes": 26,
-      "bodyWeightInGrams": 81900
+      "bodyWeightInGrams": 81900,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-13": {
       "userProfileId": 100000001,
@@ -1654,7 +2080,13 @@
       "sleepingSeconds": 27044,
       "moderateIntensityMinutes": 49,
       "vigorousIntensityMinutes": 40,
-      "bodyWeightInGrams": 81870
+      "bodyWeightInGrams": 81870,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-14": {
       "userProfileId": 100000001,
@@ -1677,7 +2109,13 @@
       "sleepingSeconds": 24973,
       "moderateIntensityMinutes": 43,
       "vigorousIntensityMinutes": 26,
-      "bodyWeightInGrams": 81840
+      "bodyWeightInGrams": 81840,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-15": {
       "userProfileId": 100000001,
@@ -1700,7 +2138,13 @@
       "sleepingSeconds": 26047,
       "moderateIntensityMinutes": 33,
       "vigorousIntensityMinutes": 30,
-      "bodyWeightInGrams": 81810
+      "bodyWeightInGrams": 81810,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-16": {
       "userProfileId": 100000001,
@@ -1723,7 +2167,13 @@
       "sleepingSeconds": 27696,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 40,
-      "bodyWeightInGrams": 81780
+      "bodyWeightInGrams": 81780,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-17": {
       "userProfileId": 100000001,
@@ -1746,7 +2196,13 @@
       "sleepingSeconds": 27387,
       "moderateIntensityMinutes": 44,
       "vigorousIntensityMinutes": 22,
-      "bodyWeightInGrams": 81750
+      "bodyWeightInGrams": 81750,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-18": {
       "userProfileId": 100000001,
@@ -1769,7 +2225,13 @@
       "sleepingSeconds": 26623,
       "moderateIntensityMinutes": 42,
       "vigorousIntensityMinutes": 19,
-      "bodyWeightInGrams": 81720
+      "bodyWeightInGrams": 81720,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-19": {
       "userProfileId": 100000001,
@@ -1792,7 +2254,13 @@
       "sleepingSeconds": 28708,
       "moderateIntensityMinutes": 44,
       "vigorousIntensityMinutes": 28,
-      "bodyWeightInGrams": 81690
+      "bodyWeightInGrams": 81690,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-20": {
       "userProfileId": 100000001,
@@ -1815,7 +2283,13 @@
       "sleepingSeconds": 27638,
       "moderateIntensityMinutes": 26,
       "vigorousIntensityMinutes": 27,
-      "bodyWeightInGrams": 81660
+      "bodyWeightInGrams": 81660,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-21": {
       "userProfileId": 100000001,
@@ -1838,7 +2312,13 @@
       "sleepingSeconds": 26695,
       "moderateIntensityMinutes": 29,
       "vigorousIntensityMinutes": 40,
-      "bodyWeightInGrams": 81630
+      "bodyWeightInGrams": 81630,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-22": {
       "userProfileId": 100000001,
@@ -1861,7 +2341,13 @@
       "sleepingSeconds": 25764,
       "moderateIntensityMinutes": 42,
       "vigorousIntensityMinutes": 23,
-      "bodyWeightInGrams": 81600
+      "bodyWeightInGrams": 81600,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-23": {
       "userProfileId": 100000001,
@@ -1884,7 +2370,13 @@
       "sleepingSeconds": 26873,
       "moderateIntensityMinutes": 26,
       "vigorousIntensityMinutes": 19,
-      "bodyWeightInGrams": 81570
+      "bodyWeightInGrams": 81570,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-24": {
       "userProfileId": 100000001,
@@ -1907,7 +2399,13 @@
       "sleepingSeconds": 25055,
       "moderateIntensityMinutes": 48,
       "vigorousIntensityMinutes": 40,
-      "bodyWeightInGrams": 81540
+      "bodyWeightInGrams": 81540,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-25": {
       "userProfileId": 100000001,
@@ -1930,7 +2428,13 @@
       "sleepingSeconds": 28333,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 17,
-      "bodyWeightInGrams": 81510
+      "bodyWeightInGrams": 81510,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-26": {
       "userProfileId": 100000001,
@@ -1953,7 +2457,13 @@
       "sleepingSeconds": 28224,
       "moderateIntensityMinutes": 28,
       "vigorousIntensityMinutes": 40,
-      "bodyWeightInGrams": 81480
+      "bodyWeightInGrams": 81480,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-27": {
       "userProfileId": 100000001,
@@ -1976,7 +2486,13 @@
       "sleepingSeconds": 25478,
       "moderateIntensityMinutes": 35,
       "vigorousIntensityMinutes": 28,
-      "bodyWeightInGrams": 81450
+      "bodyWeightInGrams": 81450,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-28": {
       "userProfileId": 100000001,
@@ -1999,7 +2515,13 @@
       "sleepingSeconds": 25765,
       "moderateIntensityMinutes": 42,
       "vigorousIntensityMinutes": 16,
-      "bodyWeightInGrams": 81420
+      "bodyWeightInGrams": 81420,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-29": {
       "userProfileId": 100000001,
@@ -2022,7 +2544,13 @@
       "sleepingSeconds": 25548,
       "moderateIntensityMinutes": 43,
       "vigorousIntensityMinutes": 31,
-      "bodyWeightInGrams": 81390
+      "bodyWeightInGrams": 81390,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-30": {
       "userProfileId": 100000001,
@@ -2045,7 +2573,13 @@
       "sleepingSeconds": 24915,
       "moderateIntensityMinutes": 44,
       "vigorousIntensityMinutes": 36,
-      "bodyWeightInGrams": 81360
+      "bodyWeightInGrams": 81360,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-03-31": {
       "userProfileId": 100000001,
@@ -2068,7 +2602,13 @@
       "sleepingSeconds": 24951,
       "moderateIntensityMinutes": 27,
       "vigorousIntensityMinutes": 38,
-      "bodyWeightInGrams": 81330
+      "bodyWeightInGrams": 81330,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-04-01": {
       "userProfileId": 100000001,
@@ -2091,7 +2631,13 @@
       "sleepingSeconds": 25974,
       "moderateIntensityMinutes": 30,
       "vigorousIntensityMinutes": 39,
-      "bodyWeightInGrams": 81300
+      "bodyWeightInGrams": 81300,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-04-02": {
       "userProfileId": 100000001,
@@ -2114,7 +2660,13 @@
       "sleepingSeconds": 25632,
       "moderateIntensityMinutes": 36,
       "vigorousIntensityMinutes": 28,
-      "bodyWeightInGrams": 81270
+      "bodyWeightInGrams": 81270,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     },
     "2026-04-03": {
       "userProfileId": 100000001,
@@ -2137,7 +2689,13 @@
       "sleepingSeconds": 26430,
       "moderateIntensityMinutes": 49,
       "vigorousIntensityMinutes": 19,
-      "bodyWeightInGrams": 81240
+      "bodyWeightInGrams": 81240,
+      "dailyStepGoal": 10000,
+      "averageSpo2": 96.4,
+      "lowestSpo2": 93.0,
+      "avgWakingRespirationValue": 15.2,
+      "lowestRespirationValue": 12.0,
+      "highestRespirationValue": 18.0
     }
   },
   "readiness": {

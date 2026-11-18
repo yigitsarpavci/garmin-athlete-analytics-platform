@@ -1,0 +1,189 @@
+{
+  "activities": {
+    "9000000036": {
+      "activityId": 9000000036,
+      "activityName": "Full Body Strength 5x5",
+      "sport": "strength_training",
+      "startTimeLocal": "2026-03-17 08:30:00",
+      "source": "garmin_recorded_summary_and_splits",
+      "fit_file": "fit_files/9000000036.fit",
+      "splitSummaries": [],
+      "powerTimeInZones": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "hrTimeInZones": [
+        1856.0,
+        960.0,
+        320.0,
+        64.0,
+        0
+      ]
+    },
+    "9000000035": {
+      "activityId": 9000000035,
+      "activityName": "Zone 2 Base Run",
+      "sport": "running",
+      "startTimeLocal": "2026-03-15 08:30:00",
+      "source": "garmin_recorded_summary_and_splits",
+      "fit_file": "fit_files/9000000035.fit",
+      "splitSummaries": [],
+      "powerTimeInZones": [
+        400.4,
+        1019.2,
+        291.2,
+        91.0,
+        18.2
+      ],
+      "hrTimeInZones": [
+        291.2,
+        1237.6,
+        200.2,
+        72.8,
+        18.2
+      ]
+    },
+    "9000000034": {
+      "activityId": 9000000034,
+      "activityName": "Full Body Strength 5x5",
+      "sport": "strength_training",
+      "startTimeLocal": "2026-03-13 08:30:00",
+      "source": "garmin_recorded_summary_and_splits",
+      "fit_file": "fit_files/9000000034.fit",
+      "splitSummaries": [],
+      "powerTimeInZones": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "hrTimeInZones": [
+        1856.0,
+        960.0,
+        320.0,
+        64.0,
+        0
+      ]
+    },
+    "9000000033": {
+      "activityId": 9000000033,
+      "activityName": "Zone 2 Base Run",
+      "sport": "running",
+      "startTimeLocal": "2026-03-11 08:30:00",
+      "source": "garmin_recorded_summary_and_splits",
+      "fit_file": "fit_files/9000000033.fit",
+      "splitSummaries": [],
+      "powerTimeInZones": [
+        400.4,
+        1019.2,
+        291.2,
+        91.0,
+        18.2
+      ],
+      "hrTimeInZones": [
+        291.2,
+        1237.6,
+        200.2,
+        72.8,
+        18.2
+      ]
+    },
+    "9000000032": {
+      "activityId": 9000000032,
+      "activityName": "Full Body Strength 5x5",
+      "sport": "strength_training",
+      "startTimeLocal": "2026-03-09 08:30:00",
+      "source": "garmin_recorded_summary_and_splits",
+      "fit_file": "fit_files/9000000032.fit",
+      "splitSummaries": [],
+      "powerTimeInZones": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "hrTimeInZones": [
+        1856.0,
+        960.0,
+        320.0,
+        64.0,
+        0
+      ]
+    },
+    "9000000031": {
+      "activityId": 9000000031,
+      "activityName": "Zone 2 Base Run",
+      "sport": "running",
+      "startTimeLocal": "2026-03-07 08:30:00",
+      "source": "garmin_recorded_summary_and_splits",
+      "fit_file": "fit_files/9000000031.fit",
+      "splitSummaries": [],
+      "powerTimeInZones": [
+        400.4,
+        1019.2,
+        291.2,
+        91.0,
+        18.2
+      ],
+      "hrTimeInZones": [
+        291.2,
+        1237.6,
+        200.2,
+        72.8,
+        18.2
+      ]
+    },
+    "9000000030": {
+      "activityId": 9000000030,
+      "activityName": "Full Body Strength 5x5",
+      "sport": "strength_training",
+      "startTimeLocal": "2026-03-05 08:30:00",
+      "source": "garmin_recorded_summary_and_splits",
+      "fit_file": "fit_files/9000000030.fit",
+      "splitSummaries": [],
+      "powerTimeInZones": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "hrTimeInZones": [
+        1856.0,
+        960.0,
+        320.0,
+        64.0,
+        0
+      ]
+    },
+    "9000000029": {
+      "activityId": 9000000029,
+      "activityName": "Zone 2 Base Run",
+      "sport": "running",
+      "startTimeLocal": "2026-03-03 08:30:00",
+      "source": "garmin_recorded_summary_and_splits",
+      "fit_file": "fit_files/9000000029.fit",
+      "splitSummaries": [],
+      "powerTimeInZones": [
+        400.4,
+        1019.2,
+        291.2,
+        91.0,
+        18.2
+      ],
+      "hrTimeInZones": [
+        291.2,
+        1237.6,
+        200.2,
+        72.8,
+        18.2
+      ]
+    }
+  },
+  "updated_at": "2026-11-18T01:51:13Z"
+}

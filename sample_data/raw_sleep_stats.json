@@ -11,7 +11,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 44,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 57
+    "bodyBatteryChange": 57,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-01-07": {
     "calendarDate": "2026-01-07",
@@ -25,7 +27,9 @@
     "sleepScore": 80,
     "avgOvernightHrv": 51,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 41
+    "bodyBatteryChange": 41,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-01-08": {
     "calendarDate": "2026-01-08",
@@ -39,7 +43,9 @@
     "sleepScore": 81,
     "avgOvernightHrv": 47,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 52
+    "bodyBatteryChange": 52,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-01-09": {
     "calendarDate": "2026-01-09",
@@ -53,7 +59,9 @@
     "sleepScore": 68,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 45
+    "bodyBatteryChange": 45,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-01-10": {
     "calendarDate": "2026-01-10",
@@ -67,7 +75,9 @@
     "sleepScore": 81,
     "avgOvernightHrv": 51,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 43
+    "bodyBatteryChange": 43,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-01-11": {
     "calendarDate": "2026-01-11",
@@ -81,7 +91,9 @@
     "sleepScore": 80,
     "avgOvernightHrv": 51,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-01-12": {
     "calendarDate": "2026-01-12",
@@ -95,7 +107,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 48,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 43
+    "bodyBatteryChange": 43,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-01-13": {
     "calendarDate": "2026-01-13",
@@ -109,7 +123,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 51,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 44
+    "bodyBatteryChange": 44,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-01-14": {
     "calendarDate": "2026-01-14",
@@ -123,7 +139,9 @@
     "sleepScore": 87,
     "avgOvernightHrv": 40,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 60
+    "bodyBatteryChange": 60,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-01-15": {
     "calendarDate": "2026-01-15",
@@ -137,7 +155,9 @@
     "sleepScore": 86,
     "avgOvernightHrv": 45,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 58
+    "bodyBatteryChange": 58,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-01-16": {
     "calendarDate": "2026-01-16",
@@ -151,7 +171,9 @@
     "sleepScore": 82,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 55
+    "bodyBatteryChange": 55,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-01-17": {
     "calendarDate": "2026-01-17",
@@ -165,7 +187,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-01-18": {
     "calendarDate": "2026-01-18",
@@ -179,7 +203,9 @@
     "sleepScore": 70,
     "avgOvernightHrv": 48,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 42
+    "bodyBatteryChange": 42,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-01-19": {
     "calendarDate": "2026-01-19",
@@ -193,7 +219,9 @@
     "sleepScore": 85,
     "avgOvernightHrv": 50,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 41
+    "bodyBatteryChange": 41,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-01-20": {
     "calendarDate": "2026-01-20",
@@ -207,7 +235,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 38,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 54
+    "bodyBatteryChange": 54,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-01-21": {
     "calendarDate": "2026-01-21",
@@ -221,7 +251,9 @@
     "sleepScore": 75,
     "avgOvernightHrv": 49,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 54
+    "bodyBatteryChange": 54,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-01-22": {
     "calendarDate": "2026-01-22",
@@ -235,7 +267,9 @@
     "sleepScore": 79,
     "avgOvernightHrv": 52,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-01-23": {
     "calendarDate": "2026-01-23",
@@ -249,7 +283,9 @@
     "sleepScore": 70,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 43
+    "bodyBatteryChange": 43,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-01-24": {
     "calendarDate": "2026-01-24",
@@ -263,7 +299,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 42
+    "bodyBatteryChange": 42,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-01-25": {
     "calendarDate": "2026-01-25",
@@ -277,7 +315,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 47,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 42
+    "bodyBatteryChange": 42,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-01-26": {
     "calendarDate": "2026-01-26",
@@ -291,7 +331,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 60
+    "bodyBatteryChange": 60,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-01-27": {
     "calendarDate": "2026-01-27",
@@ -305,7 +347,9 @@
     "sleepScore": 77,
     "avgOvernightHrv": 40,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 46
+    "bodyBatteryChange": 46,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-01-28": {
     "calendarDate": "2026-01-28",
@@ -319,7 +363,9 @@
     "sleepScore": 70,
     "avgOvernightHrv": 42,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 43
+    "bodyBatteryChange": 43,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-01-29": {
     "calendarDate": "2026-01-29",
@@ -333,7 +379,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 47,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 52
+    "bodyBatteryChange": 52,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-01-30": {
     "calendarDate": "2026-01-30",
@@ -347,7 +395,9 @@
     "sleepScore": 69,
     "avgOvernightHrv": 44,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 51
+    "bodyBatteryChange": 51,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-01-31": {
     "calendarDate": "2026-01-31",
@@ -361,7 +411,9 @@
     "sleepScore": 75,
     "avgOvernightHrv": 46,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 47
+    "bodyBatteryChange": 47,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-02-01": {
     "calendarDate": "2026-02-01",
@@ -375,7 +427,9 @@
     "sleepScore": 82,
     "avgOvernightHrv": 50,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-02-02": {
     "calendarDate": "2026-02-02",
@@ -389,7 +443,9 @@
     "sleepScore": 74,
     "avgOvernightHrv": 50,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 59
+    "bodyBatteryChange": 59,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-02-03": {
     "calendarDate": "2026-02-03",
@@ -403,7 +459,9 @@
     "sleepScore": 85,
     "avgOvernightHrv": 52,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 43
+    "bodyBatteryChange": 43,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-02-04": {
     "calendarDate": "2026-02-04",
@@ -417,7 +475,9 @@
     "sleepScore": 76,
     "avgOvernightHrv": 45,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 56
+    "bodyBatteryChange": 56,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-02-05": {
     "calendarDate": "2026-02-05",
@@ -431,7 +491,9 @@
     "sleepScore": 68,
     "avgOvernightHrv": 44,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 41
+    "bodyBatteryChange": 41,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-02-06": {
     "calendarDate": "2026-02-06",
@@ -445,7 +507,9 @@
     "sleepScore": 79,
     "avgOvernightHrv": 41,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 40
+    "bodyBatteryChange": 40,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-02-07": {
     "calendarDate": "2026-02-07",
@@ -459,7 +523,9 @@
     "sleepScore": 77,
     "avgOvernightHrv": 52,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 55
+    "bodyBatteryChange": 55,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-02-08": {
     "calendarDate": "2026-02-08",
@@ -473,7 +539,9 @@
     "sleepScore": 68,
     "avgOvernightHrv": 42,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 46
+    "bodyBatteryChange": 46,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-02-09": {
     "calendarDate": "2026-02-09",
@@ -487,7 +555,9 @@
     "sleepScore": 71,
     "avgOvernightHrv": 50,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-02-10": {
     "calendarDate": "2026-02-10",
@@ -501,7 +571,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 50,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 59
+    "bodyBatteryChange": 59,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-02-11": {
     "calendarDate": "2026-02-11",
@@ -515,7 +587,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 46,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 58
+    "bodyBatteryChange": 58,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-02-12": {
     "calendarDate": "2026-02-12",
@@ -529,7 +603,9 @@
     "sleepScore": 87,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 47
+    "bodyBatteryChange": 47,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-02-13": {
     "calendarDate": "2026-02-13",
@@ -543,7 +619,9 @@
     "sleepScore": 79,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 56
+    "bodyBatteryChange": 56,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-02-14": {
     "calendarDate": "2026-02-14",
@@ -557,7 +635,9 @@
     "sleepScore": 83,
     "avgOvernightHrv": 38,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 60
+    "bodyBatteryChange": 60,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-02-15": {
     "calendarDate": "2026-02-15",
@@ -571,7 +651,9 @@
     "sleepScore": 70,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 47
+    "bodyBatteryChange": 47,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-02-16": {
     "calendarDate": "2026-02-16",
@@ -585,7 +667,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 38,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 51
+    "bodyBatteryChange": 51,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-02-17": {
     "calendarDate": "2026-02-17",
@@ -599,7 +683,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 40,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 44
+    "bodyBatteryChange": 44,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-02-18": {
     "calendarDate": "2026-02-18",
@@ -613,7 +699,9 @@
     "sleepScore": 69,
     "avgOvernightHrv": 50,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 46
+    "bodyBatteryChange": 46,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-02-19": {
     "calendarDate": "2026-02-19",
@@ -627,7 +715,9 @@
     "sleepScore": 85,
     "avgOvernightHrv": 45,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 48
+    "bodyBatteryChange": 48,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-02-20": {
     "calendarDate": "2026-02-20",
@@ -641,7 +731,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 48
+    "bodyBatteryChange": 48,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-02-21": {
     "calendarDate": "2026-02-21",
@@ -655,7 +747,9 @@
     "sleepScore": 78,
     "avgOvernightHrv": 40,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 55
+    "bodyBatteryChange": 55,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-02-22": {
     "calendarDate": "2026-02-22",
@@ -669,7 +763,9 @@
     "sleepScore": 81,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 53
+    "bodyBatteryChange": 53,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-02-23": {
     "calendarDate": "2026-02-23",
@@ -683,7 +779,9 @@
     "sleepScore": 70,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-02-24": {
     "calendarDate": "2026-02-24",
@@ -697,7 +795,9 @@
     "sleepScore": 82,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 54
+    "bodyBatteryChange": 54,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-02-25": {
     "calendarDate": "2026-02-25",
@@ -711,7 +811,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 50,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 41
+    "bodyBatteryChange": 41,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-02-26": {
     "calendarDate": "2026-02-26",
@@ -725,7 +827,9 @@
     "sleepScore": 68,
     "avgOvernightHrv": 40,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 59
+    "bodyBatteryChange": 59,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-02-27": {
     "calendarDate": "2026-02-27",
@@ -739,7 +843,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 51
+    "bodyBatteryChange": 51,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-02-28": {
     "calendarDate": "2026-02-28",
@@ -753,7 +859,9 @@
     "sleepScore": 79,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 54
+    "bodyBatteryChange": 54,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-03-01": {
     "calendarDate": "2026-03-01",
@@ -767,7 +875,9 @@
     "sleepScore": 80,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 60
+    "bodyBatteryChange": 60,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-03-02": {
     "calendarDate": "2026-03-02",
@@ -781,7 +891,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 44,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 57
+    "bodyBatteryChange": 57,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-03-03": {
     "calendarDate": "2026-03-03",
@@ -795,7 +907,9 @@
     "sleepScore": 87,
     "avgOvernightHrv": 42,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 55
+    "bodyBatteryChange": 55,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-03-04": {
     "calendarDate": "2026-03-04",
@@ -809,7 +923,9 @@
     "sleepScore": 82,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 50
+    "bodyBatteryChange": 50,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-03-05": {
     "calendarDate": "2026-03-05",
@@ -823,7 +939,9 @@
     "sleepScore": 77,
     "avgOvernightHrv": 51,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 45
+    "bodyBatteryChange": 45,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-03-06": {
     "calendarDate": "2026-03-06",
@@ -837,7 +955,9 @@
     "sleepScore": 71,
     "avgOvernightHrv": 41,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 44
+    "bodyBatteryChange": 44,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-03-07": {
     "calendarDate": "2026-03-07",
@@ -851,7 +971,9 @@
     "sleepScore": 79,
     "avgOvernightHrv": 45,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 57
+    "bodyBatteryChange": 57,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-03-08": {
     "calendarDate": "2026-03-08",
@@ -865,7 +987,9 @@
     "sleepScore": 83,
     "avgOvernightHrv": 46,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 53
+    "bodyBatteryChange": 53,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-03-09": {
     "calendarDate": "2026-03-09",
@@ -879,7 +1003,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 54
+    "bodyBatteryChange": 54,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-03-10": {
     "calendarDate": "2026-03-10",
@@ -893,7 +1019,9 @@
     "sleepScore": 88,
     "avgOvernightHrv": 47,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 45
+    "bodyBatteryChange": 45,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-03-11": {
     "calendarDate": "2026-03-11",
@@ -907,7 +1035,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 40,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-03-12": {
     "calendarDate": "2026-03-12",
@@ -921,7 +1051,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 52,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-03-13": {
     "calendarDate": "2026-03-13",
@@ -935,7 +1067,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 48,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-03-14": {
     "calendarDate": "2026-03-14",
@@ -949,7 +1083,9 @@
     "sleepScore": 86,
     "avgOvernightHrv": 40,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 45
+    "bodyBatteryChange": 45,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-03-15": {
     "calendarDate": "2026-03-15",
@@ -963,7 +1099,9 @@
     "sleepScore": 68,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 41
+    "bodyBatteryChange": 41,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-03-16": {
     "calendarDate": "2026-03-16",
@@ -977,7 +1115,9 @@
     "sleepScore": 81,
     "avgOvernightHrv": 47,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 60
+    "bodyBatteryChange": 60,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-03-17": {
     "calendarDate": "2026-03-17",
@@ -991,7 +1131,9 @@
     "sleepScore": 83,
     "avgOvernightHrv": 41,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 52
+    "bodyBatteryChange": 52,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   },
   "2026-03-18": {
     "calendarDate": "2026-03-18",
@@ -1005,7 +1147,9 @@
     "sleepScore": 82,
     "avgOvernightHrv": 44,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 55
+    "bodyBatteryChange": 55,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-03-19": {
     "calendarDate": "2026-03-19",
@@ -1019,7 +1163,9 @@
     "sleepScore": 78,
     "avgOvernightHrv": 49,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 51
+    "bodyBatteryChange": 51,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-03-20": {
     "calendarDate": "2026-03-20",
@@ -1033,7 +1179,9 @@
     "sleepScore": 85,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 50
+    "bodyBatteryChange": 50,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-03-21": {
     "calendarDate": "2026-03-21",
@@ -1047,7 +1195,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 39,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 41
+    "bodyBatteryChange": 41,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-03-22": {
     "calendarDate": "2026-03-22",
@@ -1061,7 +1211,9 @@
     "sleepScore": 78,
     "avgOvernightHrv": 52,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 58
+    "bodyBatteryChange": 58,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-03-23": {
     "calendarDate": "2026-03-23",
@@ -1075,7 +1227,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 45,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 55
+    "bodyBatteryChange": 55,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-03-24": {
     "calendarDate": "2026-03-24",
@@ -1089,7 +1243,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 45,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 47
+    "bodyBatteryChange": 47,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-03-25": {
     "calendarDate": "2026-03-25",
@@ -1103,7 +1259,9 @@
     "sleepScore": 83,
     "avgOvernightHrv": 47,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 60
+    "bodyBatteryChange": 60,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-03-26": {
     "calendarDate": "2026-03-26",
@@ -1117,7 +1275,9 @@
     "sleepScore": 81,
     "avgOvernightHrv": 40,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 48
+    "bodyBatteryChange": 48,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-03-27": {
     "calendarDate": "2026-03-27",
@@ -1131,7 +1291,9 @@
     "sleepScore": 69,
     "avgOvernightHrv": 47,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 57
+    "bodyBatteryChange": 57,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-03-28": {
     "calendarDate": "2026-03-28",
@@ -1145,7 +1307,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 45,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 57
+    "bodyBatteryChange": 57,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-03-29": {
     "calendarDate": "2026-03-29",
@@ -1159,7 +1323,9 @@
     "sleepScore": 80,
     "avgOvernightHrv": 43,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 50
+    "bodyBatteryChange": 50,
+    "spO2": 96.2,
+    "skinTempC": 33.6
   },
   "2026-03-30": {
     "calendarDate": "2026-03-30",
@@ -1173,7 +1339,9 @@
     "sleepScore": 84,
     "avgOvernightHrv": 38,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 41
+    "bodyBatteryChange": 41,
+    "spO2": 96.2,
+    "skinTempC": 33.4
   },
   "2026-03-31": {
     "calendarDate": "2026-03-31",
@@ -1187,7 +1355,9 @@
     "sleepScore": 72,
     "avgOvernightHrv": 47,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 56
+    "bodyBatteryChange": 56,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-04-01": {
     "calendarDate": "2026-04-01",
@@ -1201,7 +1371,9 @@
     "sleepScore": 87,
     "avgOvernightHrv": 49,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 49
+    "bodyBatteryChange": 49,
+    "spO2": 96.2,
+    "skinTempC": 33.2
   },
   "2026-04-02": {
     "calendarDate": "2026-04-02",
@@ -1215,7 +1387,9 @@
     "sleepScore": 86,
     "avgOvernightHrv": 42,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 55
+    "bodyBatteryChange": 55,
+    "spO2": 96.2,
+    "skinTempC": 33.3
   },
   "2026-04-03": {
     "calendarDate": "2026-04-03",
@@ -1229,6 +1403,8 @@
     "sleepScore": 86,
     "avgOvernightHrv": 42,
     "hrvStatus": "BALANCED",
-    "bodyBatteryChange": 60
+    "bodyBatteryChange": 60,
+    "spO2": 96.2,
+    "skinTempC": 33.5
   }
 }

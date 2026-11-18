@@ -206,6 +206,26 @@ class TestApiEndpoints(unittest.TestCase):
                 self.assertIn(zkey, z)
         self.assertAlmostEqual(sum(z["run_pct"] for z in zones), 100.0, places=0)
 
+    def test_sample_data_mock_engine_parity(self):
+        """sample_data/ mock verisiyle motorun tüm temel uç noktaları hatasız ürettiğini doğrular."""
+        from app.garmin_engine import GarminAthleteEngine
+        sample_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sample_data")
+        demo_engine = GarminAthleteEngine(sample_dir)
+        self.assertGreater(len(demo_engine.df), 80)
+        self.assertGreater(len(demo_engine.adf), 25)
+        metrics = demo_engine.get_latest_metrics()
+        self.assertIn("biometrics_93d", metrics)
+        self.assertGreater(len(metrics["biometrics_93d"]), 5)
+        zones = demo_engine.get_hr_power_zones()
+        self.assertEqual(len(zones), 5)
+        self.assertGreater(sum(z["run_minutes"] for z in zones), 0)
+        exp = demo_engine.get_garmin_data_expansion_guide()
+        self.assertGreaterEqual(exp["fit_stream_summary"]["binary_fit_count"], 8)
+        self.assertGreaterEqual(exp["running_dynamics_summary"]["rd_covered_runs"], 10)
+        pw = demo_engine.get_periods_and_weeks()
+        self.assertEqual(len(pw["periods"]), 4)
+        self.assertGreaterEqual(len(pw["weeks"]), 10)
+
 
 if __name__ == "__main__":
     unittest.main()

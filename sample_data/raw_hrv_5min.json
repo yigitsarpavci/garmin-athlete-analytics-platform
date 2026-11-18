@@ -1,0 +1,170 @@
+{
+  "2026-03-21": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-21",
+      "lastNightAvg": 39,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 72
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-22": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-22",
+      "lastNightAvg": 52,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 78
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-23": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-23",
+      "lastNightAvg": 45,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 84
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-24": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-24",
+      "lastNightAvg": 45,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 84
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-25": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-25",
+      "lastNightAvg": 47,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 83
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-26": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-26",
+      "lastNightAvg": 40,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 81
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-27": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-27",
+      "lastNightAvg": 47,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 69
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-28": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-28",
+      "lastNightAvg": 45,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 84
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-29": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-29",
+      "lastNightAvg": 43,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 80
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-30": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-30",
+      "lastNightAvg": 38,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 84
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-03-31": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-03-31",
+      "lastNightAvg": 47,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 72
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-04-01": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-04-01",
+      "lastNightAvg": 49,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 87
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-04-02": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-04-02",
+      "lastNightAvg": 42,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 86
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  },
+  "2026-04-03": {
+    "provenance": "garmin_sleep_stats",
+    "hrvSummary": {
+      "calendarDate": "2026-04-03",
+      "lastNightAvg": 42,
+      "weeklyAvg": null,
+      "status": "BALANCED",
+      "sleepScore": 86
+    },
+    "localSleepStartTimeInMillis": null,
+    "localSleepEndTimeInMillis": null
+  }
+}

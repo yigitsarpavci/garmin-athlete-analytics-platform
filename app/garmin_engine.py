@@ -194,10 +194,11 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
         self.df = pd.DataFrame(rows)
 
         act_rows = []
+        min_act_cutoff = min("2026-08-01", self.dates[0]) if self.dates else "2026-01-01"
         for a in self.activities_all:
             dt_local = a.get("startTimeLocal", "")
             dt_date = dt_local[:10]
-            if dt_date < "2026-08-01":
+            if dt_date < min_act_cutoff:
                 continue
             t_key = a.get("activityType", {}).get("typeKey", "other")
             dur_s = a.get("duration") or 0
