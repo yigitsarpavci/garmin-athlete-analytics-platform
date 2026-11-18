@@ -358,33 +358,50 @@ function renderProgressionAssessment(data) {
   if (!data) return;
   const vp = data.volume_progression || {};
   const st = data.style_transition || {};
+  const rp = data.running_progression || {};
   const fd = data.fatigue_and_deload || {};
+
+  const tierBadge = document.getElementById('progressionTierBadge');
+  if (tierBadge && data.current_tier_label) {
+    tierBadge.textContent = data.current_tier_label;
+  }
 
   const grid = document.getElementById('progressionCardsGrid');
   if (grid) {
     grid.innerHTML = `
       <div class="tint-panel p-4 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Hacim &amp; Gün Artırma</span>
-          <span class="stamp-tag ${vp.can_increase_days ? 'stamp-moss' : 'stamp-accent'}">${escapeHtml(vp.verdict || '--')}</span>
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">01 · Hacim &amp; Gün Artırma Analizi</span>
+          <span class="stamp-tag ${vp.can_increase_days ? 'stamp-moss' : 'stamp-ochre'}">${escapeHtml(vp.verdict || '--')}</span>
         </div>
-        <p class="text-xs font-semibold">${escapeHtml(vp.current_days)} → <span class="accent-text">${escapeHtml(vp.next_level_days)}</span></p>
+        <p class="text-xs font-semibold">${escapeHtml(vp.current_days)} <span class="text-[var(--text-muted)]">→</span> <span class="${vp.can_increase_days ? 'moss-text' : 'ochre-text'}">${escapeHtml(vp.next_level_days)}</span></p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(vp.advice || '')}</p>
       </div>
 
       <div class="tint-panel p-4 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Stil &amp; Rutin Değişimi</span>
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">02 · Kuvvet Branşı: Seviye &amp; 5x5 Eşiği</span>
           <span class="stamp-tag stamp-accent">${escapeHtml(st.verdict || '--')}</span>
         </div>
         <p class="text-xs font-semibold">Mevcut: <span class="moss-text">${escapeHtml(st.current_style)}</span></p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(st.advice || '')}</p>
-        <p class="text-[10px] text-[var(--text-secondary)] surface-card p-2">${escapeHtml(st.running_style_advice || '')}</p>
+      </div>
+
+      <div class="tint-panel p-4 space-y-2.5 border-l-[3px] border-l-[var(--accent)]">
+        <div class="flex flex-wrap items-center justify-between gap-1.5">
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">03 · Koşu Branşı: Aerobik Taban &amp; Hız Progresyonu</span>
+          <span class="stamp-tag stamp-moss">${escapeHtml(rp.verdict || '80/20 POLARİZE')}</span>
+        </div>
+        <p class="font-mono text-[11px] font-semibold accent-text">${escapeHtml(rp.current_metrics || '')}</p>
+        <p class="text-xs text-[var(--text-primary)] font-medium">${escapeHtml(rp.current_model || '')}</p>
+        <p class="font-mono text-[10.5px] text-[var(--text-secondary)]">${escapeHtml(rp.load_balance || '')}</p>
+        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(rp.advice || st.running_style_advice || '')}</p>
+        <p class="text-[10.5px] moss-text tint-moss-panel p-2"><strong class="font-semibold">Sıradaki Koşu Hedefleri:</strong> ${escapeHtml(rp.next_milestone || '')}</p>
       </div>
 
       <div class="tint-panel p-4 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Deload &amp; Esneklik</span>
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">04 · Deload &amp; Toparlanma Kontrolü</span>
           <span class="stamp-tag ${fd.needs_deload ? 'stamp-ochre' : 'stamp-moss'}">${escapeHtml(fd.status || '--')}</span>
         </div>
         <p class="text-xs font-semibold">${fd.needs_deload ? 'Hacmi %40 Düşür' : 'Tam Güç &amp; Kondisyon Aktif'}</p>

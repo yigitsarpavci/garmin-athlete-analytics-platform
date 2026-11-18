@@ -31,47 +31,69 @@ class ProgressionDebriefMixin:
         acute_load = cur_status.get("acute_load") or 279
         rhr = float(metrics.get("resting_hr") or metrics.get("rhr") or 53.6)
         stress = float(metrics.get("stress") or 28.4)
+        cur_weight = float(metrics.get("weight") or 87.0)
         squat_pr = float(prog.get("squat", {}).get("max_kg") or 65.0)
         bench_pr = float(prog.get("bench", {}).get("max_kg") or 50.0)
+        row_pr = float(prog.get("row", {}).get("max_kg") or 60.0)
+        deadlift_pr = float(prog.get("deadlift", {}).get("max_kg") or 60.0)
 
-        # 1. Gün Arttırma Analizi (Volume Readiness)
-        can_increase_days = (0.85 <= acwr <= 1.25) and (rhr <= 56.0) and (stress < 42.0)
+        squat_ratio = round(squat_pr / max(1.0, cur_weight), 2)
+        bench_ratio = round(bench_pr / max(1.0, cur_weight), 2)
+        dl_ratio = round(deadlift_pr / max(1.0, cur_weight), 2)
+
+        vo2max = float(metrics.get("vo2max") or 45.4)
+        latest_5k = metrics.get("latest_5k", "29:07 (5:48 /km)")
+        cadence = int(metrics.get("latest_cadence") or 159)
+
+        # 1. Gün Arttırma Analizi (Gerçek kuvvet temeli + yük dengesi kapısı)
+        strength_ready_for_5th_day = (
+            squat_pr >= round(cur_weight * 0.98, 1)
+            and bench_pr >= round(cur_weight * 0.78, 1)
+        )
+        acwr_ok = (0.85 <= acwr <= 1.25) and (rhr <= 56.0) and (stress < 42.0)
+        can_increase_days = bool(strength_ready_for_5th_day and acwr_ok)
         if can_increase_days:
-            volume_verdict = "HAZIR (Yeşil Işık)"
+            volume_verdict = "HAZIR (5. Gün Eklenebilir)"
             volume_advice = (
-                f"ACWR oranınız {acwr:.2f} ile Sweet Spot içinde ve dinlenik nabzınız ({rhr:.1f} bpm) "
-                "sağlıklı toparlanma gösteriyor. Haftalık programınız uygun olduğunda mevcut 2 Koşu + 2 Kuvvet "
-                "kotasına ek hafif Zone 2 veya 3. kuvvet günü eklenebilir."
+                f"Kuvvet eşikleri (Squat {squat_pr:.0f} kg · Bench {bench_pr:.0f} kg), ACWR ({acwr:.2f}) ve "
+                f"dinlenik nabız ({rhr:.0f} bpm) 5. antrenman gününü destekliyor; programa hafif 30 dk ek koşu veya "
+                "3. kuvvet günü eklenebilir."
+            )
+            next_level_days = "3 Koşu + 2 Gym veya 2 Koşu + 3 Gym (Haftada 5 Seans)"
+        else:
+            volume_verdict = "4 GÜN SABİT KALSIN (Ek Gün Önerilmez)"
+            volume_advice = (
+                f"Toparlanma verileriniz (ACWR {acwr:.2f}, RHR {rhr:.0f} bpm) iyi olsa da mevcut ağırlıklarınız "
+                f"(Squat {squat_pr:.0f} kg = {squat_ratio:.2f}x VA, Bench {bench_pr:.0f} kg = {bench_ratio:.2f}x VA) "
+                f"henüz vücut ağırlığı ({cur_weight:.0f} kg) eşiğinin altındadır ve kalori açığındasınız. "
+                "Bu aşamada 5. günü eklemek bar üzerindeki +2.5 kg artışları yavaşlatır; haftalık 2 Koşu + 2 Kuvvet (4 gün) kotasını koruyun."
+            )
+            next_level_days = "Şimdilik 4 Gün Korunur (Hedef: Squat ~85 kg · 4/4 İstikrar)"
+
+        # 2. Kuvvet Branşı Seviye & Stil Analizi
+        if squat_pr >= 85.0 and bench_pr >= 70.0:
+            style_verdict = f"İLERİ BÖLÜNMEYE HAZIR ({squat_ratio:.2f}x VA)"
+            style_advice = (
+                f"Squat ({squat_pr:.0f} kg = {squat_ratio:.2f}x VA) ve Bench ({bench_pr:.0f} kg = {bench_ratio:.2f}x VA) "
+                "vücut ağırlığı eşiklerine ulaştı. Merkezi sinir sistemi toparlanması için Üst/Alt Vücut (Upper/Lower 4 Gün) veya PPL bölünmesine geçilebilir."
             )
         else:
-            volume_verdict = "MEVCUT HACMİ KORU (4 Gün Optimal)"
-            volume_advice = (
-                f"Mevcut akut yük ({acute_load} birim), ACWR ({acwr:.2f}) ve stres ({stress:.1f}) dengesi "
-                "haftalık 2 Koşu + 2 Kuvvet kotasını koruyup kaliteye odaklanmayı öneriyor."
+            style_verdict = f"TEMEL–ORTA GEÇİŞ ({squat_ratio:.2f}x VA · 5x5 Lineer İnşa)"
+            style_advice = (
+                f"Vücut ağırlığından ({cur_weight:.0f} kg) ağır kaldırma şartı ileri seviye içindir. Şu an "
+                f"Squat {squat_pr:.0f} kg ({squat_ratio:.2f}x VA), Deadlift {deadlift_pr:.0f} kg ({dl_ratio:.2f}x VA), "
+                f"Barbell Row {row_pr:.0f} kg ve Bench {bench_pr:.0f} kg ({bench_ratio:.2f}x VA) ile temel güç inşa fazındasınız; "
+                "ilk gerçekçi hedef haftada 2 gün A/B 5x5 ile kendi vücut ağırlığınıza (~85 kg Squat/Deadlift, ~65–70 kg Bench) ulaşmaktır."
             )
 
-        # 2. Kuvvet Stili Değiştirme Analizi
-        if squat_pr >= 85.0 or bench_pr >= 70.0:
-            style_verdict = "DÖNEMLEME DEĞİŞİMİ ÖNERİLİR"
-            style_advice = (
-                f"Squat ({squat_pr:.1f} kg) ve Bench ({bench_pr:.1f} kg) vücut ağırlığı eşiklerine yaklaştı. "
-                "Merkezi sinir sistemi toparlanması için Üst/Alt Vücut (Upper/Lower 4 Gün) veya PPL bölünmesine geçilebilir."
-            )
-        else:
-            style_verdict = "5x5 LİNEER ARTIŞA DEVAM (Aktif Progresyon)"
-            style_advice = (
-                f"Güncel 5x5 zirveleriniz Squat {squat_pr:.1f} kg ve Bench {bench_pr:.1f} kg seviyesinde lineer ilerleyişini "
-                "sürdürüyor. Squat 85 kg veya Bench 70 kg eşiğine kadar A/B 5x5 +2.5/+5 kg artışa devam edin."
-            )
-
-        # 3. Koşu & Load Focus Yönlendirmesi
+        # 3. Koşu Branşı & Load Focus Yönlendirmesi
         low_pct = load_focus.get("aerobic_low", {}).get("pct_of_target", 92.0)
         high_pct = load_focus.get("aerobic_high", {}).get("pct_of_target", 91.0)
         an_pct = load_focus.get("anaerobic", {}).get("pct_of_target", 62.0)
         running_style_advice = (
             f"Firstbeat yük dengesinde Yüksek Aerobik (%{high_pct:.0f}) ve Düşük Aerobik (%{low_pct:.0f}) "
-            f"barın üst sınırına yakınken Anaerobik yük (%{an_pct:.0f}) daha düşüktür. Öncelikle hız intervalini (4x1000m @ Z4-5) koruyun; "
-            "Zone 2 hızınız 145 bpm'de 6:00 /km altına indiğinde 3. koşu olarak Laktat Eşik temposu eklenir."
+            f"barın üst sınırına yakınken Anaerobik yük (%{an_pct:.0f}) daha düşüktür. Öncelikle 5K hız intervalini (4x1000m @ Z4-5) uygulayın; "
+            "Zone 2 hızınız 145 bpm'de 6:00 /km altına indiğinde haftalık 3. koşu veya Laktat Eşik temposu değerlendirilir."
         )
 
         # 4. Deload Analizi
@@ -84,19 +106,28 @@ class ProgressionDebriefMixin:
         )
 
         return {
+            "current_tier_label": f"Kuvvet: Temel Güç İnşası ({squat_ratio:.2f}x VA) · Koşu: Orta Seviye (VO2 {vo2max:.1f})",
             "volume_progression": {
                 "verdict": volume_verdict,
                 "can_increase_days": can_increase_days,
                 "current_days": "2 Koşu + 2 Gym (Esnek 4 Seans Kotası)",
-                "next_level_days": "3 Koşu + 2 Gym veya 2 Koşu + 3 Gym (Haftada 5 Seans)",
+                "next_level_days": next_level_days,
                 "advice": volume_advice,
             },
             "style_transition": {
                 "verdict": style_verdict,
-                "current_style": "A/B Full Body 5x5 Bileşik Kuvvet + 80/20 Polarize Koşu",
-                "suggested_next_style": "Upper/Lower Split (4 Gün) + Piramidal Eşik Koşusu",
+                "current_style": f"A/B Full Body 5x5 (Squat {squat_pr:.0f} kg · Bench {bench_pr:.0f} kg · DL {deadlift_pr:.0f} kg)",
+                "suggested_next_style": "Önce 5x5 ile 1.0x VA (~85 kg), Sonra Upper/Lower",
                 "advice": style_advice,
                 "running_style_advice": running_style_advice,
+            },
+            "running_progression": {
+                "verdict": "ORTA SEVİYE AEROBİK TABAN (80/20 Polarize)",
+                "current_metrics": f"VO2 Max: {vo2max:.1f} · En İyi 5K: {latest_5k} · Kadans: {cadence} spm",
+                "load_balance": f"Düşük Aer: %{low_pct:.0f} · Yüksek Aer: %{high_pct:.0f} · Anaerobik: %{an_pct:.0f}",
+                "current_model": "Haftada 2 Koşu: 1x 5K Hız İntervali (4x1000m @ 5:15/km) + 1x Zone 2 Taban (45-50 dk @ 140-150 bpm)",
+                "next_milestone": "Kısa Vade: 5K < 27:00 & Zone 2 @ 6:00 /km · Orta Vade: 5K < 24:30 (4:54 /km)",
+                "advice": running_style_advice,
             },
             "fatigue_and_deload": {
                 "status": deload_status,

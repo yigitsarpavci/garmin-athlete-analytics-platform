@@ -301,34 +301,34 @@ RECOVERY_AND_WATCH_SETTINGS: Dict[str, Any] = {
 
 ATHLETE_LEVELS_FRAMEWORK: Dict[str, Dict[str, str]] = {
     "beginner": {
-        "level_tr": "Başlangıç Seviyesi (Temel Adaptasyon & Fonksiyonellik)",
+        "level_tr": "Başlangıç Seviyesi (Temel Adaptasyon & Hareket Kalıbı)",
         "target_audience": "Yeni başlayanlar, uzun süre ara verenler veya spora yeni dönenler",
         "running_approach": "Koş-Yürü (Run/Walk - 2-3 dk koşu / 2 dk yürüyüş) veya Saf Zone 1-2 (Konuşma temposu). Yüksek şiddetli interval ASLA verilmez.",
         "running_frequency": "Haftada 2-3 gün (25-35 dk seanslar)",
-        "strength_approach": "Vücut ağırlığı, direnç bantları ve hafif dambıllarla temel hareket kalıpları (Squat, Hinge, Push, Pull, Lunge, Core). 2-3 set x 10-15 tekrar.",
+        "strength_approach": "Vücut ağırlığı, direnç bantları ve hafif barbell/dambılla temel hareket kalıpları (Squat, Hinge, Push, Pull, Lunge, Core). 2-3 set x 10-15 tekrar veya hafif 5x5 adaptasyonu.",
         "strength_frequency": "Haftada 1-2 gün (Tüm Vücut / Full Body)",
         "recommended_split": "2 Koşu/Yürüyüş + 1 Kuvvet (3 gün dinlenme/toparlanma)",
-        "progression_gate": "Kesintisiz 30-40 dk Zone 2 koşabilmek ve temel hareketlerde form bozulmadan 3x12 vücut ağırlığı squat/şınav yapabilmek."
+        "progression_gate": "Kesintisiz 30 dk rahat koşabilmek; Squat/Deadlift'te ~0.60x–0.70x Vücut Ağırlığı (50–60 kg), Bench'te ~0.50x VA (42.5–45 kg) ile 5x5 nizami form yakalamak."
     },
     "intermediate": {
-        "level_tr": "Orta Seviye (Gelişim, Güç & Aerobik Taban - Sarp'ın Mevcut Seviyesi)",
-        "target_audience": "Temel kardiyovasküler altyapısı olan, düzenli ağırlık kaldıran sporcular",
+        "level_tr": "Gelişim & Orta Seviye (Lineer 5x5 İnşası & 80/20 Polarize Koşu — Mevcut Faz)",
+        "target_audience": "Temel kardiyovasküler altyapısı olan, düzenli 5x5 bileşik kuvvet inşa eden sporcular",
         "running_approach": "80/20 Polarize Model (1 Seans Zone 2 Taban 45-50 dk + 1 Seans 5K Hız/VO2Max İntervali örn. 4x1000m).",
         "running_frequency": "Haftada 2 gün (Toplam 15-22 km/hafta)",
-        "strength_approach": "A/B Full Body Alternating 5x5 Bileşik Kuvvet (Squat, Bench Press, Barbell Row, OHP, Deadlift). Progressive overload odaklı.",
+        "strength_approach": "A/B Full Body Alternating 5x5 Bileşik Kuvvet (Mevcut: Squat 65 kg [0.75x VA], Bench 50 kg [0.57x VA], Row 60 kg, Deadlift 60 kg). Önce 1.0x vücut ağırlığına (~85 kg Squat/Deadlift, ~65–70 kg Bench) lineer +2.5 kg artışla ulaşma fazı.",
         "strength_frequency": "Haftada 2 gün (A ve B günleri)",
         "recommended_split": "2 Koşu + 2 Gym (4 gün antrenman, 3 gün dinlenme/rejenerasyon)",
-        "progression_gate": "Squat vücut ağırlığının 1.2 katına, Deadlift 1.5 katına ulaştığında ve 5x5 lineer artışı tükendiğinde; Zone 2 temposu 5:30/km'ye yaklaştığında."
+        "progression_gate": "Kuvvette vücut ağırlığından fazla yük şartı YOKTUR: İlk hedef Squat/Deadlift'i 0.75x VA'dan (65 kg) 1.0x VA'ya (~85 kg), Bench'i 0.80x VA'ya (~67.5–70 kg) taşımak; Koşuda 5K'yı 29:07'den <25:00'a ve Zone 2'yi 6:00 /km altına indirmektir."
     },
     "advanced": {
-        "level_tr": "İleri Seviye (Hacim Artırımı, Bölünmüş Rutinler & Eşik Dönemlemesi)",
+        "level_tr": "İleri Seviye (Bölünmüş Rutinler & Eşik Dönemlemesi)",
         "target_audience": "Yıllık antrenman sürekliliği olan, daha yüksek hacmi tolere edebilen deneyimli sporcular",
         "running_approach": "Piramidal veya Eşik Odaklı Dönemleme (2x Zone 2 Taban, 1x Tempo/Laktat Eşik Koşusu, 1x VO2Max İntervali).",
         "running_frequency": "Haftada 3-4 gün (Toplam 30-45 km/hafta)",
         "strength_approach": "5x5'ten Üst/Alt Vücut (Upper/Lower Split - 4 Gün) veya İtiş-Çekiş-Bacak (PPL - 3-5 Gün) bölünmesine geçiş. RPE/RIR takibi ve dalgalı periyodizasyon.",
         "strength_frequency": "Haftada 3-4 gün",
         "recommended_split": "3 Koşu + 2 Gym veya 2 Koşu + 4 Gym (5-6 gün antrenman, 1-2 gün toparlanma)",
-        "progression_gate": "5K süresi <22 dk, haftalık 40+ km rahat tolere edilebilmesi."
+        "progression_gate": "Squat ≥ 1.0x VA (85+ kg) ve Bench ≥ 0.80x VA (70+ kg) 5x5 lineer artışı tükendiğinde; 5K < 24:30 ve haftalık 4/4 kota en az 4 hafta kesintisiz tamamlandığında geçilir."
     },
     "elite": {
         "level_tr": "Elit / Performans & Yarışmacı Seviyesi (Blok Dönemlemesi & Zirve)",
@@ -346,12 +346,12 @@ DYNAMIC_PROGRESSION_TRIGGERS: Dict[str, Dict[str, Any]] = {
     "volume_increase": {
         "name": "Gün / Hacim Artırma Kriterleri",
         "criteria": [
-            "Son 4 haftalık ACWR (Akut/Kronik Yük Oranı) 0.90 - 1.20 arasında stabil kalması",
-            "Dinlenik nabzın (RHR) plato yapması veya düşüş eğiliminde olması",
-            "Gecelik HRV ve toparlanma skorunun (Recovery Score) sürekli >75 olması",
-            "Antrenman sonrası kas ağrısının (DOMS) 24 saat içinde tamamen geçmesi"
+            "Mevcut 2 Koşu + 2 Kuvvet (4/4) kotasının en az 4 hafta kesintisiz ve plan sapmasız tamamlanması",
+            "Kuvvet temel gücünün vücut ağırlığı eşiğine ulaşması (Squat ≥ 1.0x VA / ~85 kg, Bench ≥ 0.80x VA / ~70 kg) veya Zone 2'nin ≤ 6:00 /km bandına oturması",
+            "Son 4 haftalık ACWR (Akut/Kronik Yük Oranı) 0.90 - 1.20 arasında stabil ve toparlanma skorunun >75 kalması",
+            "Kalori açığının kapanması veya ek yükte DOMS'un 24 saat içinde tamamen geçmesi"
         ],
-        "action": "Haftalık antrenman gün sayısını 1 artır: Örneğin 2 koşudan 3 koşuya (hafif 30 dk toparlanma koşusu ekleyerek) veya 2 gym'den 3 gym'e geç."
+        "action": "Bu eşikler dolmadan 5. gün EKLENMEZ (2 Koşu + 2 Kuvvet korunur). Eşik sağlandığında haftaya 1 hafif 30 dk toparlanma koşusu veya 3. kuvvet günü eklenir."
     },
     "style_shift": {
         "name": "Antrenman Stili & Dönemleme Değiştirme Kriterleri",
