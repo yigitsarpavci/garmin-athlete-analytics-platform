@@ -59,7 +59,6 @@
       <nav aria-label="Ana Navigasyon" class="nav-tablist custom-scrollbar">
         <button type="button" onclick="setTab('overview')" id="nav-overview" aria-current="page" class="nav-tab nav-tab-active">Genel Bakış</button>
         <button type="button" onclick="setTab('plan')" id="nav-plan" class="nav-tab">Antrenman Planı</button>
-        <button type="button" onclick="setTab('calculator')" id="nav-calculator" class="nav-tab">Form Simülatörü</button>
         <button type="button" onclick="setTab('sports')" id="nav-sports" class="nav-tab">Branşlar</button>
         <button type="button" onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Antrenman Yükü</button>
         <button type="button" onclick="setTab('activities')" id="nav-activities" class="nav-tab">Aktiviteler</button>
@@ -431,7 +430,7 @@
         <!-- Lower 4-Column Ruled Metrics Ledger (Weight, 5K, EF, ACWR) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
           <!-- 1. Weight -->
-          <div onclick="setTab('calculator')" class="p-5 cursor-pointer group hover:bg-[var(--bg-subtle)] transition">
+          <div onclick="setTab('health')" class="p-5 cursor-pointer group hover:bg-[var(--bg-subtle)] transition">
             <div class="flex items-center justify-between">
               <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">Mevcut Kilo &amp; DSÖ</p>
               <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] transition" stroke-width="1.5" aria-hidden="true"></i>
@@ -573,131 +572,6 @@
 
           <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs"></div>
           <div class="space-y-4" id="dailyProtocolsContainer"></div>
-        </section>
-      </div>
-    </div>
-
-    <!-- 3. FORM SİMÜLATÖRÜ -->
-    <div id="section-calculator" class="pt-10 space-y-6 hidden">
-      <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
-        <div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">02 / PROJEKSİYON &amp; ANATOMİK DÖNÜŞÜM</span>
-          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Form Simülatörü ve Morfoloji</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Hedef kilo projeksiyonları, 5K / VO2 Max tahminleri ve anatomik dönüşüm aşamaları.</p>
-        </div>
-        <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('calculator', 'sim')" data-subtab-group="calculator" data-subtab="sim" class="subtab-btn subtab-btn-active">İnteraktif Simülatör</button>
-          <button type="button" onclick="setSubTab('calculator', 'milestones')" data-subtab-group="calculator" data-subtab="milestones" class="subtab-btn">Hedef Derece Takvimi</button>
-          <button type="button" onclick="setSubTab('calculator', 'morph')" data-subtab-group="calculator" data-subtab="morph" class="subtab-btn">Fiziksel Morfoloji</button>
-        </div>
-      </div>
-
-      <div data-subpane-group="calculator" data-subpane="sim">
-        <section class="surface-card p-6 sm:p-8 space-y-6">
-          <div>
-            <h3 class="font-editorial text-xl font-medium tracking-tight">İnteraktif Forma Girme &amp; Performans Simülatörü</h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-1">Biyometrik profilinize göre hedef kilonun kaç günde geleceğini ve 5K derecenizi hesaplayın.</p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-5 tint-panel p-5">
-            <div>
-              <label class="block text-xs font-semibold mb-2">Hedef Kilo (kg): <span id="calcTargetVal" class="font-mono accent-text font-bold text-sm">81.0 kg</span></label>
-              <input type="range" id="calcTargetInput" min="76.0" max="87.0" step="0.5" value="81.0" oninput="runCalculator()" class="w-full h-2 cursor-pointer">
-              <div class="flex justify-between font-mono text-[10px] text-[var(--text-muted)] mt-1.5">
-                <span>76.0 kg</span>
-                <span>81.0 kg (İdeal)</span>
-                <span id="calcMaxWeightLabel">87.0 kg</span>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold mb-2">Haftalık Kilo Kaybı: <span id="calcPaceVal" class="font-mono moss-text font-bold text-sm">-0.55 kg/hf</span></label>
-              <select id="calcPaceSelect" onchange="runCalculator()" class="w-full text-xs bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 font-medium">
-                <option value="0.55" selected>-0,55 kg/hafta (Önerilen - Kas Koruyucu)</option>
-                <option value="0.89">-0,89 kg/hafta (Mevcut Hız)</option>
-                <option value="0.40">-0,40 kg/hafta (Yarışma Formu)</option>
-                <option value="1.00">-1,00 kg/hafta (Agresif Açık)</option>
-              </select>
-              <p class="text-[10px] text-[var(--text-secondary)] mt-1.5">87 kg sonrasında kas korumak için -0,55 kg/hf önerilir.</p>
-            </div>
-
-            <div class="field-dossier p-4 flex flex-col justify-center">
-              <span class="font-mono text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">Kalan Süre Tahmini</span>
-              <div class="flex items-baseline gap-2 mt-1">
-                <span class="font-mono text-3xl font-bold accent-text" id="calcDaysResult">76 Gün</span>
-                <span class="font-mono text-xs text-[var(--text-secondary)]" id="calcDateResult">(1 Şubat 2027)</span>
-              </div>
-              <p class="font-mono text-xs text-[var(--text-secondary)] mt-1">Fark: <span class="font-semibold text-[var(--text-primary)]" id="calcDiffResult">-6.0 kg</span></p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="tint-panel p-4">
-              <p class="font-mono text-[10px] uppercase text-[var(--text-secondary)]">Hedeflenen VKİ</p>
-              <p class="font-mono text-2xl font-bold mt-1" id="calcBmiResult">23,41</p>
-              <p class="text-[11px] accent-text mt-0.5">İdeal Atletik Sınıf</p>
-            </div>
-
-            <div class="tint-panel p-4">
-              <p class="font-mono text-[10px] uppercase text-[var(--text-secondary)]">Beklenen 5K Süresi</p>
-              <p class="font-mono text-2xl font-bold moss-text mt-1" id="calc5kResult">24:25</p>
-              <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5">Projeksiyon</p>
-            </div>
-
-            <div class="tint-panel p-4">
-              <p class="font-mono text-[10px] uppercase text-[var(--text-secondary)]">Beklenen VO2 Max</p>
-              <p class="font-mono text-2xl font-bold accent-text mt-1" id="calcVo2Result">52,0</p>
-              <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Üstün Kondisyon</p>
-            </div>
-
-            <div class="tint-panel p-4">
-              <p class="font-mono text-[10px] uppercase text-[var(--text-secondary)]">Günlük Açık</p>
-              <p class="font-mono text-2xl font-bold mt-1" id="calcDeficitResult">~550 kcal</p>
-              <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5">Hedef Alım: 2.400 kcal</p>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div data-subpane-group="calculator" data-subpane="milestones" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-5">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 class="font-editorial text-lg font-medium tracking-tight">Forma Girme ve Hedef Derece Takvimi</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Mevcut hız (-0,89 kg/hf) ve önerilen dengeli hız (-0,55 kg/hf) simülasyonu</p>
-            </div>
-          </div>
-
-          <div tabindex="0" role="region" aria-label="Hedef derece kilometre taşları" class="table-scroll-region custom-scrollbar">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr>
-                  <th class="py-3 px-4">Hedef Aşama</th>
-                  <th class="py-3 px-4">Hedef Kilo (VKİ)</th>
-                  <th class="py-3 px-4">Kalan Fark</th>
-                  <th class="py-3 px-4">Mevcut Hız (-0,89)</th>
-                  <th class="py-3 px-4">Önerilen Hız (-0,55)</th>
-                  <th class="py-3 px-4">Beklenen 5K</th>
-                  <th class="py-3 px-4">VO2 Max</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="overviewMilestonesBody"></tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      <div data-subpane-group="calculator" data-subpane="morph" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-5">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--border-subtle)] pb-4">
-            <div>
-              <h3 class="font-editorial text-lg font-medium tracking-tight">Fiziksel Morfoloji, Yağ Oranı ve Dönüşüm Aşamaları</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Mevcut fizikten 81 kg atletik V-Taper formuna geçişte beklenen görsel ve anatomik değişimler</p>
-            </div>
-            <span class="stamp-tag stamp-accent">Morfoloji Takibi</span>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="morphologyCardsContainer"></div>
         </section>
       </div>
     </div>
@@ -1738,12 +1612,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js?v=20261118b"></script>
-  <script src="/js/quota_schedule.js?v=20261118b"></script>
-  <script src="/js/dashboard.js?v=20261118b"></script>
-  <script src="/js/health_analytics.js?v=20261118b"></script>
-  <script src="/js/charts.js?v=20261118b"></script>
-  <script src="/js/modals.js?v=20261118b"></script>
+  <script src="/js/core.js?v=20261118c"></script>
+  <script src="/js/quota_schedule.js?v=20261118c"></script>
+  <script src="/js/dashboard.js?v=20261118c"></script>
+  <script src="/js/health_analytics.js?v=20261118c"></script>
+  <script src="/js/charts.js?v=20261118c"></script>
+  <script src="/js/modals.js?v=20261118c"></script>
 </body>
 
 </html>

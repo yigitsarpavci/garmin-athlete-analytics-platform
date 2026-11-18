@@ -60,7 +60,7 @@ async function safeFetchJson(url) {
 }
 
 function setTab(tabId) {
-  const tabs = ['overview', 'plan', 'calculator', 'sports', 'training_load', 'activities', 'health', 'analytics', 'settings'];
+  const tabs = ['overview', 'plan', 'sports', 'training_load', 'activities', 'health', 'analytics', 'settings'];
   tabs.forEach(t => {
     const sec = document.getElementById('section-' + t);
     const nav = document.getElementById('nav-' + t);
@@ -147,8 +147,10 @@ async function initApp() {
       if (z2Data) renderZ2Tracker(z2Data);
     }
 
-    const morphData = await safeFetchJson('/api/physique-tracker');
-    if (morphData) renderPhysiqueTracker(morphData);
+    if (document.getElementById('morphologyCardsContainer')) {
+      const morphData = await safeFetchJson('/api/physique-tracker');
+      if (morphData) renderPhysiqueTracker(morphData);
+    }
 
     const healthScreenData = await safeFetchJson('/api/health-screening');
     if (healthScreenData) renderHealthScreening(healthScreenData);
@@ -171,7 +173,7 @@ async function initApp() {
       renderCharts(true);
     }
 
-    runCalculator();
+    if (document.getElementById('calcTargetInput')) runCalculator();
     refreshIcons();
   } catch (err) {
     console.error("Yükleme hatası:", err);
