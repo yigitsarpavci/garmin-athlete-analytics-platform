@@ -69,66 +69,20 @@
     <!-- 1. GENEL BAKIŞ (3 ALT SEKME: 12 TEMEL GÖSTERGE / GÜNLÜK DURUM & KOTA / PERFORMANS & TREND) -->
     <div id="section-overview" class="single-screen-section gap-2.5">
 
-      <!-- Compact Athlete Identity + Sub-Tabs + Actions Row -->
-      <section aria-label="Sporcu Profili ve Alt Sekmeler" class="surface-card px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-8 h-8 rounded-[3px] accent-bg flex items-center justify-center font-mono font-semibold text-xs shrink-0" id="profileAvatarInitial">A</div>
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <h1 class="text-xs sm:text-sm font-semibold tracking-tight truncate" id="profileNameDisplay">Sporcu Profili</h1>
-              <span class="stamp-tag stamp-moss" id="profileBadgeDisplay">Garmin Telemetrisi</span>
-            </div>
-            <p class="font-mono text-[10px] text-[var(--text-secondary)] truncate" id="profileDescDisplay">Haftalık 2 Koşu + 2 Kuvvet (Esnek Gün · A/B 5x5)</p>
-          </div>
-        </div>
-
-        <div class="subtab-bar shrink-0">
+      <!-- Minimal Single-Row Sub-Tabs for Overview -->
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-medium)] pb-2 shrink-0">
+        <div class="subtab-bar">
           <button type="button" onclick="setSubTab('overview', 'kpi12')" data-subtab-group="overview" data-subtab="kpi12" class="subtab-btn subtab-btn-active">12 Temel Gösterge</button>
           <button type="button" onclick="setSubTab('overview', 'quota_brief')" data-subtab-group="overview" data-subtab="quota_brief" class="subtab-btn">Günlük Durum &amp; Kota</button>
           <button type="button" onclick="setSubTab('overview', 'ledger')" data-subtab-group="overview" data-subtab="ledger" class="subtab-btn">Performans &amp; Trend</button>
         </div>
-
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button type="button" onclick="openDebriefModal(0)" class="btn-primary text-[11px] px-2.5 py-1" style="min-block-size:1.9rem">
-            <i data-lucide="file-bar-chart-2" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
-            <span>Son Antrenman Özeti</span>
-          </button>
-          <button type="button" onclick="openPreferencesModal()" class="btn-secondary text-[11px] px-2.5 py-1" style="min-block-size:1.9rem">
-            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-[var(--text-secondary)]" stroke-width="1.5" aria-hidden="true"></i>
-            <span>Profil</span>
-          </button>
-          <button type="button" onclick="restoreSarpProfile()" id="btnRestoreSarp" class="hidden btn-secondary text-[11px] px-2 py-1" style="min-block-size:1.9rem">
-            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
-            <span id="btnRestoreSarpLabel">Varsayılana Dön</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- Custom Profile Active Banner -->
-      <div id="customProfileBanner"
-        class="hidden field-dossier px-3.5 py-2 flex items-center justify-between gap-3 shrink-0">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div class="icon-box w-7 h-7 shrink-0">
-            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
-          </div>
-          <div class="min-w-0">
-            <h4 class="font-mono text-[10px] font-semibold accent-text uppercase tracking-wider truncate" id="customBannerTitle">ÖZEL SPORCU PLANI AKTİF</h4>
-            <p class="text-[11px] text-[var(--text-secondary)] truncate" id="customBannerText">Haftalık mikro-döngü ve beslenme hedefleri tercihlerinize göre hesaplanmıştır.</p>
-          </div>
-        </div>
-        <button type="button" onclick="restoreSarpProfile()" id="btnBannerRestore" class="btn-secondary text-[11px] px-2.5 py-1 shrink-0" style="min-block-size:1.8rem">
-          Varsayılan Profile Geri Dön
-        </button>
+        <span id="firstScreenDateBadge" class="stamp-tag stamp-accent">Son Kayıt: --</span>
       </div>
 
       <!-- OVERVIEW SUBPANE 1: 12 TEMEL GÖSTERGE -->
       <div data-subpane-group="overview" data-subpane="kpi12" class="single-screen-pane">
       <!-- İlk Ekran 12 Temel Garmin Telemetri Göstergesi (Above-the-Fold Command Grid) -->
       <section id="firstScreenTelemetrySection" aria-label="Ana Ekran 12 Temel Telemetri Göstergesi" class="surface-ledger overflow-hidden h-full flex flex-col">
-        <div class="px-4 py-2 border-b border-[var(--border-subtle)] bg-[var(--bg-subtle)] flex items-center justify-between gap-2 shrink-0">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Günlük Özet · 12 Temel Gösterge</span>
-          <span id="firstScreenDateBadge" class="stamp-tag stamp-accent">Son Kayıt: --</span>
-        </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 grid-rows-3 gap-px bg-[var(--border-subtle)] flex-1 min-h-0">
           <!-- 01. HRV -->
           <div onclick="setTab('health')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
@@ -329,19 +283,22 @@
           </div>
 
           <!-- Decision Guidance & Latest Activity Trigger -->
-          <div id="decisionCard" class="space-y-2 pt-2.5 border-t border-[var(--border-subtle)]">
-            <p class="text-xs text-[var(--text-secondary)] leading-relaxed" id="decisionDetail">Toparlanma ve yük dengesi normal. Planlı antrenmanı uygulayabilirsin.</p>
-            <div onclick="if(window.globalActivities && globalActivities.length) openActivityModal(globalActivities[0]); else openDebriefModal(0);" class="cursor-pointer group tint-panel p-2.5 hover:border-[var(--border-hover)] transition">
-              <div class="flex items-center justify-between font-mono text-[10px] mb-1">
-                <span class="text-[var(--text-secondary)] uppercase tracking-wider">Son Antrenman</span>
-                <span class="accent-text font-semibold inline-flex items-center gap-1">Detay <i data-lucide="arrow-up-right" class="w-3 h-3" stroke-width="1.5" aria-hidden="true"></i></span>
-              </div>
-              <div id="latestActivitySummaryRow" class="flex items-center justify-between text-xs">
-                <span class="font-medium truncate">Yükleniyor...</span>
-                <span class="font-mono text-[var(--text-secondary)] tabular-nums shrink-0 ml-2">--</span>
+            <div id="decisionCard" class="space-y-2 pt-2.5 border-t border-[var(--border-subtle)]">
+              <p class="text-xs text-[var(--text-secondary)] leading-relaxed" id="decisionDetail">Toparlanma ve yük dengesi normal. Planlı antrenmanı uygulayabilirsin.</p>
+              <div onclick="if(window.globalActivities && globalActivities.length) openActivityModal(globalActivities[0]); else openDebriefModal(0);" class="cursor-pointer group tint-panel p-2.5 hover:border-[var(--border-hover)] transition">
+                <div class="flex items-center justify-between font-mono text-[10px] mb-1">
+                  <span class="text-[var(--text-secondary)] uppercase tracking-wider">Son Antrenman</span>
+                  <div class="flex items-center gap-2.5">
+                    <button type="button" onclick="event.stopPropagation(); openDebriefModal(0);" class="accent-text hover:underline font-semibold inline-flex items-center gap-1">Son Seans Özeti</button>
+                    <span class="text-[var(--text-secondary)] group-hover:text-[var(--accent)] font-semibold inline-flex items-center gap-1 transition">Detay <i data-lucide="arrow-up-right" class="w-3 h-3" stroke-width="1.5" aria-hidden="true"></i></span>
+                  </div>
+                </div>
+                <div id="latestActivitySummaryRow" class="flex items-center justify-between text-xs">
+                  <span class="font-medium truncate">Yükleniyor...</span>
+                  <span class="font-mono text-[var(--text-secondary)] tabular-nums shrink-0 ml-2">--</span>
+                </div>
               </div>
             </div>
-          </div>
         </aside>
       </section>
       </div>
@@ -1064,157 +1021,7 @@
     </div>
   </main>
 
-  <!-- NATIVE MODAL 1: ANTRENMAN TERCİHLERİ VE PROFİL SİHİRBAZI -->
-  <dialog id="preferencesModal" closedby="any" aria-labelledby="prefsModalHeading" class="field-dialog">
-    <div class="px-6 py-4 bg-[var(--bg-surface-elevated)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 shrink-0">
-      <div class="flex items-center gap-3">
-        <div class="icon-box w-9 h-9"><i data-lucide="sliders-horizontal" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i></div>
-        <div>
-          <h3 id="prefsModalHeading" class="font-editorial text-base font-medium tracking-tight">Antrenman Tercihleri ve Profil Sihirbazı</h3>
-          <p id="prefsModalSubtitle" class="text-[11px] text-[var(--text-secondary)] mt-0.5">Başka sporcular veya farklı programlar için tercihleri anında simüle edin.</p>
-        </div>
-      </div>
-      <button type="button" onclick="closePreferencesModal()" class="btn-secondary p-1.5" aria-label="Kapat">
-        <i data-lucide="x" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
-      </button>
-    </div>
-
-    <div class="p-6 space-y-5 overflow-y-auto custom-scrollbar text-xs">
-      <div class="tint-panel p-4 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Hazır Profil Şablonları</span>
-          <span class="font-mono text-[10px] accent-text">Hızlı Kurulum</span>
-        </div>
-        <div class="flex flex-wrap gap-2" id="presetBadgesContainer"></div>
-      </div>
-
-      <form id="customProfileForm" onsubmit="submitCustomPlanForm(event)" class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-[11px] font-semibold mb-1">Sporcu Adı</label>
-            <input type="text" id="prefName" required autofocus placeholder="örn. Ahmet, Can, Zeynep" class="w-full bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium" value="Misafir Sporcu">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold mb-1">Cinsiyet</label>
-            <select id="prefGender" class="w-full bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium">
-              <option value="male" selected>Erkek</option>
-              <option value="female">Kadın</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold mb-1">Yaş</label>
-            <input type="number" id="prefAge" required min="14" max="80" class="w-full font-mono bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium" value="25">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-[11px] font-semibold mb-1">Boy (cm)</label>
-            <input type="number" id="prefHeight" required step="0.5" min="140" max="220" class="w-full font-mono bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium" value="180">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold mb-1">Mevcut Kilo (kg)</label>
-            <input type="number" id="prefWeight" required step="0.1" min="40" max="180" class="w-full font-mono bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium" value="82.0">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold mb-1">Hedef Kilo (kg)</label>
-            <input type="number" id="prefTargetWeight" required step="0.1" min="40" max="180" class="w-full font-mono bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium" value="76.0">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] font-semibold mb-1">Ana Hedef</label>
-            <select id="prefGoal" class="w-full bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium">
-              <option value="fat_loss" selected>Kilo Verme &amp; Yağ Yakımı</option>
-              <option value="running_speed">Koşu Hızı &amp; 5K/10K Gelişimi</option>
-              <option value="muscle_hypertrophy">Kas Kütlesi &amp; Kuvvet Artışı</option>
-              <option value="general_health">Genel Zindelik &amp; Kardiyovasküler Sağlık</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold mb-1">Haftalık Kilo Hedefi</label>
-            <select id="prefLossRate" class="w-full bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium">
-              <option value="0.35">-0.35 kg/hafta (Hafif)</option>
-              <option value="0.50" selected>-0.50 kg/hafta (Önerilen)</option>
-              <option value="0.70">-0.70 kg/hafta (Hızlı)</option>
-              <option value="-0.25">+0.25 kg/hafta (Kas Kazanımı)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="p-4 tint-panel space-y-2.5">
-          <h4 class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Koşu Tercihleri</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[11px] text-[var(--text-secondary)] mb-1">Haftalık Koşu Günü</label>
-              <select id="prefRunDays" class="w-full bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-semibold">
-                <option value="0">0 Gün</option>
-                <option value="1">1 Gün</option>
-                <option value="2" selected>2 Gün (Önerilen)</option>
-                <option value="3">3 Gün</option>
-                <option value="4">4 Gün</option>
-                <option value="5">5 Gün</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[11px] text-[var(--text-secondary)] mb-1">Koşu Dağılımı</label>
-              <select id="prefRunStyle" class="w-full bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium">
-                <option value="polarize" selected>80/20 Polarize (Z2 + İnterval)</option>
-                <option value="pure_z2">Sadece Zone 2 Taban</option>
-                <option value="tempo">Tempo / Laktat Eşiği</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-4 tint-panel space-y-2.5">
-          <h4 class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Kuvvet / Salon Tercihleri</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[11px] text-[var(--text-secondary)] mb-1">Haftalık Gym Günü</label>
-              <select id="prefGymDays" class="w-full bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-semibold">
-                <option value="0">0 Gün</option>
-                <option value="1">1 Gün</option>
-                <option value="2" selected>2 Gün (A/B Split)</option>
-                <option value="3">3 Gün</option>
-                <option value="4">4 Gün</option>
-                <option value="5">5 Gün</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[11px] text-[var(--text-secondary)] mb-1">Salon Rutini</label>
-              <select id="prefGymRoutine" class="w-full bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-[3px] px-3 py-2 text-xs font-medium">
-                <option value="ab_5x5" selected>A/B 5x5 Bileşik Güç</option>
-                <option value="ppl">Push - Pull - Legs</option>
-                <option value="upper_lower">Üst / Alt Vücut Split</option>
-                <option value="bodyweight">Fonksiyonel Vücut Ağırlığı</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-semibold mb-2">İkincil / Spontane Branşlar</label>
-          <div class="flex flex-wrap gap-2 text-xs">
-            <label class="btn-secondary cursor-pointer"><input type="checkbox" name="secSport" value="sailing"><span>Yelken</span></label>
-            <label class="btn-secondary cursor-pointer"><input type="checkbox" name="secSport" value="basketball"><span>Basketbol</span></label>
-            <label class="btn-secondary cursor-pointer"><input type="checkbox" name="secSport" value="swimming"><span>Yüzme</span></label>
-            <label class="btn-secondary cursor-pointer"><input type="checkbox" name="secSport" value="cycling"><span>Bisiklet</span></label>
-            <label class="btn-secondary cursor-pointer"><input type="checkbox" name="secSport" value="tennis"><span>Tenis</span></label>
-            <label class="btn-secondary cursor-pointer"><input type="checkbox" name="secSport" value="pilates"><span>Pilates / Mobilite</span></label>
-          </div>
-        </div>
-
-        <div class="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-end gap-2.5">
-          <button type="button" onclick="closePreferencesModal()" class="btn-secondary">İptal</button>
-          <button type="submit" id="btnSubmitCustomPlan" class="btn-primary">Planı Oluştur ve Uygula</button>
-        </div>
-      </form>
-    </div>
-  </dialog>
-
-  <!-- NATIVE MODAL 2: AKTİVİTE DETAY TELEMETRİSİ -->
+  <!-- NATIVE MODAL 1: AKTİVİTE DETAY TELEMETRİSİ -->
   <dialog id="activityDetailModal" closedby="any" aria-labelledby="modalActivityTitle" class="field-dialog">
     <div class="px-6 py-4 bg-[var(--bg-surface-elevated)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 shrink-0">
       <div class="flex items-center gap-3">
