@@ -43,9 +43,9 @@ class TestApiEndpoints(unittest.TestCase):
             cls.httpd.shutdown()
             cls.httpd.server_close()
 
-    def get_json(self, path):
+    def get_json(self, path, timeout=5):
         req = urllib.request.Request(f"{BASE_URL}{path}")
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             self.assertEqual(resp.status, 200)
             data = json.loads(resp.read().decode("utf-8"))
             return data
@@ -59,10 +59,16 @@ class TestApiEndpoints(unittest.TestCase):
             return data
 
     def test_status_endpoint(self):
-        """GET /api/status endpointini test eder."""
+        """GET /api/status ve /api/session/keepalive oturum koruma uç noktalarını test eder."""
         data = self.get_json("/api/status")
         self.assertEqual(data.get("status"), "ok")
         self.assertIn("profile_id", data)
+        self.assertIn("session", data)
+        self.assertTrue(data["session"].get("keepalive_active"))
+        self.assertEqual(data["session"].get("keepalive_interval_sec"), 240)
+        ka_data = self.get_json("/api/session/keepalive", timeout=50)
+        self.assertIsInstance(ka_data, dict)
+        self.assertIn("session_file_exists", ka_data)
 
     def test_overview_endpoint(self):
         """GET /api/overview endpointini test eder."""

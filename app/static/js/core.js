@@ -191,10 +191,35 @@ async function initApp() {
     }
 
     if (document.getElementById('calcTargetInput')) runCalculator();
+    startGarminSessionKeepAlive();
     refreshIcons();
   } catch (err) {
     console.error("Yükleme hatası:", err);
   }
+}
+
+function startGarminSessionKeepAlive() {
+  if (window.__garminKeepAliveStarted) return;
+  window.__garminKeepAliveStarted = true;
+
+  const checkAndRefreshSession = async () => {
+    try {
+      const status = await safeFetchJson('/api/status');
+      const sess = status && status.session;
+      if (sess && sess.session_file_exists && typeof sess.jwt_remaining_sec === 'number' && sess.jwt_remaining_sec < 420) {
+        await fetch('/api/session/keepalive', { method: 'POST' });
+      }
+    } catch (_) {
+      // Arka plan oturum yenileme sessizce sürer
+    }
+  };
+
+  window.__garminKeepAliveTimer = setInterval(checkAndRefreshSession, 240000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkAndRefreshSession();
+    }
+  });
 }
 
 async function syncGarminData() {

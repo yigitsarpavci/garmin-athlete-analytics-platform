@@ -39,6 +39,7 @@ Uç Noktalar (Endpoints):
 - POST /api/sync                : Garmin Connect ile veri senkronizasyonu tetikleme.
 """
 
+import base64
 import os
 import sys
 import json
@@ -71,8 +72,49 @@ SYNC_STATE: Dict[str, Any] = {
     "session_valid": True,
     "last_error": None,
     "auto_sync_interval_sec": 900,
+    "keepalive_active": True,
+    "keepalive_interval_sec": 240,
+    "last_keepalive_at": None,
+    "jwt_expires_at": None,
+    "jwt_remaining_sec": None,
 }
 _SYNC_LOCK = threading.Lock()
+_SESSION_FILE_PATH = os.path.join(os.path.expanduser("~"), ".garmin-connect-mcp", "session.json")
+
+
+def _inspect_session_jwt() -> Dict[str, Any]:
+    """~/.garmin-connect-mcp/session.json içindeki JWT_WEB kalan süresini çözer."""
+    info: Dict[str, Any] = {
+        "session_file_exists": os.path.exists(_SESSION_FILE_PATH),
+        "jwt_expires_at": None,
+        "jwt_remaining_sec": None,
+        "last_keepalive_at": SYNC_STATE.get("last_keepalive_at"),
+    }
+    if not info["session_file_exists"]:
+        return info
+    try:
+        with open(_SESSION_FILE_PATH, "r", encoding="utf-8") as f:
+            sess = json.load(f) or {}
+        if sess.get("last_keepalive_at"):
+            info["last_keepalive_at"] = sess.get("last_keepalive_at")
+        jwt_exp = sess.get("jwt_expires_at")
+        for c in sess.get("cookies") or []:
+            if isinstance(c, dict) and c.get("name") == "JWT_WEB":
+                val = c.get("value") or ""
+                parts = val.split(".")
+                if len(parts) == 3:
+                    b64 = parts[1] + "=" * (-len(parts[1]) % 4)
+                    payload = json.loads(base64.urlsafe_b64decode(b64).decode("utf-8"))
+                    if isinstance(payload.get("exp"), (int, float)):
+                        jwt_exp = int(payload["exp"])
+                break
+        if isinstance(jwt_exp, (int, float)):
+            jwt_exp_int = int(jwt_exp)
+            info["jwt_expires_at"] = jwt_exp_int
+            info["jwt_remaining_sec"] = int(jwt_exp_int - time.time())
+    except Exception:
+        pass
+    return info
 
 
 def sync_garmin_live() -> Dict[str, Any]:
@@ -112,6 +154,96 @@ def sync_garmin_live() -> Dict[str, Any]:
         except Exception as e:
             SYNC_STATE["last_error"] = str(e)
             return {"success": False, "session_expired": False, "message": f"Senkronizasyon hatası: {str(e)}"}
+
+
+def keepalive_garmin_session() -> Dict[str, Any]:
+    """Garmin Connect oturumunu hafif --keepalive nabız atışı ile canlı tutar ve yeni çerezleri kaydeder."""
+    jwt_info = _inspect_session_jwt()
+    if not jwt_info["session_file_exists"]:
+        return {
+            "success": False,
+            "session_file_exists": False,
+            "session_valid": False,
+            "message": "Kayıtlı ~/.garmin-connect-mcp/session.json bulunamadı.",
+            **jwt_info,
+        }
+
+    fetch_script = os.path.join(BASE_DIR, "scripts", "fetch_garmin_data.mjs")
+    if not os.path.exists(fetch_script):
+        return {
+            "success": False,
+            "session_valid": False,
+            "message": "fetch_garmin_data.mjs bulunamadı.",
+            **jwt_info,
+        }
+
+    with _SYNC_LOCK:
+        try:
+            res = subprocess.run(
+                ["node", fetch_script, "--keepalive"],
+                capture_output=True,
+                text=True,
+                timeout=45,
+            )
+            output = (res.stdout or "") + "\n" + (res.stderr or "")
+            updated_info = _inspect_session_jwt()
+            SYNC_STATE["jwt_expires_at"] = updated_info.get("jwt_expires_at")
+            SYNC_STATE["jwt_remaining_sec"] = updated_info.get("jwt_remaining_sec")
+            if res.returncode == 0:
+                now_iso = datetime.now().isoformat(timespec="seconds")
+                SYNC_STATE["last_keepalive_at"] = updated_info.get("last_keepalive_at") or now_iso
+                SYNC_STATE["session_valid"] = True
+                SYNC_STATE["last_error"] = None
+                return {
+                    "success": True,
+                    "session_expired": False,
+                    "last_keepalive_at": SYNC_STATE["last_keepalive_at"],
+                    "message": "Garmin oturumu canlı tutuldu ve çerezler tazelendi.",
+                    **updated_info,
+                }
+
+            expired = "401" in output or "Session invalid" in output or "expired" in output.lower()
+            SYNC_STATE["session_valid"] = not expired
+            SYNC_STATE["last_error"] = (
+                "Garmin Connect oturum çerezleri (401) süresi dolmuş." if expired
+                else f"Keep-alive uyarısı (kod {res.returncode})"
+            )
+            return {
+                "success": False,
+                "session_expired": expired,
+                "message": SYNC_STATE["last_error"],
+                **updated_info,
+            }
+        except Exception as e:
+            SYNC_STATE["last_error"] = str(e)
+            return {
+                "success": False,
+                "session_expired": False,
+                "message": f"Keep-alive hatası: {str(e)}",
+                **_inspect_session_jwt(),
+            }
+
+
+def _session_keepalive_loop(base_interval_sec: int = 240) -> None:
+    """Uygulama çalıştığı sürece Garmin Connect oturumunu adaptif aralıklarla yeniler."""
+    while True:
+        info = _inspect_session_jwt()
+        SYNC_STATE["jwt_expires_at"] = info.get("jwt_expires_at")
+        SYNC_STATE["jwt_remaining_sec"] = info.get("jwt_remaining_sec")
+        if info.get("last_keepalive_at"):
+            SYNC_STATE["last_keepalive_at"] = info.get("last_keepalive_at")
+
+        if info.get("session_file_exists"):
+            res = keepalive_garmin_session()
+            rem = res.get("jwt_remaining_sec")
+        else:
+            rem = None
+
+        if isinstance(rem, int) and 0 < rem < 600:
+            sleep_sec = max(60, min(base_interval_sec, rem // 2))
+        else:
+            sleep_sec = base_interval_sec
+        time.sleep(sleep_sec)
 
 
 def _auto_sync_loop(interval_sec: int = 900) -> None:
@@ -246,7 +378,16 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
         elif path == "/api/charts":
             self.send_json(200, engine.get_chart_data())
         elif path == "/api/status":
-            self.send_json(200, {"status": "ok", "profile_id": null, "version": "2.0.0"})
+            sess_info = {**SYNC_STATE, **_inspect_session_jwt()}
+            self.send_json(200, {
+                "status": "ok",
+                "profile_id": null,
+                "version": "2.0.0",
+                "is_demo": IS_DEMO_MODE,
+                "session": sess_info,
+            })
+        elif path == "/api/session/keepalive":
+            self.send_json(200, keepalive_garmin_session())
         elif path == "/" or path == "":
             self.path = "/index.html"
             return super().do_GET()
@@ -288,6 +429,8 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             res = sync_garmin_live()
             status_code = 200 if res.get("success") else (401 if res.get("session_expired") else 500)
             self.send_json(status_code, res)
+        elif path == "/api/session/keepalive":
+            self.send_json(200, keepalive_garmin_session())
         else:
             self.send_json(404, {"error": "Not found"})
 
@@ -335,11 +478,13 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
 def run(port: int = 8085) -> None:
     """
     Yerel HTTP sunucusunu belirtilen port üzerinden başlatır, arka plan otomatik
-    Garmin senkronizasyonunu (15 dk aralıkla) devreye alır ve istekleri dinler.
+    Garmin senkronizasyonunu (15 dk aralıkla) ve oturum keep-alive nabzını (4 dk)
+    devreye alır ve istekleri dinler.
 
     Args:
         port (int): Sunucunun bağlanacağı TCP portu (varsayılan: 8085).
     """
+    threading.Thread(target=_session_keepalive_loop, args=(240,), daemon=True).start()
     threading.Thread(target=_auto_sync_loop, args=(900,), daemon=True).start()
     server_address = ('127.0.0.1', port)
     httpd = HTTPServer(server_address, AthleteAppHandler)
@@ -349,6 +494,7 @@ def run(port: int = 8085) -> None:
         print(f"🧪 Mod: DEMO / MOCK VERİ (sample_data) — Canlı senkronizasyon devre dışı")
     else:
         print(f"🔄 Otomatik Garmin Canlı Senkronizasyon: Aktif (15 dk)")
+    print(f"🔐 Garmin Oturum Keep-Alive: Aktif (4 dk adaptif)")
     print(f"👉 Tarayıcıda açın: http://localhost:{port}")
     print(f"=======================================================\n")
     try:

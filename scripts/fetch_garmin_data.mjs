@@ -9,6 +9,7 @@
  */
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
@@ -17,6 +18,7 @@ import { inflateRawSync } from "node:zlib";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, "../data");
 const FIT_DIR = path.join(DATA_DIR, "fit_files");
+const SESSION_FILE = path.join(os.homedir(), ".garmin-connect-mcp", "session.json");
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(FIT_DIR, { recursive: true });
 
@@ -101,14 +103,136 @@ function formatDate(d) {
   return d.toISOString().slice(0, 10);
 }
 
+function decodeJwtExp(token) {
+  if (!token || typeof token !== "string" || token.split(".").length !== 3) {
+    return null;
+  }
+  try {
+    const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const payload = JSON.parse(Buffer.from(padded, "base64").toString("utf-8"));
+    return typeof payload.exp === "number" ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+async function persistRefreshedSession(client) {
+  if (!fs.existsSync(SESSION_FILE) || !client?.page) return null;
+  const existing = readJsonSafe(SESSION_FILE, {});
+  const oldCookies = Array.isArray(existing.cookies) ? existing.cookies : [];
+  let liveCookies = [];
+  try {
+    liveCookies = (await client.page.context().cookies()).filter(
+      (c) => c.domain && c.domain.includes("garmin")
+    );
+  } catch {
+    liveCookies = [];
+  }
+
+  const cookieMap = new Map();
+  for (const c of oldCookies) {
+    if (c && c.name && c.domain) {
+      cookieMap.set(`${c.domain}::${c.name}`, { name: c.name, value: c.value, domain: c.domain });
+    }
+  }
+  for (const c of liveCookies) {
+    if (c && c.name && c.domain) {
+      cookieMap.set(`${c.domain}::${c.name}`, { name: c.name, value: c.value, domain: c.domain });
+    }
+  }
+
+  let csrf = existing.csrf_token || client.csrfToken || "";
+  try {
+    const metaCsrf = await client.page.evaluate(
+      () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || ""
+    );
+    if (metaCsrf && metaCsrf !== "NOT_FOUND") {
+      csrf = metaCsrf;
+      client.csrfToken = metaCsrf;
+    }
+  } catch {
+    // status.json sayfasında meta etiket olmayabilir; mevcut csrf korunur
+  }
+
+  const mergedCookies = Array.from(cookieMap.values());
+  const jwtCookie = mergedCookies.find((c) => c.name === "JWT_WEB");
+  const jwtExp = decodeJwtExp(jwtCookie?.value);
+
+  const nextSession = {
+    ...existing,
+    csrf_token: csrf,
+    cookies: mergedCookies,
+    last_keepalive_at: new Date().toISOString(),
+    ...(jwtExp ? { jwt_expires_at: jwtExp } : {}),
+  };
+
+  const tmpPath = `${SESSION_FILE}.tmp`;
+  fs.writeFileSync(tmpPath, JSON.stringify(nextSession, null, 2), { mode: 0o600 });
+  fs.renameSync(tmpPath, SESSION_FILE);
+  return { jwt_expires_at: jwtExp, cookie_count: mergedCookies.length };
+}
+
+async function attemptSilentSsoRefresh(client) {
+  try {
+    if (!client.page) {
+      await client.init();
+    }
+    await client.page.goto("https://connect.garmin.com/app/activities", {
+      waitUntil: "domcontentloaded",
+      timeout: 25000,
+    });
+    await client.page.waitForTimeout(3000);
+    const metaCsrf = await client.page.evaluate(
+      () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || ""
+    );
+    if (metaCsrf && metaCsrf !== "NOT_FOUND") {
+      client.csrfToken = metaCsrf;
+    }
+    const freshCookies = (await client.page.context().cookies()).filter(
+      (c) => c.domain && c.domain.includes("garmin")
+    );
+    if (freshCookies.length) {
+      client.cookies = freshCookies.map((c) => ({ name: c.name, value: c.value, domain: c.domain }));
+    }
+    await client.get("userprofile-service/userprofile/settings");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
+  const isKeepaliveOnly = process.argv.includes("--keepalive");
   const clientPath = findGarminClientPath();
   const { GarminClient } = await import(clientPath);
   const client = new GarminClient();
 
   try {
     await client.init();
-    const displayName = await client.getDisplayName();
+    let displayName;
+    try {
+      displayName = await client.getDisplayName();
+    } catch (err) {
+      if (String(err?.message || "").includes("401")) {
+        const refreshed = await attemptSilentSsoRefresh(client);
+        if (!refreshed) throw err;
+        displayName = await client.getDisplayName();
+      } else {
+        throw err;
+      }
+    }
+
+    const persisted = await persistRefreshedSession(client);
+    if (isKeepaliveOnly) {
+      console.log(JSON.stringify({
+        keepalive: true,
+        displayName,
+        ...(persisted || {}),
+        at: new Date().toISOString(),
+      }));
+      return;
+    }
 
     const endDate = new Date();
     const startDate = new Date(endDate);
@@ -123,6 +247,7 @@ async function main() {
       path.join(DATA_DIR, "raw_activities.json"),
       JSON.stringify(acts, null, 2)
     );
+    await persistRefreshedSession(client);
 
     console.log(`[2/9] Uyku ve HRV istatistikleri çekiliyor (25 günlük bloklar)...`);
     const sleepDays = {};
@@ -367,6 +492,7 @@ async function main() {
       console.warn("Günlük solunum verisi çekilemedi:", e.message);
     }
 
+    await persistRefreshedSession(client);
     console.log("Tüm Garmin verileri (yüksek çözünürlüklü FIT/HRV/RD kanalları dahil) güncellendi.");
   } finally {
     await client.close();
