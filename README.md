@@ -33,9 +33,9 @@ An end-to-end athletic performance intelligence and biometric telemetry platform
 Commercial fitness trackers generate massive streams of biometric telemetry (heart rate variability, excess post-exercise oxygen consumption, cadence, sleep architecture), yet companion mobile apps present this data through fragmented, superficial scores without actionable training periodization. Conversely, academic exercise physiology frameworks (Gabbett ACWR, polarized 80/20 endurance splits, linear progressive overload) require labor-intensive manual logging.
 
 **Garmin Athlete Analytics Platform** bridges this gap:
-1. **IoT Sensor Ingestion:** Connects directly to Garmin Connect via the Model Context Protocol (MCP) to extract raw high-resolution activity, sleep, HRV, body weight, and resistance training telemetry.
-2. **Deterministic Physiology Engine:** Computes acute and chronic workload ratios, cardiac efficiency factors, energy expenditure, dynamic morphology projections, and progressive overload weights without heuristic guesswork.
-3. **Live Dark-Mode Telemetry Dashboard:** Serves a reactive, low-latency web workspace backed by modular Python analytics engines and automatic 15-minute live Garmin sync.
+1. **IoT Sensor Ingestion & High-Res FIT Parsing:** Connects directly to Garmin Connect via the Model Context Protocol (MCP) to extract raw 93-day activity, sleep, 5-minute overnight HRV (RMSSD), Running Dynamics (`GCT`, vertical oscillation/ratio, power), body weight, and `1 Hz` binary `.fit` streams (`app/engine/fit_stream_parser.py`).
+2. **Deterministic Physiology & Flexible Quota Engine:** Computes acute and chronic workload ratios, cardiac efficiency factors, energy expenditure, dynamic morphology projections, progressive overload weights, and Monday-reset flexible weekly quotas without heuristic guesswork.
+3. **Single-Screen Forest-Dark Telemetry Workspace:** Serves a zero-scroll (`100vh`) deep-forest dark-mode web dashboard backed by modular Python analytics engines, 15-minute live Garmin sync, 4-minute adaptive SSO keep-alive (`GET /api/session/keepalive`), and an offline synthetic demo mode (`GARMIN_DEMO_MODE=1` / `--demo`).
 
 ---
 
@@ -67,6 +67,11 @@ Commercial fitness trackers generate massive streams of biometric telemetry (hea
 
 ### 5. Dual-Provider AI Athletic Coach
 - Features a real-time conversational sports coach powered by **Google GenAI (Gemini 2.5 Flash)** with automatic fallback to **OpenAI (GPT-4o)** or deterministic sports science heuristics when API keys are absent.
+
+### 6. High-Res Binary FIT Streams, Session Keep-Alive & Demo Mode
+- **Binary `.fit` Decoder (`app/engine/fit_stream_parser.py`):** Decodes native Garmin FIT binary frames (`1 Hz` heart rate, cadence, stride length, ground contact time, and vertical oscillation) plus 5-minute overnight HRV and respiration series exposed via `GET /api/garmin-expansion`.
+- **Adaptive Session Continuity:** Runs a background 4-minute keep-alive loop (`GET /api/session/keepalive`) and rolling session lease fallback so `/api/sync` stays responsive and refreshes local telemetry cleanly without interrupting dashboard sessions.
+- **Portable Demo Mode:** Launch with `GARMIN_DEMO_MODE=1` or `--demo` to run seamlessly against synthetic telemetry in `sample_data/`.
 
 ---
 
@@ -140,7 +145,7 @@ Following every session, the platform benchmarks live telemetry against baseline
 
 ## Verification & Test Suite
 
-The platform includes a rigorous test suite of **29 unit and integration tests** guaranteeing 100% calculation accuracy and endpoint reliability:
+The platform includes a comprehensive test suite of **36 unit and integration tests** guaranteeing calculation accuracy, FIT/high-res stream parsing, flexible weekly quota transitions, sample-data parity, and endpoint reliability:
 
 ```bash
 python3 tests/run_tests.py
@@ -148,37 +153,21 @@ python3 tests/run_tests.py
 
 ```
 ======================================================================
-🏃 Garmin Athletic Performance Platform Test Suite
-📁 Working Directory: ./garmin-athlete-analytics-platform
+🏃 Garmin Sporcu Platformu Test Süiti Başlatılıyor
 ======================================================================
-test_calculator_post_endpoint .................................... ok
-test_custom_profile_plan_post_endpoint ........................... ok
-test_custom_profile_presets_endpoint ............................. ok
-test_daily_protocols_endpoint .................................... ok
-test_gym_history_endpoint ........................................ ok
-test_overview_endpoint ........................................... ok
-test_post_workout_debrief_endpoint ............................... ok
-test_progression_assessment_endpoint ............................. ok
-test_status_endpoint ............................................. ok
-test_training_load_endpoint ...................................... ok
-test_user_profile_endpoint ....................................... ok
-test_z2_tracker_endpoint ......................................... ok
-test_raw_activities_file ......................................... ok
-test_raw_daily_file .............................................. ok
-test_raw_gym_exercise_sets_file ................................... ok
-test_raw_sleep_stats_file ........................................ ok
-test_acwr_sweet_spot ............................................. ok
-test_custom_projection_math ...................................... ok
-test_efficiency_factor_math ...................................... ok
-test_mifflin_st_jeor_bmr_formula ................................. ok
-test_progressive_overload_rules .................................. ok
-test_tdee_and_macro_distribution ................................. ok
-test_z2_tracker_dynamic_countdown ................................ ok
+test_garmin_expansion_high_res_endpoint ........................ ok
+test_sample_data_mock_engine_parity ............................ ok
+test_monday_reset_with_last_week_deficit_adaptation ............ ok
+test_off_plan_tempo_run_not_counted_as_interval_and_replans_week ok
+test_unknown_sport_dynamic_weight_and_anaerobic_focus .......... ok
+test_weekly_quota_summary_states ............................... ok
+test_weekly_schedule_respects_completed_quota .................. ok
+... (+29 API, data-integrity, and sports-science tests) ......... ok
 ----------------------------------------------------------------------
-Ran 29 tests in 0.061s
+Ran 36 tests
 
 OK
-🎉 ALL 29 TESTS PASSED (100% Success Rate)
+🎉 TÜM TESTLER BAŞARIYLA TAMAMLANDI! (%100 Geçti)
 ```
 
 ---
@@ -187,8 +176,10 @@ OK
 
 | Endpoint | Method | Description |
 | :--- | :---: | :--- |
-| `/api/status` | `GET` | Health check and engine version metadata. |
-| `/api/overview` | `GET` | Aggregated 93-day athlete overview, body weight, VO2 max, and sleep scores. |
+| `/api/status` | `GET` | Health check, demo/live flag, and rolling session JWT/lease metadata. |
+| `/api/session/keepalive` | `GET` / `POST` | Adaptive Garmin session keep-alive heartbeat and lease renewal. |
+| `/api/overview` | `GET` | Aggregated 93-day athlete overview, flexible weekly quota, weight, VO2 max, and sleep scores. |
+| `/api/garmin-expansion` | `GET` | High-resolution binary FIT (`1 Hz`) streams, 5-min HRV RMSSD, Running Dynamics, and respiration channels. |
 | `/api/post-workout-debrief` | `GET` | 5-point post-workout telemetry debrief with optional `?idx=` query selector. |
 | `/api/daily-protocols` | `GET` | 7-day integrated workout and nutritional prescriptions with progressive weights. |
 | `/api/gym-history` | `GET` | Exercise-level resistance history, volume metrics, and personal records (PRs). |
@@ -196,7 +187,8 @@ OK
 | `/api/training-load` | `GET` | Acute load, chronic load, ACWR ratio, and Firstbeat training status. |
 | `/api/calculator` | `POST` | Custom calorie, BMR, TDEE, and macro nutrient distribution calculator. |
 | `/api/custom-profile/plan` | `POST` | Dynamic training schedule generation for custom athlete profiles. |
-| `/api/ai-coach` | `POST` | Context-aware AI coach query execution (Gemini / OpenAI / Heuristic). |
+| `/api/sync` | `POST` | Trigger Garmin Connect sync with rolling lease reload fallback. |
+| `/api/chat` | `POST` | Context-aware AI coach query execution (Gemini / OpenAI / Heuristic). |
 
 ---
 
@@ -214,7 +206,8 @@ OK
 
 ### 1. Launch the Web Dashboard
 ```bash
-make run          # or ./scripts/run_app.sh
+make run                       # Live telemetry (or ./scripts/run_app.sh)
+python3 app/server.py --demo   # Offline synthetic demo mode (or GARMIN_DEMO_MODE=1)
 ```
 Open your browser at `http://localhost:8085`.
 

@@ -25,20 +25,28 @@ Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve First
 4. **Gerçek LLM Entegreli AI Sporcu Koçu:**
    - Garmin telemetrisiyle anlık beslenen ve sporcunun profil geçmişini bağlam olarak alan interaktif yapay zeka danışmanı.
 
+5. **Yüksek Çözünürlüklü İkili FIT (`1 Hz`), Adaptif Oturum Koruma ve Demo Modu:**
+   - **İkili FIT & 5dk HRV (`app/engine/fit_stream_parser.py`):** `1 Hz` nabız, kadans, adım uzunluğu, Running Dynamics (`GCT`, dikey salınım/oran) ve 5 dakikalık gece HRV RMSSD kanalları `/api/garmin-expansion` üzerinden sunulur.
+   - **Kesintisiz Oturum & Tek Ekran Arayüz:** 4 dakikalık adaptif keep-alive döngüsü (`/api/session/keepalive`) ile oturum kirasını korur; tüm 19 görünüm `100vh` kaydırmasız koyu orman yeşili arayüzde sunulur.
+   - **Sentetik Demo Modu:** Canlı Garmin oturumu olmadan denemek için `GARMIN_DEMO_MODE=1` veya `--demo` bayrağıyla `sample_data/` üzerinden çalıştırılabilir.
+
 ---
 
 ## 🚀 Hızlı Başlangıç
 
 ### 1. Web Uygulamasını Başlatma
 ```bash
-# Web panelini başlatın (Port: 8085)
-make run            # veya ./scripts/run_app.sh
+# Canlı telemetriyle web panelini başlatın (Port: 8085)
+make run                       # veya ./scripts/run_app.sh
+
+# Sentetik demo verisiyle başlatın (sample_data/)
+python3 app/server.py --demo   # veya GARMIN_DEMO_MODE=1
 
 # Tarayıcınızda açın:
 http://localhost:8085
 ```
 
-### 2. Test Süitini Çalıştırma (%100 Kapsam)
+### 2. Test Süitini Çalıştırma (`36/36` Test — %100 Kapsam)
 ```bash
 make test           # veya python3 tests/run_tests.py
 ```
@@ -101,4 +109,6 @@ garmin-athlete-analytics-platform/
 | `/api/custom-profile/plan` | `POST` | Özel biyometrik ve antrenman tercihlerine göre dinamik plan üretici. |
 | `/api/calculator` | `POST` | Özel forma girme süresi, kalori açığı, 5K ve VO2Max projeksiyonu. |
 | `/api/chat` | `POST` | Gerçek yapay zeka (Gemini 3.8 / 4 Hydrogen) spor danışmanı sohbeti. |
-| `/api/status` | `GET` | Sunucu sağlık durumu ve profil doğrulaması. |
+| `/api/status` | `GET` | Sunucu sağlık durumu, demo/canlı modu ve yuvarlanan oturum bilgisi. |
+| `/api/session/keepalive` | `GET` / `POST` | Adaptif 4 dk Garmin Connect oturum koruma ve kira yenileme nabzı. |
+| `/api/sync` | `POST` | Canlı Garmin senkronizasyonu veya yerel telemetri + kira yenileme. |
