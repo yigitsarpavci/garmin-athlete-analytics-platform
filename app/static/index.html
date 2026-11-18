@@ -659,7 +659,7 @@
       <div class="border-b border-[var(--border-medium)] pb-4">
         <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">04 / GABBETT ACWR &amp; ENERJİ DAĞILIMI</span>
         <h2 class="section-heading text-2xl sm:text-3xl mt-1">Antrenman Yükü &amp; Firstbeat ACWR</h2>
-        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Akut / kronik iş yükü oranı, 4 haftalık enerji odağı ve en yüksek yük seansları.</p>
+        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Akut / kronik iş yükü oranı (ACWR) ve 4 haftalık Firstbeat enerji yük odağı dağılımı.</p>
       </div>
 
       <div class="surface-ledger grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
@@ -697,15 +697,7 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('training_load', 'focus')" data-subtab-group="training_load" data-subtab="focus" class="subtab-btn subtab-btn-active">Aylık Yük Odağı</button>
-          <button type="button" onclick="setSubTab('training_load', 'weekly')" data-subtab-group="training_load" data-subtab="weekly" class="subtab-btn">14 Haftalık ACWR Trendi</button>
-          <button type="button" onclick="setSubTab('training_load', 'top')" data-subtab-group="training_load" data-subtab="top" class="subtab-btn">En Ağır 10 Seans</button>
-        </div>
-      </div>
-
-      <div data-subpane-group="training_load" data-subpane="focus">
+      <div>
         <section class="surface-card p-6 sm:p-8 space-y-5">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -765,60 +757,6 @@
           <div id="tl-focus-recommendation" class="tint-panel p-4 border-l-2 border-[var(--accent)] text-xs space-y-1">
             <span class="font-mono text-[10px] font-semibold uppercase tracking-wider accent-text block">Firstbeat Yük Odağı Önerisi</span>
             <p class="text-[var(--text-primary)] leading-relaxed">Canlı enerji odak dağılımı hesaplanıyor...</p>
-          </div>
-        </section>
-      </div>
-
-      <div data-subpane-group="training_load" data-subpane="weekly" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-4">
-          <div>
-            <h3 class="font-editorial text-lg font-medium tracking-tight">14 Haftalık Antrenman Yükü ve ACWR Trendi</h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-1">Çeşme aşırı yüklenmesinden dengeli ACWR 1.00 formuna geçiş</p>
-          </div>
-          <div tabindex="0" role="region" aria-label="14 haftalık ACWR tablosu" class="table-scroll-region custom-scrollbar">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr>
-                  <th class="py-3 px-3">Hafta</th>
-                  <th class="py-3 px-3">Durum</th>
-                  <th class="py-3 px-3">ATL</th>
-                  <th class="py-3 px-3">CTL</th>
-                  <th class="py-3 px-3">ACWR</th>
-                  <th class="py-3 px-3">Seviye</th>
-                  <th class="py-3 px-3">Düşük A.</th>
-                  <th class="py-3 px-3">Yüksek A.</th>
-                  <th class="py-3 px-3">Anaerobik</th>
-                  <th class="py-3 px-3">Denge</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="trainingLoadWeeklyBody"></tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      <div data-subpane-group="training_load" data-subpane="top" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-4">
-          <div>
-            <h3 class="font-editorial text-lg font-medium tracking-tight">En Yüksek Antrenman Yükü Üreten 10 Seans</h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-1">Firstbeat EPOC bazlı seans yükü ve Antrenman Etkisi (TE)</p>
-          </div>
-          <div tabindex="0" role="region" aria-label="En ağır 10 seans tablosu" class="table-scroll-region custom-scrollbar">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr>
-                  <th class="py-3 px-4">Tarih</th>
-                  <th class="py-3 px-4">Branş</th>
-                  <th class="py-3 px-4">Aktivite</th>
-                  <th class="py-3 px-4">Süre</th>
-                  <th class="py-3 px-4">Yük</th>
-                  <th class="py-3 px-4">Aer. TE</th>
-                  <th class="py-3 px-4">Anaer. TE</th>
-                  <th class="py-3 px-4">Etki</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="trainingLoadTopActsBody"></tbody>
-            </table>
           </div>
         </section>
       </div>
