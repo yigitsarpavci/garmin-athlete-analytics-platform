@@ -363,7 +363,6 @@ select:focus-visible,
   gap: 0.25rem;
   overflow-x: auto;
   scroll-snap-type: inline proximity;
-  border-top: 1px solid var(--border-subtle);
   -webkit-overflow-scrolling: touch;
 }
 

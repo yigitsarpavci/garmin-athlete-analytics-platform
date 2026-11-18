@@ -219,7 +219,7 @@ async function syncGarminData() {
   let syncedOk = false;
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 animate-spin accent-text')}<span class="hidden xl:inline">Eşitleniyor...</span>`;
+    btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 animate-spin accent-text')}<span class="hidden sm:inline">Eşitleniyor...</span>`;
     refreshIcons();
   }
   try {
@@ -235,17 +235,17 @@ async function syncGarminData() {
     if (btn) {
       btn.disabled = false;
       if (syncedOk) {
-        btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-emerald-400')}<span class="hidden xl:inline text-emerald-400">✓ Eşitlendi</span>`;
+        btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-emerald-400')}<span class="hidden sm:inline text-emerald-400">✓ Eşitlendi</span>`;
         refreshIcons();
         setTimeout(() => {
           const currentBtn = document.getElementById('syncBtn');
           if (currentBtn) {
-            currentBtn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden xl:inline">Eşitle</span>`;
+            currentBtn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden sm:inline">Eşitle</span>`;
             refreshIcons();
           }
         }, 2000);
       } else {
-        btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden xl:inline">Eşitle</span>`;
+        btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden sm:inline">Eşitle</span>`;
         refreshIcons();
       }
     }
@@ -337,17 +337,11 @@ function renderWeeklyStreak(activities) {
 
 function applyAthleteBranding(overview) {
   const isDemo = Boolean(overview && overview.is_demo);
-  const rawW = (overview && (overview.weight !== undefined ? overview.weight : overview.weight_kg)) || (isDemo ? 84.0 : 87.0);
-  const lossKg = (overview && overview.total_loss_kg !== undefined) ? String(overview.total_loss_kg).replace('.', ',') : '8,0';
-  const w = String(rawW).replace('.', ',');
-  const headerMeta = document.getElementById('headerAthleteMeta');
   const coachGreet = document.getElementById('coachGreetingText');
 
   if (isDemo) {
-    if (headerMeta) headerMeta.textContent = `Demo Athlete · Sentetik Profil · ${w} kg · Örnek Garmin Verisi`;
     if (coachGreet) coachGreet.textContent = 'Merhaba! Ben sentetik Garmin Connect veritabanına bağlı yapay zeka spor koçunum. Bugünkü toparlanma';
   } else {
-    if (headerMeta) headerMeta.innerHTML = `Sarp · 22 Yaş · 186 cm · ${w} kg (<span class="moss-text font-medium">-${lossKg} kg</span>) · 93G Telemetri`;
     if (coachGreet) coachGreet.textContent = 'Merhaba Sarp! Ben 3 aylık Garmin Connect veritabanına bağlı kişisel spor koçunum. Bugünkü toparlanma';
   }
 }
