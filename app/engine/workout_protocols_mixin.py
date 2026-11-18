@@ -486,8 +486,37 @@ class WorkoutProtocolsMixin:
         rem_gyms = quota["strength"]["remaining"]
         total_done = quota["total"]["completed"]
         total_rem = quota["total"]["remaining"]
+        completed_run_kinds = set(quota["running"].get("completed_kinds") or [])
+        completed_gym_kinds = set(quota["strength"].get("completed_kinds") or [])
         rem_run_kinds = {i["slot_kind"] for i in quota["running"]["remaining_items"]}
         rem_gym_kinds = {i["slot_kind"] for i in quota["strength"]["remaining_items"]}
+        post_tempo_adapted = bool(quota.get("post_tempo_adapted"))
+
+        # ÖNEMLİ: Yapılan seans planlanandan farklı (örn. Tempo) ise unperformed türler 'completed' sayılmaz!
+        gym_a_done = "gym_a" in completed_gym_kinds
+        gym_b_done = "gym_b" in completed_gym_kinds
+        z2_done = "zone2" in completed_run_kinds
+        int_done = "interval" in completed_run_kinds
+        z2_status = "completed" if z2_done else ("remaining" if ("zone2" in rem_run_kinds or (rem_runs > 0 and not z2_done)) else "optional")
+        int_status = "completed" if int_done else ("remaining" if ("interval" in rem_run_kinds or (rem_runs > 0 and not int_done)) else "optional")
+
+        def _quota_note(is_remaining: bool, done_count: int, rem_count: int, label_tr: str, next_hint: str) -> str:
+            if is_remaining:
+                return f"Bu Hafta Kalan Kota ({done_count}/2 {label_tr} Yapıldı, {rem_count} Kaldı) • {next_hint}"
+            return f"Bu Haftaki İhtiyaç Tamamlandı ({done_count}/2 {label_tr}) • Bir Sonraki Döngü İçin Şablon"
+
+        if post_tempo_adapted:
+            int_note = (
+                f"{runs_done}/2 Koşu Yapıldı ({rem_runs} Kaldı) • Planlanan İnterval yerine Tempo Koşusu (TE: TEMPO, AnTE: 0.0) "
+                "yapıldığı için İnterval tamamlanmadı sayıldı; Anaerobik eksiği kapatmak için öncelikli telafi seansı"
+            )
+            z2_note = (
+                f"{runs_done}/2 Koşu Yapıldı ({rem_runs} Kaldı) • Plan dışı Zone 3 Tempo sonrası Zone 2 de henüz yapılmadı; "
+                "bacaklar yorgunsa kalan 1 koşu kotasında alternatif dengeleme olarak seçilebilir"
+            )
+        else:
+            int_note = _quota_note(int_status == "remaining", runs_done, rem_runs, "Koşu", "Taze bacakla ve Anaerobik eksiği kapatmak için uygun günde uygula")
+            z2_note = _quota_note(z2_status == "remaining", runs_done, rem_runs, "Koşu", "Bacakların taze olduğu herhangi bir günde uygula")
 
         prog = self.get_gym_exercise_history().get("progression", {})
         sq = prog.get("squat", {})
@@ -503,21 +532,16 @@ class WorkoutProtocolsMixin:
         cur_w = float(metrics.get("weight", 87.0))
         prot_g = round(cur_w * 2.0)
 
-        def _quota_note(is_remaining: bool, done_count: int, rem_count: int, label_tr: str, next_hint: str) -> str:
-            if is_remaining:
-                return f"Bu Hafta Kalan Kota ({done_count}/2 {label_tr} Yapıldı, {rem_count} Kaldı) • {next_hint}"
-            return f"Bu Haftaki İhtiyaç Tamamlandı ({done_count}/2 {label_tr}) • Bir Sonraki Döngü İçin Şablon"
-
         return [
             {
                 "day_code": "tuesday",
                 "slot_label": "Workout A",
-                "quota_status": "remaining" if "gym_a" in rem_gym_kinds else "completed",
+                "quota_status": "completed" if gym_a_done else ("remaining" if "gym_a" in rem_gym_kinds else "completed"),
                 "day_title": "Kuvvet Reçetesi A: Workout A (Tüm Vücut Güç & Hipertrofi)",
                 "category": "gym",
                 "badge": "Workout A",
                 "badge_color": "blue",
-                "status_note": _quota_note("gym_a" in rem_gym_kinds, gyms_done, rem_gyms, "Kuvvet", "Uygun olduğun herhangi bir günde uygula"),
+                "status_note": _quota_note((not gym_a_done) and ("gym_a" in rem_gym_kinds), gyms_done, rem_gyms, "Kuvvet", "Uygun olduğun herhangi bir günde uygula"),
                 "objective": "Nöromüsküler güç inşası, göğüs, bacak, sırt ve yan omuz gelişimi (Progressive Overload). Sabit gün zorunluluğu olmadan haftanın uygun gününe yerleştirilir.",
                 "warmup": "5 dk dinamik kalça & omuz mobilitesi + Boş bar ile 2x10 Squat ve 2x10 Bench Press hafif ısınma setleri.",
                 "exercises": [
@@ -594,12 +618,12 @@ class WorkoutProtocolsMixin:
             {
                 "day_code": "thursday",
                 "slot_label": "Zone 2",
-                "quota_status": "remaining" if "zone2" in rem_run_kinds else "completed",
+                "quota_status": z2_status,
                 "day_title": "Koşu Reçetesi #1: Zone 2 Aerobik Taban (45-50 dk)",
                 "category": "running",
                 "badge": "Zone 2 Taban",
                 "badge_color": "emerald",
-                "status_note": _quota_note("zone2" in rem_run_kinds, runs_done, rem_runs, "Koşu", "Bacakların taze olduğu herhangi bir günde uygula"),
+                "status_note": z2_note,
                 "objective": "Sol karıncık atım hacmini büyütmek ve aerobik tabanı nabız tavanını aşmadan korumak.",
                 "warmup": "5-8 dk dinamik kalça ve ayak bileği mobilitesi.",
                 "exercises": [
@@ -651,12 +675,12 @@ class WorkoutProtocolsMixin:
             {
                 "day_code": "saturday",
                 "slot_label": "Workout B",
-                "quota_status": "remaining" if "gym_b" in rem_gym_kinds else "completed",
+                "quota_status": "completed" if gym_b_done else ("remaining" if "gym_b" in rem_gym_kinds else "completed"),
                 "day_title": "Kuvvet Reçetesi B: Workout B (Arka Zincir, Omuz & Çekiş)",
                 "category": "gym",
                 "badge": "Workout B",
                 "badge_color": "blue",
-                "status_note": _quota_note("gym_b" in rem_gym_kinds, gyms_done, rem_gyms, "Kuvvet", "Toparlanmana uygun herhangi bir günde uygula"),
+                "status_note": _quota_note((not gym_b_done) and ("gym_b" in rem_gym_kinds), gyms_done, rem_gyms, "Kuvvet", "Toparlanmana uygun herhangi bir günde uygula"),
                 "objective": "Arka zincir, omuz itiş gücü, kanat hipertrofisi ve trapez dayanıklılığı.",
                 "warmup": "5-8 dk dinamik eklem açma + Boş bar ile Squat ve OHP ısınma setleri.",
                 "exercises": [
@@ -745,12 +769,12 @@ class WorkoutProtocolsMixin:
             {
                 "day_code": "monday",
                 "slot_label": "5K İnterval",
-                "quota_status": "remaining" if "interval" in rem_run_kinds else "completed",
+                "quota_status": int_status,
                 "day_title": "Koşu Reçetesi #2: 5K Hız İntervali & Anaerobik Yük (4 x 1.000m)",
                 "category": "running",
                 "badge": "5K İnterval",
                 "badge_color": "purple",
-                "status_note": _quota_note("interval" in rem_run_kinds, runs_done, rem_runs, "Koşu", "Taze bacakla ve Anaerobik eksiği kapatmak için uygun günde uygula"),
+                "status_note": int_note,
                 "objective": "Laktat eşiğini ve barın ortasında kalan Anaerobik (Zone 5) yükünü yukarı çekmek.",
                 "warmup": "10 dk hafif jog @ 135-145 bpm + 3 adet 50m strides + kalça mobilitesi.",
                 "exercises": [

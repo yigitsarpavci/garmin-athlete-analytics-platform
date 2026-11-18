@@ -9,10 +9,10 @@ from typing import Dict, Any
 
 try:
     from athlete_principles import ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
-    from engine.helpers import format_sport_tr
+    from engine.helpers import format_sport_tr, classify_run_workout
 except ImportError:
     from app.athlete_principles import ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
-    from app.engine.helpers import format_sport_tr
+    from app.engine.helpers import format_sport_tr, classify_run_workout
 
 
 class ProgressionDebriefMixin:
@@ -261,11 +261,23 @@ class ProgressionDebriefMixin:
         cur_w = float(daily.get("weight", 87.0))
         prot_g = round(cur_w * 2.0)
 
+        run_cls = classify_run_workout(act) if sport == "running" else None
+        workout_type_label = run_cls["label_tr"] if run_cls else (gym_prog.get("workout_type") or sport_tr)
+        is_plan_dev = bool(run_cls and not run_cls["is_planned_archetype"])
+        verdict_txt = (
+            f"Plan Dışı {run_cls['label_tr']} Algılandı (TE: {run_cls['te_label']}, AnTE: {run_cls['an_te']}) • "
+            "İnterval / Zone 2 Kotası Güncel Duruma Göre Yeniden Planlandı"
+            if is_plan_dev else
+            "Antrenman Başarıyla Kilitlendi • Süper-Kompanzasyon Başladı"
+        )
+
         return {
             "activity": {
                 "name": act.get("name"),
                 "sport": sport,
                 "sport_tr": sport_tr,
+                "workout_type": workout_type_label,
+                "is_plan_deviation": is_plan_dev,
                 "date": act_date,
                 "time": act.get("time", ""),
                 "duration_min": round(act.get("dur_m") or 0, 1),
@@ -323,7 +335,7 @@ class ProgressionDebriefMixin:
             "gym_volume_progression": gym_prog,
             "weekly_quota": weekly_quota,
             "executive_coaching_verdict": {
-                "verdict": "Antrenman Başarıyla Kilitlendi • Süper-Kompanzasyon Başladı",
+                "verdict": verdict_txt,
                 "nutrition_action": f"{prot_g}g protein hedefi tamamlanmalı; toparlanma için kompleks karbonhidrat ve hidrasyon sağlanmalı.",
                 "sleep_action": "Growth Hormone piki için 00:30 öncesi yatış (hedef 8+ saat uyku).",
                 "next_session": next_session_info,

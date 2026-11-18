@@ -114,9 +114,14 @@ class TestApiEndpoints(unittest.TestCase):
 
     def test_calculator_post_endpoint(self):
         """POST /api/calculator endpointini test eder."""
+        from datetime import datetime, timedelta
+        from app.engine.morphology_health_mixin import _TR_FULL_MONTHS
+
         res = self.post_json("/api/calculator", {"target_kg": 81.0, "weekly_pace_kg": 0.55})
         self.assertEqual(res.get("days_needed"), 76)
-        self.assertIn("1 Şubat 2027", res.get("target_date", ""))
+        target_dt = datetime.now() + timedelta(days=res.get("days_needed", 76))
+        expected_date = f"{target_dt.day} {_TR_FULL_MONTHS[target_dt.month - 1]} {target_dt.year}"
+        self.assertIn(expected_date, res.get("target_date", ""))
 
     def test_custom_profile_plan_post_endpoint(self):
         """POST /api/custom-profile/plan endpointini test eder."""

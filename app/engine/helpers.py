@@ -131,6 +131,102 @@ def get_sport_icon(sport_key: Optional[str]) -> str:
     return "activity"
 
 
+def classify_run_workout(act: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Koşu aktivitesini nabız zonları, anaerobik/aerobik training effect (TE) ve başlığa bakarak
+    gerçek fizyolojik türüne ('interval', 'zone2' veya 'tempo') sınıflandırır.
+    Sürekli Zone 3-4 Tempo koşularını (örn. AnTE=0.0, TE=TEMPO) hatalı şekilde İnterval saymaz.
+    """
+    a = act or {}
+    name_low = str(a.get("activityName") or a.get("name") or "").lower()
+    te_label = str(a.get("trainingEffectLabel") or a.get("te_label") or "").upper()
+    an_te = float(
+        a.get("anaerobicTrainingEffect")
+        if a.get("anaerobicTrainingEffect") is not None
+        else (a.get("anTE") or 0.0)
+    )
+    a_te = float(
+        a.get("aerobicTrainingEffect")
+        if a.get("aerobicTrainingEffect") is not None
+        else (a.get("aTE") or 0.0)
+    )
+    avg_hr = float(a.get("averageHR") or a.get("avg_hr") or 0.0)
+    max_hr = float(a.get("maxHR") or a.get("max_hr") or 0.0)
+
+    if any(a.get(f"hrTimeInZone_{i}") is not None for i in range(1, 6)):
+        zs = [float(a.get(f"hrTimeInZone_{i}") or 0.0) for i in range(1, 6)]
+        tot_z = sum(zs) or 1.0
+        z1_pct, z2_pct, z3_pct, z4_pct, z5_pct = [z / tot_z * 100.0 for z in zs]
+    else:
+        z1_pct = float(a.get("z1_pct") or 0.0)
+        z2_pct = float(a.get("z2_pct") or 0.0)
+        z3_pct = float(a.get("z3_pct") or 0.0)
+        z4_pct = float(a.get("z4_pct") or 0.0)
+        z5_pct = float(a.get("z5_pct") or 0.0)
+
+    has_interval_name = any(
+        k in name_low for k in ("interval", "interva", "run workout", "4x", "1000m", "tekrar", "sprint", "hiit", "vo2")
+    )
+    is_interval = (
+        has_interval_name
+        or an_te >= 1.5
+        or te_label in ("ANAEROBIC_CAPACITY", "SPEED", "VO2MAX")
+        or (an_te >= 1.0 and max_hr >= 178 and (z4_pct + z5_pct) >= 20.0)
+    )
+    if is_interval:
+        return {
+            "kind": "interval",
+            "label_tr": "5K Hız İntervali",
+            "short_label": "5K Hız İntervali",
+            "badge_tr": "5K Hız İntervali (Z4-5)",
+            "is_planned_archetype": True,
+            "te_label": te_label or "SPEED",
+            "an_te": round(an_te, 1),
+            "a_te": round(a_te, 1),
+        }
+
+    has_z2_name = any(
+        k in name_low for k in ("zone 2", "z2", "taban", "base", "easy", "rahat", "recovery", "toparlanma")
+    )
+    is_zone2 = (
+        has_z2_name
+        or (
+            an_te < 1.5
+            and te_label not in ("TEMPO", "LACTATE_THRESHOLD")
+            and 0 < avg_hr <= 152
+            and (z3_pct + z4_pct + z5_pct) < 55.0
+        )
+        or te_label == "RECOVERY"
+    )
+    if is_zone2:
+        return {
+            "kind": "zone2",
+            "label_tr": "Zone 2 Rahat Taban",
+            "short_label": "Zone 2 Koşu",
+            "badge_tr": "Zone 2 Taban",
+            "is_planned_archetype": True,
+            "te_label": te_label or "AEROBIC_BASE",
+            "an_te": round(an_te, 1),
+            "a_te": round(a_te, 1),
+        }
+
+    label_tr = (
+        "Laktat Eşiği Tempo Koşusu (Zone 4)"
+        if (te_label == "LACTATE_THRESHOLD" or z4_pct >= 55.0)
+        else "Tempo Koşusu (Zone 3)"
+    )
+    return {
+        "kind": "tempo",
+        "label_tr": label_tr,
+        "short_label": "Tempo Koşusu",
+        "badge_tr": "Tempo Koşusu (Plan Dışı)",
+        "is_planned_archetype": False,
+        "te_label": te_label or "TEMPO",
+        "an_te": round(an_te, 1),
+        "a_te": round(a_te, 1),
+    }
+
+
 def fmt_pace_sec(sec: Optional[float]) -> str:
     """
     Saniye cinsinden tempo değerini standart 'dakika:saniye' (örn. 5:48 /km) formatına dönüştürür.

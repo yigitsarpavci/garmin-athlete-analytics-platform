@@ -160,7 +160,7 @@ function renderDebriefModalContent(d, idx) {
     iconEl.innerHTML = lucideSvg(ic, 'w-5 h-5 accent-text');
   }
   document.getElementById('debriefTitle').textContent = `${a.name} Seans Debrief Raporu`;
-  document.getElementById('debriefBadge').textContent = a.sport === 'strength_training' ? (gym.workout_type || 'Kuvvet') : (a.sport_tr || (a.sport === 'running' ? 'Koşu' : 'Branş'));
+  document.getElementById('debriefBadge').textContent = a.sport === 'strength_training' ? (gym.workout_type || 'Kuvvet') : (a.workout_type || a.sport_tr || (a.sport === 'running' ? 'Koşu' : 'Branş'));
   document.getElementById('debriefSub').textContent = `${a.date} · ${a.time || ''} · ${a.duration_min} dk Seans · ${a.calories} kcal`;
 
   document.getElementById('debriefSessionLoad').textContent = tl.session_epoc_load || a.load;

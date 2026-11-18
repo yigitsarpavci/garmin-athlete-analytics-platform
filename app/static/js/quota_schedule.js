@@ -200,6 +200,19 @@ function buildQuotaLedgerHtml(quota) {
   const totalBadgeCls = total.is_complete ? 'stamp-moss' : 'stamp-accent';
   const adapt = quota.last_week_adaptation || null;
   const hasMissedCarry = adapt && Array.isArray(adapt.missed_sessions) && adapt.missed_sessions.length > 0;
+  const deviations = Array.isArray(quota.plan_deviations) ? quota.plan_deviations : [];
+
+  const deviationHtml = deviations.length
+    ? deviations.map(d => `
+      <div class="tint-ochre-panel px-3 py-2 text-[11px] flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-start gap-2 min-w-0">
+          ${lucideSvg('alert-triangle', 'w-3.5 h-3.5 shrink-0 ochre-text mt-0.5')}
+          <span class="ochre-text font-medium leading-snug">${escapeHtml(d.note || '')}</span>
+        </div>
+        <span class="stamp-tag stamp-ochre shrink-0">${escapeHtml(d.badge || 'Plan Güncellendi')}</span>
+      </div>
+    `).join('')
+    : '';
 
   const adaptHtml = adapt && adapt.adaptation_note
     ? `<div class="${hasMissedCarry ? 'tint-ochre-panel' : 'tint-moss-panel'} px-3 py-2 text-[11px] flex flex-wrap items-center justify-between gap-2">
@@ -229,6 +242,7 @@ function buildQuotaLedgerHtml(quota) {
       </div>
     </div>
 
+    ${deviationHtml}
     ${adaptHtml}
     ${quota.flexibility_note ? `<p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(quota.flexibility_note)}</p>` : ''}
 
@@ -279,7 +293,9 @@ function renderWeeklyScheduleTable(scheduleList) {
       || (s.primary || '').startsWith('Kuvvet #')
     );
     const slotBadge = isDone
-      ? '<span class="stamp-tag stamp-moss">TAMAMLANDI</span>'
+      ? (`<div class="flex flex-wrap items-center gap-1"><span class="stamp-tag stamp-moss">TAMAMLANDI</span>`
+        + (s.deviation_badge ? `<span class="stamp-tag stamp-ochre">${escapeHtml(s.deviation_badge)}</span>` : '')
+        + `</div>`)
       : (isQuotaSlot
         ? '<span class="stamp-tag stamp-accent">ESNEK KOTA</span>'
         : '<span class="stamp-tag">REJENERASYON</span>');

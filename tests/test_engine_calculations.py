@@ -9,7 +9,7 @@ Matematiksel formüllerin (Mifflin-St Jeor, ACWR, Kardiyak Verimlilik Faktörü 
 import unittest
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
@@ -60,11 +60,15 @@ class TestEngineCalculations(unittest.TestCase):
 
     def test_custom_projection_math(self):
         """Kilo projeksiyonunun gün ve hedef tarih matematiğini test eder."""
+        from app.engine.morphology_health_mixin import _TR_FULL_MONTHS
+
         proj = self.engine.calculate_custom_projection(target_kg=81.0, weekly_pace_kg=0.55)
         # 87 kg -> 81 kg = 6.0 kg / 0.55 = 10.909 hafta * 7 = 76.36 -> 76 gün
         self.assertEqual(proj["days_needed"], 76)
         self.assertEqual(proj["remaining_kg"], 6.0)
-        self.assertIn("1 Şubat 2027", proj["target_date"])
+        target_dt = datetime.now() + timedelta(days=proj["days_needed"])
+        expected_date = f"{target_dt.day} {_TR_FULL_MONTHS[target_dt.month - 1]} {target_dt.year}"
+        self.assertIn(expected_date, proj["target_date"])
 
     def test_efficiency_factor_math(self):
         """Kardiyak Verimlilik Faktörü (EF = Hız / Nabız) formülünü test eder."""
@@ -124,7 +128,7 @@ class TestEngineCalculations(unittest.TestCase):
 
     def test_weekly_schedule_respects_completed_quota(self):
         """Hafta başında tamamlanan seansların 2 Koşu + 2 Gym kotasından düşülmesini doğrular."""
-        from datetime import datetime
+        from datetime import datetime, timedelta
         from unittest.mock import patch
 
         ref_now = datetime(2026, 11, 17, 15, 0, 0)  # Salı (16 Kas Pzt + 17 Kas Salı takvim haftası)
@@ -171,7 +175,18 @@ class TestEngineCalculations(unittest.TestCase):
         from unittest.mock import patch
 
         ref_now = datetime(2026, 11, 17, 15, 0, 0)  # 16 Kas – 22 Kas haftası
-        run_1 = {
+        run_interval = {
+            "startTimeLocal": "2026-11-16 10:24:35",
+            "activityType": {"typeKey": "running"},
+            "activityName": "Besiktas - Run Workout (4x1000m)",
+            "duration": 2700.0,
+            "distance": 6400.0,
+            "calories": 520,
+            "averageHR": 158,
+            "anaerobicTrainingEffect": 2.8,
+            "trainingEffectLabel": "ANAEROBIC_CAPACITY",
+        }
+        run_tempo = {
             "startTimeLocal": "2026-11-16 10:24:35",
             "activityType": {"typeKey": "running"},
             "activityName": "Besiktas Running",
@@ -179,6 +194,13 @@ class TestEngineCalculations(unittest.TestCase):
             "distance": 5191.2,
             "calories": 401,
             "averageHR": 161,
+            "maxHR": 174,
+            "aerobicTrainingEffect": 3.6,
+            "anaerobicTrainingEffect": 0.0,
+            "trainingEffectLabel": "TEMPO",
+            "hrTimeInZone_2": 285.0,
+            "hrTimeInZone_3": 1236.0,
+            "hrTimeInZone_4": 146.0,
         }
         gym_1 = {
             "startTimeLocal": "2026-11-17 10:35:00",
@@ -197,8 +219,8 @@ class TestEngineCalculations(unittest.TestCase):
             "averageHR": 124,
         }
 
-        # 1) 1 Koşu + 1 Kuvvet tamamlandı
-        with patch.object(self.engine, "activities_all", [run_1, gym_1]):
+        # 1) Gerçek İnterval Koşu + 1 Kuvvet tamamlandı -> geriye Zone 2 + Workout B kalmalı
+        with patch.object(self.engine, "activities_all", [run_interval, gym_1]):
             q_half = self.engine.get_weekly_quota_summary(now=ref_now)
         self.assertEqual(q_half["week_range"], "16 Kas – 22 Kas")
         self.assertEqual(q_half["total"]["target"], 4)
@@ -216,7 +238,16 @@ class TestEngineCalculations(unittest.TestCase):
         self.assertIn("Zone 2", q_half["headline"])
         self.assertIn("Workout B", q_half["headline"])
 
-        # 2) 0 Koşu + 0 Kuvvet (+ 1 spontane Yelken kotadan yemez)
+        # 2) Plan dışı Tempo koşusu (run_tempo, AnTE 0.0, TE=TEMPO) İnterval sayılmamalı
+        with patch.object(self.engine, "activities_all", [run_tempo, gym_1]):
+            q_tempo = self.engine.get_weekly_quota_summary(now=ref_now)
+        self.assertTrue(q_tempo["post_tempo_adapted"])
+        self.assertEqual(q_tempo["running"]["completed_kinds"], ["tempo"])
+        self.assertEqual(q_tempo["running"]["remaining_items"][0]["slot_kind"], "interval")
+        self.assertTrue(len(q_tempo["plan_deviations"]) >= 1)
+        self.assertIn("Tempo Koşusu", q_tempo["plan_deviations"][0]["actual_label"])
+
+        # 3) 0 Koşu + 0 Kuvvet (+ 1 spontane Yelken kotadan yemez)
         with patch.object(self.engine, "activities_all", [sailing_1]):
             q_zero = self.engine.get_weekly_quota_summary(now=ref_now)
         self.assertEqual(q_zero["total"]["completed"], 0)
@@ -227,10 +258,10 @@ class TestEngineCalculations(unittest.TestCase):
         self.assertEqual(q_zero["spontaneous"]["count"], 1)
         self.assertEqual(q_zero["spontaneous"]["items"][0]["sport_tr"], "Yelken")
 
-        # 3) 2 Koşu + 2 Kuvvet tamamlandı
-        run_2 = {**run_1, "startTimeLocal": "2026-11-19 09:00:00", "averageHR": 144}
+        # 4) 2 Koşu + 2 Kuvvet tamamlandı
+        run_2 = {**run_interval, "startTimeLocal": "2026-11-19 09:00:00", "averageHR": 144, "anaerobicTrainingEffect": 0.0, "trainingEffectLabel": "AEROBIC_BASE", "activityName": "Zone 2 Easy"}
         gym_2 = {**gym_1, "startTimeLocal": "2026-11-21 11:00:00"}
-        with patch.object(self.engine, "activities_all", [run_1, gym_1, run_2, gym_2]):
+        with patch.object(self.engine, "activities_all", [run_interval, gym_1, run_2, gym_2]):
             q_full = self.engine.get_weekly_quota_summary(now=ref_now)
         self.assertEqual(q_full["total"]["completed"], 4)
         self.assertEqual(q_full["total"]["remaining"], 0)
@@ -245,6 +276,72 @@ class TestEngineCalculations(unittest.TestCase):
         debrief = self.engine.get_post_workout_debrief(0)
         self.assertIn("weekly_quota", debrief)
         self.assertNotIn("19 Kasım Perşembe", debrief["executive_coaching_verdict"]["next_session"]["day"])
+
+    def test_off_plan_tempo_run_not_counted_as_interval_and_replans_week(self):
+        """Pazartesi (2026-11-16) Tempo koşusu yapıldığında İnterval sayılmadığını, yapılanın yazıldığını ve kalan haftanın yeniden planlandığını doğrular."""
+        from unittest.mock import patch
+        from app.engine.helpers import classify_run_workout
+
+        # Gerçek Pazartesi 2026-11-16 koşusu verisi (161 bpm, TE: TEMPO, AnTE: 0.0)
+        mon_tempo = {
+            "startTimeLocal": "2026-11-16 10:24:35",
+            "activityType": {"typeKey": "running"},
+            "activityName": "Besiktas Running",
+            "duration": 1807.0,
+            "distance": 5191.2,
+            "calories": 401,
+            "averageHR": 161,
+            "maxHR": 174,
+            "aerobicTrainingEffect": 3.6,
+            "anaerobicTrainingEffect": 0.0,
+            "trainingEffectLabel": "TEMPO",
+            "hrTimeInZone_2": 285.3,
+            "hrTimeInZone_3": 1236.9,
+            "hrTimeInZone_4": 146.0,
+        }
+        tue_gym_a = {
+            "startTimeLocal": "2026-11-17 10:35:00",
+            "activityType": {"typeKey": "strength_training"},
+            "activityName": "Strength",
+            "duration": 3194.6,
+            "calories": 340,
+            "averageHR": 112,
+        }
+
+        cls_res = classify_run_workout(mon_tempo)
+        self.assertEqual(cls_res["kind"], "tempo")
+        self.assertEqual(cls_res["label_tr"], "Tempo Koşusu (Zone 3)")
+        self.assertFalse(cls_res["is_planned_archetype"])
+
+        with patch.object(self.engine, "activities_all", [mon_tempo, tue_gym_a]):
+            ref_tue = datetime(2026, 11, 17, 20, 0, 0)
+            sched, meta = self.engine._build_weekly_schedule_entries(now=ref_tue)
+            quota = self.engine.get_weekly_quota_summary(now=ref_tue)
+            # get_detailed_daily_workout_protocols() içindeki quota_status kontrolü (gerçek veride Pzt tempo var)
+            with patch.object(self.engine, "get_weekly_quota_summary", return_value=quota):
+                protocols = self.engine.get_detailed_daily_workout_protocols()
+
+        # 1) Pazartesi (sched[0]) İnterval değil Tempo Koşusu yazmalı
+        self.assertIn("Tempo Koşusu", sched[0]["primary"])
+        self.assertIn("5K Hız İntervali yerine Tempo Koşusu", sched[0]["secondary"])
+        self.assertEqual(sched[0].get("deviation_badge"), "Plan Dışı: Tempo Koşusu")
+
+        # 2) Arka arkaya Pzt Tempo + Salı Gym A yapıldığı için Çarşamba (sched[2]) uyarlanmış toparlanma olmalı
+        self.assertEqual(sched[2]["slot_kind"], "rest")
+        self.assertIn("Uyarlanmış Toparlanma", sched[2]["primary"])
+
+        # 3) Kalan günler (Perşembe İnterval telafisi, Cumartesi Workout B) güncel duruma göre planlanmalı
+        self.assertEqual(sched[3]["slot_kind"], "interval")
+        self.assertIn("Tempo Sonrası Güncel Telafi", sched[3]["primary"])
+        self.assertEqual(sched[5]["slot_kind"], "gym_b")
+
+        # 4) Reçeteler sekmesinde 5K Hız İntervali ve Zone 2 'completed' olarak işaretlenmemiş olmalı!
+        int_proto = next(p for p in protocols if p["day_code"] == "monday")
+        z2_proto = next(p for p in protocols if p["day_code"] == "thursday")
+        gym_a_proto = next(p for p in protocols if p["day_code"] == "tuesday")
+        self.assertEqual(int_proto["quota_status"], "remaining")
+        self.assertEqual(z2_proto["quota_status"], "remaining")
+        self.assertEqual(gym_a_proto["quota_status"], "completed")
 
     def test_monday_reset_with_last_week_deficit_adaptation(self):
         """Pazartesi 0/2 sıfırlamasını korurken geçen hafta eksik kalan türlerin yeni haftada öne alınmasını doğrular."""
