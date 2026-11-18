@@ -1229,103 +1229,37 @@
       </div>
     </div>
 
-    <!-- 8. ANALİTİK & TRENDLER -->
+    <!-- 8. ANALİTİK & KORELASYON MATRİSİ -->
     <div id="section-analytics" class="pt-10 space-y-6 hidden">
       <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
         <div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">07 / İSTATİSTİKSEL ZAMAN SERİLERİ</span>
-          <h2 class="section-heading text-2xl sm:text-3xl mt-1">İstatistiksel Analitik ve Zaman Serileri</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">93 günlük HRV, tempo/kadans, Body Battery grafikleri ve Pearson korelasyon matrisi.</p>
+          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">07 / İSTATİSTİKSEL KORELASYON ANALİZİ</span>
+          <h2 class="section-heading text-2xl sm:text-3xl mt-1">İstatistiksel Korelasyon Matrisi</h2>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">93 günlük telemetri değişkenleri arası doğrusal ilişkiler (Pearson r, t-değeri, p-değeri) ve pratik sporcu içgörüleri.</p>
         </div>
-        <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('analytics', 'charts')" data-subtab-group="analytics" data-subtab="charts" class="subtab-btn subtab-btn-active">Zaman Serisi Grafikleri</button>
-          <button type="button" onclick="setSubTab('analytics', 'corr')" data-subtab-group="analytics" data-subtab="corr" class="subtab-btn">Korelasyon Matrisi</button>
-          <button type="button" onclick="setSubTab('analytics', 'periods')" data-subtab-group="analytics" data-subtab="periods" class="subtab-btn">4 Makro Dönem</button>
+        <span class="stamp-tag stamp-accent">Pearson r · t-Testi · p-Değeri</span>
+      </div>
+
+      <section class="surface-card p-6 sm:p-8 space-y-4">
+        <div>
+          <h3 class="font-editorial text-lg font-medium tracking-tight">İstatistiksel Korelasyon Matrisi (r, t-değeri, p-değeri)</h3>
+          <p class="text-xs text-[var(--text-secondary)] mt-1">Değişkenler arası doğrusal ilişkiler ve sporcu pratik içgörüleri</p>
         </div>
-      </div>
-
-      <div data-subpane-group="analytics" data-subpane="charts">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div class="surface-card p-6 space-y-3">
-            <div class="flex items-center justify-between gap-2">
-              <h4 class="font-editorial text-base font-medium tracking-tight">93 Günlük Gece HRV ve Dinlenik Nabız</h4>
-              <span class="stamp-tag stamp-moss">İdeal: 37–58 ms</span>
-            </div>
-            <div class="h-64 relative w-full min-w-0 overflow-hidden"><canvas id="chart-hrv"></canvas></div>
-          </div>
-
-          <div class="surface-card p-6 space-y-3">
-            <div class="flex items-center justify-between gap-2">
-              <h4 id="analyticsRunsTitle" class="font-editorial text-base font-medium tracking-tight">Koşularda Tempo ve Kadans Gelişimi</h4>
-              <span id="analyticsRunsBadge" class="stamp-tag stamp-accent">-- /km · -- spm</span>
-            </div>
-            <div class="h-64 relative w-full min-w-0 overflow-hidden"><canvas id="chart-runs"></canvas></div>
-          </div>
-
-          <div class="surface-card p-6 space-y-3">
-            <div class="flex items-center justify-between gap-2">
-              <h4 class="font-editorial text-base font-medium tracking-tight">Body Battery Dolumu ve Günlük Stres</h4>
-              <span class="stamp-tag stamp-crimson">Gün Sonu Stres Analizi</span>
-            </div>
-            <div class="h-64 relative w-full min-w-0 overflow-hidden"><canvas id="chart-bb"></canvas></div>
-          </div>
-
-          <div class="surface-card p-6 space-y-3">
-            <div class="flex items-center justify-between gap-2">
-              <h4 class="font-editorial text-base font-medium tracking-tight">Uyku Süresi ve Garmin Uyku Puanı</h4>
-              <span id="analyticsSleepBadge" class="stamp-tag stamp-accent">Ort: -- sa · --</span>
-            </div>
-            <div class="h-64 relative w-full min-w-0 overflow-hidden"><canvas id="chart-sleep"></canvas></div>
-          </div>
+        <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi" class="table-scroll-region custom-scrollbar">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr>
+                <th class="py-3 px-4">Değişken Çifti</th>
+                <th class="py-3 px-4">Pearson r</th>
+                <th class="py-3 px-4">t-Değeri</th>
+                <th class="py-3 px-4">Anlamlılık (p)</th>
+                <th class="py-3 px-4">Pratik Sporcu İçgörüsü</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
+          </table>
         </div>
-      </div>
-
-      <div data-subpane-group="analytics" data-subpane="corr" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-4">
-          <div>
-            <h3 class="font-editorial text-lg font-medium tracking-tight">İstatistiksel Korelasyon Matrisi (r, t-değeri, p-değeri)</h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-1">Değişkenler arası doğrusal ilişkiler ve sporcu pratik içgörüleri</p>
-          </div>
-          <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi" class="table-scroll-region custom-scrollbar">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr>
-                  <th class="py-3 px-4">Değişken Çifti</th>
-                  <th class="py-3 px-4">Pearson r</th>
-                  <th class="py-3 px-4">t-Değeri</th>
-                  <th class="py-3 px-4">Anlamlılık (p)</th>
-                  <th class="py-3 px-4">Pratik Sporcu İçgörüsü</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      <div data-subpane-group="analytics" data-subpane="periods" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-5">
-          <h3 id="analyticsPeriodsTitle" class="font-editorial text-lg font-medium tracking-tight">Makro Dönemler ve Haftalık Seyir</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="periodsContainer"></div>
-          <div tabindex="0" role="region" aria-label="Haftalık makro özet tablosu" class="table-scroll-region custom-scrollbar">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr>
-                  <th class="py-3 px-3">Hafta</th>
-                  <th class="py-3 px-3">Başlangıç</th>
-                  <th class="py-3 px-3">Seans (Dk)</th>
-                  <th class="py-3 px-3">Ort. Adım (Hedef)</th>
-                  <th class="py-3 px-3">RHR / HRV</th>
-                  <th class="py-3 px-3">Uyku (Skor)</th>
-                  <th class="py-3 px-3">BB Sabah/Dip</th>
-                  <th class="py-3 px-3">Maks Akut Yük</th>
-                </tr>
-              </thead>
-              <tbody id="periodsWeeksTableBody" class="divide-y divide-[var(--border-subtle)]"></tbody>
-            </table>
-          </div>
-        </section>
-      </div>
+      </section>
     </div>
 
     <!-- 9. SAAT AYARLARI -->
@@ -1841,12 +1775,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js"></script>
-  <script src="/js/quota_schedule.js"></script>
-  <script src="/js/dashboard.js"></script>
-  <script src="/js/health_analytics.js"></script>
-  <script src="/js/charts.js"></script>
-  <script src="/js/modals.js"></script>
+  <script src="/js/core.js?v=20261118"></script>
+  <script src="/js/quota_schedule.js?v=20261118"></script>
+  <script src="/js/dashboard.js?v=20261118"></script>
+  <script src="/js/health_analytics.js?v=20261118"></script>
+  <script src="/js/charts.js?v=20261118"></script>
+  <script src="/js/modals.js?v=20261118"></script>
 </body>
 
 </html>

@@ -47,6 +47,7 @@ function updateChartThemes(isDark) {
 let chartsLoadingPromise = null;
 
 async function renderCharts(forceRefresh = false) {
+  if (!document.getElementById('chart-hrv')) return;
   if (!forceRefresh && chartInstances.hrv) return;
   if (chartsLoadingPromise) return chartsLoadingPromise;
   chartsLoadingPromise = (async () => {

@@ -79,7 +79,7 @@ function setTab(tabId) {
     }
   });
 
-  if (tabId === 'analytics') {
+  if (tabId === 'analytics' && document.getElementById('chart-hrv')) {
     renderCharts();
   }
 }
@@ -93,7 +93,7 @@ function setSubTab(group, paneKey) {
     btn.className = active ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
-  if (group === 'analytics' && paneKey === 'charts') {
+  if (group === 'analytics' && paneKey === 'charts' && document.getElementById('chart-hrv')) {
     renderCharts();
   }
 }
@@ -134,8 +134,10 @@ async function initApp() {
     const corrData = await safeFetchJson('/api/correlations');
     if (corrData) renderCorrelations(corrData);
 
-    const periodsData = await safeFetchJson('/api/periods-weeks');
-    if (periodsData) renderPeriods(periodsData);
+    if (document.getElementById('periodsContainer')) {
+      const periodsData = await safeFetchJson('/api/periods-weeks');
+      if (periodsData) renderPeriods(periodsData);
+    }
 
     const setData = await safeFetchJson('/api/garmin-settings');
     if (setData) renderSettingsAndZones(setData);
@@ -163,7 +165,7 @@ async function initApp() {
 
     chartInstances = {};
     const analyticsSec = document.getElementById('section-analytics');
-    if (analyticsSec && !analyticsSec.classList.contains('hidden') && typeof renderCharts === 'function') {
+    if (analyticsSec && !analyticsSec.classList.contains('hidden') && document.getElementById('chart-hrv') && typeof renderCharts === 'function') {
       renderCharts(true);
     }
 
