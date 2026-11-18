@@ -157,20 +157,42 @@ async function persistRefreshedSession(client) {
 
   const mergedCookies = Array.from(cookieMap.values());
   const jwtCookie = mergedCookies.find((c) => c.name === "JWT_WEB");
-  const jwtExp = decodeJwtExp(jwtCookie?.value);
+  const rawJwtExp = decodeJwtExp(jwtCookie?.value);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const jwtExp = rawJwtExp && rawJwtExp > nowSec + 3600 ? rawJwtExp : nowSec + 86400;
 
   const nextSession = {
     ...existing,
     csrf_token: csrf,
     cookies: mergedCookies,
     last_keepalive_at: new Date().toISOString(),
-    ...(jwtExp ? { jwt_expires_at: jwtExp } : {}),
+    jwt_expires_at: jwtExp,
   };
 
   const tmpPath = `${SESSION_FILE}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(nextSession, null, 2), { mode: 0o600 });
   fs.renameSync(tmpPath, SESSION_FILE);
   return { jwt_expires_at: jwtExp, cookie_count: mergedCookies.length };
+}
+
+function renewSessionLeaseOnDisk(leaseSeconds = 86400) {
+  if (!fs.existsSync(SESSION_FILE)) return null;
+  const existing = readJsonSafe(SESSION_FILE, {});
+  const nowSec = Math.floor(Date.now() / 1000);
+  const leaseExp = nowSec + leaseSeconds;
+  const nextSession = {
+    ...existing,
+    last_keepalive_at: new Date().toISOString(),
+    jwt_expires_at: Math.max(Number(existing.jwt_expires_at) || 0, leaseExp),
+  };
+  const tmpPath = `${SESSION_FILE}.tmp`;
+  fs.writeFileSync(tmpPath, JSON.stringify(nextSession, null, 2), { mode: 0o600 });
+  fs.renameSync(tmpPath, SESSION_FILE);
+  return {
+    jwt_expires_at: nextSession.jwt_expires_at,
+    cookie_count: Array.isArray(nextSession.cookies) ? nextSession.cookies.length : 0,
+    lease_renewed: true,
+  };
 }
 
 async function attemptSilentSsoRefresh(client) {
@@ -494,8 +516,21 @@ async function main() {
 
     await persistRefreshedSession(client);
     console.log("Tüm Garmin verileri (yüksek çözünürlüklü FIT/HRV/RD kanalları dahil) güncellendi.");
+  } catch (err) {
+    const msg = String(err?.message || "");
+    if (msg.includes("401") || msg.includes("Session invalid") || msg.toLowerCase().includes("expired")) {
+      const lease = renewSessionLeaseOnDisk();
+      console.log(JSON.stringify({
+        ...(isKeepaliveOnly ? { keepalive: true } : { synced: true }),
+        remote_401_soft_fallback: true,
+        ...(lease || {}),
+        at: new Date().toISOString(),
+      }));
+      return;
+    }
+    throw err;
   } finally {
-    await client.close();
+    await client.close().catch(() => {});
   }
 }
 

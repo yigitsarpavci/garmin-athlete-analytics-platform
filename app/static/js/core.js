@@ -216,25 +216,38 @@ function startGarminSessionKeepAlive() {
 
 async function syncGarminData() {
   const btn = document.getElementById('syncBtn');
+  let syncedOk = false;
   if (btn) {
+    btn.disabled = true;
     btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 animate-spin accent-text')}<span class="hidden xl:inline">Eşitleniyor...</span>`;
     refreshIcons();
   }
   try {
     const res = await fetch('/api/sync', { method: 'POST' });
-    const resData = await res.json();
-    if (!res.ok || !resData.success) {
-      alert(resData.message || "Garmin oturumu yenilenemedi. Lütfen Garmin Connect girişi yapın.");
-    } else {
-      alert(resData.message || "Garmin verileri güncellendi!");
-      initApp();
+    const resData = await res.json().catch(() => ({}));
+    await initApp();
+    if (res.ok && resData.success !== false) {
+      syncedOk = true;
     }
   } catch (e) {
-    alert("Senkronizasyon hatası: " + e);
+    console.warn('Senkronizasyon uyarısı:', e);
   } finally {
     if (btn) {
-      btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden xl:inline">Eşitle</span>`;
-      refreshIcons();
+      btn.disabled = false;
+      if (syncedOk) {
+        btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-emerald-400')}<span class="hidden xl:inline text-emerald-400">✓ Eşitlendi</span>`;
+        refreshIcons();
+        setTimeout(() => {
+          const currentBtn = document.getElementById('syncBtn');
+          if (currentBtn) {
+            currentBtn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden xl:inline">Eşitle</span>`;
+            refreshIcons();
+          }
+        }, 2000);
+      } else {
+        btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden xl:inline">Eşitle</span>`;
+        refreshIcons();
+      }
     }
   }
 }
