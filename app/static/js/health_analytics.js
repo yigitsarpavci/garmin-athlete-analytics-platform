@@ -262,10 +262,6 @@ function renderZ2Tracker(data) {
   if (wkBadge) {
     wkBadge.textContent = `2 Koşu + 2 Gym · ${data.plan_weeks_label || 'Aktif'}`;
   }
-  const svgGoal = document.getElementById('svgPaceGoalZ2');
-  const svgTargetLbl = document.getElementById('svgPaceTargetLabel');
-  if (svgGoal && data.target_pace) svgGoal.textContent = `${data.target_pace} Z2`;
-  if (svgTargetLbl && data.target_pace) svgTargetLbl.textContent = `Hedef: ${data.target_pace} /km (EF ${data.target_efficiency_factor || '1.38'})`;
 
   const kpi = document.getElementById('z2KpiGrid');
   if (kpi) {

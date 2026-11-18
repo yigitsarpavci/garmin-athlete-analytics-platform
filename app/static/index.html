@@ -211,39 +211,16 @@
       <div data-subpane-group="overview" data-subpane="quota_brief" class="single-screen-pane hidden">
       <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch h-full">
 
-        <!-- LEFT 7 COLS: Weekly Flexible Quota Panel & Chronometer Pace Track SVG -->
-        <div class="lg:col-span-7 flex flex-col justify-between gap-3 min-h-0">
+        <!-- LEFT 7 COLS: Weekly Flexible Quota Panel -->
+        <div class="lg:col-span-7 flex flex-col min-h-0">
           <!-- HAFTALIK KOTA & KALAN SEANSLAR LEDGER PANELİ -->
-          <section id="weeklyQuotaPanel" aria-label="Haftalık Kota ve Kalan Seanslar" class="field-dossier p-3 space-y-2 flex-1 min-h-0 overflow-hidden">
+          <section id="weeklyQuotaPanel" aria-label="Haftalık Kota ve Kalan Seanslar" class="field-dossier p-4 space-y-2.5 flex-1 min-h-0 overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık Kota &amp; Kalan Seanslar</span>
               <span class="stamp-tag stamp-accent">Yükleniyor...</span>
             </div>
             <p class="text-xs text-[var(--text-secondary)]">Bu hafta tamamlanan koşu, kuvvet ve spontane seanslar hesaplanıyor...</p>
           </section>
-
-          <!-- Custom Domain-Specific Geometric Split Pace Ruler Graphic -->
-          <div class="surface-card p-2.5 space-y-1 shrink-0">
-            <div class="flex items-center justify-between gap-2 flex-wrap font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-secondary)]">
-              <span>Aerobik Verimlilik Rotası @ 145 BPM</span>
-              <span id="svgPaceTargetLabel" class="accent-text font-semibold">Hedef: 5:00 /km (EF 1.38)</span>
-            </div>
-            <svg viewBox="0 0 600 44" class="w-full h-9 block" aria-hidden="true">
-              <line x1="16" y1="22" x2="584" y2="22" stroke="var(--border-medium)" stroke-width="1.5" />
-              <line id="svgPaceProgressLine" x1="16" y1="22" x2="310" y2="22" stroke="var(--accent)" stroke-width="2.5" />
-              <line x1="16" y1="15" x2="16" y2="29" stroke="var(--text-primary)" stroke-width="1.5" />
-              <line x1="196" y1="16" x2="196" y2="28" stroke="var(--border-hover)" stroke-width="1" />
-              <circle id="svgPaceProgressDot" cx="310" cy="22" r="4.5" fill="var(--accent)" />
-              <line x1="450" y1="16" x2="450" y2="28" stroke="var(--border-hover)" stroke-width="1" />
-              <rect x="579" y="17" width="10" height="10" fill="none" stroke="var(--moss)" stroke-width="2" />
-              <text x="16" y="11" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--text-secondary)">6:45 Z2</text>
-              <text id="svgPaceCur5k" x="292" y="11" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="600" fill="var(--accent)">5:48 5K</text>
-              <text id="svgPaceGoalZ2" x="540" y="11" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="600" fill="var(--moss)">5:00 Z2</text>
-              <text id="svgPaceStartWeight" x="16" y="40" font-family="IBM Plex Mono, monospace" font-size="8.5" fill="var(--text-muted)">95 kg Başlangıç</text>
-              <text id="svgPaceCurWeight" x="284" y="40" font-family="IBM Plex Mono, monospace" font-size="8.5" fill="var(--text-secondary)">-- kg Mevcut</text>
-              <text id="svgPaceTargetWeight" x="526" y="40" font-family="IBM Plex Mono, monospace" font-size="8.5" fill="var(--moss)">81.0 kg İdeal</text>
-            </svg>
-          </div>
         </div>
 
           <!-- RIGHT 5 COLS: FIELD DISPATCH DOSSIER (Readiness + Weekly Streak + Daily Decision) -->

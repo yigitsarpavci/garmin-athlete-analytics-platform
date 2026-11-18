@@ -210,27 +210,6 @@ function renderOverview(data) {
     kwbar.style.width = `${Math.max(5, Math.min(100, Number(data.loss_pct)))}%`;
   }
 
-  const svgLine = document.getElementById('svgPaceProgressLine');
-  const svgDot = document.getElementById('svgPaceProgressDot');
-  const svgCur5k = document.getElementById('svgPaceCur5k');
-  const svgStartW = document.getElementById('svgPaceStartWeight');
-  const svgCurW = document.getElementById('svgPaceCurWeight');
-  const svgTgtW = document.getElementById('svgPaceTargetWeight');
-  if (svgCur5k && data.latest_5k) {
-    const m = String(data.latest_5k).match(/(\d+:\d+)/);
-    svgCur5k.textContent = `${m ? m[1] : '5:48'} 5K`;
-  }
-  if (svgStartW && data.start_weight !== undefined) svgStartW.textContent = `${data.start_weight} kg Başlangıç`;
-  if (svgCurW && data.weight !== undefined) svgCurW.textContent = `${data.weight} kg Mevcut`;
-  if (svgTgtW && data.target_weight !== undefined) svgTgtW.textContent = `${data.target_weight} kg İdeal`;
-  if (svgLine && svgDot && data.start_weight && data.weight && data.target_weight) {
-    const denom = Math.max(0.5, Number(data.start_weight) - Number(data.target_weight));
-    const ratio = Math.max(0.05, Math.min(1.0, (Number(data.start_weight) - Number(data.weight)) / denom));
-    const cx = Math.round(16 + (584 - 16) * ratio);
-    svgLine.setAttribute('x2', String(cx));
-    svgDot.setAttribute('cx', String(cx));
-  }
-
   const k5 = document.getElementById('kpi-5k');
   const k5p = document.getElementById('kpi-5k-pace');
   if (k5 && data.latest_5k) {
