@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr" class="h-full dark">
+<html lang="tr" class="h-screen overflow-hidden dark">
 
 <head>
   <meta charset="UTF-8">
@@ -29,84 +29,107 @@
   <link rel="stylesheet" href="/css/theme.css">
 </head>
 
-<body class="h-full flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] antialiased">
+<body class="h-screen overflow-hidden flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] antialiased">
 
-  <!-- EDITORIAL MASTHEAD HEADER -->
+  <!-- COMPACT SINGLE-SCREEN HEADER -->
   <header class="site-header flex-shrink-0">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between py-3 gap-4">
-        <!-- Minimal Telemetry Status Meta (No Logo/Site Name/Live Tag) -->
+      <div class="flex items-center justify-between py-1.5 gap-4">
         <div class="flex items-center min-w-0 flex-1">
-          <div class="min-w-0">
-            <p id="headerAthleteMeta" class="font-mono text-[11px] sm:text-xs text-[var(--text-secondary)] truncate max-w-[60vw]">Garmin Connect Verileri</p>
-          </div>
+          <p id="headerAthleteMeta" class="font-mono text-[11px] text-[var(--text-secondary)] truncate max-w-[65vw]">Garmin Connect Verileri</p>
         </div>
 
-        <!-- Global Instrument Controls (Full Dark Mode Locked) -->
-        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button type="button" onclick="syncGarminData()" id="syncBtn" class="header-btn px-2 sm:px-3" title="Garmin Connect verilerini şimdi eşitle">
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button" onclick="syncGarminData()" id="syncBtn" class="header-btn px-2.5 py-1 text-[11px]" title="Garmin Connect verilerini şimdi eşitle">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[var(--text-secondary)]" stroke-width="1.5" aria-hidden="true"></i>
             <span class="hidden xl:inline">Eşitle</span>
           </button>
-          <button type="button" onclick="toggleAICoach()" id="aiCoachHeaderBtn" class="btn-primary text-xs px-2.5 sm:px-3 py-1.5">
+          <button type="button" onclick="toggleAICoach()" id="aiCoachHeaderBtn" class="btn-primary text-[11px] px-2.5 py-1" style="min-block-size:1.95rem">
             <i data-lucide="message-square" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
             <span>AI Koç</span>
           </button>
         </div>
       </div>
 
-      <!-- Primary Single-Row Navigation -->
+      <!-- 6 Primary Top-Level Navigation Headings -->
       <nav aria-label="Ana Navigasyon" class="nav-tablist custom-scrollbar">
         <button type="button" onclick="setTab('overview')" id="nav-overview" aria-current="page" class="nav-tab nav-tab-active">Genel Bakış</button>
-        <button type="button" onclick="setTab('plan')" id="nav-plan" class="nav-tab">Plan &amp; Branşlar</button>
-        <button type="button" onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Yük, Aktiviteler &amp; Saat</button>
+        <button type="button" onclick="setTab('plan')" id="nav-plan" class="nav-tab">Antrenman Planı</button>
+        <button type="button" onclick="setTab('sports')" id="nav-sports" class="nav-tab">Branşlar</button>
+        <button type="button" onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Yük &amp; Aktiviteler</button>
         <button type="button" onclick="setTab('health')" id="nav-health" class="nav-tab">Sağlık &amp; Uyku</button>
+        <button type="button" onclick="setTab('settings')" id="nav-settings" class="nav-tab">Saat Ayarları</button>
       </nav>
     </div>
   </header>
 
-  <!-- MAIN EDITORIAL WORKSPACE CONTAINER -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+  <!-- NON-SCROLLABLE SINGLE-SCREEN WORKSPACE CONTAINER -->
+  <main class="single-screen-main flex-1 min-h-0 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-2.5 overflow-hidden flex flex-col">
 
-    <!-- 1. GENEL BAKIŞ (SPORCU & DEBRIEF ŞERİDİ + KOTA VE SAHA BRİFİNGİ + TELEMETRİ DEFTERİ) -->
-    <div id="section-overview" class="pt-5 sm:pt-6 space-y-6 sm:space-y-8">
+    <!-- 1. GENEL BAKIŞ (3 ALT SEKME: 12 TEMEL GÖSTERGE / GÜNLÜK DURUM & KOTA / PERFORMANS & TREND) -->
+    <div id="section-overview" class="single-screen-section gap-2.5">
 
-      <!-- Compact Athlete Identity & Debrief Action Strip -->
-      <section aria-label="Sporcu Profili ve Son Seans Debrief" class="surface-card p-3.5 sm:px-5 sm:py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3.5">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div class="w-9 h-9 rounded-[3px] accent-bg flex items-center justify-center font-mono font-semibold text-sm shrink-0" id="profileAvatarInitial">A</div>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <h1 class="text-sm sm:text-base font-semibold tracking-tight" id="profileNameDisplay">Sporcu Profili</h1>
+      <!-- Compact Athlete Identity + Sub-Tabs + Actions Row -->
+      <section aria-label="Sporcu Profili ve Alt Sekmeler" class="surface-card px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-[3px] accent-bg flex items-center justify-center font-mono font-semibold text-xs shrink-0" id="profileAvatarInitial">A</div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h1 class="text-xs sm:text-sm font-semibold tracking-tight truncate" id="profileNameDisplay">Sporcu Profili</h1>
               <span class="stamp-tag stamp-moss" id="profileBadgeDisplay">Garmin Telemetrisi</span>
             </div>
-            <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5 truncate" id="profileDescDisplay">Haftalık 2 Koşu + 2 Kuvvet (Esnek Gün · A/B 5x5)</p>
+            <p class="font-mono text-[10px] text-[var(--text-secondary)] truncate" id="profileDescDisplay">Haftalık 2 Koşu + 2 Kuvvet (Esnek Gün · A/B 5x5)</p>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
-          <button type="button" onclick="openDebriefModal(0)" class="btn-primary w-full sm:w-auto">
-            <i data-lucide="file-bar-chart-2" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
+        <div class="subtab-bar shrink-0">
+          <button type="button" onclick="setSubTab('overview', 'kpi12')" data-subtab-group="overview" data-subtab="kpi12" class="subtab-btn subtab-btn-active">12 Temel Gösterge</button>
+          <button type="button" onclick="setSubTab('overview', 'quota_brief')" data-subtab-group="overview" data-subtab="quota_brief" class="subtab-btn">Günlük Durum &amp; Kota</button>
+          <button type="button" onclick="setSubTab('overview', 'ledger')" data-subtab-group="overview" data-subtab="ledger" class="subtab-btn">Performans &amp; Trend</button>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button" onclick="openDebriefModal(0)" class="btn-primary text-[11px] px-2.5 py-1" style="min-block-size:1.9rem">
+            <i data-lucide="file-bar-chart-2" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
             <span>Son Antrenman Özeti</span>
           </button>
-          <button type="button" onclick="openPreferencesModal()" class="btn-secondary flex-1 sm:flex-none">
+          <button type="button" onclick="openPreferencesModal()" class="btn-secondary text-[11px] px-2.5 py-1" style="min-block-size:1.9rem">
             <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-[var(--text-secondary)]" stroke-width="1.5" aria-hidden="true"></i>
-            <span>Profil &amp; Tercihler</span>
+            <span>Profil</span>
           </button>
-          <button type="button" onclick="restoreSarpProfile()" id="btnRestoreSarp" class="hidden btn-secondary flex-1 sm:flex-none">
+          <button type="button" onclick="restoreSarpProfile()" id="btnRestoreSarp" class="hidden btn-secondary text-[11px] px-2 py-1" style="min-block-size:1.9rem">
             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
-            <span id="btnRestoreSarpLabel">Varsayılan Profile Dön</span>
+            <span id="btnRestoreSarpLabel">Varsayılana Dön</span>
           </button>
         </div>
       </section>
 
+      <!-- Custom Profile Active Banner -->
+      <div id="customProfileBanner"
+        class="hidden field-dossier px-3.5 py-2 flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="icon-box w-7 h-7 shrink-0">
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
+          </div>
+          <div class="min-w-0">
+            <h4 class="font-mono text-[10px] font-semibold accent-text uppercase tracking-wider truncate" id="customBannerTitle">ÖZEL SPORCU PLANI AKTİF</h4>
+            <p class="text-[11px] text-[var(--text-secondary)] truncate" id="customBannerText">Haftalık mikro-döngü ve beslenme hedefleri tercihlerinize göre hesaplanmıştır.</p>
+          </div>
+        </div>
+        <button type="button" onclick="restoreSarpProfile()" id="btnBannerRestore" class="btn-secondary text-[11px] px-2.5 py-1 shrink-0" style="min-block-size:1.8rem">
+          Varsayılan Profile Geri Dön
+        </button>
+      </div>
+
+      <!-- OVERVIEW SUBPANE 1: 12 TEMEL GÖSTERGE -->
+      <div data-subpane-group="overview" data-subpane="kpi12" class="single-screen-pane">
       <!-- İlk Ekran 12 Temel Garmin Telemetri Göstergesi (Above-the-Fold Command Grid) -->
-      <section id="firstScreenTelemetrySection" aria-label="Ana Ekran 12 Temel Telemetri Göstergesi" class="surface-ledger overflow-hidden">
-        <div class="px-4 sm:px-5 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-subtle)] flex flex-wrap items-center justify-between gap-2">
+      <section id="firstScreenTelemetrySection" aria-label="Ana Ekran 12 Temel Telemetri Göstergesi" class="surface-ledger overflow-hidden h-full flex flex-col">
+        <div class="px-4 py-2 border-b border-[var(--border-subtle)] bg-[var(--bg-subtle)] flex items-center justify-between gap-2 shrink-0">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Günlük Özet · 12 Temel Gösterge</span>
           <span id="firstScreenDateBadge" class="stamp-tag stamp-accent">Son Kayıt: --</span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-[var(--border-subtle)]">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 grid-rows-3 gap-px bg-[var(--border-subtle)] flex-1 min-h-0">
           <!-- 01. HRV -->
           <div onclick="setTab('health')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
             <div class="flex items-center justify-between gap-1.5 min-w-0">
@@ -228,31 +251,16 @@
           </div>
         </div>
       </section>
-
-      <!-- Custom Profile Active Banner -->
-      <div id="customProfileBanner"
-        class="hidden field-dossier p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div class="flex items-start gap-3">
-          <div class="icon-box w-9 h-9">
-            <i data-lucide="sliders-horizontal" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
-          </div>
-          <div>
-            <h4 class="font-mono text-xs font-semibold accent-text uppercase tracking-wider" id="customBannerTitle">ÖZEL SPORCU PLANI AKTİF</h4>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5" id="customBannerText">Aşağıdaki haftalık mikro-döngü ve beslenme hedefleri tercihlerinize göre hesaplanmıştır.</p>
-          </div>
-        </div>
-        <button type="button" onclick="restoreSarpProfile()" id="btnBannerRestore" class="btn-secondary">
-          Varsayılan Profile Geri Dön
-        </button>
       </div>
 
-      <!-- BALANCED OVERVIEW TOP GRID (7 + 5 COLS: WEEKLY QUOTA + PACE TRACK | FIELD BRIEFING) -->
-      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      <!-- OVERVIEW SUBPANE 2: GÜNLÜK DURUM & HAFTALIK KOTA -->
+      <div data-subpane-group="overview" data-subpane="quota_brief" class="single-screen-pane hidden">
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch h-full">
 
         <!-- LEFT 7 COLS: Weekly Flexible Quota Panel & Chronometer Pace Track SVG -->
-        <div class="lg:col-span-7 space-y-6">
+        <div class="lg:col-span-7 flex flex-col justify-between gap-3 min-h-0">
           <!-- HAFTALIK KOTA & KALAN SEANSLAR LEDGER PANELİ -->
-          <section id="weeklyQuotaPanel" aria-label="Haftalık Kota ve Kalan Seanslar" class="field-dossier p-5 sm:p-6 space-y-4">
+          <section id="weeklyQuotaPanel" aria-label="Haftalık Kota ve Kalan Seanslar" class="field-dossier p-3 space-y-2 flex-1 min-h-0 overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık Kota &amp; Kalan Seanslar</span>
               <span class="stamp-tag stamp-accent">Yükleniyor...</span>
@@ -261,12 +269,12 @@
           </section>
 
           <!-- Custom Domain-Specific Geometric Split Pace Ruler Graphic -->
-          <div class="surface-card p-4 space-y-2.5">
+          <div class="surface-card p-2.5 space-y-1 shrink-0">
             <div class="flex items-center justify-between gap-2 flex-wrap font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-secondary)]">
               <span>Aerobik Verimlilik Rotası @ 145 BPM</span>
               <span id="svgPaceTargetLabel" class="accent-text font-semibold">Hedef: 5:00 /km (EF 1.38)</span>
             </div>
-            <svg viewBox="0 0 600 44" class="w-full h-11 block" aria-hidden="true">
+            <svg viewBox="0 0 600 44" class="w-full h-9 block" aria-hidden="true">
               <line x1="16" y1="22" x2="584" y2="22" stroke="var(--border-medium)" stroke-width="1.5" />
               <line id="svgPaceProgressLine" x1="16" y1="22" x2="310" y2="22" stroke="var(--accent)" stroke-width="2.5" />
               <line x1="16" y1="15" x2="16" y2="29" stroke="var(--text-primary)" stroke-width="1.5" />
@@ -284,33 +292,33 @@
           </div>
         </div>
 
-        <!-- RIGHT 5 COLS: FIELD DISPATCH DOSSIER (Readiness + Weekly Streak + Daily Decision) -->
-        <aside class="lg:col-span-5 field-dossier p-5 sm:p-6 space-y-5">
-          <div class="flex items-center justify-between gap-2 pb-3 border-b border-[var(--border-subtle)]">
+          <!-- RIGHT 5 COLS: FIELD DISPATCH DOSSIER (Readiness + Weekly Streak + Daily Decision) -->
+        <aside class="lg:col-span-5 field-dossier p-4 space-y-3 flex flex-col justify-between min-h-0">
+          <div class="flex items-center justify-between gap-2 pb-2 border-b border-[var(--border-subtle)]">
             <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Günlük Durum</span>
             <span class="stamp-tag stamp-moss">HAZIRLIK</span>
           </div>
 
           <!-- Readiness Ring + Daily Decision Summary -->
-          <div class="flex items-center gap-5">
-            <div class="relative w-24 h-24 flex items-center justify-center shrink-0">
+          <div class="flex items-center gap-4">
+            <div class="relative w-20 h-20 flex items-center justify-center shrink-0">
               <svg class="w-full h-full readiness-ring" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="40" stroke="var(--bg-surface-elevated)" stroke-width="6" fill="transparent" />
                 <circle id="readinessSvgCircle" cx="50" cy="50" r="40" stroke="currentColor" stroke-width="6" stroke-linecap="butt" class="moss-text transition-all duration-1000" fill="transparent" stroke-dasharray="251.32" stroke-dashoffset="57.8" />
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span class="font-mono text-2xl font-bold tabular-nums tracking-tight" id="heroReadinessVal">77%</span>
-                <span class="font-mono text-[8.5px] font-medium text-[var(--text-secondary)] uppercase tracking-widest">HAZIRLIK</span>
+                <span class="font-mono text-xl font-bold tabular-nums tracking-tight" id="heroReadinessVal">77%</span>
+                <span class="font-mono text-[8px] font-medium text-[var(--text-secondary)] uppercase tracking-widest">HAZIRLIK</span>
               </div>
             </div>
-            <div class="space-y-1.5 min-w-0">
+            <div class="space-y-1 min-w-0">
               <span class="stamp-tag stamp-moss" id="decisionBadge">YEŞİL IŞIK</span>
-              <h3 class="font-editorial text-lg font-medium leading-snug" id="decisionTitle">Toparlanma iyi durumda, antrenman için uygun gün.</h3>
+              <h3 class="font-editorial text-base font-medium leading-snug" id="decisionTitle">Toparlanma iyi durumda, antrenman için uygun gün.</h3>
             </div>
           </div>
 
           <!-- Weekly Streak Strip -->
-          <div class="pt-4 border-t border-[var(--border-subtle)] space-y-3">
+          <div class="pt-2.5 border-t border-[var(--border-subtle)] space-y-2">
             <div class="flex items-center justify-between">
               <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Bu Hafta</span>
               <span id="weeklyStreakBadge" class="font-mono text-[11px] font-semibold accent-text tabular-nums">--/7 Gün</span>
@@ -321,10 +329,10 @@
           </div>
 
           <!-- Decision Guidance & Latest Activity Trigger -->
-          <div id="decisionCard" class="space-y-3 pt-4 border-t border-[var(--border-subtle)]">
+          <div id="decisionCard" class="space-y-2 pt-2.5 border-t border-[var(--border-subtle)]">
             <p class="text-xs text-[var(--text-secondary)] leading-relaxed" id="decisionDetail">Toparlanma ve yük dengesi normal. Planlı antrenmanı uygulayabilirsin.</p>
-            <div onclick="if(window.globalActivities && globalActivities.length) openActivityModal(globalActivities[0]); else openDebriefModal(0);" class="cursor-pointer group tint-panel p-3 hover:border-[var(--border-hover)] transition">
-              <div class="flex items-center justify-between font-mono text-[10px] mb-1.5">
+            <div onclick="if(window.globalActivities && globalActivities.length) openActivityModal(globalActivities[0]); else openDebriefModal(0);" class="cursor-pointer group tint-panel p-2.5 hover:border-[var(--border-hover)] transition">
+              <div class="flex items-center justify-between font-mono text-[10px] mb-1">
                 <span class="text-[var(--text-secondary)] uppercase tracking-wider">Son Antrenman</span>
                 <span class="accent-text font-semibold inline-flex items-center gap-1">Detay <i data-lucide="arrow-up-right" class="w-3 h-3" stroke-width="1.5" aria-hidden="true"></i></span>
               </div>
@@ -336,9 +344,12 @@
           </div>
         </aside>
       </section>
+      </div>
 
+      <!-- OVERVIEW SUBPANE 3: PERFORMANS & TREND ÖZETİ -->
+      <div data-subpane-group="overview" data-subpane="ledger" class="single-screen-pane hidden">
       <!-- RULED ARCHITECTURAL TELEMETRY LEDGER (Replaces Symmetrical Bubble-Card Grid) -->
-      <section aria-label="Temel Telemetri Göstergeleri" class="surface-ledger overflow-hidden">
+      <section aria-label="Temel Telemetri Göstergeleri" class="surface-ledger overflow-hidden h-full flex flex-col justify-between">
         <!-- Upper 12-Col Ledger Row: Sleep + Training Status + Quick Ratio -->
         <div class="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border-subtle)] border-b border-[var(--border-subtle)]">
           <!-- Sleep Architecture Cell (4 Cols) -->
@@ -502,52 +513,52 @@
           </div>
         </div>
       </section>
+      </div>
     </div>
 
-    <!-- 2. PLAN & BRANŞLAR -->
-    <div id="section-plan" class="pt-10 space-y-6 hidden">
-      <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
-        <div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">PLAN &amp; BRANŞLAR</span>
-          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Antrenman Planı ve Branşlar</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Esnek haftalık kota, seans reçeteleri, 5x5 kuvvet geçmişi ve koşu / dinamik ilerleme durumu.</p>
+    <!-- 2. ANTRENMAN PLANI (3 ALT SEKME: HAFTALIK KOTA ÖZETİ / 7 GÜNLÜK TAKVİM / ANTRENMAN İÇERİKLERİ) -->
+    <div id="section-plan" class="single-screen-section gap-2.5 hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-medium)] pb-2 shrink-0">
+        <div class="flex items-baseline gap-3">
+          <h2 class="section-heading text-xl sm:text-2xl">Antrenman Planı</h2>
+          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden sm:inline">Esnek 2 Koşu + 2 Kuvvet Kotası</span>
         </div>
         <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('plan', 'schedule')" data-subtab-group="plan" data-subtab="schedule" class="subtab-btn subtab-btn-active">Haftalık Takvim</button>
+          <button type="button" onclick="setSubTab('plan', 'quota')" data-subtab-group="plan" data-subtab="quota" class="subtab-btn subtab-btn-active">Haftalık Kota Özeti</button>
+          <button type="button" onclick="setSubTab('plan', 'schedule')" data-subtab-group="plan" data-subtab="schedule" class="subtab-btn">7 Günlük Esnek Takvim</button>
           <button type="button" onclick="setSubTab('plan', 'protocols')" data-subtab-group="plan" data-subtab="protocols" class="subtab-btn">Antrenman İçerikleri</button>
-          <button type="button" onclick="setSubTab('plan', 'gym')" data-subtab-group="plan" data-subtab="gym" class="subtab-btn">Kuvvet &amp; 5x5</button>
-          <button type="button" onclick="setSubTab('plan', 'prog')" data-subtab-group="plan" data-subtab="prog" class="subtab-btn">Koşu &amp; Dinamik İlerleme</button>
         </div>
       </div>
 
-      <div data-subpane-group="plan" data-subpane="schedule" class="space-y-6">
-        <!-- ANTRENMAN PLANI: HAFTALIK KOTA & KALAN SEANSLAR LEDGER PANELİ -->
-        <section id="planQuotaSummary" aria-label="Haftalık Kota ve Kalan Seans Özeti" class="field-dossier p-5 sm:p-6 space-y-4">
+      <div data-subpane-group="plan" data-subpane="quota" class="single-screen-pane">
+        <section id="planQuotaSummary" aria-label="Haftalık Kota ve Kalan Seans Özeti" class="field-dossier p-4 sm:p-5 space-y-3 h-full overflow-hidden">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık Kota &amp; Kalan Seanslar</span>
             <span class="stamp-tag stamp-accent">Yükleniyor...</span>
           </div>
           <p class="text-xs text-[var(--text-secondary)]">Haftalık kota özeti hazırlanıyor...</p>
         </section>
+      </div>
 
-        <section class="surface-card p-6 sm:p-8 space-y-5">
-          <div class="flex flex-wrap items-center justify-between gap-3">
+      <div data-subpane-group="plan" data-subpane="schedule" class="single-screen-pane hidden">
+        <section class="surface-card p-4 sm:p-5 space-y-3 h-full flex flex-col justify-between overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
-              <h3 class="font-editorial text-lg font-medium tracking-tight">Haftalık Takip &amp; Esnek Kalan Kotalar (Hedef İdeal Kilo: 81,0 kg)</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Haftalık <strong class="text-[var(--text-primary)]">2 Koşu + 2 Kuvvet</strong> kotası. Sabit gün zorunluluğu olmadan tamamlananlar düşülür, kalan kotalara tıklayarak reçeteye geçebilirsin.</p>
+              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Haftalık Takip &amp; Esnek Kalan Kotalar (Hedef İdeal Kilo: 81,0 kg)</h3>
+              <p class="text-[11px] text-[var(--text-secondary)]">Sabit gün zorunluluğu olmadan tamamlananlar düşülür, kalan kotalara tıklayarak reçeteye geçebilirsiniz.</p>
             </div>
             <span class="stamp-tag stamp-moss">Esnek 2 Koşu + 2 Kuvvet</span>
           </div>
-          <div tabindex="0" role="region" aria-label="Haftalık takip ve esnek kota tablosu" class="table-scroll-region custom-scrollbar">
+          <div tabindex="0" role="region" aria-label="Haftalık takip ve esnek kota tablosu" class="table-scroll-region flex-1 min-h-0">
             <table class="w-full text-left text-xs">
               <thead>
                 <tr>
-                  <th class="py-3 px-4">Gün / Esnek Slot</th>
-                  <th class="py-3 px-4">Seans Türü &amp; Kota</th>
-                  <th class="py-3 px-4">Durum / Esnek Planlama</th>
-                  <th class="py-3 px-4">Hedef Nabız &amp; Tempo</th>
-                  <th class="py-3 px-4">Harcama</th>
-                  <th class="py-3 px-4">Hedef Kalori &amp; Makro</th>
+                  <th class="py-2 px-3">Gün / Esnek Slot</th>
+                  <th class="py-2 px-3">Seans Türü &amp; Kota</th>
+                  <th class="py-2 px-3">Durum / Esnek Planlama</th>
+                  <th class="py-2 px-3">Hedef Nabız &amp; Tempo</th>
+                  <th class="py-2 px-3">Harcama</th>
+                  <th class="py-2 px-3">Hedef Kalori &amp; Makro</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="overviewScheduleBody"></tbody>
@@ -556,53 +567,84 @@
         </section>
       </div>
 
-      <div data-subpane-group="plan" data-subpane="protocols" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-5" id="dailyProtocolsSection">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="stamp-tag stamp-accent">ANTRENMAN İÇERİKLERİ</span>
-                <h3 class="font-editorial text-lg font-medium tracking-tight">Seans Detayları</h3>
-              </div>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Kalan kotadaki seansları veya dilediğiniz branş reçetesini seçerek set, nabız ve makro hedeflerini inceleyin:</p>
+      <div data-subpane-group="plan" data-subpane="protocols" class="single-screen-pane hidden">
+        <section class="surface-card p-4 sm:p-5 space-y-3 h-full flex flex-col overflow-hidden" id="dailyProtocolsSection">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2.5 shrink-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="stamp-tag stamp-accent">ANTRENMAN İÇERİKLERİ</span>
+              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Seans Detayları</h3>
             </div>
+            <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs"></div>
           </div>
+          <div class="flex-1 min-h-0 overflow-hidden" id="dailyProtocolsContainer"></div>
+        </section>
+      </div>
+    </div>
 
-          <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs"></div>
-          <div class="space-y-4" id="dailyProtocolsContainer"></div>
+    <!-- 3. BRANŞLAR (6 ALT SEKME: KOŞU ÖZETİ / KUVVET ÖZETİ / 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME / REFERANS TABLOSU) -->
+    <div id="section-sports" class="single-screen-section gap-2.5 hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-medium)] pb-2 shrink-0">
+        <div class="flex items-baseline gap-3">
+          <h2 class="section-heading text-xl sm:text-2xl">Branşlar &amp; Gelişim</h2>
+          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden lg:inline">Koşu · Kuvvet · İlerleme</span>
+        </div>
+        <div class="subtab-bar">
+          <button type="button" onclick="setSubTab('sports', 'run_branch')" data-subtab-group="sports" data-subtab="run_branch" class="subtab-btn subtab-btn-active">Koşu Branş Özeti</button>
+          <button type="button" onclick="setSubTab('sports', 'gym_branch')" data-subtab-group="sports" data-subtab="gym_branch" class="subtab-btn">Kuvvet Branş Özeti</button>
+          <button type="button" onclick="setSubTab('sports', 'gym')" data-subtab-group="sports" data-subtab="gym" class="subtab-btn">5x5 Ağırlık Hedefleri</button>
+          <button type="button" onclick="setSubTab('sports', 'gym_history')" data-subtab-group="sports" data-subtab="gym_history" class="subtab-btn">Salon Geçmişi</button>
+          <button type="button" onclick="setSubTab('sports', 'prog')" data-subtab-group="sports" data-subtab="prog" class="subtab-btn">Seviye &amp; İlerleme</button>
+          <button type="button" onclick="setSubTab('sports', 'tiers')" data-subtab-group="sports" data-subtab="tiers" class="subtab-btn">Referans Tablosu</button>
+        </div>
+      </div>
+
+      <div data-subpane-group="sports" data-subpane="run_branch" class="single-screen-pane">
+        <section class="surface-card p-4 sm:p-5 h-full flex flex-col justify-between overflow-hidden">
+          <div id="runningBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full"></div>
         </section>
       </div>
 
-      <div data-subpane-group="plan" data-subpane="gym" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-5" id="gymHistorySection">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="stamp-tag stamp-accent">SALON KAYITLARI</span>
-                <h3 class="font-editorial text-lg font-medium tracking-tight">Kuvvet Programı ve Ağırlık Geçmişi</h3>
-              </div>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Garmin kayıtlarından çekilen A/B antrenman setleri, sıradaki döngü hedefleri ve ağırlıklar:</p>
+      <div data-subpane-group="sports" data-subpane="gym_branch" class="single-screen-pane hidden">
+        <section class="surface-card p-4 sm:p-5 h-full flex flex-col justify-between overflow-hidden">
+          <div id="gymBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full"></div>
+        </section>
+      </div>
+
+      <div data-subpane-group="sports" data-subpane="gym" class="single-screen-pane hidden">
+        <section class="surface-card p-4 sm:p-5 space-y-3.5 h-full flex flex-col overflow-hidden" id="gymHistorySection">
+          <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="stamp-tag stamp-accent">5x5 PROGRESYON</span>
+              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Kuvvet Programı ve Sıradaki Ağırlık Hedefleri</h3>
             </div>
-            <div id="gymHeaderBadges" class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+            <div id="gymHeaderBadges" class="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
               <span class="stamp-tag stamp-moss">Squat --</span>
               <span class="stamp-tag stamp-accent">Bench --</span>
               <span class="stamp-tag">Row --</span>
             </div>
           </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 content-start" id="gymProgressionGrid"></div>
+        </section>
+      </div>
 
-          <div id="gymBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="gymProgressionGrid"></div>
-
-          <div tabindex="0" role="region" aria-label="Salon kuvvet antrenmanları tablosu" class="table-scroll-region custom-scrollbar">
+      <div data-subpane-group="sports" data-subpane="gym_history" class="single-screen-pane hidden">
+        <section class="surface-card p-4 sm:p-5 space-y-3 h-full flex flex-col overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="stamp-tag stamp-accent">SALON KAYITLARI</span>
+              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Kaydedilen Kuvvet Antrenmanları ve Set Hacimleri</h3>
+            </div>
+            <span class="font-mono text-[11px] text-[var(--text-secondary)]">Garmin exerciseSets verisi</span>
+          </div>
+          <div tabindex="0" role="region" aria-label="Salon kuvvet antrenmanları tablosu" class="table-scroll-region flex-1 min-h-0">
             <table class="w-full text-left text-xs">
               <thead>
                 <tr>
-                  <th class="py-3 px-4">Tarih</th>
-                  <th class="py-3 px-4">Rutin</th>
-                  <th class="py-3 px-4">Süre &amp; Kalori</th>
-                  <th class="py-3 px-4">Toplam Hacim</th>
-                  <th class="py-3 px-4">Egzersizler, Setler &amp; Ağırlıklar (kg)</th>
+                  <th class="py-2 px-3">Tarih</th>
+                  <th class="py-2 px-3">Rutin</th>
+                  <th class="py-2 px-3">Süre &amp; Kalori</th>
+                  <th class="py-2 px-3">Toplam Hacim</th>
+                  <th class="py-2 px-3">Egzersizler, Setler &amp; Ağırlıklar (kg)</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="gymHistoryTableBody"></tbody>
@@ -611,298 +653,266 @@
         </section>
       </div>
 
-      <div data-subpane-group="plan" data-subpane="prog" class="hidden space-y-6">
-        <section class="surface-card p-6 sm:p-8 space-y-5">
-          <div id="runningBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
-        </section>
-
-        <section class="surface-card p-6 sm:p-8 space-y-5" id="progressionAssessmentSection">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="stamp-tag stamp-ochre">SEVİYE &amp; İLERLEME</span>
-                <h3 class="font-editorial text-lg font-medium tracking-tight">Seviye ve İlerleme Durumu</h3>
-              </div>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Mevcut ağırlık, koşu temposu ve toparlanma verilerine göre ilerleme durumu:</p>
+      <div data-subpane-group="sports" data-subpane="prog" class="single-screen-pane hidden">
+        <section class="surface-card p-4 sm:p-5 space-y-3.5 h-full flex flex-col overflow-hidden" id="progressionAssessmentSection">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2.5 shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="stamp-tag stamp-ochre">SEVİYE &amp; İLERLEME</span>
+              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Seviye ve İlerleme Durumu</h3>
             </div>
             <span class="stamp-tag stamp-accent" id="progressionTierBadge">Kuvvet: Temel Güç İnşası (0.75x VA) · Koşu: Orta Seviye</span>
           </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 flex-1 content-start" id="progressionCardsGrid"></div>
+        </section>
+      </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="progressionCardsGrid"></div>
-
-          <div class="tint-panel p-5 space-y-3">
-            <h4 class="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Seviye Referans Tablosu</h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs" id="athleteTiersGrid"></div>
+      <div data-subpane-group="sports" data-subpane="tiers" class="single-screen-pane hidden">
+        <section class="surface-card p-4 sm:p-5 space-y-3.5 h-full flex flex-col overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2.5 shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="stamp-tag stamp-accent">REFERANS SİSTEMİ</span>
+              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Seviye Referans Tablosu</h3>
+            </div>
+            <span class="text-[11px] text-[var(--text-secondary)]">Başlangıç, Temel, Orta ve İleri Sporcu Eşik Kriterleri</span>
           </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1 content-start" id="athleteTiersGrid"></div>
         </section>
       </div>
     </div>
 
-    <!-- 3. YÜK, AKTİVİTELER & SAAT -->
-    <div id="section-training_load" class="pt-10 space-y-6 hidden">
-      <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
-        <div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">YÜK, AKTİVİTELER &amp; SAAT</span>
-          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Yük, Aktiviteler ve Nabız Bölgeleri</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Akut/kronik yük dengesi (ACWR), aktivite günlüğü ve LTHR/FTP nabız bölgeleri.</p>
+    <!-- 4. YÜK & AKTİVİTELER (2 ALT SEKME: YÜK & ACWR ODAĞI / AKTİVİTE GEÇMİŞİ SAYFALI) -->
+    <div id="section-training_load" class="single-screen-section gap-2.5 hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-medium)] pb-2 shrink-0">
+        <div class="flex items-baseline gap-3">
+          <h2 class="section-heading text-xl sm:text-2xl">Yük &amp; Aktiviteler</h2>
+          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden sm:inline">ACWR Dengesi · Aktivite Günlüğü</span>
         </div>
         <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('training_load', 'load')" data-subtab-group="training_load" data-subtab="load" class="subtab-btn subtab-btn-active">Yük &amp; ACWR</button>
+          <button type="button" onclick="setSubTab('training_load', 'load')" data-subtab-group="training_load" data-subtab="load" class="subtab-btn subtab-btn-active">Yük &amp; ACWR Odağı</button>
           <button type="button" onclick="setSubTab('training_load', 'activities')" data-subtab-group="training_load" data-subtab="activities" class="subtab-btn">Aktivite Geçmişi</button>
-          <button type="button" onclick="setSubTab('training_load', 'zones')" data-subtab-group="training_load" data-subtab="zones" class="subtab-btn">Saat Ayarları (Nabız Zonları)</button>
         </div>
       </div>
 
-      <div data-subpane-group="training_load" data-subpane="load" class="space-y-6">
-        <div class="surface-ledger grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
-          <div class="p-5">
-            <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Antrenman Durumu</p>
-            <p class="font-editorial text-xl font-medium accent-text mt-1.5" id="tl-status">Form Korunuyor</p>
-            <p class="text-xs text-[var(--text-secondary)] mt-1">Kondisyon: <span class="font-medium moss-text">Pozitif Trend</span></p>
+      <div data-subpane-group="training_load" data-subpane="load" class="single-screen-pane">
+        <div class="flex flex-col gap-3 h-full justify-between overflow-hidden">
+          <div class="surface-ledger grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)] shrink-0">
+            <div class="p-4">
+              <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Antrenman Durumu</p>
+              <p class="font-editorial text-xl font-medium accent-text mt-1" id="tl-status">Form Korunuyor</p>
+              <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Kondisyon: <span class="font-medium moss-text">Pozitif Trend</span></p>
+            </div>
+
+            <div class="p-4">
+              <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Akut Yük (7G ATL)</p>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span class="font-mono text-2xl font-bold" id="tl-acute">279</span>
+                <span class="font-mono text-xs text-[var(--text-secondary)]">birim</span>
+              </div>
+              <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5">Tünel: <span class="font-medium text-[var(--text-primary)]" id="tl-tunnel">223 – 418</span></p>
+            </div>
+
+            <div class="p-4">
+              <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Kronik Yük (28G CTL)</p>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span class="font-mono text-2xl font-bold" id="tl-chronic">279</span>
+                <span class="font-mono text-xs text-[var(--text-secondary)]">birim</span>
+              </div>
+              <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Taban: <span class="font-medium moss-text">Yüksek Kapasite</span></p>
+            </div>
+
+            <div class="p-4">
+              <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">ACWR Oranı</p>
+              <div class="flex items-baseline gap-2 mt-1">
+                <span class="font-mono text-2xl font-bold moss-text" id="tl-acwr">1.00</span>
+                <span class="stamp-tag stamp-moss" id="tl-acwr-badge">SWEET SPOT</span>
+              </div>
+              <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5">Optimal: 0,80 – 1,30</p>
+            </div>
           </div>
 
-          <div class="p-5">
-            <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Akut Yük (7G ATL)</p>
-            <div class="flex items-baseline gap-1.5 mt-1.5">
-              <span class="font-mono text-2xl font-bold" id="tl-acute">279</span>
-              <span class="font-mono text-xs text-[var(--text-secondary)]">birim</span>
+          <section class="surface-card p-4 sm:p-5 space-y-3 flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
+              <div>
+                <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Aylık Yük Dağılımı ve Odak (Load Focus)</h3>
+                <p class="text-[11px] text-[var(--text-secondary)]">Son 4 haftalık aerobik taban, tempo ve anaerobik güç dengesi</p>
+              </div>
+              <span id="tl-focus-balance-badge" class="stamp-tag stamp-moss">Yükleniyor...</span>
             </div>
-            <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-1">Tünel: <span class="font-medium text-[var(--text-primary)]" id="tl-tunnel">223 – 418</span></p>
-          </div>
 
-          <div class="p-5">
-            <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Kronik Yük (28G CTL)</p>
-            <div class="flex items-baseline gap-1.5 mt-1.5">
-              <span class="font-mono text-2xl font-bold" id="tl-chronic">279</span>
-              <span class="font-mono text-xs text-[var(--text-secondary)]">birim</span>
-            </div>
-            <p class="text-[11px] text-[var(--text-secondary)] mt-1">Taban: <span class="font-medium moss-text">Yüksek Kapasite</span></p>
-          </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              <div class="p-3.5 tint-panel space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-semibold">Düşük Aerobik (Z1-2)</span>
+                  <span class="font-mono font-bold accent-text" id="tl-focus-low">-- birim</span>
+                </div>
+                <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
+                  <div id="tl-focus-low-bar" class="bg-[var(--accent)] h-1.5" style="width: 0%;"></div>
+                </div>
+                <div class="flex justify-between font-mono text-[11px] text-[var(--text-secondary)]">
+                  <span id="tl-focus-low-target">Hedef: --</span>
+                  <span id="tl-focus-low-status" class="moss-text">--</span>
+                </div>
+                <p class="text-[11px] text-[var(--text-secondary)] pt-1.5 border-t border-[var(--border-subtle)]">Kalp atım hacmini büyüten rahat taban koşuları.</p>
+              </div>
 
-          <div class="p-5">
-            <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">ACWR Oranı</p>
-            <div class="flex items-baseline gap-2 mt-1.5">
-              <span class="font-mono text-2xl font-bold moss-text" id="tl-acwr">1.00</span>
-              <span class="stamp-tag stamp-moss" id="tl-acwr-badge">SWEET SPOT</span>
+              <div class="p-3.5 tint-panel space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-semibold">Yüksek Aerobik (Z3-4)</span>
+                  <span class="font-mono font-bold ochre-text" id="tl-focus-high">-- birim</span>
+                </div>
+                <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
+                  <div id="tl-focus-high-bar" class="bg-[var(--ochre)] h-1.5" style="width: 0%;"></div>
+                </div>
+                <div class="flex justify-between font-mono text-[11px] text-[var(--text-secondary)]">
+                  <span id="tl-focus-high-target">Hedef: --</span>
+                  <span id="tl-focus-high-status" class="moss-text">--</span>
+                </div>
+                <p class="text-[11px] text-[var(--text-secondary)] pt-1.5 border-t border-[var(--border-subtle)]">Laktat eşiğini yükselten tempo koşuları ve branş yükü.</p>
+              </div>
+
+              <div class="p-3.5 tint-panel space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-semibold">Anaerobik (Z5 / Sprint)</span>
+                  <span class="font-mono font-bold crimson-text" id="tl-focus-anaerobic">-- birim</span>
+                </div>
+                <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
+                  <div id="tl-focus-anaerobic-bar" class="bg-[var(--crimson)] h-1.5" style="width: 0%;"></div>
+                </div>
+                <div class="flex justify-between font-mono text-[11px] text-[var(--text-secondary)]">
+                  <span id="tl-focus-anaerobic-target">Hedef: --</span>
+                  <span id="tl-focus-anaerobic-status" class="moss-text">--</span>
+                </div>
+                <p class="text-[11px] text-[var(--text-secondary)] pt-1.5 border-t border-[var(--border-subtle)]">Sprintler, laktat intervalleri ve patlayıcı yük.</p>
+              </div>
             </div>
-            <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-1">Optimal: 0,80 – 1,30</p>
-          </div>
+
+            <div id="tl-focus-recommendation" class="tint-panel p-3 border-l-2 border-[var(--accent)] text-xs space-y-0.5 shrink-0">
+              <span class="font-mono text-[10px] font-semibold uppercase tracking-wider accent-text block">Yük Dağılımı Notu</span>
+              <p class="text-[var(--text-primary)] leading-snug">Yük dağılımı hesaplanıyor...</p>
+            </div>
+          </section>
         </div>
-
-        <section class="surface-card p-6 sm:p-8 space-y-5">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 class="font-editorial text-lg font-medium tracking-tight">Aylık Yük Dağılımı ve Odak (Load Focus)</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-0.5">Son 4 haftalık aerobik taban, tempo ve anaerobik güç dengesi</p>
-            </div>
-            <span id="tl-focus-balance-badge" class="stamp-tag stamp-moss">Yükleniyor...</span>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-            <div class="p-4 tint-panel space-y-2.5">
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-semibold">Düşük Aerobik (Z1-2)</span>
-                <span class="font-mono font-bold accent-text" id="tl-focus-low">-- birim</span>
-              </div>
-              <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
-                <div id="tl-focus-low-bar" class="bg-[var(--accent)] h-1.5" style="width: 0%;"></div>
-              </div>
-              <div class="flex justify-between font-mono text-[11px] text-[var(--text-secondary)]">
-                <span id="tl-focus-low-target">Hedef: --</span>
-                <span id="tl-focus-low-status" class="moss-text">--</span>
-              </div>
-              <p class="text-[11px] text-[var(--text-secondary)] pt-2 border-t border-[var(--border-subtle)]">Kalp atım hacmini büyüten rahat taban koşuları.</p>
-            </div>
-
-            <div class="p-4 tint-panel space-y-2.5">
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-semibold">Yüksek Aerobik (Z3-4)</span>
-                <span class="font-mono font-bold ochre-text" id="tl-focus-high">-- birim</span>
-              </div>
-              <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
-                <div id="tl-focus-high-bar" class="bg-[var(--ochre)] h-1.5" style="width: 0%;"></div>
-              </div>
-              <div class="flex justify-between font-mono text-[11px] text-[var(--text-secondary)]">
-                <span id="tl-focus-high-target">Hedef: --</span>
-                <span id="tl-focus-high-status" class="moss-text">--</span>
-              </div>
-              <p class="text-[11px] text-[var(--text-secondary)] pt-2 border-t border-[var(--border-subtle)]">Laktat eşiğini yükselten tempo koşuları ve branş yükü.</p>
-            </div>
-
-            <div class="p-4 tint-panel space-y-2.5">
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-semibold">Anaerobik (Z5 / Sprint)</span>
-                <span class="font-mono font-bold crimson-text" id="tl-focus-anaerobic">-- birim</span>
-              </div>
-              <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
-                <div id="tl-focus-anaerobic-bar" class="bg-[var(--crimson)] h-1.5" style="width: 0%;"></div>
-              </div>
-              <div class="flex justify-between font-mono text-[11px] text-[var(--text-secondary)]">
-                <span id="tl-focus-anaerobic-target">Hedef: --</span>
-                <span id="tl-focus-anaerobic-status" class="moss-text">--</span>
-              </div>
-              <p class="text-[11px] text-[var(--text-secondary)] pt-2 border-t border-[var(--border-subtle)]">Sprintler, laktat intervalleri ve patlayıcı yük.</p>
-            </div>
-          </div>
-
-          <div id="tl-focus-recommendation" class="tint-panel p-4 border-l-2 border-[var(--accent)] text-xs space-y-1">
-            <span class="font-mono text-[10px] font-semibold uppercase tracking-wider accent-text block">Yük Dağılımı Notu</span>
-            <p class="text-[var(--text-primary)] leading-relaxed">Yük dağılımı hesaplanıyor...</p>
-          </div>
-        </section>
       </div>
 
-      <div data-subpane-group="training_load" data-subpane="activities" class="hidden">
-        <section id="activitiesCard" class="surface-card p-6 sm:p-8 space-y-5">
-          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
+      <div data-subpane-group="training_load" data-subpane="activities" class="single-screen-pane hidden">
+        <section id="activitiesCard" class="surface-card p-3.5 sm:p-4 space-y-2.5 h-full flex flex-col justify-between overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--border-subtle)] pb-2 shrink-0">
             <div>
-              <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">AKTİVİTELER</span>
-              <h3 id="activitiesSectionTitle" class="font-editorial text-xl font-medium tracking-tight mt-1">Aktivite Geçmişi</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Tüm spor kayıtlarının süre, mesafe, nabız, tempo, kadans ve antrenman yükü özeti</p>
+              <h3 id="activitiesSectionTitle" class="font-editorial text-base sm:text-lg font-medium tracking-tight">Aktivite Geçmişi</h3>
             </div>
-
-            <div class="relative w-full sm:w-72">
+            <div class="relative w-full sm:w-64">
               <input type="text" id="actSearchInput" oninput="searchActivities(this.value)" placeholder="Aktivite adı, tarih veya branş ara..."
-                class="w-full text-xs bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] pl-8 pr-3.5 py-2 placeholder-[var(--text-muted)]">
-              <i data-lucide="search" class="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-2.5" stroke-width="1.5" aria-hidden="true"></i>
+                class="w-full text-xs bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] pl-7 pr-3 py-1.5 placeholder-[var(--text-muted)]">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2 top-2" stroke-width="1.5" aria-hidden="true"></i>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 tint-panel text-xs">
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 px-3 py-2 tint-panel text-xs shrink-0">
             <div>
-              <span class="font-mono text-[10px] text-[var(--text-secondary)] block uppercase">Seans</span>
-              <strong id="actSumCount" class="font-mono font-bold text-sm tabular-nums">49 Seans</strong>
+              <span class="font-mono text-[9.5px] text-[var(--text-secondary)] block uppercase">Seans</span>
+              <strong id="actSumCount" class="font-mono font-bold text-xs tabular-nums">49 Seans</strong>
             </div>
             <div>
-              <span class="font-mono text-[10px] text-[var(--text-secondary)] block uppercase">Süre</span>
-              <strong id="actSumDur" class="font-mono accent-text font-bold text-sm tabular-nums">73.5 Saat</strong>
+              <span class="font-mono text-[9.5px] text-[var(--text-secondary)] block uppercase">Süre</span>
+              <strong id="actSumDur" class="font-mono accent-text font-bold text-xs tabular-nums">73.5 Saat</strong>
             </div>
             <div>
-              <span class="font-mono text-[10px] text-[var(--text-secondary)] block uppercase">Koşu</span>
-              <strong id="actSumDist" class="font-mono moss-text font-bold text-sm tabular-nums">174.8 km</strong>
+              <span class="font-mono text-[9.5px] text-[var(--text-secondary)] block uppercase">Koşu</span>
+              <strong id="actSumDist" class="font-mono moss-text font-bold text-xs tabular-nums">174.8 km</strong>
             </div>
             <div>
-              <span class="font-mono text-[10px] text-[var(--text-secondary)] block uppercase">Toplam Yük</span>
-              <strong id="actSumLoad" class="font-mono font-bold text-sm tabular-nums">3.140</strong>
+              <span class="font-mono text-[9.5px] text-[var(--text-secondary)] block uppercase">Toplam Yük</span>
+              <strong id="actSumLoad" class="font-mono font-bold text-xs tabular-nums">3.140</strong>
             </div>
             <div>
-              <span class="font-mono text-[10px] text-[var(--text-secondary)] block uppercase">Kalori</span>
-              <strong id="actSumCal" class="font-mono font-bold text-sm tabular-nums">42.500 kcal</strong>
+              <span class="font-mono text-[9.5px] text-[var(--text-secondary)] block uppercase">Kalori</span>
+              <strong id="actSumCal" class="font-mono font-bold text-xs tabular-nums">42.500 kcal</strong>
             </div>
           </div>
 
-          <div id="activityFilterBar" class="flex flex-wrap items-center gap-1.5 text-xs">
-            <button type="button" onclick="filterActivities('all')" id="af-all" class="btn-primary text-xs px-3 py-1.5">Tümü</button>
+          <div id="activityFilterBar" class="flex flex-wrap items-center gap-1 text-xs shrink-0">
+            <button type="button" onclick="filterActivities('all')" id="af-all" class="btn-primary text-[11px] px-2.5 py-1">Tümü</button>
           </div>
 
-          <div tabindex="0" role="region" aria-label="Aktivite telemetri tablosu" class="table-scroll-region custom-scrollbar max-h-[600px]">
-            <table class="w-full text-left text-xs">
+          <div tabindex="0" role="region" aria-label="Aktivite telemetri tablosu" class="table-scroll-region flex-1 min-h-0">
+            <table class="w-full text-left text-[11.5px]">
               <thead>
                 <tr>
-                  <th class="py-3 px-3">Tarih</th>
-                  <th class="py-3 px-3">Branş</th>
-                  <th class="py-3 px-3">Aktivite Adı</th>
-                  <th class="py-3 px-3">Süre</th>
-                  <th class="py-3 px-3">Mesafe</th>
-                  <th class="py-3 px-3">Tempo</th>
-                  <th class="py-3 px-3">Ort/Maks HR</th>
-                  <th class="py-3 px-3">Güç</th>
-                  <th class="py-3 px-3">Kadans</th>
-                  <th class="py-3 px-3">Yük</th>
-                  <th class="py-3 px-3">TE (A/An)</th>
-                  <th class="py-3 px-3">Kalori (Ter)</th>
+                  <th class="py-1.5 px-2.5">Tarih</th>
+                  <th class="py-1.5 px-2.5">Branş</th>
+                  <th class="py-1.5 px-2.5">Aktivite Adı</th>
+                  <th class="py-1.5 px-2.5">Süre</th>
+                  <th class="py-1.5 px-2.5">Mesafe</th>
+                  <th class="py-1.5 px-2.5">Tempo</th>
+                  <th class="py-1.5 px-2.5">Ort/Maks HR</th>
+                  <th class="py-1.5 px-2.5">Güç</th>
+                  <th class="py-1.5 px-2.5">Kadans</th>
+                  <th class="py-1.5 px-2.5">Yük</th>
+                  <th class="py-1.5 px-2.5">TE (A/An)</th>
+                  <th class="py-1.5 px-2.5">Kalori (Ter)</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="activitiesTableBody"></tbody>
             </table>
           </div>
+
+          <div id="activitiesPaginationBar" class="flex items-center justify-between gap-2 pt-1 shrink-0 font-mono text-[11px]">
+            <span id="activitiesPageInfo" class="text-[var(--text-secondary)]">Sayfa 1 / 1</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="changeActivityPage(-1)" id="actPrevBtn" class="btn-secondary text-[11px] px-2.5 py-1" style="min-block-size:1.75rem">Önceki</button>
+              <button type="button" onclick="changeActivityPage(1)" id="actNextBtn" class="btn-secondary text-[11px] px-2.5 py-1" style="min-block-size:1.75rem">Sonraki</button>
+            </div>
+          </div>
         </section>
-      </div>
-
-      <div data-subpane-group="training_load" data-subpane="zones" class="hidden">
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          <section class="xl:col-span-6 surface-card p-6 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
-              <div>
-                <h3 class="font-editorial text-lg font-medium tracking-tight">Nabız Bölgelerine Göre Zone Grafiği (Z1–Z5)</h3>
-                <p class="text-xs text-[var(--text-secondary)] mt-0.5">Gerçekleşen koşu &amp; toplam antrenman süre dağılımı ve LTHR (179 bpm) pencereleri</p>
-              </div>
-              <span class="stamp-tag stamp-accent">LTHR 179 bpm</span>
-            </div>
-            <div id="hrZonesVisualChart" class="space-y-4">
-              <p class="text-xs text-[var(--text-secondary)]">Nabız bölge grafiği yükleniyor...</p>
-            </div>
-          </section>
-
-          <section class="xl:col-span-6 surface-card p-6 space-y-4">
-            <div class="border-b border-[var(--border-subtle)] pb-3">
-              <h3 class="font-editorial text-lg font-medium tracking-tight">Doğru Koşu Nabız ve Güç Bölgeleri</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-0.5">Mevcut (RHR=65), LTHR (179 bpm), Karvonen %HRR ve Koşu Gücü (FTP) referans tablosu:</p>
-            </div>
-            <div tabindex="0" role="region" aria-label="Koşu nabız ve güç zonları" class="table-scroll-region custom-scrollbar">
-              <table class="w-full text-left text-xs">
-                <thead>
-                  <tr>
-                    <th class="py-2.5 px-3">Bölge</th>
-                    <th class="py-2.5 px-3">Mevcut (RHR=65)</th>
-                    <th class="py-2.5 px-3">Önerilen LTHR (179)</th>
-                    <th class="py-2.5 px-3">Karvonen %HRR</th>
-                    <th class="py-2.5 px-3">Koşu Gücü (FTP)</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--border-subtle)]" id="zonesTableBody"></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
       </div>
     </div>
 
-    <!-- 4. SAĞLIK & UYKU -->
-    <div id="section-health" class="pt-10 space-y-6 hidden">
-      <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
-        <div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">SAĞLIK, UYKU &amp; ANALİTİK</span>
-          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Sağlık, Uyku ve Korelasyon Özeti</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Kalp, stres, fitness yaşı, uyku saatleri, 93 günlük ortalamalar ve istatistiksel korelasyonlar.</p>
+    <!-- 5. SAĞLIK & UYKU (4 ALT SEKME: GENEL SAĞLIK & FİTNESS YAŞI / UYKU & YATIŞ SAATİ / 93G BİYOMETRİK ORTALAMALAR / KORELASYON MATRİSİ) -->
+    <div id="section-health" class="single-screen-section gap-2.5 hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-medium)] pb-2 shrink-0">
+        <div class="flex items-baseline gap-3">
+          <h2 class="section-heading text-xl sm:text-2xl">Sağlık &amp; Uyku</h2>
+          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden lg:inline">Klinik Özet · Uyku · 93G · Korelasyon</span>
         </div>
         <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('health', 'clinic')" data-subtab-group="health" data-subtab="clinic" class="subtab-btn subtab-btn-active">Genel Sağlık &amp; Uyku</button>
-          <button type="button" onclick="setSubTab('health', 'metrics')" data-subtab-group="health" data-subtab="metrics" class="subtab-btn">93G Ortalamalar &amp; Korelasyon</button>
+          <button type="button" onclick="setSubTab('health', 'clinic')" data-subtab-group="health" data-subtab="clinic" class="subtab-btn subtab-btn-active">Genel Sağlık &amp; Fitness Yaşı</button>
+          <button type="button" onclick="setSubTab('health', 'sleep')" data-subtab-group="health" data-subtab="sleep" class="subtab-btn">Uyku &amp; Yatış Saati</button>
+          <button type="button" onclick="setSubTab('health', 'metrics')" data-subtab-group="health" data-subtab="metrics" class="subtab-btn">93G Ortalamalar</button>
+          <button type="button" onclick="setSubTab('health', 'correlations')" data-subtab-group="health" data-subtab="correlations" class="subtab-btn">Korelasyon Matrisi</button>
         </div>
       </div>
 
-      <div data-subpane-group="health" data-subpane="clinic" class="space-y-6">
-        <section class="surface-card p-6 sm:p-8 space-y-5">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
-            <div class="flex items-center gap-3.5">
-              <div class="icon-box w-10 h-10"><i data-lucide="heart-pulse" class="w-5 h-5" stroke-width="1.5" aria-hidden="true"></i></div>
+      <div data-subpane-group="health" data-subpane="clinic" class="single-screen-pane">
+        <section class="surface-card p-4 sm:p-5 space-y-3 h-full flex flex-col justify-between overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-2.5 shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="icon-box w-8 h-8"><i data-lucide="heart-pulse" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i></div>
               <div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <h3 class="font-editorial text-lg font-medium tracking-tight">Genel Sağlık Özeti</h3>
+                  <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Genel Sağlık Özeti</h3>
                   <span class="stamp-tag stamp-moss">Özet</span>
                 </div>
-                <p class="text-xs text-[var(--text-secondary)] mt-0.5">Nabız, HRV, kilo, solunum ve uyku verilerine göre genel durum</p>
+                <p class="text-[11px] text-[var(--text-secondary)]">Nabız, HRV, kilo, solunum ve uyku verilerine göre genel durum</p>
               </div>
             </div>
 
-            <div class="tint-moss-panel px-4 py-2.5 text-right shrink-0">
-              <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Genel Durum</p>
-              <p class="text-sm font-bold moss-text" id="doctorVerdictTitle">Normal Sınırlar İçinde</p>
+            <div class="tint-moss-panel px-3 py-1.5 text-right shrink-0">
+              <p class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)]">Genel Durum</p>
+              <p class="text-xs font-bold moss-text" id="doctorVerdictTitle">Normal Sınırlar İçinde</p>
             </div>
           </div>
 
-          <p class="text-xs text-[var(--text-secondary)] leading-relaxed tint-panel p-4" id="doctorSummaryText">Yükleniyor...</p>
+          <p class="text-xs text-[var(--text-secondary)] leading-snug tint-panel p-2.5 shrink-0" id="doctorSummaryText">Yükleniyor...</p>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="healthPillarsGrid"></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 flex-1 min-h-0 content-start" id="healthPillarsGrid"></div>
 
-          <div class="field-dossier p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-              <div class="icon-box w-10 h-10"><i data-lucide="dna" class="w-5 h-5" stroke-width="1.5" aria-hidden="true"></i></div>
+          <div class="field-dossier p-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="icon-box w-8 h-8"><i data-lucide="dna" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i></div>
               <div>
-                <p class="font-mono text-[10px] font-semibold accent-text uppercase tracking-wider">Garmin Biyolojik Sağlık Yaşı (Fitness Age)</p>
-                <div class="flex items-baseline gap-2.5 mt-0.5">
-                  <span class="font-mono text-2xl font-bold" id="fitnessAgeValue">-- Yaş</span>
+                <p class="font-mono text-[9.5px] font-semibold accent-text uppercase tracking-wider">Garmin Biyolojik Sağlık Yaşı (Fitness Age)</p>
+                <div class="flex items-baseline gap-2 mt-0.5">
+                  <span class="font-mono text-xl font-bold" id="fitnessAgeValue">-- Yaş</span>
                   <span id="fitnessAgeAdvantageBadge" class="stamp-tag stamp-moss">-- Avantaj</span>
                   <span id="fitnessAgeChronoText" class="font-mono text-xs text-[var(--text-secondary)]">(Kronolojik: 22)</span>
                 </div>
@@ -911,34 +921,36 @@
 
             <div class="flex items-center gap-4 text-xs">
               <div class="text-right">
-                <p class="font-mono text-[10px] text-[var(--text-secondary)]">En Düşük Sınır</p>
-                <p id="fitnessAgeMinVal" class="font-mono text-base font-bold moss-text">18,0 Yaş</p>
+                <p class="font-mono text-[9.5px] text-[var(--text-secondary)]">En Düşük Sınır</p>
+                <p id="fitnessAgeMinVal" class="font-mono text-sm font-bold moss-text">18,0 Yaş</p>
               </div>
-              <div class="h-8 w-px bg-[var(--border-subtle)]"></div>
+              <div class="h-7 w-px bg-[var(--border-subtle)]"></div>
               <div class="text-left text-[11px] text-[var(--text-secondary)]">
                 <p id="fitnessAgeRoadmapText" class="moss-text font-medium">Hedef vücut ağırlığına inildikçe biyolojik yaş sınırı açılır.</p>
               </div>
             </div>
           </div>
         </section>
+      </div>
 
-        <section class="surface-card p-6 sm:p-8 space-y-4">
-          <div>
+      <div data-subpane-group="health" data-subpane="sleep" class="single-screen-pane hidden">
+        <section class="surface-card p-4 sm:p-5 space-y-3.5 h-full flex flex-col justify-between overflow-hidden">
+          <div class="shrink-0">
             <h3 class="font-editorial text-lg font-medium tracking-tight">Yatış Saatinin REM Uykusu ve Sabah Enerjisine Etkisi</h3>
-            <p id="sleepBedtimeSubtitle" class="text-xs text-[var(--text-secondary)] mt-1">Uyku kayıtlarının uykuya geçiş saatine göre 3 gruplu analizi:</p>
+            <p id="sleepBedtimeSubtitle" class="text-xs text-[var(--text-secondary)] mt-0.5">Uyku kayıtlarının uykuya geçiş saatine göre 3 gruplu analizi:</p>
           </div>
-          <div tabindex="0" role="region" aria-label="Yatış saati grupları tablosu" class="table-scroll-region custom-scrollbar">
+          <div tabindex="0" role="region" aria-label="Yatış saati grupları tablosu" class="table-scroll-region flex-1 min-h-0">
             <table class="w-full text-left text-xs">
               <thead>
                 <tr>
-                  <th class="py-3 px-4">Yatış Saati Grubu</th>
-                  <th class="py-3 px-4">Gece Sayısı</th>
-                  <th class="py-3 px-4">Toplam Uyku</th>
-                  <th class="py-3 px-4">Derin / REM</th>
-                  <th class="py-3 px-4">Skor</th>
-                  <th class="py-3 px-4">Gece HRV</th>
-                  <th class="py-3 px-4">RHR</th>
-                  <th class="py-3 px-4">Sabah Enerji / Hazırlık</th>
+                  <th class="py-2.5 px-3">Yatış Saati Grubu</th>
+                  <th class="py-2.5 px-3">Gece Sayısı</th>
+                  <th class="py-2.5 px-3">Toplam Uyku</th>
+                  <th class="py-2.5 px-3">Derin / REM</th>
+                  <th class="py-2.5 px-3">Skor</th>
+                  <th class="py-2.5 px-3">Gece HRV</th>
+                  <th class="py-2.5 px-3">RHR</th>
+                  <th class="py-2.5 px-3">Sabah Enerji / Hazırlık</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="bedtimeGroupsBody"></tbody>
@@ -947,51 +959,103 @@
         </section>
       </div>
 
-      <div data-subpane-group="health" data-subpane="metrics" class="hidden">
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-          <section id="healthMetrics93dCard" class="surface-card p-6 sm:p-7 space-y-4 min-w-0">
+      <div data-subpane-group="health" data-subpane="metrics" class="single-screen-pane hidden">
+        <section id="healthMetrics93dCard" class="surface-card p-4 sm:p-5 space-y-2.5 h-full flex flex-col overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
-              <h3 class="font-editorial text-lg font-medium tracking-tight">93 Günlük Temel Sağlık ve Biyometrik Göstergeler</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Ortalama, medyan, minimum–maksimum değerler ile ideal referans aralıkları</p>
+              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">93 Günlük Temel Sağlık ve Biyometrik Göstergeler</h3>
+              <p class="text-[11px] text-[var(--text-secondary)]">Ortalama, medyan, minimum–maksimum değerler ile ideal referans aralıkları</p>
             </div>
-            <div tabindex="0" role="region" aria-label="93 günlük biyometrik özetler tablosu" class="table-scroll-region custom-scrollbar">
-              <table class="w-full text-left text-xs">
-                <thead>
-                  <tr>
-                    <th class="py-3 px-3">Gösterge</th>
-                    <th class="py-3 px-3">Ortalama (Medyan)</th>
-                    <th class="py-3 px-3">Min – Maks</th>
-                    <th class="py-3 px-3">İdeal Referans</th>
-                    <th class="py-3 px-3">Klinik Durum</th>
-                  </tr>
-                </thead>
-                <tbody id="healthMetrics93dBody" class="divide-y divide-[var(--border-subtle)] font-sans">
-                  <tr><td colspan="5" class="py-4 px-3 text-center text-[var(--text-secondary)]">93 günlük biyometrik göstergeler Garmin verilerinden hesaplanıyor...</td></tr>
-                </tbody>
-              </table>
+            <span class="stamp-tag stamp-accent">14 Klinik Gösterge</span>
+          </div>
+          <div tabindex="0" role="region" aria-label="93 günlük biyometrik özetler tablosu" class="table-scroll-region flex-1 min-h-0">
+            <table class="w-full text-left text-[11.5px]">
+              <thead>
+                <tr>
+                  <th class="py-2 px-3">Gösterge</th>
+                  <th class="py-2 px-3">Ortalama (Medyan)</th>
+                  <th class="py-2 px-3">Min – Maks</th>
+                  <th class="py-2 px-3">İdeal Referans</th>
+                  <th class="py-2 px-3">Klinik Durum</th>
+                </tr>
+              </thead>
+              <tbody id="healthMetrics93dBody" class="divide-y divide-[var(--border-subtle)] font-sans">
+                <tr><td colspan="5" class="py-4 px-3 text-center text-[var(--text-secondary)]">93 günlük biyometrik göstergeler Garmin verilerinden hesaplanıyor...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div data-subpane-group="health" data-subpane="correlations" class="single-screen-pane hidden">
+        <section id="correlationsCard" class="surface-card p-4 sm:p-5 space-y-2.5 h-full flex flex-col overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
+            <div>
+              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">İstatistiksel Korelasyon Matrisi (r, t-değeri, p-değeri)</h3>
+              <p class="text-[11px] text-[var(--text-secondary)]">93 günlük uyku, nabız, HRV ve yük verileri arasındaki doğrusal ilişkiler</p>
+            </div>
+            <span class="stamp-tag stamp-accent">Pearson r · p-Değeri</span>
+          </div>
+          <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi" class="table-scroll-region flex-1 min-h-0">
+            <table class="w-full text-left text-[11.5px]">
+              <thead>
+                <tr>
+                  <th class="py-2 px-3">Değişken Çifti</th>
+                  <th class="py-2 px-3">Pearson r</th>
+                  <th class="py-2 px-3">t-Değeri</th>
+                  <th class="py-2 px-3">Anlamlılık (p)</th>
+                  <th class="py-2 px-3">Pratik Sporcu İçgörüsü</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- 6. SAAT AYARLARI (NABIZ ZONLARI & GÜÇ BÖLGELERİ) -->
+    <div id="section-settings" class="single-screen-section gap-2.5 hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-medium)] pb-2 shrink-0">
+        <div class="flex items-baseline gap-3">
+          <h2 class="section-heading text-xl sm:text-2xl">Saat Ayarları</h2>
+          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden sm:inline">Nabız Bölgeleri (LTHR) · Koşu Gücü (FTP)</span>
+        </div>
+        <span class="stamp-tag stamp-accent">LTHR 179 bpm · Z1–Z5 Dağılımı</span>
+      </div>
+
+      <div class="single-screen-pane">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch h-full">
+          <section class="xl:col-span-6 surface-card p-4 space-y-3 flex flex-col justify-between overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2 shrink-0">
+              <div>
+                <h3 class="font-editorial text-base font-medium tracking-tight">Nabız Bölgelerine Göre Zone Grafiği (Z1–Z5)</h3>
+                <p class="text-[11px] text-[var(--text-secondary)]">Gerçekleşen koşu &amp; toplam antrenman süre dağılımı ve LTHR pencereleri</p>
+              </div>
+              <span class="stamp-tag stamp-accent">LTHR 179 bpm</span>
+            </div>
+            <div id="hrZonesVisualChart" class="space-y-2.5 flex-1 min-h-0 overflow-hidden">
+              <p class="text-xs text-[var(--text-secondary)]">Nabız bölge grafiği yükleniyor...</p>
             </div>
           </section>
 
-          <section id="correlationsCard" class="surface-card p-6 sm:p-7 space-y-4 min-w-0">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 class="font-editorial text-lg font-medium tracking-tight">İstatistiksel Korelasyon Matrisi (r, t-değeri, p-değeri)</h3>
-                <p class="text-xs text-[var(--text-secondary)] mt-1">93 günlük uyku, nabız, HRV ve yük verileri arasındaki doğrusal ilişkiler</p>
-              </div>
-              <span class="stamp-tag stamp-accent">Pearson r · p-Değeri</span>
+          <section class="xl:col-span-6 surface-card p-4 space-y-3 flex flex-col overflow-hidden">
+            <div class="border-b border-[var(--border-subtle)] pb-2 shrink-0">
+              <h3 class="font-editorial text-base font-medium tracking-tight">Doğru Koşu Nabız ve Güç Bölgeleri</h3>
+              <p class="text-[11px] text-[var(--text-secondary)]">Mevcut (RHR=65), LTHR (179 bpm), Karvonen %HRR ve Koşu Gücü (FTP) referans tablosu:</p>
             </div>
-            <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi" class="table-scroll-region custom-scrollbar">
+            <div tabindex="0" role="region" aria-label="Koşu nabız ve güç zonları" class="table-scroll-region flex-1 min-h-0">
               <table class="w-full text-left text-xs">
                 <thead>
                   <tr>
-                    <th class="py-3 px-3">Değişken Çifti</th>
-                    <th class="py-3 px-3">Pearson r</th>
-                    <th class="py-3 px-3">t-Değeri</th>
-                    <th class="py-3 px-3">Anlamlılık (p)</th>
-                    <th class="py-3 px-3">Pratik Sporcu İçgörüsü</th>
+                    <th class="py-2 px-2.5">Bölge</th>
+                    <th class="py-2 px-2.5">Mevcut (RHR=65)</th>
+                    <th class="py-2 px-2.5">Önerilen LTHR (179)</th>
+                    <th class="py-2 px-2.5">Karvonen %HRR</th>
+                    <th class="py-2 px-2.5">Koşu Gücü (FTP)</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
+                <tbody class="divide-y divide-[var(--border-subtle)]" id="zonesTableBody"></tbody>
               </table>
             </div>
           </section>

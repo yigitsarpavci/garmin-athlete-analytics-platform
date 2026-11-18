@@ -70,11 +70,11 @@ function render93dBiometrics(rows) {
   if (!tbody || !Array.isArray(rows) || !rows.length) return;
   tbody.innerHTML = rows.map(r => `
     <tr class="hover:bg-[var(--bg-subtle)] transition">
-      <td class="py-2.5 px-4 font-medium">${escapeHtml(r.metric)}</td>
-      <td class="py-2.5 px-4 font-mono font-semibold accent-text">${escapeHtml(r.avg_median)}</td>
-      <td class="py-2.5 px-4 font-mono">${escapeHtml(r.min_max)}</td>
-      <td class="py-2.5 px-4 font-mono">${escapeHtml(r.ideal_ref)}</td>
-      <td class="py-2.5 px-4 text-[var(--text-secondary)]">${escapeHtml(r.status)}</td>
+      <td class="py-1.5 px-3 font-medium">${escapeHtml(r.metric)}</td>
+      <td class="py-1.5 px-3 font-mono font-semibold accent-text">${escapeHtml(r.avg_median)}</td>
+      <td class="py-1.5 px-3 font-mono">${escapeHtml(r.min_max)}</td>
+      <td class="py-1.5 px-3 font-mono">${escapeHtml(r.ideal_ref)}</td>
+      <td class="py-1.5 px-3 text-[var(--text-secondary)]">${escapeHtml(r.status)}</td>
     </tr>
   `).join('');
 }
@@ -87,11 +87,11 @@ function renderCorrelations(corrs) {
     const tr = document.createElement('tr');
     tr.className = "hover:bg-[var(--bg-subtle)] transition";
     tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold">${escapeHtml(c.pair)}</td>
-      <td class="py-3 px-4 font-mono font-semibold ${c.r < 0 ? 'crimson-text' : 'accent-text'}">${Number(c.r).toFixed(3)}</td>
-      <td class="py-3 px-4 font-mono text-[var(--text-secondary)]">${Number(c.t).toFixed(2)}</td>
-      <td class="py-3 px-4 font-mono font-medium text-[var(--text-secondary)]">${escapeHtml(c.p)}</td>
-      <td class="py-3 px-4 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
+      <td class="py-1.5 px-3 font-semibold">${escapeHtml(c.pair)}</td>
+      <td class="py-1.5 px-3 font-mono font-semibold ${c.r < 0 ? 'crimson-text' : 'accent-text'}">${Number(c.r).toFixed(3)}</td>
+      <td class="py-1.5 px-3 font-mono text-[var(--text-secondary)]">${Number(c.t).toFixed(2)}</td>
+      <td class="py-1.5 px-3 font-mono font-medium text-[var(--text-secondary)]">${escapeHtml(c.p)}</td>
+      <td class="py-1.5 px-3 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
     `;
     cBody.appendChild(tr);
   });
@@ -213,21 +213,21 @@ function renderSettingsAndZones(setData) {
       const lthrBpm = String(z.rec_lthr || '').split('(')[0].trim();
       const pwrRng = String(z.rec_pwr || '').split('(')[0].trim();
       return `
-        <div class="tint-panel p-3.5 space-y-2">
+        <div class="tint-panel p-2.5 space-y-1">
           <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
             <div class="flex items-center gap-2 min-w-0">
               <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] text-[var(--bg-surface)] shrink-0" style="background-color: ${barCol};">${escapeHtml(z.zone_short || '')}</span>
               <span class="font-semibold truncate">${escapeHtml(z.zone)}</span>
             </div>
-            <div class="font-mono text-[11px] shrink-0">
+            <div class="font-mono text-[10.5px] shrink-0">
               <span class="accent-text font-semibold">${escapeHtml(lthrBpm)}</span>
               <span class="text-[var(--text-muted)]"> · ${escapeHtml(pwrRng)}</span>
             </div>
           </div>
-          <div class="w-full h-2.5 bg-[var(--bg-surface-elevated)] rounded-[2px] overflow-hidden">
+          <div class="w-full h-2 bg-[var(--bg-surface-elevated)] rounded-[2px] overflow-hidden">
             <div class="h-full transition-all duration-500 rounded-[2px]" style="width: ${wPct}%; background-color: ${barCol};"></div>
           </div>
-          <div class="flex items-center justify-between font-mono text-[10.5px] text-[var(--text-secondary)]">
+          <div class="flex items-center justify-between font-mono text-[10px] text-[var(--text-secondary)]">
             <span>Koşu: <strong class="text-[var(--text-primary)]">%${rPct.toFixed(1)}</strong> (${z.run_minutes} dk)</span>
             <span>Tüm Branşlar: %${aPct.toFixed(1)} (${z.all_minutes} dk)</span>
           </div>
@@ -235,7 +235,7 @@ function renderSettingsAndZones(setData) {
       `;
     }).join('');
 
-    zChart.innerHTML = `${stackBarHtml}<div class="space-y-2.5">${rowsHtml}</div>`;
+    zChart.innerHTML = `${stackBarHtml}<div class="space-y-1.5">${rowsHtml}</div>`;
   }
 
   const zBody = document.getElementById('zonesTableBody');
@@ -245,11 +245,11 @@ function renderSettingsAndZones(setData) {
       const tr = document.createElement('tr');
       tr.className = "hover:bg-[var(--bg-subtle)] transition";
       tr.innerHTML = `
-        <td class="py-3 px-3 font-semibold">${escapeHtml(z.zone)}</td>
-        <td class="py-3 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(z.current_hr)}</td>
-        <td class="py-3 px-3 font-mono font-semibold accent-text">${escapeHtml(z.rec_lthr)}</td>
-        <td class="py-3 px-3 font-mono font-medium moss-text">${escapeHtml(z.rec_hrr)}</td>
-        <td class="py-3 px-3 font-mono font-semibold">${escapeHtml(z.rec_pwr)}</td>
+        <td class="py-2 px-2.5 font-semibold">${escapeHtml(z.zone)}</td>
+        <td class="py-2 px-2.5 font-mono text-[var(--text-secondary)]">${escapeHtml(z.current_hr)}</td>
+        <td class="py-2 px-2.5 font-mono font-semibold accent-text">${escapeHtml(z.rec_lthr)}</td>
+        <td class="py-2 px-2.5 font-mono font-medium moss-text">${escapeHtml(z.rec_hrr)}</td>
+        <td class="py-2 px-2.5 font-mono font-semibold">${escapeHtml(z.rec_pwr)}</td>
       `;
       zBody.appendChild(tr);
     });
@@ -355,13 +355,13 @@ function renderHealthScreening(data) {
   const pGrid = document.getElementById('healthPillarsGrid');
   if (pGrid && Array.isArray(data.pillars)) {
     pGrid.innerHTML = data.pillars.map((p, idx) => `
-      <div class="tint-panel p-4 space-y-2 ${idx === 0 ? 'lg:col-span-2 border-l-[3px] border-l-[var(--accent)]' : ''}">
+      <div class="tint-panel p-3 space-y-1 ${idx === 0 ? 'lg:col-span-2 border-l-[3px] border-l-[var(--accent)]' : ''}">
         <div class="flex items-center justify-between gap-2">
           <h5 class="text-xs font-semibold">${escapeHtml(p.name)}</h5>
           <span class="stamp-tag stamp-moss shrink-0">${escapeHtml(p.badge)}</span>
         </div>
-        <p class="font-mono text-xs font-semibold accent-text">${escapeHtml(p.value)}</p>
-        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(p.clinical_notes)}</p>
+        <p class="font-mono text-[11px] font-semibold accent-text">${escapeHtml(p.value)}</p>
+        <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(p.clinical_notes)}</p>
       </div>
     `).join('');
   }

@@ -387,63 +387,63 @@ function _renderBranchSummaryInto(containerId, sp, iconName) {
     : '';
 
   const tipsHtml = (sp.how_to_improve || []).length
-    ? `<div class="text-xs text-[var(--text-secondary)] space-y-1.5 tint-panel p-4 leading-relaxed">
-        <p class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-1">Öneriler</p>
-        ${(sp.how_to_improve || []).map(item => `<p class="flex items-start gap-2"><span class="accent-text mt-0.5">·</span><span>${escapeHtml(item)}</span></p>`).join('')}
+    ? `<div class="text-[11px] text-[var(--text-secondary)] space-y-1 tint-panel p-2.5 leading-snug">
+        <p class="font-mono text-[9.5px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-0.5">Öneriler</p>
+        ${(sp.how_to_improve || []).map(item => `<p class="flex items-start gap-1.5"><span class="accent-text">·</span><span>${escapeHtml(item)}</span></p>`).join('')}
       </div>`
     : '';
 
   const lastHtml = sp.last_workout
-    ? `<div class="text-xs tint-moss-panel p-3.5 space-y-1.5">
+    ? `<div class="text-[11px] tint-moss-panel p-2.5 space-y-1">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <span class="font-semibold">${escapeHtml(sp.last_workout.date || '')}</span>
           <span class="stamp-tag stamp-moss">${escapeHtml(sp.last_workout.title || '')}</span>
         </div>
-        <p class="text-[11px] moss-text leading-relaxed">${sp.last_workout.exercises ? sp.last_workout.exercises.map(escapeHtml).join(' · ') : ''}</p>
+        <p class="text-[11px] moss-text leading-snug">${sp.last_workout.exercises ? sp.last_workout.exercises.map(escapeHtml).join(' · ') : ''}</p>
       </div>`
     : '';
 
   const upcomingList = Array.isArray(sp.upcoming_sessions) && sp.upcoming_sessions.length
     ? sp.upcoming_sessions.map(sess => `
-        <div class="tint-panel p-3 text-xs space-y-1">
+        <div class="tint-panel p-2.5 text-[11px] space-y-0.5">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <span class="font-semibold">${escapeHtml(sess.day || '')}</span>
             <span class="stamp-tag stamp-accent">${escapeHtml(sess.type || 'Seans')}</span>
           </div>
-          <p class="font-medium text-[12px]">${escapeHtml(sess.title || '')} <span class="font-mono text-[11px] text-[var(--text-muted)]">(${escapeHtml(sess.duration || '')})</span></p>
-          ${(sess.target_hr || sess.target_pace) ? `<p class="font-mono text-[10.5px] accent-text">${[sess.target_hr, sess.target_pace].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(sess.details || '')}</p>
+          <p class="font-medium text-xs">${escapeHtml(sess.title || '')} <span class="font-mono text-[10.5px] text-[var(--text-muted)]">(${escapeHtml(sess.duration || '')})</span></p>
+          ${(sess.target_hr || sess.target_pace) ? `<p class="font-mono text-[10px] accent-text">${[sess.target_hr, sess.target_pace].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
+          <p class="text-[10.5px] text-[var(--text-secondary)] leading-snug">${escapeHtml(sess.details || '')}</p>
         </div>
       `).join('')
     : (sp.next_workout ? `
-        <div class="text-xs tint-panel p-3">
+        <div class="text-[11px] tint-panel p-2.5">
           <p class="font-semibold">${escapeHtml(sp.next_workout.day)}: ${escapeHtml(sp.next_workout.title)} <span class="font-mono text-[var(--text-muted)]">(${escapeHtml(sp.next_workout.duration || '')})</span></p>
-          <p class="text-[11px] text-[var(--text-secondary)] mt-1">${escapeHtml(sp.next_workout.details || (sp.next_workout.exercises ? sp.next_workout.exercises.join(', ') : ''))}</p>
+          <p class="text-[10.5px] text-[var(--text-secondary)] mt-0.5">${escapeHtml(sp.next_workout.details || (sp.next_workout.exercises ? sp.next_workout.exercises.join(', ') : ''))}</p>
         </div>
       ` : '');
 
   container.innerHTML = `
-    <div class="space-y-3.5 min-w-0">
-      <div class="space-y-1.5">
+    <div class="space-y-2.5 min-w-0 flex flex-col justify-between">
+      <div class="space-y-1">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2.5">
-            <div class="icon-box w-8 h-8 shrink-0">${lucideSvg(iconName, 'w-4 h-4')}</div>
-            <h4 class="font-editorial text-lg font-medium tracking-tight leading-snug">${escapeHtml(sp.name || '')}</h4>
+          <div class="flex items-center gap-2">
+            <div class="icon-box w-7 h-7 shrink-0">${lucideSvg(iconName, 'w-3.5 h-3.5')}</div>
+            <h4 class="font-editorial text-base font-medium tracking-tight leading-snug">${escapeHtml(sp.name || '')}</h4>
           </div>
           <span class="stamp-tag stamp-accent">${escapeHtml(sp.schedule_status || 'Aktif')}</span>
         </div>
-        <p class="font-mono text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(sp.stats_summary || '')}</p>
+        <p class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug">${escapeHtml(sp.stats_summary || '')}</p>
       </div>
       ${extraGridHtml}
       ${tipsHtml}
       ${lastHtml}
     </div>
-    <div class="space-y-2.5 min-w-0 lg:border-l lg:border-[var(--border-subtle)] lg:pl-4">
+    <div class="space-y-2 min-w-0 lg:border-l lg:border-[var(--border-subtle)] lg:pl-4">
       <p class="font-mono text-[10px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
         ${lucideSvg('calendar', 'w-3.5 h-3.5 accent-text')}
         <span>Bu Hafta Kalan / Sıradaki Seçenekler</span>
       </p>
-      <div class="space-y-2.5">${upcomingList}</div>
+      <div class="space-y-2">${upcomingList}</div>
     </div>
   `;
 }
@@ -504,17 +504,17 @@ function renderGymHistory(gym) {
     gym.sessions.forEach(sess => {
       const tr = document.createElement('tr');
       tr.className = "hover:bg-[var(--bg-subtle)] transition";
-      const exSummary = (sess.exercises || []).map(ex => {
+      const exSummary = `<div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">` + (sess.exercises || []).map(ex => {
         const setStr = (ex.sets || []).map(s => `${s.reps}x${s.weight_kg}kg`).join(', ');
-        return `<div class="mb-1"><strong class="font-semibold">${escapeHtml(ex.name)}</strong> <span class="font-mono text-[var(--text-muted)] text-[10px]">(${(ex.sets || []).length} set)</span>: <span class="font-mono accent-text font-medium">${escapeHtml(setStr)}</span></div>`;
-      }).join('');
+        return `<span><strong class="font-semibold">${escapeHtml(ex.name)}</strong>: <span class="font-mono accent-text">${escapeHtml(setStr)}</span></span>`;
+      }).join('') + `</div>`;
 
       tr.innerHTML = `
-<td class="py-3 px-4 font-mono font-medium whitespace-nowrap">${escapeHtml(sess.date)} <span class="text-[var(--text-muted)] text-[11px]">${escapeHtml(sess.time || '')}</span></td>
-<td class="py-3 px-4 font-semibold ${sess.workout_type === 'Workout A' ? 'accent-text' : ''}">${escapeHtml(sess.workout_type)}</td>
-<td class="py-3 px-4 font-mono text-[var(--text-secondary)] whitespace-nowrap">${sess.duration_min} dk · ${sess.calories} kcal</td>
-<td class="py-3 px-4 font-mono font-semibold whitespace-nowrap">${(sess.total_volume_kg / 1000.0).toFixed(2)} Ton</td>
-<td class="py-3 px-4 text-xs">${exSummary}</td>
+<td class="py-2 px-3 font-mono font-medium whitespace-nowrap">${escapeHtml(sess.date)} <span class="text-[var(--text-muted)] text-[10px]">${escapeHtml(sess.time || '')}</span></td>
+<td class="py-2 px-3 font-semibold whitespace-nowrap ${sess.workout_type === 'Workout A' ? 'accent-text' : ''}">${escapeHtml(sess.workout_type)}</td>
+<td class="py-2 px-3 font-mono text-[var(--text-secondary)] whitespace-nowrap">${sess.duration_min} dk · ${sess.calories} kcal</td>
+<td class="py-2 px-3 font-mono font-semibold whitespace-nowrap">${(sess.total_volume_kg / 1000.0).toFixed(2)} Ton</td>
+<td class="py-2 px-3">${exSummary}</td>
       `;
       tableBody.appendChild(tr);
     });
@@ -743,7 +743,7 @@ function searchActivities(term) {
     return searchable.includes(q);
   });
 
-  renderActivities(filtered, false);
+  renderActivities(filtered, false, true);
 }
 
 function filterActivities(sport) {
@@ -754,39 +754,66 @@ function filterActivities(sport) {
   searchActivities(term);
 }
 
-function renderActivities(acts, rebuildFilters = true) {
+const ACT_PAGE_SIZE = 7;
+let currentActivityPage = 1;
+let lastRenderedActivities = [];
+
+function changeActivityPage(delta) {
+  const totalPages = Math.max(1, Math.ceil((lastRenderedActivities || []).length / ACT_PAGE_SIZE));
+  currentActivityPage = Math.max(1, Math.min(totalPages, currentActivityPage + delta));
+  renderActivities(lastRenderedActivities, false, false);
+}
+
+function renderActivities(acts, rebuildFilters = true, resetPage = true) {
   if (rebuildFilters && Array.isArray(acts)) {
     renderActivityFilters(acts);
   }
-  updateActivityStatsSummary(acts);
+  const fullList = Array.isArray(acts) ? acts : [];
+  lastRenderedActivities = fullList;
+  if (resetPage) currentActivityPage = 1;
+
+  updateActivityStatsSummary(fullList);
   if (currentSportFilter === 'all' && (!document.getElementById('actSearchInput') || !document.getElementById('actSearchInput').value.trim())) {
     const titleEl = document.getElementById('activitiesSectionTitle');
-    if (titleEl && acts) titleEl.textContent = `Aktivite Telemetri Günlüğü (${acts.length} Seans)`;
+    if (titleEl && fullList) titleEl.textContent = `Aktivite Telemetri Günlüğü (${fullList.length} Seans)`;
   }
+
+  const totalPages = Math.max(1, Math.ceil(fullList.length / ACT_PAGE_SIZE));
+  currentActivityPage = Math.max(1, Math.min(totalPages, currentActivityPage));
+  const startIdx = (currentActivityPage - 1) * ACT_PAGE_SIZE;
+  const pageItems = fullList.slice(startIdx, startIdx + ACT_PAGE_SIZE);
+
+  const pageInfo = document.getElementById('activitiesPageInfo');
+  const prevBtn = document.getElementById('actPrevBtn');
+  const nextBtn = document.getElementById('actNextBtn');
+  if (pageInfo) pageInfo.textContent = `Sayfa ${currentActivityPage} / ${totalPages} (${fullList.length} seans)`;
+  if (prevBtn) prevBtn.disabled = currentActivityPage <= 1;
+  if (nextBtn) nextBtn.disabled = currentActivityPage >= totalPages;
+
   const aBody = document.getElementById('activitiesTableBody');
   if (!aBody) return;
   aBody.innerHTML = '';
-  (acts || []).forEach((a, idx) => {
+  pageItems.forEach((a) => {
     const tr = document.createElement('tr');
-    tr.className = "hover:bg-[var(--bg-subtle)] transition cursor-pointer group text-[12px]";
+    tr.className = "hover:bg-[var(--bg-subtle)] transition cursor-pointer group text-[11.5px]";
     tr.title = "Aktivite detaylarını ve sensör telemetrisini açmak için tıklayın";
     tr.onclick = () => openActivityModal(a);
-    const teDisplay = a.aTE ? `<span class="font-mono text-[11px] font-semibold moss-text">A:${Number(a.aTE).toFixed(1)}</span> / <span class="font-mono text-[11px] font-semibold crimson-text">An:${Number(a.anTE || 0).toFixed(1)}</span>` : '--';
+    const teDisplay = a.aTE ? `<span class="font-mono text-[10.5px] font-semibold moss-text">A:${Number(a.aTE).toFixed(1)}</span>/<span class="font-mono text-[10.5px] font-semibold crimson-text">An:${Number(a.anTE || 0).toFixed(1)}</span>` : '--';
     const durStr = a.dur_m !== null && a.dur_m !== undefined ? `${Number(a.dur_m).toFixed(0)} dk` : '--';
-    const hrStr = `${a.avg_hr ?? '--'} / ${a.max_hr ?? '--'}`;
+    const hrStr = `${a.avg_hr ?? '--'}/${a.max_hr ?? '--'}`;
     tr.innerHTML = `
-      <td class="py-2.5 px-3 font-mono font-medium whitespace-nowrap">${escapeHtml(a.date)} <span class="text-[var(--text-muted)]">${escapeHtml(a.time || '')}</span></td>
-      <td class="py-2.5 px-3 whitespace-nowrap"><span class="stamp-tag">${escapeHtml(getDynamicSportLabel(a.sport, a.sport_tr))}</span></td>
-      <td class="py-2.5 px-3 font-medium group-hover:text-[var(--accent)] transition">${escapeHtml(a.name || '--')}</td>
-      <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${durStr}</td>
-      <td class="py-2.5 px-3 font-mono font-semibold accent-text tabular-nums whitespace-nowrap">${a.dist_km > 0 ? Number(a.dist_km).toFixed(2) + ' km' : '--'}</td>
-      <td class="py-2.5 px-3 font-mono font-semibold tabular-nums whitespace-nowrap">${escapeHtml(a.pace_str || '--')}</td>
-      <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${hrStr}</td>
-      <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.norm_pwr ? a.norm_pwr + ' W' : '--'}</td>
-      <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cadence ? Number(a.cadence).toFixed(0) : '--'}</td>
-      <td class="py-2.5 px-3 font-mono font-semibold tabular-nums whitespace-nowrap">${a.load ? Number(a.load).toFixed(1) : '0'}</td>
-      <td class="py-2.5 px-3 whitespace-nowrap">${teDisplay}</td>
-      <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cal ?? 0} kcal${a.water_ml ? ' (' + (a.water_ml / 1000).toFixed(1) + 'L)' : ''}</td>
+      <td class="py-1.5 px-2.5 font-mono font-medium whitespace-nowrap">${escapeHtml(a.date)} <span class="text-[var(--text-muted)]">${escapeHtml(a.time || '')}</span></td>
+      <td class="py-1.5 px-2.5 whitespace-nowrap"><span class="stamp-tag">${escapeHtml(getDynamicSportLabel(a.sport, a.sport_tr))}</span></td>
+      <td class="py-1.5 px-2.5 font-medium group-hover:text-[var(--accent)] transition max-w-[180px] truncate">${escapeHtml(a.name || '--')}</td>
+      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${durStr}</td>
+      <td class="py-1.5 px-2.5 font-mono font-semibold accent-text tabular-nums whitespace-nowrap">${a.dist_km > 0 ? Number(a.dist_km).toFixed(2) + ' km' : '--'}</td>
+      <td class="py-1.5 px-2.5 font-mono font-semibold tabular-nums whitespace-nowrap">${escapeHtml(a.pace_str || '--')}</td>
+      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${hrStr}</td>
+      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.norm_pwr ? a.norm_pwr + ' W' : '--'}</td>
+      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cadence ? Number(a.cadence).toFixed(0) : '--'}</td>
+      <td class="py-1.5 px-2.5 font-mono font-semibold tabular-nums whitespace-nowrap">${a.load ? Number(a.load).toFixed(1) : '0'}</td>
+      <td class="py-1.5 px-2.5 whitespace-nowrap">${teDisplay}</td>
+      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cal ?? 0} kcal</td>
     `;
     aBody.appendChild(tr);
   });

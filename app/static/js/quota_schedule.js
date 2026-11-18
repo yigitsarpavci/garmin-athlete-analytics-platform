@@ -64,12 +64,8 @@ function resolveProtocolIndex(slotKind, dayCode, fallbackText = '', fallbackIdx 
 function openQuotaItemRecipe(slotKind, dayCode) {
   if (typeof setTab === 'function') setTab('plan');
   if (typeof setSubTab === 'function') setSubTab('plan', 'protocols');
-  const targetIdx = resolveProtocolIndex(slotKind, dayCode, '', 'upcoming');
+  const targetIdx = resolveProtocolIndex(slotKind, dayCode, '', 0);
   if (typeof selectProtocolDay === 'function') selectProtocolDay(targetIdx);
-  const targetSec = document.getElementById('dailyProtocolsSection');
-  if (targetSec) {
-    targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
 }
 
 function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
@@ -102,33 +98,33 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
             const prioBadge = item.prioritized_from_last_week
               ? `<span class="stamp-tag stamp-ochre">GEÇEN HAFTADAN ÖNCELİKLİ</span>`
               : '';
-            return `<button type="button" onclick="openQuotaItemRecipe('${slotKind}', '${dayCode}')" class="w-full text-left tint-panel px-2.5 py-2 hover:border-[var(--border-hover)] transition flex items-center justify-between gap-2 group">
+            return `<button type="button" onclick="openQuotaItemRecipe('${slotKind}', '${dayCode}')" class="w-full text-left tint-panel px-2 py-1.5 hover:border-[var(--border-hover)] transition flex items-center justify-between gap-2 group">
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="stamp-tag stamp-accent">${escapeHtml(item.short_label || item.badge || item.type || 'Kalan')}</span>
                   ${prioBadge}
                   ${meta ? `<span class="font-mono text-[10px] text-[var(--text-secondary)]">${escapeHtml(meta)}</span>` : ''}
                 </div>
-                ${detail ? `<p class="text-[11px] text-[var(--text-secondary)] mt-1 leading-snug break-words">${escapeHtml(detail)}</p>` : ''}
+                ${detail ? `<p class="text-[10.5px] text-[var(--text-secondary)] mt-0.5 leading-tight truncate">${escapeHtml(detail)}</p>` : ''}
               </div>
               ${lucideSvg('arrow-right', 'w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] shrink-0 transition')}
             </button>`;
           }).join('')}
         </div>
       </div>`
-    : `<p class="text-[11px] ${isDone ? 'moss-text font-medium' : 'text-[var(--text-secondary)]'} pt-1">
+    : `<p class="text-[11px] ${isDone ? 'moss-text font-medium' : 'text-[var(--text-secondary)]'} pt-0.5">
         ${isDone ? '✓ Bu haftanın kotası tamamlandı.' : escapeHtml(bucket.status_text || 'Kota tanımlanmadı.')}
       </p>`;
 
   return `
-    <div class="tint-panel p-4 space-y-2.5 flex flex-col justify-between min-w-0">
-      <div class="space-y-2">
-        <div class="flex items-center justify-between gap-2 flex-wrap">
+    <div class="tint-panel p-2.5 space-y-1.5 flex flex-col justify-between min-w-0">
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between gap-1.5 flex-wrap">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
             ${lucideSvg(iconName, 'w-3.5 h-3.5 accent-text shrink-0')}
             <span>${escapeHtml(label)}</span>
           </span>
-          <span class="stamp-tag ${isDone ? 'stamp-moss' : 'stamp-accent'} tabular-nums">${completed} / ${target} Tamamlandı</span>
+          <span class="stamp-tag ${isDone ? 'stamp-moss' : 'stamp-accent'} tabular-nums">${completed} / ${target}</span>
         </div>
         <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5 overflow-hidden rounded-[1px]">
           <div class="${isDone ? 'bg-[var(--moss)]' : barColorClass} h-1.5 transition-all duration-500" style="width: ${pct}%"></div>
@@ -175,8 +171,8 @@ function buildSpontaneousCard(spont) {
   }
 
   return `
-    <div class="tint-panel p-4 space-y-2.5 flex flex-col justify-between min-w-0">
-      <div class="space-y-2">
+    <div class="tint-panel p-2.5 space-y-1.5 flex flex-col justify-between min-w-0">
+      <div class="space-y-1.5">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
             ${lucideSvg('compass', 'w-3.5 h-3.5 moss-text shrink-0')}
@@ -186,7 +182,7 @@ function buildSpontaneousCard(spont) {
         </div>
         ${bodyHtml}
       </div>
-      <p class="font-mono text-[10px] text-[var(--text-muted)] pt-2 border-t border-[var(--border-subtle)]">Yelken, Basketbol, Kayak veya diğer saat branşları sabit kota kaplamaz; otomatik işlenir.</p>
+      <p class="font-mono text-[10px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-subtle)] leading-tight">Yelken, Basketbol, Kayak vb. sabit kota kaplamaz.</p>
     </div>
   `;
 }
@@ -204,30 +200,34 @@ function buildQuotaLedgerHtml(quota) {
 
   const deviationHtml = deviations.length
     ? deviations.map(d => `
-      <div class="tint-ochre-panel px-3 py-2 text-[11px] flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-start gap-2 min-w-0">
-          ${lucideSvg('alert-triangle', 'w-3.5 h-3.5 shrink-0 ochre-text mt-0.5')}
-          <span class="ochre-text font-medium leading-snug">${escapeHtml(d.note || '')}</span>
+      <div class="tint-ochre-panel px-2 py-1 text-[10.5px] flex items-center justify-between gap-2 min-w-0">
+        <div class="flex items-center gap-1.5 min-w-0">
+          ${lucideSvg('alert-triangle', 'w-3 h-3 shrink-0 ochre-text')}
+          <span class="ochre-text font-medium leading-tight line-clamp-2">${escapeHtml(d.note || '')}</span>
         </div>
-        <span class="stamp-tag stamp-ochre shrink-0">${escapeHtml(d.badge || 'Plan Güncellendi')}</span>
+        <span class="stamp-tag stamp-ochre shrink-0">${escapeHtml(d.badge || 'Güncellendi')}</span>
       </div>
     `).join('')
     : '';
 
   const adaptHtml = adapt && adapt.adaptation_note
-    ? `<div class="${hasMissedCarry ? 'tint-ochre-panel' : 'tint-moss-panel'} px-3 py-2 text-[11px] flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-2 min-w-0">
-          ${lucideSvg(hasMissedCarry ? 'refresh-cw' : 'check', `w-3.5 h-3.5 shrink-0 ${hasMissedCarry ? 'ochre-text' : 'moss-text'}`)}
-          <span class="${hasMissedCarry ? 'ochre-text font-medium' : 'moss-text'} leading-snug">${escapeHtml(adapt.adaptation_note)}</span>
+    ? `<div class="${hasMissedCarry ? 'tint-ochre-panel' : 'tint-moss-panel'} px-2 py-1 text-[10.5px] flex items-center justify-between gap-2 min-w-0">
+        <div class="flex items-center gap-1.5 min-w-0">
+          ${lucideSvg(hasMissedCarry ? 'refresh-cw' : 'check', `w-3 h-3 shrink-0 ${hasMissedCarry ? 'ochre-text' : 'moss-text'}`)}
+          <span class="${hasMissedCarry ? 'ochre-text font-medium' : 'moss-text'} leading-tight line-clamp-2">${escapeHtml(adapt.adaptation_note)}</span>
         </div>
-        ${adapt.monday_reset_enforced ? '<span class="font-mono text-[10px] text-[var(--text-secondary)] shrink-0">Pzt 0/2 Temiz Açılış</span>' : ''}
+        ${adapt.monday_reset_enforced ? '<span class="font-mono text-[9.5px] text-[var(--text-secondary)] shrink-0">Pzt 0/2</span>' : ''}
       </div>`
     : '';
 
+  const bannerRowHtml = (deviationHtml || adaptHtml)
+    ? `<div class="grid grid-cols-1 lg:grid-cols-2 gap-1.5">${deviationHtml}${adaptHtml}</div>`
+    : '';
+
   return `
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-3 border-b border-[var(--border-subtle)]">
-      <div class="space-y-1 min-w-0">
-        <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-1.5 border-b border-[var(--border-subtle)]">
+      <div class="space-y-0.5 min-w-0">
+        <div class="flex flex-wrap items-center gap-1.5">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)] flex items-center gap-1.5">
             ${lucideSvg('check-square', 'w-3.5 h-3.5 accent-text shrink-0')}
             <span>Haftalık Kota &amp; Kalan Seanslar</span>
@@ -235,18 +235,17 @@ function buildQuotaLedgerHtml(quota) {
           <span class="stamp-tag">${escapeHtml(weekRange)}</span>
           ${quota.is_custom && quota.athlete_name ? `<span class="stamp-tag stamp-accent">${escapeHtml(quota.athlete_name)}</span>` : ''}
         </div>
-        <h3 class="font-editorial text-base sm:text-lg font-medium leading-snug text-[var(--text-primary)]">${escapeHtml(quota.headline || '')}</h3>
+        <h3 class="font-editorial text-sm sm:text-base font-medium leading-tight text-[var(--text-primary)]">${escapeHtml(quota.headline || '')}</h3>
       </div>
       <div class="flex items-center gap-2 shrink-0 self-start sm:self-center">
         <span class="stamp-tag ${totalBadgeCls} tabular-nums">${total.completed} / ${total.target} Tamamlandı</span>
       </div>
     </div>
 
-    ${deviationHtml}
-    ${adaptHtml}
-    ${quota.flexibility_note ? `<p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(quota.flexibility_note)}</p>` : ''}
+    ${bannerRowHtml}
+    ${quota.flexibility_note ? `<p class="text-[10.5px] text-[var(--text-secondary)] truncate" title="${escapeHtml(quota.flexibility_note)}">${escapeHtml(quota.flexibility_note)}</p>` : ''}
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
       ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[var(--accent)]')}
       ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
       ${buildSpontaneousCard(spont)}
@@ -280,10 +279,6 @@ function renderWeeklyScheduleTable(scheduleList) {
       if (typeof setSubTab === 'function') setSubTab('plan', 'protocols');
       const targetIdx = resolveProtocolIndex(s.slot_kind, s.protocol_day_code, `${s.primary || ''} ${s.day || ''}`, idx);
       if (typeof selectProtocolDay === 'function') selectProtocolDay(targetIdx);
-      const targetSec = document.getElementById('dailyProtocolsSection');
-      if (targetSec) {
-        targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
     };
     const isDone = Boolean(s.is_completed) || (s.secondary || '').includes('TAMAMLANDI');
     const slotKind = s.slot_kind || '';
@@ -301,20 +296,20 @@ function renderWeeklyScheduleTable(scheduleList) {
         : '<span class="stamp-tag">REJENERASYON</span>');
 
     tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold group-hover:text-[var(--accent)] transition">
-        <div class="flex items-center justify-between gap-2">
-          <div class="space-y-1 min-w-0">
-            <span class="block">${escapeHtml(s.day)}</span>
+      <td class="py-1 px-2 text-[11px] leading-tight font-semibold group-hover:text-[var(--accent)] transition whitespace-nowrap">
+        <div class="flex items-center justify-between gap-1.5">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span>${escapeHtml(s.day)}</span>
             ${slotBadge}
           </div>
-          ${lucideSvg('arrow-right', 'w-3.5 h-3.5 accent-text opacity-0 group-hover:opacity-100 transition shrink-0')}
+          ${lucideSvg('arrow-right', 'w-3 h-3 accent-text opacity-0 group-hover:opacity-100 transition shrink-0')}
         </div>
       </td>
-      <td class="py-3 px-4 font-medium">${escapeHtml(s.primary)}</td>
-      <td class="py-3 px-4 ${isDone ? 'font-mono moss-text font-semibold' : 'text-[var(--text-secondary)]'}">${escapeHtml(s.secondary)}</td>
-      <td class="py-3 px-4 font-mono text-[11px] font-medium accent-text whitespace-nowrap">${escapeHtml(s.target)}</td>
-      <td class="py-3 px-4 font-mono text-[11px] text-[var(--text-secondary)] whitespace-nowrap">${escapeHtml(s.calories)}</td>
-      <td class="py-3 px-4 font-mono text-[11px] text-[var(--text-secondary)]">${escapeHtml(s.macro)}</td>
+      <td class="py-1 px-2 text-[11px] leading-tight font-medium whitespace-nowrap">${escapeHtml(s.primary)}</td>
+      <td class="py-1 px-2 text-[11px] leading-tight ${isDone ? 'font-mono moss-text font-semibold' : 'text-[var(--text-secondary)]'}"><div class="line-clamp-1" title="${escapeHtml(s.secondary)}">${escapeHtml(s.secondary)}</div></td>
+      <td class="py-1 px-2 font-mono text-[10.5px] leading-tight font-medium accent-text whitespace-nowrap">${escapeHtml(s.target)}</td>
+      <td class="py-1 px-2 font-mono text-[10.5px] leading-tight text-[var(--text-secondary)] whitespace-nowrap">${escapeHtml(s.calories)}</td>
+      <td class="py-1 px-2 font-mono text-[10.5px] leading-tight text-[var(--text-secondary)]"><div class="line-clamp-1" title="${escapeHtml(s.macro)}">${escapeHtml(s.macro)}</div></td>
     `;
     sBody.appendChild(tr);
   });
@@ -322,7 +317,7 @@ function renderWeeklyScheduleTable(scheduleList) {
 }
 
 let cachedDailyProtocols = [];
-let selectedProtocolMode = 'upcoming';
+let selectedProtocolMode = 0;
 
 function selectProtocolDay(mode) {
   selectedProtocolMode = mode;
@@ -352,79 +347,62 @@ function getQuotaStatusStamp(quotaStatus) {
 function renderDailyProtocols(protocols) {
   const container = document.getElementById('dailyProtocolsContainer');
   const tabsEl = document.getElementById('protocolDayTabs');
-  if (!container || !protocols || !Array.isArray(protocols)) return;
+  if (!container || !protocols || !Array.isArray(protocols) || !protocols.length) return;
   cachedDailyProtocols = protocols;
 
-  const remainingProtocols = protocols.filter(p => p.quota_status === 'remaining');
+  let activeIdx = typeof selectedProtocolMode === 'number' && protocols[selectedProtocolMode]
+    ? selectedProtocolMode
+    : protocols.findIndex(p => p.quota_status === 'remaining');
+  if (activeIdx < 0 || activeIdx >= protocols.length) activeIdx = 0;
+  selectedProtocolMode = activeIdx;
 
   if (tabsEl) {
-    const activeCls = 'btn-primary text-xs px-3 py-1.5';
-    const idleCls = 'btn-secondary text-xs px-3 py-1.5';
-    tabsEl.innerHTML = `
-      <button type="button" onclick="selectProtocolDay('upcoming')" class="${selectedProtocolMode === 'upcoming' ? activeCls : idleCls}">Kalanlar (${remainingProtocols.length})</button>
-      ${protocols.map((p, idx) => `<button type="button" onclick="selectProtocolDay(${idx})" class="${selectedProtocolMode === idx ? activeCls : idleCls}">${escapeHtml(getProtocolTabLabel(p))}</button>`).join('')}
-      <button type="button" onclick="selectProtocolDay('all')" class="${selectedProtocolMode === 'all' ? activeCls : idleCls}">Tümü (${protocols.length})</button>
-    `;
+    const activeCls = 'subtab-btn subtab-btn-active';
+    const idleCls = 'subtab-btn';
+    tabsEl.innerHTML = `<div class="subtab-bar">${protocols.map((p, idx) => {
+      const remDot = p.quota_status === 'remaining' ? ' <span class="accent-text">●</span>' : '';
+      return `<button type="button" onclick="selectProtocolDay(${idx})" class="${activeIdx === idx ? activeCls : idleCls}">${escapeHtml(getProtocolTabLabel(p))}${remDot}</button>`;
+    }).join('')}</div>`;
   }
 
-  let emptyBannerHtml = '';
-  let visibleProtocols;
-  if (selectedProtocolMode === 'all') {
-    visibleProtocols = protocols;
-  } else if (selectedProtocolMode === 'upcoming') {
-    if (remainingProtocols.length > 0) {
-      visibleProtocols = remainingProtocols;
-    } else {
-      emptyBannerHtml = `
-        <div class="tint-moss-panel p-4 text-xs flex items-center justify-between gap-2 flex-wrap">
-          <span class="font-semibold moss-text">✓ Bu haftanın antrenman kotası tamamlandı!</span>
-          <span class="text-[var(--text-secondary)]">Yeni döngü için temel şablonlar aşağıdadır.</span>
-        </div>
-      `;
-      visibleProtocols = [protocols[0], protocols[2]].filter(Boolean);
-    }
-  } else {
-    visibleProtocols = protocols[selectedProtocolMode] ? [protocols[selectedProtocolMode]] : (remainingProtocols.length ? remainingProtocols : protocols.slice(0, 2));
-  }
-
-  container.innerHTML = emptyBannerHtml + visibleProtocols.map(p => {
-    let exerciseHtml = '';
-    if (p.category === 'gym') {
-      exerciseHtml = `
-<div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region custom-scrollbar mt-3">
-  <table class="w-full text-left text-xs">
+  const p = protocols[activeIdx];
+  let exerciseHtml = '';
+  if (p.category === 'gym') {
+    exerciseHtml = `
+<div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region mt-1.5">
+  <table class="w-full text-left text-[11.5px]">
     <thead>
       <tr>
-        <th class="py-2.5 px-3">#</th>
-        <th class="py-2.5 px-3">Egzersiz</th>
-        <th class="py-2.5 px-3">Set x Tekrar</th>
-        <th class="py-2.5 px-3">Mevcut &amp; Hedef Ağırlık</th>
-        <th class="py-2.5 px-3">Dinlenme &amp; RPE</th>
-        <th class="py-2.5 px-3">Koçluk İpucu</th>
+        <th class="py-1.5 px-2.5">#</th>
+        <th class="py-1.5 px-2.5">Egzersiz</th>
+        <th class="py-1.5 px-2.5">Set x Tekrar</th>
+        <th class="py-1.5 px-2.5">Mevcut &amp; Hedef Ağırlık</th>
+        <th class="py-1.5 px-2.5">Dinlenme &amp; RPE</th>
+        <th class="py-1.5 px-2.5">Koçluk İpucu</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-[var(--border-subtle)]">
       ${(p.exercises || []).map(ex => `
         <tr class="hover:bg-[var(--bg-subtle)]">
-          <td class="py-2.5 px-3 font-mono font-semibold text-[var(--text-muted)]">${ex.num}</td>
-          <td class="py-2.5 px-3 font-semibold">${escapeHtml(ex.name)}</td>
-          <td class="py-2.5 px-3 font-mono font-semibold accent-text">${ex.sets} x ${ex.reps}</td>
-          <td class="py-2.5 px-3">
+          <td class="py-1.5 px-2.5 font-mono font-semibold text-[var(--text-muted)]">${ex.num}</td>
+          <td class="py-1.5 px-2.5 font-semibold whitespace-nowrap">${escapeHtml(ex.name)}</td>
+          <td class="py-1.5 px-2.5 font-mono font-semibold accent-text whitespace-nowrap">${ex.sets} x ${ex.reps}</td>
+          <td class="py-1.5 px-2.5">
             <span class="stamp-tag stamp-moss">${escapeHtml(ex.target_weight)}</span>
-            ${ex.current_achieved ? `<p class="font-mono text-[10px] text-[var(--text-muted)] mt-1">Son: ${escapeHtml(ex.current_achieved)}</p>` : ''}
+            ${ex.current_achieved ? `<span class="font-mono text-[10px] text-[var(--text-muted)] ml-1.5">Son: ${escapeHtml(ex.current_achieved)}</span>` : ''}
           </td>
-          <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(ex.rest_sec)} <span class="text-[var(--text-muted)]">(${escapeHtml(ex.target_rpe || 'RPE 8')})</span></td>
-          <td class="py-2.5 px-3 text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(ex.coaching_cue)}</td>
+          <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] whitespace-nowrap">${escapeHtml(ex.rest_sec)} <span class="text-[var(--text-muted)]">(${escapeHtml(ex.target_rpe || 'RPE 8')})</span></td>
+          <td class="py-1.5 px-2.5 text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(ex.coaching_cue)}</td>
         </tr>
       `).join('')}
     </tbody>
   </table>
 </div>
-      `;
-    } else if (p.category === 'running') {
-      const runEx = (p.exercises || [])[0] || {};
-      exerciseHtml = `
-<div class="tint-panel p-4 space-y-3 mt-3">
+    `;
+  } else if (p.category === 'running') {
+    const runEx = (p.exercises || [])[0] || {};
+    exerciseHtml = `
+<div class="tint-panel p-3.5 space-y-2.5 mt-1.5">
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
     <div>
       <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Süre / Mesafe</p>
@@ -444,41 +422,42 @@ function renderDailyProtocols(protocols) {
       <p class="font-mono font-bold text-sm mt-0.5">${escapeHtml(runEx.cadence_target)}</p>
     </div>
   </div>
-  <p class="text-xs text-[var(--text-secondary)] pt-2.5 border-t border-[var(--border-subtle)]"><strong class="text-[var(--text-primary)] font-semibold">Koçluk Talimatı:</strong> ${escapeHtml(runEx.coaching_cue)}</p>
+  <p class="text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border-subtle)]"><strong class="text-[var(--text-primary)] font-semibold">Koçluk Talimatı:</strong> ${escapeHtml(runEx.coaching_cue)}</p>
 </div>
-      `;
-    } else {
-      const restEx = (p.exercises || [])[0] || {};
-      exerciseHtml = `
-<div class="tint-panel p-4 space-y-1 mt-3 text-xs">
+    `;
+  } else {
+    const restEx = (p.exercises || [])[0] || {};
+    exerciseHtml = `
+<div class="tint-panel p-3.5 space-y-1 mt-1.5 text-xs">
   <p class="font-semibold">${escapeHtml(restEx.protocol)}</p>
   <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(restEx.coaching_cue)}</p>
 </div>
-      `;
-    }
-
-    return `
-      <div class="surface-card surface-card-interactive p-5 space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="stamp-tag stamp-accent">${escapeHtml(p.badge)}</span>
-            ${getQuotaStatusStamp(p.quota_status)}
-            <h4 class="font-editorial text-base font-medium tracking-tight">${escapeHtml(p.day_title)}</h4>
-          </div>
-          <span class="font-mono text-[11px] text-[var(--text-secondary)]">${escapeHtml(p.status_note)}</span>
-        </div>
-
-        <p class="text-xs text-[var(--text-secondary)] leading-relaxed"><strong class="text-[var(--text-primary)] font-semibold">Seans Hedefi:</strong> ${escapeHtml(p.objective)}</p>
-        <p class="text-xs text-[var(--text-secondary)] tint-panel p-2.5"><strong class="text-[var(--text-primary)] font-semibold">Isınma &amp; Mobilite:</strong> ${escapeHtml(p.warmup)}</p>
-
-        ${exerciseHtml}
-
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)]">
-          <p><strong class="text-[var(--text-primary)]">Soğuma:</strong> ${escapeHtml(p.cooldown)}</p>
-          <p class="font-mono font-medium tint-panel px-2.5 py-1">${escapeHtml(p.telemetry_targets ? p.telemetry_targets.nutrition : '')}</p>
-        </div>
-      </div>
     `;
-  }).join('');
+  }
+
+  container.innerHTML = `
+    <div class="surface-card p-3.5 space-y-2 h-full flex flex-col justify-between overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2 shrink-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="stamp-tag stamp-accent">${escapeHtml(p.badge)}</span>
+          ${getQuotaStatusStamp(p.quota_status)}
+          <h4 class="font-editorial text-base font-medium tracking-tight">${escapeHtml(p.day_title)}</h4>
+        </div>
+        <span class="font-mono text-[11px] text-[var(--text-secondary)]">${escapeHtml(p.status_note)}</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] shrink-0">
+        <p class="text-[var(--text-secondary)] tint-panel p-2 leading-snug"><strong class="text-[var(--text-primary)] font-semibold">Seans Hedefi:</strong> ${escapeHtml(p.objective)}</p>
+        <p class="text-[var(--text-secondary)] tint-panel p-2 leading-snug"><strong class="text-[var(--text-primary)] font-semibold">Isınma &amp; Mobilite:</strong> ${escapeHtml(p.warmup)}</p>
+      </div>
+
+      ${exerciseHtml}
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)] shrink-0">
+        <p><strong class="text-[var(--text-primary)]">Soğuma:</strong> ${escapeHtml(p.cooldown)}</p>
+        <p class="font-mono font-medium tint-panel px-2.5 py-1">${escapeHtml(p.telemetry_targets ? p.telemetry_targets.nutrition : '')}</p>
+      </div>
+    </div>
+  `;
   if (typeof refreshIcons === 'function') refreshIcons();
 }
