@@ -16,7 +16,7 @@ try:
         RECOVERY_AND_WATCH_SETTINGS, PRESENTATION_RULES,
         ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
     )
-    from engine.helpers import DATA_DIR, fmt_pace_sec, format_sport_tr, classify_sport_bucket
+    from engine.helpers import DATA_DIR, fmt_pace_sec, format_sport_tr, classify_sport_bucket, classify_run_workout
 except ImportError:
     from app.athlete_principles import (
         ATHLETE_PROFILE, NUTRITION_PRINCIPLES, STRENGTH_PRINCIPLES,
@@ -24,7 +24,7 @@ except ImportError:
         RECOVERY_AND_WATCH_SETTINGS, PRESENTATION_RULES,
         ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
     )
-    from app.engine.helpers import DATA_DIR, fmt_pace_sec, format_sport_tr, classify_sport_bucket
+    from app.engine.helpers import DATA_DIR, fmt_pace_sec, format_sport_tr, classify_sport_bucket, classify_run_workout
 
 
 _EXERCISE_NAME_MAP = {
@@ -299,19 +299,49 @@ class WorkoutProtocolsMixin:
             }
             for item in weekly_quota["running"]["remaining_items"]
         ]
-        if len(running_upcoming) < 2:
-            fallback_kind = "zone2" if (running_upcoming and "İnterval" in running_upcoming[0].get("type", "")) else "interval"
-            tpl_item = self._build_quota_remaining_item(fallback_kind, 1)
+        run_kinds_chain = [item.get("slot_kind") for item in weekly_quota["running"]["remaining_items"] if item.get("slot_kind")]
+        rem_run_count = len(running_upcoming)
+        while len(running_upcoming) < 3:
+            if not run_kinds_chain:
+                comp_kinds = weekly_quota["running"].get("completed_kinds", [])
+                if "interval" not in comp_kinds:
+                    next_kind = "interval"
+                elif "zone2" not in comp_kinds:
+                    next_kind = "zone2"
+                else:
+                    next_kind = "zone2" if comp_kinds[-1] == "interval" else "interval"
+                prev_kind = None
+            else:
+                prev_kind = run_kinds_chain[-1]
+                next_kind = "zone2" if prev_kind == "interval" else "interval"
+
+            step_num = len(running_upcoming) - rem_run_count + 1
+            tpl_item = self._build_quota_remaining_item(next_kind, 1 if next_kind == "zone2" else 2)
+            if step_num == 1:
+                day_lbl = "Sıradaki Projeksiyon (Yeni Döngü #1)"
+                prefix_note = (
+                    "Bu haftanın kalan koşusu tamamlandıktan sonraki döngü adımı"
+                    if rem_run_count > 0
+                    else "Bu haftanın koşu kotası tamamlandı; yeni döngü ilk koşu önerisi"
+                )
+            else:
+                prev_name = "Zone 2" if prev_kind == "zone2" else "İnterval"
+                day_lbl = f"{prev_name} Sonrası Projeksiyon (Yeni Döngü #{step_num})"
+                prefix_note = (
+                    f"{prev_name} seansı sonrası 80/20 polarize rotasyon gereği sıradaki koşu"
+                )
             running_upcoming.append({
-                "day": "Kota Tamamlandıktan Sonra (Yeni Döngü)",
-                "type": f"{tpl_item['type']} (Yeni Döngü)",
+                "day": day_lbl,
+                "type": f"{tpl_item['type']} (Projeksiyon)",
                 "title": tpl_item["title"],
                 "duration": tpl_item["duration"],
                 "target_hr": tpl_item["target_hr"],
                 "target_pace": tpl_item["target_pace"],
-                "details": f"Bu haftanın 2/2 koşu kotası tamamlandıktan sonraki döngü seçeneği: {tpl_item['coaching_note']}",
+                "details": f"{prefix_note}: {tpl_item['coaching_note']}",
             })
+            run_kinds_chain.append(next_kind)
 
+        gym_sessions = self.get_gym_exercise_history().get("sessions", [])
         gym_upcoming: List[Dict[str, str]] = [
             {
                 "day": "Bu Hafta Kalan Kota (Esnek Gün)" + (" · Öncelikli" if item.get("is_prioritized") else ""),
@@ -322,18 +352,58 @@ class WorkoutProtocolsMixin:
             }
             for item in weekly_quota["strength"]["remaining_items"]
         ]
-        if len(gym_upcoming) < 2:
-            next_cycle_kind = "gym_b" if (gym_upcoming and "Workout A" in gym_upcoming[0]["type"]) else "gym_a"
-            tpl_item = self._build_quota_remaining_item(next_cycle_kind, 1)
+        gym_kinds_chain = [item.get("slot_kind") for item in weekly_quota["strength"]["remaining_items"] if item.get("slot_kind")]
+        rem_gym_count = len(gym_upcoming)
+        while len(gym_upcoming) < 3:
+            if not gym_kinds_chain:
+                last_wt = (gym_sessions[0].get("workout_type", "") if gym_sessions else "")
+                next_cycle_kind = "gym_b" if "Workout A" in last_wt else "gym_a"
+                prev_gym = None
+            else:
+                prev_gym = gym_kinds_chain[-1]
+                next_cycle_kind = "gym_b" if prev_gym == "gym_a" else "gym_a"
+            step_num = len(gym_upcoming) - rem_gym_count + 1
+            tpl_item = self._build_quota_remaining_item(next_cycle_kind, 1 if next_cycle_kind == "gym_a" else 2)
+            day_lbl = (
+                "Sıradaki Projeksiyon (Yeni Döngü #1)"
+                if step_num == 1
+                else f"{'Workout A' if prev_gym == 'gym_a' else 'Workout B'} Sonrası Projeksiyon (Yeni Döngü #{step_num})"
+            )
             gym_upcoming.append({
-                "day": "Kota Tamamlandıktan Sonra (Yeni Döngü)",
-                "type": f"{tpl_item['type']} (Yeni Döngü)",
+                "day": day_lbl,
+                "type": f"{tpl_item['type']} (Projeksiyon)",
                 "title": tpl_item["title"],
                 "duration": tpl_item["duration"],
                 "details": tpl_item["exercises_summary"],
             })
+            gym_kinds_chain.append(next_cycle_kind)
 
-        gym_sessions = self.get_gym_exercise_history().get("sessions", [])
+        latest_run_act = None
+        for act in sorted(self.activities_all, key=lambda x: x.get("startTimeLocal") or "", reverse=True):
+            sp_k = (act.get("sport") or (act.get("activityType") or {}).get("typeKey") or "").lower()
+            if classify_sport_bucket(sp_k) == "running":
+                latest_run_act = act
+                break
+        if latest_run_act:
+            r_cls = classify_run_workout(latest_run_act)
+            r_dt = (latest_run_act.get("startTimeLocal") or "")[:10]
+            r_tm = (latest_run_act.get("startTimeLocal") or "")[11:16]
+            r_km = round((latest_run_act.get("distance") or 0) / 1000.0, 2)
+            r_dur = int(round((latest_run_act.get("duration") or 0) / 60.0))
+            r_hr = int(round(latest_run_act.get("averageHR") or 0))
+            dev_note = " · Plan Dışı Sapma" if not r_cls["is_planned_archetype"] else ""
+            last_run_workout = {
+                "date": f"{r_dt} ({r_tm})" if r_tm else r_dt,
+                "title": f"{r_cls['label_tr']}{dev_note}",
+                "exercises": [
+                    latest_run_act.get("activityName") or "Koşu",
+                    f"{r_km:.2f} km · {r_dur} dk",
+                    f"{r_hr} bpm ort.",
+                    f"TE: {r_cls['te_label']} · AnTE: {r_cls['an_te']}",
+                ],
+            }
+        else:
+            last_run_workout = None
         if gym_sessions:
             latest_gym = gym_sessions[0]
             date_str = latest_gym.get("date", "")
@@ -392,6 +462,7 @@ class WorkoutProtocolsMixin:
                 "efficiency_factor": latest_ef,
                 "cadence": f"{latest_cadence} spm (Harika Form ve Düşük Darbe)",
                 "stats_summary": f"{run_cnt} Koşu • {run_km} km Mesafe • {run_hr} bpm Ortalama Nabız",
+                "last_workout": last_run_workout,
                 "how_to_improve": [
                     "80/20 Polarize Model: Haftalık 2 koşu kotasının 1'ini Zone 2 (140-150 bpm, konuşma temposu), 1'ini hız intervali (Anaerobik eksik kapatıcı) olarak uygulayın.",
                     "Laktat Eşiği İntervali: 4x1.000m @ 5:15 /km (172-180 bpm) ile yüksek hız toleransını ve anaerobik yük barını yukarı taşıyın.",
