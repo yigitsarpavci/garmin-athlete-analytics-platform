@@ -60,11 +60,21 @@ async function safeFetchJson(url) {
 }
 
 function setTab(tabId) {
-  const tabs = ['overview', 'plan', 'sports', 'training_load', 'activities', 'health', 'analytics', 'settings'];
+  let scrollTargetId = null;
+  let targetTab = tabId;
+  if (tabId === 'activities') {
+    targetTab = 'training_load';
+    scrollTargetId = 'activitiesCard';
+  } else if (tabId === 'analytics') {
+    targetTab = 'health';
+    scrollTargetId = 'correlationsCard';
+  }
+
+  const tabs = ['overview', 'plan', 'sports', 'training_load', 'health', 'settings'];
   tabs.forEach(t => {
     const sec = document.getElementById('section-' + t);
     const nav = document.getElementById('nav-' + t);
-    if (t === tabId) {
+    if (t === targetTab) {
       if (sec) sec.classList.remove('hidden');
       if (nav) {
         nav.classList.add('nav-tab-active');
@@ -79,8 +89,9 @@ function setTab(tabId) {
     }
   });
 
-  if (tabId === 'analytics' && document.getElementById('chart-hrv')) {
-    renderCharts();
+  if (scrollTargetId) {
+    const el = document.getElementById(scrollTargetId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
 
