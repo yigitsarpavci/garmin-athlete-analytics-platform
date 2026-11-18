@@ -520,7 +520,6 @@
         <div class="subtab-bar">
           <button type="button" onclick="setSubTab('plan', 'schedule')" data-subtab-group="plan" data-subtab="schedule" class="subtab-btn subtab-btn-active">Haftalık Kota &amp; Takip</button>
           <button type="button" onclick="setSubTab('plan', 'protocols')" data-subtab-group="plan" data-subtab="protocols" class="subtab-btn">Branş &amp; Seans Türü Reçeteleri</button>
-          <button type="button" onclick="setSubTab('plan', 'z2')" data-subtab-group="plan" data-subtab="z2" class="subtab-btn">Zone 2 @ 5:00/km</button>
         </div>
       </div>
 
@@ -575,41 +574,6 @@
 
           <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs"></div>
           <div class="space-y-4" id="dailyProtocolsContainer"></div>
-        </section>
-      </div>
-
-      <div data-subpane-group="plan" data-subpane="z2" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
-            <div>
-              <h3 class="font-editorial text-xl font-medium tracking-tight">Zone 2 @ 5:00 /km Pace Hedefi ve Geri Sayım</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">145 bpm nabızda 6:40 /km'den 5:00 /km'ye iniş takvimi, kalan gün ve seans sayıları</p>
-            </div>
-            <span class="stamp-tag stamp-moss">
-              <i data-lucide="check" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
-              <span id="z2PlanWeeksLabel">2 Koşu + 2 Gym Aktif</span>
-            </span>
-          </div>
-
-          <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="z2KpiGrid"></div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-1">
-            <div class="tint-panel p-5 space-y-3">
-              <h4 class="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-2">
-                <i data-lucide="target" class="w-3.5 h-3.5 accent-text" stroke-width="1.5" aria-hidden="true"></i>
-                <span>5:00 Pace İçin 5 Kural</span>
-              </h4>
-              <div class="space-y-2.5 text-xs" id="z2GoldenRulesContainer"></div>
-            </div>
-
-            <div class="tint-panel p-5 space-y-3">
-              <h4 class="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-2">
-                <i data-lucide="calendar" class="w-3.5 h-3.5 moss-text" stroke-width="1.5" aria-hidden="true"></i>
-                <span>Dönemsel Hız Kilometre Taşları</span>
-              </h4>
-              <div class="space-y-2.5 text-xs" id="z2MilestonesContainer"></div>
-            </div>
-          </div>
         </section>
       </div>
     </div>
@@ -1775,12 +1739,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js?v=20261118"></script>
-  <script src="/js/quota_schedule.js?v=20261118"></script>
-  <script src="/js/dashboard.js?v=20261118"></script>
-  <script src="/js/health_analytics.js?v=20261118"></script>
-  <script src="/js/charts.js?v=20261118"></script>
-  <script src="/js/modals.js?v=20261118"></script>
+  <script src="/js/core.js?v=20261118b"></script>
+  <script src="/js/quota_schedule.js?v=20261118b"></script>
+  <script src="/js/dashboard.js?v=20261118b"></script>
+  <script src="/js/health_analytics.js?v=20261118b"></script>
+  <script src="/js/charts.js?v=20261118b"></script>
+  <script src="/js/modals.js?v=20261118b"></script>
 </body>
 
 </html>

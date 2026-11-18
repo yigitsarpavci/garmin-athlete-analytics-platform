@@ -142,8 +142,10 @@ async function initApp() {
     const setData = await safeFetchJson('/api/garmin-settings');
     if (setData) renderSettingsAndZones(setData);
 
-    const z2Data = await safeFetchJson('/api/z2-tracker');
-    if (z2Data) renderZ2Tracker(z2Data);
+    if (document.getElementById('z2KpiGrid')) {
+      const z2Data = await safeFetchJson('/api/z2-tracker');
+      if (z2Data) renderZ2Tracker(z2Data);
+    }
 
     const morphData = await safeFetchJson('/api/physique-tracker');
     if (morphData) renderPhysiqueTracker(morphData);
