@@ -65,12 +65,12 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   // 02. VO2 Max
   setText('fs-vo2-val', fmtDec(vo2, 1));
   setText('fs-vo2-badge', 'ml/kg/dk');
-  setText('fs-vo2-sub', 'Hedef: 50+ · Aerobik Güç');
+  setText('fs-vo2-sub', 'Hedef: 50+');
 
   // 03. Sleep Score
   const sc = data.sleep_score !== undefined ? Math.round(data.sleep_score) : null;
   setText('fs-sleepscore-val', sc !== null ? `${sc} / 100` : '-- / 100');
-  setText('fs-sleepscore-badge', sc !== null ? (sc >= 80 ? 'İyi Kalite' : (sc >= 65 ? 'Orta Kalite' : 'Düşük Kalite')) : '--');
+  setText('fs-sleepscore-badge', sc !== null ? (sc >= 80 ? 'İyi' : (sc >= 65 ? 'Orta' : 'Düşük')) : '--');
   setText('fs-sleepscore-sub', `7G Ort: ${fmtDec(data.sleep_score_7d, 1)} · Solunum: ${fmtDec(data.resp_sleep, 1)} br/dk`);
 
   // 04. Sleep Süre
@@ -156,7 +156,7 @@ function renderOverview(data) {
   }
   const ifsQ = document.getElementById('inFocusSleepQuality');
   if (ifsQ && data.sleep_score !== undefined) {
-    ifsQ.textContent = data.sleep_score >= 80 ? 'Good Quality' : (data.sleep_score >= 65 ? 'Fair Quality' : 'Low Quality');
+    ifsQ.textContent = data.sleep_score >= 80 ? 'İyi' : (data.sleep_score >= 65 ? 'Orta' : 'Düşük');
   }
   const ifsStages = document.getElementById('inFocusSleepStages');
   if (ifsStages) {
@@ -398,7 +398,7 @@ function renderSports(sports) {
       </div>
 
       <div class="text-xs text-[var(--text-secondary)] space-y-1.5 tint-panel p-4 leading-relaxed">
-        <p class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-1">Gelişim &amp; Yük Stratejisi</p>
+        <p class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-1">Öneriler</p>
         ${(sp.how_to_improve || []).map(item => `<p class="flex items-start gap-2"><span class="accent-text mt-0.5">·</span><span>${escapeHtml(item)}</span></p>`).join('')}
       </div>
 

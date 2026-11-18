@@ -61,12 +61,11 @@ class ProgressionDebriefMixin:
             )
             next_level_days = "3 Koşu + 2 Gym veya 2 Koşu + 3 Gym (Haftada 5 Seans)"
         else:
-            volume_verdict = "4 GÜN SABİT KALSIN (Ek Gün Önerilmez)"
+            volume_verdict = "4 GÜNDE KAL (Ek Gün Gerekmiyor)"
             volume_advice = (
-                f"Toparlanma verileriniz (ACWR {acwr:.2f}, RHR {rhr:.0f} bpm) iyi olsa da mevcut ağırlıklarınız "
-                f"(Squat {squat_pr:.0f} kg = {squat_ratio:.2f}x VA, Bench {bench_pr:.0f} kg = {bench_ratio:.2f}x VA) "
-                f"henüz vücut ağırlığı ({cur_weight:.0f} kg) eşiğinin altındadır ve kalori açığındasınız. "
-                "Bu aşamada 5. günü eklemek bar üzerindeki +2.5 kg artışları yavaşlatır; haftalık 2 Koşu + 2 Kuvvet (4 gün) kotasını koruyun."
+                f"ACWR ({acwr:.2f}) ve dinlenik nabız ({rhr:.0f} bpm) iyi durumda; ancak Squat ({squat_pr:.0f} kg = {squat_ratio:.2f}x VA) "
+                f"ve Bench ({bench_pr:.0f} kg = {bench_ratio:.2f}x VA) henüz kendi vücut ağırlığının ({cur_weight:.0f} kg) altında "
+                "ve kalori açığındasın. Şu aşamada 5. günü eklemek ağırlık artışını yavaşlatır; haftalık 2 Koşu + 2 Kuvvet düzenini koru."
             )
             next_level_days = "Şimdilik 4 Gün Korunur (Hedef: Squat ~85 kg · 4/4 İstikrar)"
 
@@ -75,15 +74,15 @@ class ProgressionDebriefMixin:
             style_verdict = f"İLERİ BÖLÜNMEYE HAZIR ({squat_ratio:.2f}x VA)"
             style_advice = (
                 f"Squat ({squat_pr:.0f} kg = {squat_ratio:.2f}x VA) ve Bench ({bench_pr:.0f} kg = {bench_ratio:.2f}x VA) "
-                "vücut ağırlığı eşiklerine ulaştı. Merkezi sinir sistemi toparlanması için Üst/Alt Vücut (Upper/Lower 4 Gün) veya PPL bölünmesine geçilebilir."
+                "vücut ağırlığı eşiklerine ulaştı. Üst/Alt Vücut (Upper/Lower 4 Gün) veya PPL programına geçilebilir."
             )
         else:
-            style_verdict = f"TEMEL–ORTA GEÇİŞ ({squat_ratio:.2f}x VA · 5x5 Lineer İnşa)"
+            style_verdict = f"BAŞLANGIÇ–ORTA GEÇİŞ ({squat_ratio:.2f}x VA · 5x5)"
             style_advice = (
-                f"Vücut ağırlığından ({cur_weight:.0f} kg) ağır kaldırma şartı ileri seviye içindir. Şu an "
+                f"Vücut ağırlığının ({cur_weight:.0f} kg) üzerinde kaldırma kriteri ileri seviye içindir. Şu an "
                 f"Squat {squat_pr:.0f} kg ({squat_ratio:.2f}x VA), Deadlift {deadlift_pr:.0f} kg ({dl_ratio:.2f}x VA), "
-                f"Barbell Row {row_pr:.0f} kg ve Bench {bench_pr:.0f} kg ({bench_ratio:.2f}x VA) ile temel güç inşa fazındasınız; "
-                "ilk gerçekçi hedef haftada 2 gün A/B 5x5 ile kendi vücut ağırlığınıza (~85 kg Squat/Deadlift, ~65–70 kg Bench) ulaşmaktır."
+                f"Row {row_pr:.0f} kg ve Bench {bench_pr:.0f} kg ({bench_ratio:.2f}x VA) seviyesindesin. "
+                "İlk hedef haftada 2 gün A/B 5x5 ile kendi vücut ağırlığına (~85 kg Squat/Deadlift, ~65–70 kg Bench) ulaşmak."
             )
 
         # 3. Koşu Branşı & Load Focus Yönlendirmesi
@@ -92,25 +91,25 @@ class ProgressionDebriefMixin:
         an_pct = load_focus.get("anaerobic", {}).get("pct_of_target", 62.0)
         running_style_advice = (
             f"Firstbeat yük dengesinde Yüksek Aerobik (%{high_pct:.0f}) ve Düşük Aerobik (%{low_pct:.0f}) "
-            f"barın üst sınırına yakınken Anaerobik yük (%{an_pct:.0f}) daha düşüktür. Öncelikle 5K hız intervalini (4x1000m @ Z4-5) uygulayın; "
-            "Zone 2 hızınız 145 bpm'de 6:00 /km altına indiğinde haftalık 3. koşu veya Laktat Eşik temposu değerlendirilir."
+            f"barın üst sınırına yakınken Anaerobik yük (%{an_pct:.0f}) daha düşük. Önce 5K hız intervalini (4x1000m @ Z4-5) uygula; "
+            "Zone 2 hızın 145 bpm'de 6:00 /km altına indiğinde haftalık 3. koşu veya tempo eklenebilir."
         )
 
         # 4. Deload Analizi
         needs_deload = (acwr > 1.35) or (stress > 48.0) or (rhr > 60.0)
-        deload_status = "GEREKMİYOR (Kondisyon Yüksek)" if not needs_deload else "DİKKAT: DELOAD ÖNERİLİR"
+        deload_status = "GEREKMİYOR (Normal)" if not needs_deload else "DİKKAT: YÜKÜ AZALT"
         deload_note = (
-            "Toparlanma ve ACWR göstergeleri güvenli bantta; planlı kota seanslarını güvenle uygulayabilirsiniz."
+            "Toparlanma ve ACWR değerleri normal aralıkta; planlı antrenmanları güvenle yapabilirsin."
             if not needs_deload else
-            "Yorgunluk/stres sinyali yüksek; bu hafta kota hacmini %40 düşürüp aktif dinlenmeye öncelik verin."
+            "Yorgunluk ve stres yüksek; bu hafta antrenman hacmini %40 azaltıp dinlenmeye ağırlık ver."
         )
 
         return {
-            "current_tier_label": f"Kuvvet: Temel Güç İnşası ({squat_ratio:.2f}x VA) · Koşu: Orta Seviye (VO2 {vo2max:.1f})",
+            "current_tier_label": f"Kuvvet: Başlangıç–Orta ({squat_ratio:.2f}x VA) · Koşu: Orta Seviye (VO2 {vo2max:.1f})",
             "volume_progression": {
                 "verdict": volume_verdict,
                 "can_increase_days": can_increase_days,
-                "current_days": "2 Koşu + 2 Gym (Esnek 4 Seans Kotası)",
+                "current_days": "2 Koşu + 2 Gym (Esnek 4 Seans)",
                 "next_level_days": next_level_days,
                 "advice": volume_advice,
             },
@@ -122,7 +121,7 @@ class ProgressionDebriefMixin:
                 "running_style_advice": running_style_advice,
             },
             "running_progression": {
-                "verdict": "ORTA SEVİYE AEROBİK TABAN (80/20 Polarize)",
+                "verdict": "ORTA SEVİYE (80/20 Koşu Planı)",
                 "current_metrics": f"VO2 Max: {vo2max:.1f} · En İyi 5K: {latest_5k} · Kadans: {cadence} spm",
                 "load_balance": f"Düşük Aer: %{low_pct:.0f} · Yüksek Aer: %{high_pct:.0f} · Anaerobik: %{an_pct:.0f}",
                 "current_model": "Haftada 2 Koşu: 1x 5K Hız İntervali (4x1000m @ 5:15/km) + 1x Zone 2 Taban (45-50 dk @ 140-150 bpm)",
@@ -166,11 +165,11 @@ class ProgressionDebriefMixin:
 
             if sport == "strength_training":
                 insight = (
-                    f"Önceki seansa ({prev_same.get('date')}) kıyasla ortalama nabız {abs(avg_diff)} bpm daha düşük "
-                    f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm). Set arası parasempatik toparlanma daha verimli."
+                    f"Önceki antrenmana ({prev_same.get('date')}) göre ortalama nabız {abs(avg_diff)} bpm daha düşük "
+                    f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm). Set aralarında nabız daha hızlı düştü."
                     if avg_diff <= 0 else
-                    f"Önceki gym seansına ({prev_same.get('date')}) kıyasla ortalama nabız {avg_diff} bpm daha yüksek "
-                    f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm); mekanik yoğunluk arttı."
+                    f"Önceki salon antrenmanına ({prev_same.get('date')}) göre ortalama nabız {avg_diff} bpm daha yüksek "
+                    f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm); antrenman yoğunluğu daha yüksekti."
                 )
             elif sport == "running":
                 insight = (
@@ -299,7 +298,7 @@ class ProgressionDebriefMixin:
             f"Plan Dışı {run_cls['label_tr']} Algılandı (TE: {run_cls['te_label']}, AnTE: {run_cls['an_te']}) • "
             "İnterval / Zone 2 Kotası Güncel Duruma Göre Yeniden Planlandı"
             if is_plan_dev else
-            "Antrenman Başarıyla Kilitlendi • Süper-Kompanzasyon Başladı"
+            "Antrenman Tamamlandı • Toparlanma Süreci"
         )
 
         return {

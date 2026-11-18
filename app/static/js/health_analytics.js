@@ -371,7 +371,7 @@ function renderProgressionAssessment(data) {
     grid.innerHTML = `
       <div class="tint-panel p-4 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">01 · Hacim &amp; Gün Artırma Analizi</span>
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">1. Haftalık Gün Sayısı</span>
           <span class="stamp-tag ${vp.can_increase_days ? 'stamp-moss' : 'stamp-ochre'}">${escapeHtml(vp.verdict || '--')}</span>
         </div>
         <p class="text-xs font-semibold">${escapeHtml(vp.current_days)} <span class="text-[var(--text-muted)]">→</span> <span class="${vp.can_increase_days ? 'moss-text' : 'ochre-text'}">${escapeHtml(vp.next_level_days)}</span></p>
@@ -380,7 +380,7 @@ function renderProgressionAssessment(data) {
 
       <div class="tint-panel p-4 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">02 · Kuvvet Branşı: Seviye &amp; 5x5 Eşiği</span>
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">2. Kuvvet: Mevcut Ağırlıklar ve Hedef</span>
           <span class="stamp-tag stamp-accent">${escapeHtml(st.verdict || '--')}</span>
         </div>
         <p class="text-xs font-semibold">Mevcut: <span class="moss-text">${escapeHtml(st.current_style)}</span></p>
@@ -389,8 +389,8 @@ function renderProgressionAssessment(data) {
 
       <div class="tint-panel p-4 space-y-2.5 border-l-[3px] border-l-[var(--accent)]">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">03 · Koşu Branşı: Aerobik Taban &amp; Hız Progresyonu</span>
-          <span class="stamp-tag stamp-moss">${escapeHtml(rp.verdict || '80/20 POLARİZE')}</span>
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">3. Koşu: Mevcut Durum ve Hedef</span>
+          <span class="stamp-tag stamp-moss">${escapeHtml(rp.verdict || '80/20 KOŞU PLANI')}</span>
         </div>
         <p class="font-mono text-[11px] font-semibold accent-text">${escapeHtml(rp.current_metrics || '')}</p>
         <p class="text-xs text-[var(--text-primary)] font-medium">${escapeHtml(rp.current_model || '')}</p>
@@ -401,12 +401,12 @@ function renderProgressionAssessment(data) {
 
       <div class="tint-panel p-4 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">04 · Deload &amp; Toparlanma Kontrolü</span>
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">4. Yorgunluk ve Dinlenme</span>
           <span class="stamp-tag ${fd.needs_deload ? 'stamp-ochre' : 'stamp-moss'}">${escapeHtml(fd.status || '--')}</span>
         </div>
-        <p class="text-xs font-semibold">${fd.needs_deload ? 'Hacmi %40 Düşür' : 'Tam Güç &amp; Kondisyon Aktif'}</p>
+        <p class="text-xs font-semibold">${fd.needs_deload ? 'Hacmi %40 Düşür' : 'Normal Yükte Devam'}</p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(fd.note || '')}</p>
-        <p class="text-[10px] ochre-text tint-ochre-panel p-2"><strong class="font-semibold">Dogmatik Olmama Kuralı:</strong> Yorgunluk/düşük HRV durumunda seans yürüyüş veya esnemeye çevrilir.</p>
+        <p class="text-[10px] ochre-text tint-ochre-panel p-2"><strong class="font-semibold">Not:</strong> Yorgunluk yüksekse veya uyku düşükse antrenmanı hafif yürüyüşe çevirin.</p>
       </div>
     `;
   }

@@ -139,62 +139,62 @@ class MorphologyHealthMixin:
         )
 
         return {
-            "title": "Klinik Egzersiz Fizyolojisi & Genel Sağlık Taraması",
-            "doctor_verdict": "A-1 Sınıfı Üstün Atletik Kardiyovasküler Rezerv" if rhr <= 56 else "B-1 Aktif Sporcu Kardiyovasküler Profili",
-            "overall_status": "MÜKEMMEL (Risk Faktörü Bulunmamaktadır)" if stress < 42 else "DİKKAT (Stres / Yük İzlemi)",
+            "title": "Genel Sağlık Özeti",
+            "doctor_verdict": "Kalp ve Kondisyon Verileri İyi Durumda" if rhr <= 56 else "Aktif Sporcu Profili",
+            "overall_status": "Normal" if stress < 42 else "Stres / Yük Takibi",
             "summary": (
-                f"Güncel 93 günlük sensör telemetrisinde dinlenik nabız {rhr:.1f} bpm, ortalama uyku {sleep_dur:.2f} saat, "
-                f"VO2 Max {vo2:.1f} ve kilo {cur_w:.1f} kg (-{lost_kg:.1f} kg) olarak kaydedildi. Metabolik ve otonom profil optimal bantta."
+                f"Son 93 günde dinlenik nabız {rhr:.1f} bpm, ortalama uyku {sleep_dur:.2f} saat, "
+                f"VO2 Max {vo2:.1f} ve güncel kilo {cur_w:.1f} kg (-{lost_kg:.1f} kg). Temel göstergeler normal aralıkta."
             ),
             "pillars": [
                 {
-                    "name": "Kardiyovasküler Kapasite & Kalp Sağlığı",
-                    "status": "Sporcu Kalbi (Fizyolojik Bradikardi)" if rhr <= 56 else "Sağlıklı Kardiyak Yanıt",
-                    "badge": "Mükemmel" if rhr <= 56 else "İyi",
+                    "name": "Kalp ve Dolaşım",
+                    "status": "Sporcu Profili (Düşük Dinlenik Nabız)" if rhr <= 56 else "Normal Nabız Yanıtı",
+                    "badge": "İyi" if rhr <= 56 else "Normal",
                     "badge_color": "emerald",
                     "value": f"{rhr:.1f} bpm Dinlenik Nabız • 203 bpm Maksimum Nabız",
                     "clinical_notes": (
-                        f"{rhr:.1f} bpm dinlenik nabız güçlü sol ventrikül atım hacmini gösterir. "
-                        "203 bpm tavanı sempatik kalp rezervinin sağlıklı korunduğunu doğrular."
+                        f"{rhr:.1f} bpm dinlenik nabız kalbin yüksek verimle çalıştığını gösterir. "
+                        "203 bpm maksimum nabız kalp rezervinin sağlıklı korunduğunu doğruluyor."
                     ),
                 },
                 {
-                    "name": "Otonom Sinir Sistemi (HRV & Parasempatik Denge)",
-                    "status": "Yüksek Vagal Tonus" if stress < 35 else "Orta Sempatik Yük",
+                    "name": "Stres ve Toparlanma (HRV)",
+                    "status": "İyi Toparlanma" if stress < 35 else "Orta Stres Yükü",
                     "badge": "Dengeli" if stress < 35 else "İzle",
                     "badge_color": "blue",
                     "value": f"{stress:.1f}/100 Ortalama Günlük Stres",
                     "clinical_notes": (
                         f"Ortalama günlük stres skoru {stress:.1f} puan bandında; gece HRV ({metrics.get('overnight_hrv', 43)} ms) "
-                        "ile parasempatik toparlanma dengesi korunuyor."
+                        "ile toparlanma dengesi korunuyor."
                     ),
                 },
                 {
-                    "name": "Metabolik Sağlık & Vücut Kompozisyonu",
+                    "name": "Kilo ve Vücut Kitle İndeksi",
                     "status": metabolic_status,
                     "badge": metabolic_badge,
                     "badge_color": "amber" if to_who_g > 0 else "emerald",
-                    "value": f"{cur_w:.1f} kg • VKİ: {cur_bmi:.2f} (DSÖ Eşiği: {who_cutoff:.2f} kg)",
+                    "value": f"{cur_w:.1f} kg • VKİ: {cur_bmi:.2f} (DSÖ Sınırı: {who_cutoff:.2f} kg)",
                     "clinical_notes": metabolic_detail,
                 },
                 {
-                    "name": "Pulmoner Fonksiyon & Gece Oksijenasyonu",
-                    "status": "Optimal Gaz Değişimi",
-                    "badge": "Optimal",
+                    "name": "Gece Solunumu",
+                    "status": "Normal Aralıkta",
+                    "badge": "Normal",
                     "badge_color": "emerald",
                     "value": f"{resp:.1f} Nefes/dk Gece Solunumu",
                     "clinical_notes": (
-                        f"Gece solunum hızının ortalama {resp:.1f} nefes/dk bandında kalması stabil gaz değişimini gösterir."
+                        f"Gece solunum hızının ortalama {resp:.1f} nefes/dk bandında kalması solunum düzeninin stabil olduğunu gösterir."
                     ),
                 },
                 {
-                    "name": "Nörolojik Rejenerasyon & Uyku Mimarisi",
-                    "status": "Derin Fazlar Korunmuş" if sleep_dur >= 6.8 else "Uyku Süresi Artırılmalı",
+                    "name": "Uyku Süresi ve Derin Uyku",
+                    "status": "Derin Uyku Yeterli" if sleep_dur >= 6.8 else "Uyku Süresi Artırılmalı",
                     "badge": "İyi" if sleep_dur >= 6.8 else "Dikkat",
                     "badge_color": "emerald",
                     "value": f"{sleep_dur:.2f} Saat Ortalama Uyku • %{deep_pct:.1f} Derin Uyku",
                     "clinical_notes": (
-                        "Derin uyku oranı kas dokusu tamirini destekliyor; 00:45 öncesi yatış REM mimarisini maksimize eder."
+                        "Derin uyku süresi toparlanmayı destekliyor; 00:45 öncesi yatış REM oranını artırır."
                     ),
                 },
             ],

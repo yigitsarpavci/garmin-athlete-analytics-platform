@@ -277,10 +277,10 @@ class TelemetryMixin:
             }
         elif readiness_score >= 75 and hrv_night >= 40:
             rec = {
-                "status": "Yeşil Işık (Yüksek Hazırlık)",
+                "status": "Yeşil Işık (Hazır)",
                 "color": "emerald",
-                "summary": "Toparlanma mükemmel. Kaliteli antrenman için ideal gün.",
-                "suggestion": load_focus.get("recommended_workout", "Kalan haftalık kota seansını yüksek odakla icra edin."),
+                "summary": "Toparlanma iyi durumda, planlı antrenman için uygun gün.",
+                "suggestion": load_focus.get("recommended_workout", "Bu haftanın kalan antrenmanını uygulayabilirsin."),
             }
         elif readiness_score >= 50:
             rec = {
