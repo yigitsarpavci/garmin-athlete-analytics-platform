@@ -159,6 +159,41 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(data["gym_volume_progression"]["current_volume_kg"], 7430.0)
         self.assertTrue(data["training_load"]["in_sweet_spot"])
 
+    def test_garmin_expansion_high_res_endpoint(self):
+        """GET /api/garmin-expansion yüksek çözünürlüklü FIT/HRV/RD kanallarını ve FIT kodlamayı test eder."""
+        from app.engine.fit_stream_parser import encode_records_to_fit_bytes, parse_fit_bytes
+
+        # 1. Pure Python FIT binary roundtrip & CRC-16 doğrulaması
+        fit_raw = encode_records_to_fit_bytes([
+            {"unix_ts": 1794900915, "distance_m": 100.0, "heart_rate": 144, "cadence_spm": 162, "speed_mps": 3.0, "power_w": 310, "stance_time_ms": 270.0, "vertical_oscillation_cm": 8.4},
+            {"unix_ts": 1794900920, "distance_m": 115.0, "heart_rate": 146, "cadence_spm": 164, "speed_mps": 3.1, "power_w": 318, "stance_time_ms": 268.5, "vertical_oscillation_cm": 8.3},
+        ])
+        decoded = parse_fit_bytes(fit_raw, file_name="unit_test.fit")
+        self.assertTrue(decoded["valid"])
+        self.assertTrue(decoded["crc_ok"])
+        self.assertEqual(decoded["record_count"], 2)
+        self.assertEqual(decoded["summary"]["avg_hr"], 145.0)
+        self.assertEqual(decoded["summary"]["avg_gct_ms"], 269.2)
+
+        # 2. /api/garmin-expansion uç noktası
+        data = self.get_json("/api/garmin-expansion")
+        for key in (
+            "new_high_resolution_channels",
+            "implementation_steps_detail",
+            "fit_stream_summary",
+            "hrv_5min_summary",
+            "running_dynamics_summary",
+            "respiration_thermal_summary",
+        ):
+            self.assertIn(key, data, f"Eksik high-res anahtarı: {key}")
+
+        self.assertEqual(len(data["new_high_resolution_channels"]), 4)
+        self.assertEqual(len(data["implementation_steps_detail"]), 3)
+        self.assertGreater(len(data["hrv_5min_summary"]["readings"]), 0)
+        if os.path.exists("data/archive/act_25105660179_details.json"):
+            self.assertGreaterEqual(data["fit_stream_summary"]["total_sample_points"], 245)
+            self.assertGreaterEqual(data["running_dynamics_summary"]["rd_covered_runs"], 40)
+
 
 if __name__ == "__main__":
     unittest.main()

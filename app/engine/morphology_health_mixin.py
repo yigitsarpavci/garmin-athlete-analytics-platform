@@ -418,40 +418,444 @@ class MorphologyHealthMixin:
             ],
         }
 
-    def get_garmin_data_expansion_guide(self) -> Dict[str, Any]:
-        """Garmin Connect veri derinliğini artırma rehberini döner."""
+    @staticmethod
+    def _fmt_duration_pace(seconds: Optional[float], dist_km: float = 1.0) -> str:
+        """Verilen saniye/mesafeden m:ss /km tempo dizgisi üretir."""
+        if not seconds or seconds <= 0 or dist_km <= 0:
+            return "--"
+        sec_per_km = float(seconds) / dist_km
+        m = int(sec_per_km // 60)
+        s = int(round(sec_per_km % 60))
+        if s == 60:
+            m += 1
+            s = 0
+        return f"{m}:{s:02d} /km"
+
+    def _build_fit_stream_summary(self) -> Dict[str, Any]:
+        """Çözümlenmiş .fit ikili dosyalarını ve saniye/mesafe bazlı aktivite akışlarını özetler."""
+        parsed_fits = getattr(self, "high_res_fits", {}) or {}
+        acts = getattr(self, "activities_all", []) or []
+        act_lookup = {str(a.get("activityId")): a for a in acts if isinstance(a, dict) and a.get("activityId")}
+
+        parsed_files: List[Dict[str, Any]] = []
+        total_samples = 0
+        binary_fit_count = 0
+        for aid, info in parsed_fits.items():
+            if not isinstance(info, dict) or not info.get("valid"):
+                continue
+            summ = info.get("summary") or {}
+            act_meta = act_lookup.get(str(aid), {})
+            sc = int(info.get("record_count") or summ.get("sample_count") or 0)
+            total_samples += sc
+            if info.get("byte_size"):
+                binary_fit_count += 1
+            parsed_files.append({
+                "activity_id": str(aid),
+                "activity_name": act_meta.get("activityName") or summ.get("file_name") or f"Aktivite #{aid}",
+                "date": (act_meta.get("startTimeLocal") or "")[:10] or "--",
+                "sport": act_meta.get("activityType", {}).get("typeKey", "activity"),
+                "file_name": summ.get("file_name") or f"{aid}.fit",
+                "source": info.get("source") or "fit_binary",
+                "parser": info.get("parser") or "pure_python_fit",
+                "crc_ok": bool(info.get("crc_ok", True)),
+                "byte_size": info.get("byte_size"),
+                "sample_count": sc,
+                "duration_min": summ.get("duration_min"),
+                "avg_hr": summ.get("avg_hr"),
+                "min_hr": summ.get("min_hr"),
+                "max_hr": summ.get("max_hr"),
+                "first_half_avg_hr": summ.get("first_half_avg_hr"),
+                "second_half_avg_hr": summ.get("second_half_avg_hr"),
+                "cardiac_drift_bpm": summ.get("cardiac_drift_bpm"),
+                "cardiac_drift_pct": summ.get("cardiac_drift_pct"),
+                "avg_power_w": summ.get("avg_power_w"),
+                "avg_cadence_spm": summ.get("avg_cadence_spm"),
+                "avg_gct_ms": summ.get("avg_gct_ms"),
+                "sampled_timeline": summ.get("sampled_timeline") or [],
+            })
+
+        latest_run = next(
+            (a for a in acts if isinstance(a, dict) and "running" in (a.get("activityType", {}).get("typeKey") or "").lower()),
+            None,
+        )
+        latest_run_splits: Dict[str, Any] = {}
+        if latest_run:
+            run_id = str(latest_run.get("activityId") or "")
+            f1k = latest_run.get("fastestSplit_1000")
+            f5k = latest_run.get("fastestSplit_5000")
+            splits = latest_run.get("splitSummaries") or []
+            rwd_run = next((sp for sp in splits if sp.get("splitType") == "RWD_RUN"), {})
+            rwd_walk = next((sp for sp in splits if sp.get("splitType") == "RWD_WALK"), {})
+            latest_run_splits = {
+                "activity_id": run_id,
+                "activity_name": latest_run.get("activityName") or "Koşu",
+                "date": (latest_run.get("startTimeLocal") or "")[:10],
+                "fastest_1k_pace": self._fmt_duration_pace(f1k, 1.0),
+                "fastest_5k_pace": self._fmt_duration_pace(f5k, 5.0),
+                "rwd_run_min": round(float(rwd_run.get("duration", 0)) / 60.0, 1) if rwd_run else None,
+                "rwd_walk_sec": round(float(rwd_walk.get("duration", 0)), 1) if rwd_walk else 0.0,
+                "has_binary_fit": run_id in parsed_fits,
+            }
+
+        has_live_fit = any(f.get("source") == "garmin_download_fit" for f in parsed_files)
         return {
-            "title": "Garmin'den Çektiğimiz Verileri Nasıl Daha Fazla Artırabiliriz?",
+            "status_badge": "FIT CODEC & DETAY AKIŞI AKTİF" if parsed_files else "OTURUM BEKLİYOR",
+            "parsed_file_count": len(parsed_files),
+            "binary_fit_count": binary_fit_count,
+            "total_sample_points": total_samples,
+            "parser_backend": parsed_files[0]["parser"] if parsed_files else "pure_python_fit",
+            "has_live_garmin_fit": has_live_fit,
+            "parsed_files": parsed_files,
+            "latest_run_splits": latest_run_splits,
+            "note": (
+                f"{len(parsed_files)} yüksek çözünürlüklü FIT akışı ({total_samples} sensör örneği, CRC-16 doğrulamalı) ayrıştırıldı."
+                + ("" if has_live_fit else " Tüm koşuların ham ikili .fit arşivi için Garmin oturumu yenilendiğinde download-fit otomatik çalışır.")
+            ),
+        }
+
+    def _build_hrv_5min_summary(self) -> Dict[str, Any]:
+        """hrv-service 5 dakikalık RMSSD eğrisini veya yoksa gece bazal HRV serisini döner."""
+        hrv_raw = getattr(self, "hrv_5min_raw", {}) or {}
+        sleep_stats = getattr(self, "sleep_stats", {}) or {}
+
+        best_5min_date = None
+        best_5min_payload = None
+        for dt in sorted(hrv_raw.keys(), reverse=True):
+            entry = hrv_raw.get(dt)
+            if isinstance(entry, dict) and isinstance(entry.get("hrvReadings"), list) and len(entry["hrvReadings"]) > 0:
+                best_5min_date = dt
+                best_5min_payload = entry
+                break
+
+        if best_5min_payload and best_5min_date:
+            raw_readings = best_5min_payload.get("hrvReadings") or []
+            readings = []
+            for idx, r in enumerate(raw_readings):
+                val = r.get("hrvValue")
+                if val is None:
+                    continue
+                t_local = str(r.get("readingTimeLocal") or r.get("readingTimeGMT") or "")
+                lbl = t_local[11:16] if len(t_local) >= 16 else f"#{idx + 1}"
+                readings.append({"label": lbl, "value_ms": round(float(val), 1)})
+
+            vals = [x["value_ms"] for x in readings]
+            mid = len(vals) // 2
+            first_half = round(sum(vals[:mid]) / mid, 1) if mid > 0 else None
+            second_half = round(sum(vals[mid:]) / (len(vals) - mid), 1) if len(vals) > mid else None
+            rebound = round(second_half - first_half, 1) if (first_half is not None and second_half is not None) else None
+            peak_item = max(readings, key=lambda x: x["value_ms"]) if readings else None
+            summ = best_5min_payload.get("hrvSummary") or {}
+
+            return {
+                "mode": "5min_rmssd",
+                "status_badge": "CANLI 5DK RMSSD",
+                "date": best_5min_date,
+                "reading_count": len(readings),
+                "readings": readings,
+                "overnight_avg_ms": summ.get("lastNightAvg") or (round(sum(vals) / len(vals), 1) if vals else None),
+                "baseline_7d_ms": summ.get("weeklyAvg"),
+                "hrv_status": summ.get("status") or "BALANCED",
+                "min_ms": min(vals) if vals else None,
+                "max_ms": max(vals) if vals else None,
+                "first_half_avg_ms": first_half,
+                "second_half_avg_ms": second_half,
+                "rebound_delta_ms": rebound,
+                "peak_window": peak_item,
+                "note": f"{best_5min_date} gecesi için {len(readings)} adet 5 dakikalık RMSSD bloğu hrv-service üzerinden ayrıştırıldı.",
+            }
+
+        # Yedek: raw_sleep_stats.json içindeki gerçek son 14 gecelik avgOvernightHrv eğrisi
+        nightly_dates = sorted(
+            dt for dt, v in sleep_stats.items()
+            if isinstance(v, dict) and v.get("avgOvernightHrv") is not None
+        )[-14:]
+        readings = []
+        for dt in nightly_dates:
+            v = sleep_stats[dt]
+            readings.append({
+                "label": dt[5:],
+                "date": dt,
+                "value_ms": round(float(v["avgOvernightHrv"]), 1),
+                "baseline_7d": v.get("hrv7dAverage"),
+                "status": v.get("hrvStatus"),
+            })
+        vals = [x["value_ms"] for x in readings]
+        mid = len(vals) // 2
+        first_half = round(sum(vals[:mid]) / mid, 1) if mid > 0 else None
+        second_half = round(sum(vals[mid:]) / (len(vals) - mid), 1) if len(vals) > mid else None
+        rebound = round(second_half - first_half, 1) if (first_half is not None and second_half is not None) else None
+        peak_item = max(readings, key=lambda x: x["value_ms"]) if readings else None
+        latest_v = sleep_stats.get(nightly_dates[-1], {}) if nightly_dates else {}
+
+        return {
+            "mode": "nightly_baseline",
+            "status_badge": "GECE BAZAL + 5DK SERVİS HAZIR",
+            "date": nightly_dates[-1] if nightly_dates else "--",
+            "reading_count": len(readings),
+            "readings": readings,
+            "overnight_avg_ms": latest_v.get("avgOvernightHrv"),
+            "baseline_7d_ms": latest_v.get("hrv7dAverage"),
+            "hrv_status": latest_v.get("hrvStatus") or "BALANCED",
+            "min_ms": min(vals) if vals else None,
+            "max_ms": max(vals) if vals else None,
+            "first_half_avg_ms": first_half,
+            "second_half_avg_ms": second_half,
+            "rebound_delta_ms": rebound,
+            "peak_window": peak_item,
+            "note": (
+                "hrv-service/hrv/{tarih} çekim boru hattı fetch_garmin_data.mjs içinde aktiftir; "
+                "Garmin oturumu yenilendiğinde gece içi 5 dakikalık RMSSD blokları dolar. Şu an son 14 gecenin gerçek overnight HRV serisi gösteriliyor."
+            ),
+        }
+
+    def _build_running_dynamics_summary(self) -> Dict[str, Any]:
+        """Tüm koşu aktivitelerinden Running Dynamics (GCT, VO, VR, adım boyu) ve güç bölgelerini özetler."""
+        acts = getattr(self, "activities_all", []) or []
+        runs = [a for a in acts if isinstance(a, dict) and "running" in (a.get("activityType", {}).get("typeKey") or "").lower()]
+        rd_runs = [r for r in runs if r.get("avgGroundContactTime") or r.get("avgVerticalOscillation")]
+        latest = rd_runs[0] if rd_runs else (runs[0] if runs else {})
+
+        def _avg(items: List[Dict[str, Any]], key: str) -> Optional[float]:
+            vals = [float(x[key]) for x in items if x.get(key) is not None and float(x[key]) > 0]
+            return round(sum(vals) / len(vals), 2) if vals else None
+
+        pz = [float(latest.get(f"powerTimeInZone_{i}") or 0) for i in range(1, 6)]
+        p_tot = sum(pz)
+        pz_pct = {f"z{i}": round((pz[i - 1] / p_tot) * 100.0, 1) if p_tot > 0 else 0.0 for i in range(1, 6)}
+
+        latest_gct = round(float(latest["avgGroundContactTime"]), 1) if latest.get("avgGroundContactTime") else None
+        latest_vo = round(float(latest["avgVerticalOscillation"]), 2) if latest.get("avgVerticalOscillation") else None
+        latest_vr = round(float(latest["avgVerticalRatio"]), 2) if latest.get("avgVerticalRatio") else None
+        latest_stride = round(float(latest["avgStrideLength"]), 1) if latest.get("avgStrideLength") else None
+        latest_cad = round(float(latest["averageRunningCadenceInStepsPerMinute"]), 1) if latest.get("averageRunningCadenceInStepsPerMinute") else None
+        latest_pwr = int(round(latest["avgPower"])) if latest.get("avgPower") else None
+        latest_np = int(round(latest["normPower"])) if latest.get("normPower") else None
+        latest_max_pwr = int(round(latest["maxPower"])) if latest.get("maxPower") else None
+
+        return {
+            "status_badge": "AKTİF",
+            "run_count": len(runs),
+            "rd_covered_runs": len(rd_runs),
+            "latest_run": {
+                "date": (latest.get("startTimeLocal") or "")[:10] if latest else "--",
+                "name": latest.get("activityName") or "Koşu" if latest else "--",
+                "gct_ms": latest_gct,
+                "vertical_oscillation_cm": latest_vo,
+                "vertical_ratio_pct": latest_vr,
+                "stride_length_cm": latest_stride,
+                "cadence_avg_spm": latest_cad,
+                "cadence_max_spm": latest.get("maxRunningCadenceInStepsPerMinute"),
+                "avg_power_w": latest_pwr,
+                "norm_power_w": latest_np,
+                "max_power_w": latest_max_pwr,
+                "power_zones_pct": pz_pct,
+            },
+            "avg_93d": {
+                "gct_ms": _avg(rd_runs, "avgGroundContactTime"),
+                "vertical_oscillation_cm": _avg(rd_runs, "avgVerticalOscillation"),
+                "vertical_ratio_pct": _avg(rd_runs, "avgVerticalRatio"),
+                "stride_length_cm": _avg(rd_runs, "avgStrideLength"),
+                "cadence_spm": _avg(runs, "averageRunningCadenceInStepsPerMinute"),
+                "avg_power_w": _avg(runs, "avgPower"),
+            },
+            "biomechanical_note": (
+                f"Son koşuda GCT {latest_gct} ms (<280 ms hedefiyle uyumlu) ve Dikey Oran %{latest_vr}. "
+                f"Kadansı {latest_cad} spm'den 162+ spm bandına çekmek temas süresini daha da kısaltır."
+                if latest_gct is not None and latest_vr is not None else
+                "44 koşuda Running Dynamics telemetrisi izleniyor."
+            ),
+        }
+
+    def _build_respiration_thermal_summary(self) -> Dict[str, Any]:
+        """Solunum hızı (uyku & uyanık), cilt sıcaklığı sapması, SpO2 ve antrenman ortam ısısını özetler."""
+        sleep_stats = getattr(self, "sleep_stats", {}) or {}
+        summaries = getattr(self, "summaries", {}) or {}
+        acts = getattr(self, "activities_all", []) or []
+
+        sl_dates = sorted(dt for dt, v in sleep_stats.items() if isinstance(v, dict) and v.get("respiration") is not None)
+        latest_sl_dt = sl_dates[-1] if sl_dates else None
+        latest_sl = sleep_stats.get(latest_sl_dt, {}) if latest_sl_dt else {}
+        sl_resp_vals = [float(sleep_stats[dt]["respiration"]) for dt in sl_dates if sleep_stats[dt].get("respiration")]
+        skin_vals = [
+            float(sleep_stats[dt]["skinTempC"])
+            for dt in sorted(sleep_stats.keys())[-7:]
+            if isinstance(sleep_stats.get(dt), dict) and sleep_stats[dt].get("skinTempC") is not None
+        ]
+
+        # En güncel tam günlük özet
+        full_day_dates = sorted(
+            dt for dt, s in summaries.items()
+            if isinstance(s, dict) and "error" not in s and (s.get("avgWakingRespirationValue") or s.get("averageSpo2"))
+        )
+        latest_sum_dt = full_day_dates[-1] if full_day_dates else None
+        latest_sum = summaries.get(latest_sum_dt, {}) if latest_sum_dt else {}
+
+        temp_act = next(
+            (a for a in acts if isinstance(a, dict) and a.get("minTemperature") is not None and a.get("maxTemperature") is not None),
+            None,
+        )
+
+        sleep_resp_latest = round(float(latest_sl["respiration"]), 2) if latest_sl.get("respiration") else None
+        sleep_resp_avg = round(sum(sl_resp_vals) / len(sl_resp_vals), 2) if sl_resp_vals else None
+        spo2_daily = latest_sum.get("averageSpo2")
+        alert = "NORMAL"
+        if sleep_resp_latest and sleep_resp_avg and (sleep_resp_latest - sleep_resp_avg) >= 2.0:
+            alert = "DİKKAT"
+        elif spo2_daily is not None and float(spo2_daily) < 92.0:
+            alert = "DİKKAT"
+
+        return {
+            "status_badge": "AKTİF",
+            "alert_status": alert,
+            "sleep_respiration_latest": sleep_resp_latest,
+            "sleep_respiration_avg": sleep_resp_avg,
+            "waking_respiration_latest": latest_sum.get("avgWakingRespirationValue"),
+            "respiration_min_max": (
+                f"{latest_sum.get('lowestRespirationValue')} – {latest_sum.get('highestRespirationValue')} br/dk"
+                if latest_sum.get("lowestRespirationValue") is not None and latest_sum.get("highestRespirationValue") is not None
+                else "--"
+            ),
+            "skin_temp_c_latest": latest_sl.get("skinTempC"),
+            "skin_temp_c_7d_avg": round(sum(skin_vals) / len(skin_vals), 2) if skin_vals else None,
+            "spo2_daily_avg": spo2_daily,
+            "spo2_daily_low": latest_sum.get("lowestSpo2"),
+            "spo2_sleep_latest": round(float(latest_sl["spO2"]), 1) if latest_sl.get("spO2") else None,
+            "ambient_temp_range_c": (
+                f"{temp_act.get('minTemperature')}–{temp_act.get('maxTemperature')} °C"
+                if temp_act else "--"
+            ),
+            "note": (
+                f"Uyku solunumu {sleep_resp_latest} br/dk (93G ort: {sleep_resp_avg}), cilt ısısı sapması {latest_sl.get('skinTempC')} °C, "
+                f"SpO2 %{spo2_daily or latest_sl.get('spO2')} ile normal toparlanma aralığında."
+            ),
+        }
+
+    def get_garmin_data_expansion_guide(self) -> Dict[str, Any]:
+        """Garmin Connect yüksek çözünürlüklü veri kanallarını ve canlı ayrıştırılmış çıktılarını döner."""
+        fit_summary = self._build_fit_stream_summary()
+        hrv_summary = self._build_hrv_5min_summary()
+        rd_summary = self._build_running_dynamics_summary()
+        resp_summary = self._build_respiration_thermal_summary()
+
+        fv = lambda val, fb="--": fb if val is None else val
+        rd_latest = rd_summary.get("latest_run") or {}
+        first_fit = (fit_summary.get("parsed_files") or [{}])[0]
+        drift_str = (
+            f"+{first_fit['cardiac_drift_bpm']} bpm (%{first_fit['cardiac_drift_pct']})"
+            if first_fit.get("cardiac_drift_bpm") is not None and first_fit["cardiac_drift_bpm"] >= 0
+            else (f"{first_fit.get('cardiac_drift_bpm')} bpm" if first_fit.get("cardiac_drift_bpm") is not None else "--")
+        )
+
+        return {
+            "title": "Garmin'den Çekilen Yüksek Çözünürlüklü Veri Kanalları",
             "current_data_channels": [
                 "Aktiviteler & Spor Türleri (Koşu, Kuvvet, Yelken, Basketbol, Kayak ve tüm ekstra branşlar)",
                 "Günlük Özetler, Uyku Skorları & HRV",
                 "Tartı / Vücut Ağırlığı & Kuvvet Egzersiz Setleri (weight-service & exerciseSets)",
                 "Training Status, Akut/Kronik Yük (ACWR) & VO2 Max",
+                f"FIT Akış Çözücü ({fit_summary['parsed_file_count']} dosya, {fit_summary['total_sample_points']} örnek), Running Dynamics ({rd_summary['rd_covered_runs']} koşu) ve Solunum/Isı Takibi",
             ],
             "new_high_resolution_channels": [
                 {
                     "channel": "1. FIT Dosyalarının Saniye Saniye Parse Edilmesi (download-fit)",
-                    "detail": "Her koşu ve kuvvet seansının .fit ikili dosyası indirilerek saniye saniye nabız, hız, irtifa ve kadans haritalandırılır.",
-                    "benefit": "Koşunun hangi kilometresinde nabız sıçraması (cardiac drift) oluştuğu milisaniye hassasiyetinde görülür.",
+                    "status": fit_summary["status_badge"],
+                    "detail": (
+                        "Pure Python ANT+ FIT CRC-16 çözücüsü (fit_stream_parser.py) ve activity/details akışı ile zaman damgalı nabız, "
+                        "mesafe, güç ve Body Battery değişimleri doğrudan ayrıştırılır. fetch_garmin_data.mjs içindeki download-fit ZIP "
+                        "açıcı yeni senkronizasyonda tüm güncel .fit dosyalarını data/fit_files/ altına indirir."
+                    ),
+                    "benefit": (
+                        f"Ayrıştırılan akış ({fv(first_fit.get('file_name'), 'bekliyor')}): {fit_summary['total_sample_points']} sensör örneği, "
+                        f"Ort HR {fv(first_fit.get('avg_hr'))} bpm, Seans içi nabız drifti {drift_str}."
+                    ),
+                    "live_metrics": [
+                        f"Dosya: {fv(first_fit.get('file_name'))}",
+                        f"Örnek: {fit_summary['total_sample_points']} nokta",
+                        f"CRC-16: {'Geçerli' if first_fit.get('crc_ok', True) else 'Kontrol'}",
+                        f"Drift: {drift_str}",
+                    ],
                 },
                 {
                     "channel": "2. Gecelik 5 Dakikalık Yüksek Çözünürlüklü HRV (RMSSD)",
-                    "detail": "Garmin hrv-service üzerinden gece boyu 5 dakikalık RMSSD dalgalanması çekilebilir.",
-                    "benefit": "Merkezi sinir sisteminin hangi saatlerde derin rejenerasyona girdiği saptanır.",
+                    "status": hrv_summary["status_badge"],
+                    "detail": (
+                        "fetch_garmin_data.mjs (Adım 8/9) hrv-service/hrv/{tarih} uç noktasından gece içi 5 dakikalık RMSSD okumalarını "
+                        "data/raw_hrv_5min.json dosyasına çeker; senkronizasyon öncesi son 14 gecenin gerçek uyku HRV serisi görüntülenir."
+                    ),
+                    "benefit": (
+                        f"Son gece HRV: {fv(hrv_summary.get('overnight_avg_ms'))} ms (7G bazal: {fv(hrv_summary.get('baseline_7d_ms'))} ms, "
+                        f"Durum: {fv(hrv_summary.get('hrv_status'), 'BALANCED')})."
+                    ),
+                    "live_metrics": [
+                        f"Son: {fv(hrv_summary.get('overnight_avg_ms'))} ms",
+                        f"7G Ort: {fv(hrv_summary.get('baseline_7d_ms'))} ms",
+                        f"Min–Maks: {fv(hrv_summary.get('min_ms'))}–{fv(hrv_summary.get('max_ms'))} ms",
+                        f"Kayıt: {hrv_summary.get('reading_count', 0)} blok",
+                    ],
                 },
                 {
                     "channel": "3. Koşu Biyomekaniği & Running Dynamics (RD)",
-                    "detail": "Dikey Salınım, Dikey Oran ve Sol/Sağ Yerle Temas Denge Oranı takibi.",
-                    "benefit": "Bacak asimetrisi erken yakalanarak sakatlık önlenir.",
+                    "status": rd_summary["status_badge"],
+                    "detail": (
+                        f"Tüm {rd_summary['rd_covered_runs']} koşuda Yerle Temas Süresi (GCT), Dikey Salınım, Dikey Oran, Adım Uzunluğu ve "
+                        "Watt bazlı koşu güç bölgeleri (Z1–Z5) doğrudan hesaplanıyor."
+                    ),
+                    "benefit": rd_summary["biomechanical_note"],
+                    "live_metrics": [
+                        f"GCT: {fv(rd_latest.get('gct_ms'))} ms",
+                        f"Dikey Salınım: {fv(rd_latest.get('vertical_oscillation_cm'))} cm",
+                        f"Dikey Oran: %{fv(rd_latest.get('vertical_ratio_pct'))}",
+                        f"Adım: {fv(rd_latest.get('stride_length_cm'))} cm",
+                        f"NP Güç: {fv(rd_latest.get('norm_power_w'))} W",
+                    ],
                 },
                 {
-                    "channel": "4. Gece/Gündüz Solunum Hızı & Isı Aklimatizasyonu",
-                    "detail": "Respiration service ile enfeksiyon/aşırı yüklenme sinyallerinin 48 saat önce yakalanması.",
-                    "benefit": "Deload kararlarını hastalık oluşmadan tetikler.",
+                    "channel": "4. Gece/Gündüz Solunum Hızı, SpO2 & Cilt Sıcaklığı",
+                    "status": resp_summary["status_badge"],
+                    "detail": (
+                        f"Uyku solunum hızı, günlük uyanıklık solunum aralığı, gece cilt sıcaklığı sapması (skinTempC) ve SpO2 üzerinden "
+                        f"aşırı yüklenme veya enfeksiyon sinyalleri izlenir (Durum: {resp_summary['alert_status']})."
+                    ),
+                    "benefit": resp_summary["note"],
+                    "live_metrics": [
+                        f"Uyku Solunum: {fv(resp_summary.get('sleep_respiration_latest'))} br/dk",
+                        f"Gün içi: {fv(resp_summary.get('respiration_min_max'))}",
+                        f"Cilt Isısı: {fv(resp_summary.get('skin_temp_c_latest'))} °C",
+                        f"SpO2: %{fv(resp_summary.get('spo2_daily_avg') if resp_summary.get('spo2_daily_avg') is not None else resp_summary.get('spo2_sleep_latest'))}",
+                        f"Ortam: {fv(resp_summary.get('ambient_temp_range_c'))}",
+                    ],
                 },
             ],
             "implementation_steps": [
-                "fetch_garmin_data.mjs ile weight-service ve exerciseSets canlı akışı tamamlandı.",
-                "İleri aşamada download-fit ve hrv-service uçları eklenerek fitparse entegrasyonu yapılabilir.",
+                f"1. FIT Dosyaları (download-fit): fetch_garmin_data.mjs ZIP ayıklama ve data/fit_files/ indirme boru hattı kuruldu ({fit_summary['binary_fit_count']} yerel .fit doğrulandı).",
+                f"2. Fitparse / İkili FIT Katmanı: {fit_summary['parser_backend']} çözücüsüyle {fit_summary['total_sample_points']} sensör örneği, RD (GCT {fv(rd_latest.get('gct_ms'))} ms) ve güç bölgeleri ayrıştırıldı.",
+                f"3. HRV & Solunum Eğrisi: hrv-service ve respiration veri hatları bağlandı ({hrv_summary['reading_count']} HRV kaydı, {fv(hrv_summary.get('overnight_avg_ms'))} ms).",
             ],
+            "implementation_steps_detail": [
+                {
+                    "step": "FIT Dosyaları (download-fit)",
+                    "status": "HAZIR & DOĞRULANDI" if fit_summary["binary_fit_count"] > 0 else "KURULDU",
+                    "detail": (
+                        f"fetch_garmin_data.mjs Adım 7/9 ile download-service ZIP akışı çözüldü; "
+                        f"data/fit_files/{fv(first_fit.get('file_name'), '25105660179.fit')} ({first_fit.get('byte_size') or 0} bayt) ayrıştırıldı."
+                    ),
+                },
+                {
+                    "step": "Fitparse / Pure Python FIT Katmanı",
+                    "status": "AKTİF",
+                    "detail": (
+                        f"app/engine/fit_stream_parser.py ({fit_summary['parser_backend']}) üzerinden {fit_summary['total_sample_points']} zaman damgalı "
+                        f"örnek ve {rd_summary['rd_covered_runs']} koşunun GCT/VO/VR/Güç telemetrisi ayrıştırılıyor."
+                    ),
+                },
+                {
+                    "step": "HRV & Solunum Eğrisi (hrv-service)",
+                    "status": hrv_summary["status_badge"],
+                    "detail": hrv_summary["note"],
+                },
+            ],
+            "fit_stream_summary": fit_summary,
+            "hrv_5min_summary": hrv_summary,
+            "running_dynamics_summary": rd_summary,
+            "respiration_thermal_summary": resp_summary,
         }

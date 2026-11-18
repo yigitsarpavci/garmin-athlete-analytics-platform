@@ -337,20 +337,166 @@ function renderFitnessAge(data) {
 function renderGarminExpansion(data) {
   if (!data || !Array.isArray(data.new_high_resolution_channels)) return;
   const c = document.getElementById('garminExpansionCardsContainer');
-  if (!c) return;
-  c.innerHTML = data.new_high_resolution_channels.map((ch, idx) => `
-    <div class="tint-panel p-4 space-y-2.5 ${idx === 0 ? 'md:col-span-2' : ''}">
-      <h4 class="text-xs font-semibold flex items-center gap-2">
-        ${lucideSvg('cpu', 'w-3.5 h-3.5 accent-text')}
-        <span>${escapeHtml(ch.channel)}</span>
-      </h4>
-      <p class="text-xs text-[var(--text-secondary)] leading-relaxed">${escapeHtml(ch.detail)}</p>
-      <p class="text-[11px] accent-text surface-card p-2.5 flex items-start gap-2">
-        ${lucideSvg('sparkles', 'w-3.5 h-3.5 shrink-0 mt-0.5')}
-        <span><strong class="font-semibold">Faydası:</strong> ${escapeHtml(ch.benefit)}</span>
-      </p>
-    </div>
-  `).join('');
+  if (c) {
+    c.innerHTML = data.new_high_resolution_channels.map(ch => {
+      const pills = Array.isArray(ch.live_metrics) ? ch.live_metrics : [];
+      const pillsHtml = pills.length
+        ? `<div class="flex flex-wrap gap-1.5 pt-1">
+            ${pills.map(m => `<span class="font-mono text-[10px] px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[2px] text-[var(--text-primary)]">${escapeHtml(m)}</span>`).join('')}
+          </div>`
+        : '';
+      const statusBadge = ch.status
+        ? `<span class="stamp-tag ${ch.status === 'AKTİF' || ch.status.includes('AKTİF') ? 'stamp-moss' : 'stamp-accent'} shrink-0">${escapeHtml(ch.status)}</span>`
+        : '';
+      return `
+        <div class="tint-panel p-4 space-y-2.5 flex flex-col justify-between min-w-0">
+          <div class="space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <h4 class="text-xs font-semibold flex items-center gap-2 leading-snug">
+                ${lucideSvg('cpu', 'w-3.5 h-3.5 accent-text shrink-0')}
+                <span>${escapeHtml(ch.channel)}</span>
+              </h4>
+              ${statusBadge}
+            </div>
+            <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(ch.detail)}</p>
+            ${pillsHtml}
+          </div>
+          <p class="text-[11px] accent-text surface-card p-2.5 flex items-start gap-2">
+            ${lucideSvg('sparkles', 'w-3.5 h-3.5 shrink-0 mt-0.5')}
+            <span><strong class="font-semibold">Canlı Çıktı:</strong> ${escapeHtml(ch.benefit)}</span>
+          </p>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const stepsList = document.getElementById('garminExpansionStepsList');
+  const pipeBadge = document.getElementById('expansionPipelineBadge');
+  const stepsDetail = Array.isArray(data.implementation_steps_detail) ? data.implementation_steps_detail : [];
+  if (pipeBadge) {
+    const activeCnt = stepsDetail.filter(s => s.status && (s.status.includes('AKTİF') || s.status.includes('DOĞRULANDI') || s.status.includes('HAZIR'))).length;
+    pipeBadge.textContent = stepsDetail.length ? `${activeCnt}/${stepsDetail.length} Adım Hazır` : 'Aktif';
+  }
+  if (stepsList && stepsDetail.length) {
+    stepsList.innerHTML = stepsDetail.map((st, idx) => `
+      <div class="tint-panel p-3.5 space-y-1.5">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="font-semibold text-[var(--text-primary)]">${idx + 1}. ${escapeHtml(st.step)}</span>
+          <span class="stamp-tag ${st.status && (st.status.includes('AKTİF') || st.status.includes('DOĞRULANDI')) ? 'stamp-moss' : 'stamp-accent'}">${escapeHtml(st.status || 'Hazır')}</span>
+        </div>
+        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(st.detail || '')}</p>
+      </div>
+    `).join('');
+  }
+
+  const panel = document.getElementById('highResTelemetryPanel');
+  if (panel) {
+    const fit = data.fit_stream_summary || {};
+    const hrv = data.hrv_5min_summary || {};
+    const rd = data.running_dynamics_summary || {};
+    const resp = data.respiration_thermal_summary || {};
+    const firstFit = (Array.isArray(fit.parsed_files) && fit.parsed_files.length) ? fit.parsed_files[0] : null;
+    const splits = fit.latest_run_splits || {};
+    const rdLatest = rd.latest_run || {};
+    const readings = Array.isArray(hrv.readings) ? hrv.readings : [];
+
+    const maxHrvVal = readings.reduce((mx, r) => Math.max(mx, Number(r.value_ms) || 0), 1);
+    const minHrvVal = readings.reduce((mn, r) => Math.min(mn, Number(r.value_ms) || 999), 999);
+    const hrvBarsHtml = readings.length
+      ? `<div class="flex items-end gap-1 h-16 pt-2">
+          ${readings.map(r => {
+            const val = Number(r.value_ms) || 0;
+            const hPct = Math.max(18, Math.min(100, Math.round((val / maxHrvVal) * 100)));
+            const isPeak = val >= maxHrvVal - 0.5;
+            const cls = isPeak ? 'bg-[var(--moss)]' : 'bg-[var(--accent)] opacity-80';
+            return `<div class="flex-1 ${cls} rounded-t-[1px] transition-all" style="height: ${hPct}%;" title="${escapeHtml(r.label)}: ${val} ms"></div>`;
+          }).join('')}
+        </div>
+        <div class="flex justify-between font-mono text-[10px] text-[var(--text-muted)] pt-1">
+          <span>${escapeHtml(readings[0].label)} (${readings[0].value_ms} ms)</span>
+          <span>Min ${minHrvVal} / Peak ${hrv.peak_window ? `${hrv.peak_window.label}: ${hrv.peak_window.value_ms} ms` : `${maxHrvVal} ms`}</span>
+          <span>${escapeHtml(readings[readings.length - 1].label)} (${readings[readings.length - 1].value_ms} ms)</span>
+        </div>`
+      : `<p class="text-[11px] text-[var(--text-secondary)]">HRV verisi bekleniyor.</p>`;
+
+    const timeline = (firstFit && Array.isArray(firstFit.sampled_timeline)) ? firstFit.sampled_timeline : [];
+    const maxSampleHr = timeline.reduce((mx, p) => Math.max(mx, Number(p.hr) || 0), 1);
+    const fitSparkHtml = timeline.length
+      ? `<div class="flex items-end gap-0.5 h-12 pt-1">
+          ${timeline.map(p => {
+            const hr = Number(p.hr) || 0;
+            const hPct = Math.max(20, Math.min(100, Math.round((hr / maxSampleHr) * 100)));
+            return `<div class="flex-1 bg-[var(--accent)] opacity-75 rounded-t-[1px]" style="height: ${hPct}%;" title="${p.t_min} dk · ${hr} bpm"></div>`;
+          }).join('')}
+        </div>
+        <div class="flex justify-between font-mono text-[10px] text-[var(--text-muted)] pt-1">
+          <span>0 dk (${timeline[0].hr} bpm)</span>
+          <span>1. Yarı: ${firstFit.first_half_avg_hr ?? '--'} → 2. Yarı: ${firstFit.second_half_avg_hr ?? '--'} bpm</span>
+          <span>${firstFit.duration_min ?? '--'} dk (${firstFit.max_hr ?? '--'} max)</span>
+        </div>`
+      : '';
+
+    panel.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
+        <div>
+          <h4 class="font-editorial text-base font-medium tracking-tight">Canlı Yüksek Çözünürlük Telemetrisi (FIT + HRV + Running Dynamics)</h4>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">${escapeHtml(fit.note || '')}</p>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="stamp-tag stamp-moss">${escapeHtml(fit.status_badge || 'FIT AKTİF')}</span>
+          <span class="stamp-tag stamp-accent">${escapeHtml(hrv.status_badge || 'HRV HAZIR')}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="tint-panel p-4 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">FIT İkili Akış Örneği</span>
+            <span class="font-mono text-[10px] accent-text font-semibold">${escapeHtml(firstFit ? firstFit.file_name : 'download-fit')}</span>
+          </div>
+          <p class="text-xs font-medium">${escapeHtml(firstFit ? `${firstFit.activity_name} (${firstFit.date})` : 'Seans FIT Akışı')}</p>
+          <p class="font-mono text-[11px] text-[var(--text-secondary)]">
+            ${firstFit ? `${firstFit.sample_count} nokta · Ort HR ${firstFit.avg_hr} bpm · Drift ${firstFit.cardiac_drift_bpm >= 0 ? '+' : ''}${firstFit.cardiac_drift_bpm} bpm` : 'FIT dosyası bekleniyor'}
+          </p>
+          ${fitSparkHtml}
+          ${splits.activity_name ? `<p class="font-mono text-[10px] text-[var(--text-secondary)] pt-1 border-t border-[var(--border-subtle)]">Son Koşu Splitleri (${escapeHtml(splits.date)}): En Hızlı 1K ${escapeHtml(splits.fastest_1k_pace)} · 5K Tempo ${escapeHtml(splits.fastest_5k_pace)}</p>` : ''}
+        </div>
+
+        <div class="tint-panel p-4 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">${hrv.mode === '5min_rmssd' ? '5 Dakikalık Gece HRV (RMSSD)' : 'Son 14 Gece HRV Serisi (5dk Servis Hazır)'}</span>
+            <span class="font-mono text-[10px] moss-text font-semibold">${hrv.overnight_avg_ms ?? '--'} ms (7G: ${hrv.baseline_7d_ms ?? '--'})</span>
+          </div>
+          ${hrvBarsHtml}
+          <p class="text-[10.5px] text-[var(--text-secondary)] leading-relaxed pt-1 border-t border-[var(--border-subtle)]">${escapeHtml(hrv.note || '')}</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div class="tint-panel p-3">
+          <span class="font-mono text-[10px] text-[var(--text-muted)] block uppercase">Yerle Temas (GCT)</span>
+          <strong class="font-mono text-sm font-bold accent-text">${rdLatest.gct_ms ?? '--'} ms</strong>
+          <span class="font-mono text-[10px] text-[var(--text-secondary)] block">93G Ort: ${rd.avg_93d?.gct_ms ?? '--'} ms</span>
+        </div>
+        <div class="tint-panel p-3">
+          <span class="font-mono text-[10px] text-[var(--text-muted)] block uppercase">Dikey Salınım / Oran</span>
+          <strong class="font-mono text-sm font-bold">${rdLatest.vertical_oscillation_cm ?? '--'} cm</strong>
+          <span class="font-mono text-[10px] text-[var(--text-secondary)] block">Oran: %${rdLatest.vertical_ratio_pct ?? '--'}</span>
+        </div>
+        <div class="tint-panel p-3">
+          <span class="font-mono text-[10px] text-[var(--text-muted)] block uppercase">Solunum &amp; Cilt Isısı</span>
+          <strong class="font-mono text-sm font-bold moss-text">${resp.sleep_respiration_latest ?? '--'} br/dk</strong>
+          <span class="font-mono text-[10px] text-[var(--text-secondary)] block">Cilt: ${resp.skin_temp_c_latest ?? '--'} °C · SpO2 %${resp.spo2_daily_avg ?? resp.spo2_sleep_latest ?? '--'}</span>
+        </div>
+        <div class="tint-panel p-3">
+          <span class="font-mono text-[10px] text-[var(--text-muted)] block uppercase">Koşu Gücü (NP / Maks)</span>
+          <strong class="font-mono text-sm font-bold">${rdLatest.norm_power_w ?? '--'} W</strong>
+          <span class="font-mono text-[10px] text-[var(--text-secondary)] block">Maks: ${rdLatest.max_power_w ?? '--'} W · Adım ${rdLatest.stride_length_cm ?? '--'} cm</span>
+        </div>
+      </div>
+    `;
+  }
+
   if (typeof refreshIcons === 'function') refreshIcons();
 }
 

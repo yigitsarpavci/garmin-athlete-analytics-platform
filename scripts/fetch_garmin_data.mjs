@@ -12,10 +12,77 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import { inflateRawSync } from "node:zlib";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, "../data");
+const FIT_DIR = path.join(DATA_DIR, "fit_files");
 fs.mkdirSync(DATA_DIR, { recursive: true });
+fs.mkdirSync(FIT_DIR, { recursive: true });
+
+function extractFitFromZip(buf, activityId) {
+  let eocdOffset = buf.length - 22;
+  while (eocdOffset >= 0) {
+    if (
+      buf[eocdOffset] === 0x50 &&
+      buf[eocdOffset + 1] === 0x4b &&
+      buf[eocdOffset + 2] === 0x05 &&
+      buf[eocdOffset + 3] === 0x06
+    ) {
+      break;
+    }
+    eocdOffset--;
+  }
+  if (eocdOffset < 0) return null;
+
+  const cdOffset = buf.readUInt32LE(eocdOffset + 16);
+  const cdEntries = buf.readUInt16LE(eocdOffset + 10);
+  let pos = cdOffset;
+  for (let i = 0; i < cdEntries; i++) {
+    if (
+      buf[pos] !== 0x50 ||
+      buf[pos + 1] !== 0x4b ||
+      buf[pos + 2] !== 0x01 ||
+      buf[pos + 3] !== 0x02
+    ) {
+      break;
+    }
+    const method = buf.readUInt16LE(pos + 10);
+    const compressedSize = buf.readUInt32LE(pos + 20);
+    const uncompressedSize = buf.readUInt32LE(pos + 24);
+    const nameLength = buf.readUInt16LE(pos + 28);
+    const extraLength = buf.readUInt16LE(pos + 30);
+    const commentLength = buf.readUInt16LE(pos + 32);
+    const localHeaderOffset = buf.readUInt32LE(pos + 42);
+    const name = buf.toString("utf-8", pos + 46, pos + 46 + nameLength);
+    if (name.endsWith(".fit")) {
+      const localNameLen = buf.readUInt16LE(localHeaderOffset + 26);
+      const localExtraLen = buf.readUInt16LE(localHeaderOffset + 28);
+      const dataStart = localHeaderOffset + 30 + localNameLen + localExtraLen;
+      if (method === 0) {
+        return {
+          name: `${activityId}.fit`,
+          data: Buffer.from(buf.subarray(dataStart, dataStart + uncompressedSize)),
+        };
+      }
+      if (method === 8) {
+        const compressed = buf.subarray(dataStart, dataStart + compressedSize);
+        return { name: `${activityId}.fit`, data: inflateRawSync(compressed) };
+      }
+    }
+    pos += 46 + nameLength + extraLength + commentLength;
+  }
+  return null;
+}
+
+function readJsonSafe(filePath, fallback) {
+  if (!fs.existsSync(filePath)) return fallback;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf-8")) || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 function findGarminClientPath() {
   const out = execSync(
@@ -47,7 +114,7 @@ async function main() {
     const startDate = new Date(endDate);
     startDate.setUTCDate(startDate.getUTCDate() - 92); // 93 days inclusive
 
-    console.log(`[1/3] Son 100 aktivite çekiliyor...`);
+    console.log(`[1/9] Son 100 aktivite çekiliyor...`);
     const acts = await client.get(
       "activitylist-service/activities/search/activities",
       { limit: 100, start: 0 }
@@ -57,7 +124,7 @@ async function main() {
       JSON.stringify(acts, null, 2)
     );
 
-    console.log(`[2/3] Uyku ve HRV istatistikleri çekiliyor (25 günlük bloklar)...`);
+    console.log(`[2/9] Uyku ve HRV istatistikleri çekiliyor (25 günlük bloklar)...`);
     const sleepDays = {};
     let cur = new Date(startDate);
     cur.setUTCDate(cur.getUTCDate() - 15); // extra buffer
@@ -81,7 +148,7 @@ async function main() {
       JSON.stringify(sleepDays, null, 2)
     );
 
-    console.log(`[3/3] 93 günlük özet ve Training Readiness verileri çekiliyor...`);
+    console.log(`[3/9] 93 günlük özet ve Training Readiness verileri çekiliyor...`);
     const dates = [];
     for (
       let d = new Date(startDate);
@@ -122,7 +189,7 @@ async function main() {
       JSON.stringify({ summaries, readiness }, null, 2)
     );
 
-    console.log(`[4/4] Firstbeat Training Status, ACWR, Yük Dengesi ve VO2 Max çekiliyor...`);
+    console.log(`[4/9] Firstbeat Training Status, ACWR, Yük Dengesi ve VO2 Max çekiliyor...`);
     const todayStr = formatDate(endDate);
     try {
       const aggLatest = await client.get(`metrics-service/metrics/trainingstatus/aggregated/${todayStr}`);
@@ -157,7 +224,7 @@ async function main() {
     }
     fs.writeFileSync(path.join(DATA_DIR, "raw_training_status_weekly.json"), JSON.stringify(weeklyStatus, null, 2));
 
-    console.log(`[5/6] Tartı ve vücut kompozisyonu verileri çekiliyor...`);
+    console.log(`[5/9] Tartı ve vücut kompozisyonu verileri çekiliyor...`);
     try {
       const weightData = await client.get("weight-service/weight/dateRange", {
         startDate: formatDate(startDate),
@@ -173,17 +240,10 @@ async function main() {
       console.warn("Tartı/kilo verisi çekilemedi:", e.message);
     }
 
-    console.log(`[6/6] Kuvvet antrenmanı egzersiz setleri çekiliyor...`);
+    console.log(`[6/9] Kuvvet antrenmanı egzersiz setleri çekiliyor...`);
     try {
       const gymSetsPath = path.join(DATA_DIR, "raw_gym_exercise_sets.json");
-      let existingGymSets = {};
-      if (fs.existsSync(gymSetsPath)) {
-        try {
-          existingGymSets = JSON.parse(fs.readFileSync(gymSetsPath, "utf-8")) || {};
-        } catch (e) {
-          existingGymSets = {};
-        }
-      }
+      const existingGymSets = readJsonSafe(gymSetsPath, {});
       const strengthActs = Array.isArray(acts)
         ? acts.filter((a) => {
             const tKey = (a?.activityType?.typeKey || "").toLowerCase();
@@ -207,7 +267,107 @@ async function main() {
       console.warn("Salon egzersiz setleri çekilemedi:", e.message);
     }
 
-    console.log("Tüm Garmin verileri başarıyla güncellendi.");
+    console.log(`[7/9] Orijinal .fit dosyaları, saniye bazlı detaylar ve splitler çekiliyor...`);
+    try {
+      const streamsPath = path.join(DATA_DIR, "raw_high_res_streams.json");
+      const existingStreams = readJsonSafe(streamsPath, { activities: {} });
+      if (!existingStreams.activities || typeof existingStreams.activities !== "object") {
+        existingStreams.activities = {};
+      }
+      const targetActs = Array.isArray(acts)
+        ? acts.filter((a) => {
+            const tKey = (a?.activityType?.typeKey || "").toLowerCase();
+            return tKey.includes("running") || tKey.includes("strength") || tKey.includes("fitness_equipment");
+          }).slice(0, 10)
+        : [];
+      for (const act of targetActs) {
+        const aid = String(act?.activityId || "");
+        if (!aid) continue;
+        const fitPath = path.join(FIT_DIR, `${aid}.fit`);
+        if (!fs.existsSync(fitPath)) {
+          try {
+            const zipBytes = await client.getBytes(`download-service/files/activity/${aid}`);
+            const fitFile = extractFitFromZip(zipBytes, aid);
+            if (fitFile?.data) {
+              fs.writeFileSync(fitPath, fitFile.data);
+            }
+          } catch (e) {
+            console.warn(`FIT dosyası indirilemedi (${aid}):`, e.message);
+          }
+        }
+        const cached = existingStreams.activities[aid] || {};
+        if (!cached.details || !cached.splits) {
+          try {
+            const details = cached.details || await client.get(`activity-service/activity/${aid}/details`, {
+              maxChartSize: 10000,
+              maxPolylineSize: 0,
+              maxHeatMapSize: 2000,
+            });
+            const splits = cached.splits || await client.get(`activity-service/activity/${aid}/splits`);
+            existingStreams.activities[aid] = {
+              activityId: Number(aid) || aid,
+              activityName: act.activityName || "",
+              sport: act?.activityType?.typeKey || "",
+              startTimeLocal: act.startTimeLocal || "",
+              source: "garmin_api",
+              fit_file: fs.existsSync(fitPath) ? `fit_files/${aid}.fit` : null,
+              details,
+              splits,
+            };
+          } catch (e) {
+            console.warn(`Aktivite yüksek çözünürlük akışı çekilemedi (${aid}):`, e.message);
+          }
+        }
+      }
+      existingStreams.updated_at = new Date().toISOString();
+      fs.writeFileSync(streamsPath, JSON.stringify(existingStreams, null, 2));
+    } catch (e) {
+      console.warn("FIT & detay akışı çekilemedi:", e.message);
+    }
+
+    console.log(`[8/9] Gecelik 5 dakikalık yüksek çözünürlüklü HRV (hrv-service) çekiliyor...`);
+    try {
+      const hrvPath = path.join(DATA_DIR, "raw_hrv_5min.json");
+      const hrvDays = readJsonSafe(hrvPath, {});
+      const recentDates14 = dates.slice(-14);
+      for (const dt of recentDates14) {
+        if (hrvDays[dt]?.hrvReadings?.length) continue;
+        try {
+          const hrvRes = await client.get(`hrv-service/hrv/${dt}`);
+          if (hrvRes && !hrvRes.noData) {
+            hrvDays[dt] = hrvRes;
+          }
+        } catch (e) {
+          console.warn(`5dk HRV çekilemedi (${dt}):`, e.message);
+        }
+      }
+      fs.writeFileSync(hrvPath, JSON.stringify(hrvDays, null, 2));
+    } catch (e) {
+      console.warn("HRV 5dk eğrisi çekilemedi:", e.message);
+    }
+
+    console.log(`[9/9] Günlük solunum hızı zaman serileri (respiration) çekiliyor...`);
+    try {
+      const respPath = path.join(DATA_DIR, "raw_respiration_daily.json");
+      const respDays = readJsonSafe(respPath, {});
+      const recentDates14 = dates.slice(-14);
+      for (const dt of recentDates14) {
+        if (respDays[dt]?.respirationValuesArray?.length) continue;
+        try {
+          const respRes = await client.get(`wellness-service/wellness/daily/respiration/${dt}`);
+          if (respRes && !respRes.noData) {
+            respDays[dt] = respRes;
+          }
+        } catch (e) {
+          console.warn(`Solunum verisi çekilemedi (${dt}):`, e.message);
+        }
+      }
+      fs.writeFileSync(respPath, JSON.stringify(respDays, null, 2));
+    } catch (e) {
+      console.warn("Günlük solunum verisi çekilemedi:", e.message);
+    }
+
+    console.log("Tüm Garmin verileri (yüksek çözünürlüklü FIT/HRV/RD kanalları dahil) güncellendi.");
   } finally {
     await client.close();
   }

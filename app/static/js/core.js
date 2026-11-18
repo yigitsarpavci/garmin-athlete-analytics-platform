@@ -60,14 +60,11 @@ async function safeFetchJson(url) {
 }
 
 function setTab(tabId) {
-  let scrollTargetId = null;
   let targetTab = tabId;
   if (tabId === 'activities') {
     targetTab = 'training_load';
-    scrollTargetId = 'activitiesCard';
   } else if (tabId === 'analytics') {
     targetTab = 'health';
-    scrollTargetId = 'correlationsCard';
   }
 
   const tabs = ['overview', 'plan', 'sports', 'training_load', 'health', 'settings'];
@@ -89,9 +86,10 @@ function setTab(tabId) {
     }
   });
 
-  if (scrollTargetId) {
-    const el = document.getElementById(scrollTargetId);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (tabId === 'activities') {
+    setSubTab('training_load', 'activities');
+  } else if (tabId === 'analytics') {
+    setSubTab('health', 'metrics');
   }
 }
 

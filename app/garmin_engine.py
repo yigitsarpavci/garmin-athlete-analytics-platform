@@ -13,13 +13,15 @@ from typing import Dict, List, Optional, Any
 import pandas as pd
 
 try:
-    from engine.helpers import fmt_pace_sec, fmt_clock, DATA_DIR, format_sport_tr, classify_sport_bucket
+    from engine.helpers import fmt_pace_sec, fmt_clock, DATA_DIR, IS_DEMO_MODE, format_sport_tr, classify_sport_bucket
+    from engine.fit_stream_parser import load_and_parse_high_res_streams
     from engine.telemetry_mixin import TelemetryMixin
     from engine.sleep_analytics_mixin import SleepAnalyticsMixin
     from engine.training_protocols_mixin import TrainingProtocolsMixin
     from engine.simulation_health_mixin import SimulationHealthMixin
 except ImportError:
-    from app.engine.helpers import fmt_pace_sec, fmt_clock, DATA_DIR, format_sport_tr, classify_sport_bucket
+    from app.engine.helpers import fmt_pace_sec, fmt_clock, DATA_DIR, IS_DEMO_MODE, format_sport_tr, classify_sport_bucket
+    from app.engine.fit_stream_parser import load_and_parse_high_res_streams
     from app.engine.telemetry_mixin import TelemetryMixin
     from app.engine.sleep_analytics_mixin import SleepAnalyticsMixin
     from app.engine.training_protocols_mixin import TrainingProtocolsMixin
@@ -111,6 +113,15 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
         self.training_status_weekly = json.load(open(ts_weekly_path, encoding="utf-8")) if os.path.exists(ts_weekly_path) else {}
         self.vo2max_history = json.load(open(vo2_path, encoding="utf-8")) if os.path.exists(vo2_path) else []
         self.weight_raw = json.load(open(weight_path, encoding="utf-8")) if os.path.exists(weight_path) else {}
+
+        high_res = load_and_parse_high_res_streams(
+            self.data_dir,
+            persist_real_fit=(not IS_DEMO_MODE and os.path.basename(os.path.normpath(self.data_dir)) == "data"),
+        )
+        self.high_res_fits = high_res.get("parsed_fits", {})
+        self.high_res_streams = high_res.get("raw_streams", {})
+        self.hrv_5min_raw = high_res.get("hrv_5min_raw", {})
+        self.resp_daily_raw = high_res.get("resp_daily_raw", {})
 
         self.summaries = self.daily_raw.get("summaries", {})
         self.readiness = self.daily_raw.get("readiness", {})
