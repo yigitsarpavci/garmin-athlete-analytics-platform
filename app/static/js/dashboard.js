@@ -31,18 +31,128 @@ function getDynamicSportLabel(sport, sportTr = null) {
     .replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function formatTrInt(val) {
+  if (val === undefined || val === null || Number.isNaN(Number(val))) return '--';
+  return Math.round(Number(val)).toLocaleString('tr-TR');
+}
+
+function formatHm(hoursFloat) {
+  if (hoursFloat === undefined || hoursFloat === null || Number.isNaN(Number(hoursFloat))) return '--';
+  const totalMin = Math.round(Number(hoursFloat) * 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}s ${String(m).padStart(2, '0')}dk`;
+}
+
+function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVal, acwrNum, tMin, tMax) {
+  const setText = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+  const fmtDec = (val, dec = 1) => (
+    val === undefined || val === null || Number.isNaN(Number(val))
+      ? '--'
+      : Number(val).toFixed(dec).replace('.', ',')
+  );
+
+  setText('firstScreenDateBadge', `Son Kayıt: ${data.date || '--'}${data.is_partial_day ? ' (Kısmi Gün)' : ''}`);
+
+  // 01. HRV
+  setText('fs-hrv-val', `${data.overnight_hrv !== undefined ? Math.round(data.overnight_hrv) : '--'} ms`);
+  setText('fs-hrv-badge', data.hrv_status || 'Dengeli');
+  setText('fs-hrv-sub', `7G Ort: ${data.hrv_7d ?? '--'} ms · RHR: ${data.resting_hr ?? '--'} bpm`);
+
+  // 02. VO2 Max
+  setText('fs-vo2-val', fmtDec(vo2, 1));
+  setText('fs-vo2-badge', 'ml/kg/dk');
+  setText('fs-vo2-sub', 'Hedef: 50+ · Aerobik Güç');
+
+  // 03. Sleep Score
+  const sc = data.sleep_score !== undefined ? Math.round(data.sleep_score) : null;
+  setText('fs-sleepscore-val', sc !== null ? `${sc} / 100` : '-- / 100');
+  setText('fs-sleepscore-badge', sc !== null ? (sc >= 80 ? 'İyi Kalite' : (sc >= 65 ? 'Orta Kalite' : 'Düşük Kalite')) : '--');
+  setText('fs-sleepscore-sub', `7G Ort: ${fmtDec(data.sleep_score_7d, 1)} · Solunum: ${fmtDec(data.resp_sleep, 1)} br/dk`);
+
+  // 04. Sleep Süre
+  setText('fs-sleephours-val', formatHm(data.sleep_hours));
+  setText('fs-sleephours-badge', `${fmtDec(data.sleep_hours, 2)} sa`);
+  setText('fs-sleephours-sub', `7G Ort: ${formatHm(data.sleep_hours_7d)} · 93G: ${fmtDec(data.sleep_duration_hours, 1)} sa`);
+
+  // 05. REM Oranı
+  const remPct = data.rem_sleep_pct !== undefined
+    ? data.rem_sleep_pct
+    : (data.sleep_hours > 0 && data.rem_hours !== undefined ? (data.rem_hours / data.sleep_hours) * 100 : undefined);
+  setText('fs-rem-val', `%${fmtDec(remPct, 1)}`);
+  setText('fs-rem-badge', formatHm(data.rem_hours));
+  setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin: %${fmtDec(data.deep_sleep_pct, 1)} (${fmtDec(data.deep_hours, 1)}s)`);
+
+  // 06. Günlük Adım
+  setText('fs-steps-val', formatTrInt(data.steps));
+  setText('fs-steps-badge', `7G Ort: ${formatTrInt(data.steps_7d_avg)}`);
+  setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})`);
+
+  // 07. Acute Load
+  setText('fs-acuteload-val', formatTrInt(acuteVal));
+  setText('fs-acuteload-badge', `ACWR ${fmtDec(acwrNum, 2)}`);
+  setText('fs-acuteload-sub', `Kronik: ${formatTrInt(chronicVal)} · Tünel: ${tMin}–${tMax}`);
+
+  // 08. Load Focus
+  const lf = data.load_focus_summary || (data.training_load && data.training_load.load_focus) || {};
+  const lowPct = lf.low_aerobic_pct ?? (lf.aerobic_low && lf.aerobic_low.pct_of_target);
+  const highPct = lf.high_aerobic_pct ?? (lf.aerobic_high && lf.aerobic_high.pct_of_target);
+  const anPct = lf.anaerobic_pct ?? (lf.anaerobic && lf.anaerobic.pct_of_target);
+  const balMatch = String(lf.balance_phrase || 'Dengeli').match(/\(([^)]+)\)/);
+  setText('fs-loadfocus-val', lf.recommended_focus_label || 'Anaerobik & Laktat İntervali');
+  setText('fs-loadfocus-badge', balMatch ? balMatch[1] : String(lf.balance_phrase || 'Dengeli').split(' ')[0]);
+  setText('fs-loadfocus-sub', `Düşük %${fmtDec(lowPct, 0)} · Yüksek %${fmtDec(highPct, 0)} · Anaer %${fmtDec(anPct, 0)}`);
+
+  // 09. Günlük Stres
+  const stressVal = data.stress !== undefined ? Math.round(data.stress) : null;
+  setText('fs-stress-val', stressVal !== null ? String(stressVal) : '--');
+  setText('fs-stress-badge', data.stress_status || '--');
+  setText('fs-stress-sub', `7G Ort: ${fmtDec(data.stress_7d_avg, 1)} · Son Tam Gün: ${fmtDec(data.stress_prev_full_day, 0)}`);
+
+  // 10. Training Readiness
+  const rdVal = data.readiness_score !== undefined ? Math.round(data.readiness_score) : null;
+  setText('fs-readiness-val', rdVal !== null ? `${rdVal} / 100` : '-- / 100');
+  setText('fs-readiness-badge', data.readiness_status || '--');
+  setText('fs-readiness-sub', `7G Ort: ${fmtDec(data.readiness_7d_avg, 1)} · Sabah BB: ${data.bb_wake ?? '--'}`);
+
+  // 11. 7 Gün Antrenman
+  const w7 = data.workouts_7d || {};
+  setText('fs-7d-workouts-val', `${w7.count ?? 0} Seans · ${formatTrInt(w7.total_duration_min ?? 0)} dk`);
+  setText('fs-7d-workouts-badge', w7.breakdown_tr || '0 Seans');
+  setText('fs-7d-workouts-sub', `Top: ${fmtDec(w7.total_distance_km ?? 0, 1)} km · ${formatTrInt(w7.total_calories ?? 0)} kcal · Yük: ${fmtDec(w7.total_load ?? 0, 0)}`);
+
+  // 12. Günlük Kalori
+  if (data.is_partial_day) {
+    setText('fs-calories-val', `${formatTrInt(data.kcal_7d_avg)} kcal`);
+    setText('fs-calories-badge', '7G Ort.');
+    setText('fs-calories-sub', `Son Tam: ${formatTrInt(data.prev_full_day_kcal)} (Aktif ${formatTrInt(data.prev_full_day_active_kcal)}) · Bugün: ${formatTrInt(data.total_kcal)}`);
+  } else {
+    setText('fs-calories-val', `${formatTrInt(data.total_kcal)} kcal`);
+    setText('fs-calories-badge', `Aktif: ${formatTrInt(data.active_kcal)}`);
+    setText('fs-calories-sub', `Bazal: ${formatTrInt(data.bmr_kcal)} · 7G Ort: ${formatTrInt(data.kcal_7d_avg)} · Son Tam: ${formatTrInt(data.prev_full_day_kcal)}`);
+  }
+}
+
 function renderOverview(data) {
   if (!data) return;
   const curLoad = (data.training_load && data.training_load.current_status) || {};
   const vo2 = data.training_load && data.training_load.vo2max_current ? data.training_load.vo2max_current : (curLoad.vo2max || data.vo2max || '45.4');
+  const acuteVal = curLoad.acute_load !== undefined ? curLoad.acute_load : (data.acute_load || 279);
+  const chronicVal = curLoad.chronic_load !== undefined ? curLoad.chronic_load : (data.chronic_load || 279);
+  const acwrNum = curLoad.acwr !== undefined ? Number(curLoad.acwr) : Number(data.acwr || 1.0);
+  const tMin = curLoad.tunnel_min ? Math.round(curLoad.tunnel_min) : (data.tunnel_min || 223);
+  const tMax = curLoad.tunnel_max ? Math.round(curLoad.tunnel_max) : (data.tunnel_max || 419);
+
+  renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVal, acwrNum, tMin, tMax);
 
   const ifsScore = document.getElementById('inFocusSleepScore');
   if (ifsScore) ifsScore.textContent = data.sleep_score !== undefined ? Math.round(data.sleep_score) : '--';
   const ifsHours = document.getElementById('inFocusSleepHours');
   if (ifsHours && data.sleep_hours !== undefined) {
-    const h = Math.floor(data.sleep_hours);
-    const m = Math.round((data.sleep_hours - h) * 60);
-    ifsHours.textContent = `${h}s ${String(m).padStart(2, '0')}dk`;
+    ifsHours.textContent = formatHm(data.sleep_hours);
   }
   const ifsQ = document.getElementById('inFocusSleepQuality');
   if (ifsQ && data.sleep_score !== undefined) {
@@ -51,8 +161,10 @@ function renderOverview(data) {
   const ifsStages = document.getElementById('inFocusSleepStages');
   if (ifsStages) {
     const deepStr = data.deep_hours !== undefined ? `${Number(data.deep_hours).toFixed(1)}s` : '--';
+    const deepPctStr = data.deep_sleep_pct !== undefined ? `${Math.round(Number(data.deep_sleep_pct))}` : '--';
     const remStr = data.rem_hours !== undefined ? `${Number(data.rem_hours).toFixed(1)}s` : '--';
-    ifsStages.textContent = `Derin: ${deepStr} · REM: ${remStr}`;
+    const remPctStr = data.rem_sleep_pct !== undefined ? `${Math.round(Number(data.rem_sleep_pct))}` : '--';
+    ifsStages.textContent = `Derin: ${deepStr} (%${deepPctStr}) · REM: %${remPctStr} (${remStr})`;
   }
 
   const ifsStatus = document.getElementById('inFocusTrainingStatus');
@@ -63,9 +175,11 @@ function renderOverview(data) {
   }
   const ifsSub = document.getElementById('inFocusStatusSub');
   if (ifsSub) {
-    const acwrVal = curLoad.acwr !== undefined ? Number(curLoad.acwr).toFixed(2) : Number(data.acwr || 1.0).toFixed(2);
-    const bal = (data.training_balance || '').split('(')[0].trim() || 'Balanced';
-    ifsSub.textContent = `ACWR ${acwrVal} · ${bal}`;
+    const lf = data.load_focus_summary || {};
+    const lowP = lf.low_aerobic_pct !== undefined ? Math.round(Number(lf.low_aerobic_pct)) : '--';
+    const highP = lf.high_aerobic_pct !== undefined ? Math.round(Number(lf.high_aerobic_pct)) : '--';
+    const anP = lf.anaerobic_pct !== undefined ? Math.round(Number(lf.anaerobic_pct)) : '--';
+    ifsSub.textContent = `ACWR ${acwrNum.toFixed(2)} · Düşük %${lowP} / Yüksek %${highP} / Anaer %${anP}`;
   }
   const ifsVo2 = document.getElementById('inFocusVo2Max');
   if (ifsVo2) ifsVo2.textContent = vo2;
@@ -134,12 +248,6 @@ function renderOverview(data) {
   if (kehrv) kehrv.innerHTML = `Gece HRV: <strong class="text-[var(--text-primary)] font-semibold">${data.overnight_hrv ?? '--'} ms</strong>`;
   const kerhr = document.getElementById('kpi-ef-rhr');
   if (kerhr) kerhr.textContent = `RHR: ${data.resting_hr ?? '--'} bpm`;
-
-  const acuteVal = curLoad.acute_load !== undefined ? curLoad.acute_load : (data.acute_load || 279);
-  const chronicVal = curLoad.chronic_load !== undefined ? curLoad.chronic_load : (data.chronic_load || 279);
-  const acwrNum = curLoad.acwr !== undefined ? Number(curLoad.acwr) : Number(data.acwr || 1.0);
-  const tMin = curLoad.tunnel_min ? Math.round(curLoad.tunnel_min) : 223;
-  const tMax = curLoad.tunnel_max ? Math.round(curLoad.tunnel_max) : 419;
 
   const kl = document.getElementById('kpi-load');
   if (kl) kl.textContent = acuteVal;

@@ -105,6 +105,135 @@
         </div>
       </section>
 
+      <!-- İlk Ekran 12 Temel Garmin Telemetri Göstergesi (Above-the-Fold Command Grid) -->
+      <section id="firstScreenTelemetrySection" aria-label="Ana Ekran 12 Temel Telemetri Göstergesi" class="surface-ledger overflow-hidden">
+        <div class="px-4 sm:px-5 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-subtle)] flex flex-wrap items-center justify-between gap-2">
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Canlı Garmin Telemetri Özeti · İlk Ekran 12 Temel Metrik</span>
+          <span id="firstScreenDateBadge" class="stamp-tag stamp-accent">Son Kayıt: --</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-[var(--border-subtle)]">
+          <!-- 01. HRV -->
+          <div onclick="setTab('health')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">01 · HRV</span>
+              <span id="fs-hrv-badge" class="stamp-tag stamp-moss shrink-0">--</span>
+            </div>
+            <p id="fs-hrv-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- ms</p>
+            <p id="fs-hrv-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · RHR: --</p>
+          </div>
+
+          <!-- 02. VO2 Max -->
+          <div onclick="setTab('training_load')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">02 · VO2 Max</span>
+              <span id="fs-vo2-badge" class="stamp-tag stamp-accent shrink-0">ml/kg/dk</span>
+            </div>
+            <p id="fs-vo2-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+            <p id="fs-vo2-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Hedef: 50+ · Aerobik Güç</p>
+          </div>
+
+          <!-- 03. Sleep Score -->
+          <div onclick="setTab('health')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">03 · Sleep Score</span>
+              <span id="fs-sleepscore-badge" class="stamp-tag stamp-moss shrink-0">--</span>
+            </div>
+            <p id="fs-sleepscore-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
+            <p id="fs-sleepscore-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Solunum: --</p>
+          </div>
+
+          <!-- 04. Sleep Süre -->
+          <div onclick="setTab('health')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">04 · Uyku Süresi</span>
+              <span id="fs-sleephours-badge" class="stamp-tag shrink-0">-- sa</span>
+            </div>
+            <p id="fs-sleephours-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--s --dk</p>
+            <p id="fs-sleephours-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · 93G: --</p>
+          </div>
+
+          <!-- 05. REM Oranı -->
+          <div onclick="setTab('health')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">05 · REM Oranı</span>
+              <span id="fs-rem-badge" class="stamp-tag stamp-accent shrink-0">-- dk</span>
+            </div>
+            <p id="fs-rem-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">%--</p>
+            <p id="fs-rem-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G REM: %-- · Derin: %--</p>
+          </div>
+
+          <!-- 06. Günlük Adım -->
+          <div onclick="setTab('analytics')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">06 · Adım</span>
+              <span id="fs-steps-badge" class="stamp-tag shrink-0">7G Ort: --</span>
+            </div>
+            <p id="fs-steps-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+            <p id="fs-steps-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- · Hedef: --</p>
+          </div>
+
+          <!-- 07. Acute Load -->
+          <div onclick="setTab('training_load')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">07 · Acute Load</span>
+              <span id="fs-acuteload-badge" class="stamp-tag stamp-accent shrink-0">ACWR --</span>
+            </div>
+            <p id="fs-acuteload-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+            <p id="fs-acuteload-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Kronik: -- · Tünel: --</p>
+          </div>
+
+          <!-- 08. Load Focus -->
+          <div onclick="setTab('training_load')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">08 · Load Focus</span>
+              <span id="fs-loadfocus-badge" class="stamp-tag stamp-moss shrink-0">--</span>
+            </div>
+            <p id="fs-loadfocus-val" class="font-mono text-sm sm:text-base font-bold tracking-tight truncate">--</p>
+            <p id="fs-loadfocus-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Düşük -- · Yüksek -- · Anaer --</p>
+          </div>
+
+          <!-- 09. Günlük Stres -->
+          <div onclick="setTab('health')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">09 · Stres</span>
+              <span id="fs-stress-badge" class="stamp-tag stamp-moss shrink-0">--</span>
+            </div>
+            <p id="fs-stress-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+            <p id="fs-stress-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Son Tam Gün: --</p>
+          </div>
+
+          <!-- 10. Training Readiness -->
+          <div onclick="setTab('health')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">10 · Readiness</span>
+              <span id="fs-readiness-badge" class="stamp-tag stamp-moss shrink-0">--</span>
+            </div>
+            <p id="fs-readiness-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
+            <p id="fs-readiness-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Sabah BB: --</p>
+          </div>
+
+          <!-- 11. 7 Gün Antrenman -->
+          <div onclick="setTab('activities')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">11 · 7 Gün Antro</span>
+              <span id="fs-7d-workouts-badge" class="stamp-tag stamp-accent shrink-0">-- Seans</span>
+            </div>
+            <p id="fs-7d-workouts-val" class="font-mono text-base sm:text-lg font-bold tabular-nums tracking-tight truncate">-- Seans · -- dk</p>
+            <p id="fs-7d-workouts-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Top: -- km · -- kcal · Yük: --</p>
+          </div>
+
+          <!-- 12. Günlük Kalori -->
+          <div onclick="setTab('analytics')" class="bg-[var(--bg-surface)] p-3.5 sm:p-4 hover:bg-[var(--bg-subtle)] transition cursor-pointer flex flex-col justify-between min-w-0 space-y-1.5">
+            <div class="flex items-center justify-between gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">12 · Kalori</span>
+              <span id="fs-calories-badge" class="stamp-tag shrink-0">--</span>
+            </div>
+            <p id="fs-calories-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- kcal</p>
+            <p id="fs-calories-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- · Bugün: --</p>
+          </div>
+        </div>
+      </section>
+
       <!-- Custom Profile Active Banner -->
       <div id="customProfileBanner"
         class="hidden field-dossier p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

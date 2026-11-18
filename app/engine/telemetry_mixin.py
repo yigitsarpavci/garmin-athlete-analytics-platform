@@ -5,15 +5,15 @@ Temel Biyometrik Özetler, 93 Günlük Dinamik İstatistik Tablosu ve Firstbeat 
 """
 
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import numpy as np
 import pandas as pd
 
 try:
-    from engine.helpers import format_sport_tr, fmt_pace_sec
+    from engine.helpers import format_sport_tr, fmt_pace_sec, classify_sport_bucket
 except ImportError:
-    from app.engine.helpers import format_sport_tr, fmt_pace_sec
+    from app.engine.helpers import format_sport_tr, fmt_pace_sec, classify_sport_bucket
 
 
 class TelemetryMixin:
@@ -104,20 +104,142 @@ class TelemetryMixin:
         deep_h = float(latest.get("deep_h") or 1.3)
         rem_h = float(latest.get("rem_h") or 1.4)
         deep_pct = round((deep_h / max(1.0, sleep_h)) * 100.0, 1)
-        readiness_score = int(latest.get("readiness_score") or 77)
-        stress_latest = float(latest.get("avg_stress")) if pd.notnull(latest.get("avg_stress")) else round(float(self.df["avg_stress"].dropna().mean() if self.df["avg_stress"].notna().any() else 28.4), 1)
+        rem_sleep_pct = round((rem_h / max(1.0, sleep_h)) * 100.0, 1)
+
+        def _num(val, default=0.0):
+            return float(val) if val is not None and pd.notnull(val) else float(default)
+
+        def _tail_stat(col, op="mean", n=7, default=0.0):
+            if col not in self.df.columns:
+                return float(default)
+            ser = pd.to_numeric(self.df[col], errors="coerce").dropna().tail(n)
+            if ser.empty:
+                return float(default)
+            return float(ser.sum() if op == "sum" else ser.mean())
+
+        sleep_score_7d = round(_tail_stat("sleep_score", "mean", 7, sleep_score), 1)
+        sleep_hours_7d = round(_tail_stat("sleep_h", "mean", 7, sleep_h), 2)
+        if {"rem_h", "sleep_h"}.issubset(self.df.columns):
+            rem_df = self.df[["rem_h", "sleep_h"]].apply(pd.to_numeric, errors="coerce").dropna()
+            rem_df = rem_df[rem_df["sleep_h"] > 0].tail(7)
+            rem_sleep_pct_7d = round(float(((rem_df["rem_h"] / rem_df["sleep_h"].clip(lower=1.0)) * 100.0).mean()), 1) if not rem_df.empty else rem_sleep_pct
+        else:
+            rem_sleep_pct_7d = rem_sleep_pct
+
+        readiness_score = int(round(_num(latest.get("readiness_score"), 77)))
+        readiness_7d_avg = round(_tail_stat("readiness_score", "mean", 7, readiness_score), 1)
+        readiness_status = "Yüksek Hazırlık" if readiness_score >= 70 else ("Orta Hazırlık" if readiness_score >= 45 else "Toparlanma Gerekli")
+
+        hrv_status = "Dengeli" if abs(hrv_night - hrv_7d) <= 6 else ("Yüksek Rezerv" if hrv_night > hrv_7d else "Baskılanmış")
+        stress_latest = float(latest.get("avg_stress")) if pd.notnull(latest.get("avg_stress")) else round(_tail_stat("avg_stress", "mean", len(self.df), 28.4), 1)
+        stress_7d_avg = round(_tail_stat("avg_stress", "mean", 7, stress_latest), 1)
+        stress_status = "Düşük / Rahat" if stress_latest <= 25 else ("Normal / Dengeli" if stress_latest <= 38 else "Yüksek Stres")
         resp_val = round(float(latest.get("resp_sleep") or self.df["resp_sleep"].dropna().mean() or 13.8), 1)
-        bb_wake = int(round(float(latest.get("bb_wake") or 78)))
-        bb_low = int(round(float(latest.get("bb_low") or 20)))
+        bb_wake = int(round(_num(latest.get("bb_wake"), 78)))
+        bb_low = int(round(_num(latest.get("bb_low"), 20)))
+
+        steps = int(round(_num(latest.get("steps"), 0)))
+        step_goal = int(round(_num(latest.get("step_goal"), 10000))) or 10000
+        steps_pct = round((steps / max(1, step_goal)) * 100.0, 1)
+        steps_7d_avg = int(round(_tail_stat("steps", "mean", 7, steps)))
+        steps_7d_total = int(round(_tail_stat("steps", "sum", 7, steps)))
+
+        total_kcal = int(round(_num(latest.get("total_kcal"), 0)))
+        active_kcal = int(round(_num(latest.get("active_kcal"), 0)))
+        bmr_kcal = int(round(_num(latest.get("bmr_kcal"), 0)))
+        is_partial_day = bool(bmr_kcal < 1800)
+
+        prev_row = self.df.iloc[-2] if len(self.df) >= 2 else latest
+        steps_prev_full_day = int(round(_num(prev_row.get("steps"), steps)))
+        stress_prev_full_day = round(_num(prev_row.get("avg_stress"), stress_latest), 1)
+        prev_full_day_kcal = int(round(_num(prev_row.get("total_kcal"), total_kcal)))
+        prev_full_day_active_kcal = int(round(_num(prev_row.get("active_kcal"), active_kcal)))
+        prev_full_day_bmr_kcal = int(round(_num(prev_row.get("bmr_kcal"), bmr_kcal)))
+
+        kcal_7d_avg = int(round(_tail_stat("total_kcal", "mean", 7, total_kcal)))
+        active_kcal_7d_avg = int(round(_tail_stat("active_kcal", "mean", 7, active_kcal)))
+        bmr_kcal_7d_avg = int(round(_tail_stat("bmr_kcal", "mean", 7, bmr_kcal)))
 
         tl = self.get_training_load_analytics()
         cur_st = tl.get("current_status", {})
         load_focus = tl.get("load_focus", {})
-        acute_load = cur_st.get("acute_load") or int(latest.get("acute_load") or 279)
+        acute_load = cur_st.get("acute_load") or int(_num(latest.get("acute_load"), 279))
         chronic_load = cur_st.get("chronic_load") or 279
         acwr_val = float(cur_st.get("acwr") or 1.0)
         acwr_status = cur_st.get("acwr_status") or ("OPTIMAL" if 0.8 <= acwr_val <= 1.3 else ("HIGH" if acwr_val > 1.3 else "LOW"))
+        tunnel_min = int(round(_num(cur_st.get("tunnel_min"), 223)))
+        tunnel_max = int(round(_num(cur_st.get("tunnel_max"), 419)))
         vo2_val = float(tl.get("vo2max_current") or 45.4)
+
+        load_focus_summary = {
+            "low_aerobic_pct": float(load_focus.get("aerobic_low", {}).get("pct_of_target", 92.3)),
+            "high_aerobic_pct": float(load_focus.get("aerobic_high", {}).get("pct_of_target", 91.5)),
+            "anaerobic_pct": float(load_focus.get("anaerobic", {}).get("pct_of_target", 61.9)),
+            "low_aerobic_actual": float(load_focus.get("aerobic_low", {}).get("actual", 385.9)),
+            "high_aerobic_actual": float(load_focus.get("aerobic_high", {}).get("actual", 537.8)),
+            "anaerobic_actual": float(load_focus.get("anaerobic", {}).get("actual", 162.3)),
+            "primary_deficit": load_focus.get("primary_deficit", "anaerobic"),
+            "recommended_focus_label": load_focus.get("recommended_focus_label", "Anaerobik & Laktat İntervali"),
+            "balance_phrase": load_focus.get("balance_phrase", "BALANCED (Dengeli)"),
+        }
+
+        # Son 7 gün yapılan antrenmanların özeti (tarih penceresi en güncel kayıt üzerinden kurulur)
+        end_dt_str = str(latest["date"])[:10]
+        if self.activities_all:
+            newest_act_dt = max(((a.get("startTimeLocal") or "")[:10] for a in self.activities_all), default=end_dt_str)
+            if newest_act_dt > end_dt_str:
+                end_dt_str = newest_act_dt
+        end_dt = datetime.strptime(end_dt_str, "%Y-%m-%d")
+        start_dt = end_dt - timedelta(days=6)
+        start_dt_str = start_dt.strftime("%Y-%m-%d")
+        acts_7d = [
+            a for a in self.activities_all
+            if start_dt_str <= (a.get("startTimeLocal") or "")[:10] <= end_dt_str
+        ]
+        run_count = 0
+        gym_count = 0
+        other_count = 0
+        w7_items = []
+        for a in sorted(acts_7d, key=lambda x: x.get("startTimeLocal") or "", reverse=True):
+            sp_key = a.get("sport") or (a.get("activityType") or {}).get("typeKey") or ""
+            bkt = classify_sport_bucket(sp_key)
+            if bkt == "running":
+                run_count += 1
+            elif bkt == "strength":
+                gym_count += 1
+            else:
+                other_count += 1
+            w7_items.append({
+                "date": (a.get("startTimeLocal") or "")[:10],
+                "sport": sp_key,
+                "sport_tr": format_sport_tr(sp_key, a.get("activityName") or ""),
+                "name": a.get("activityName") or format_sport_tr(sp_key),
+                "duration_min": int(round((a.get("duration") or 0) / 60.0)),
+                "distance_km": round((a.get("distance") or 0) / 1000.0, 2),
+                "calories": int(round(a.get("calories") or 0)),
+                "load": round(float(a.get("activityTrainingLoad") or 0), 1),
+            })
+        bd_parts = []
+        if run_count:
+            bd_parts.append(f"{run_count} Koşu")
+        if gym_count:
+            bd_parts.append(f"{gym_count} Kuvvet")
+        if other_count:
+            bd_parts.append(f"{other_count} Diğer")
+        workouts_7d = {
+            "count": len(acts_7d),
+            "active_days": len({(a.get("startTimeLocal") or "")[:10] for a in acts_7d}),
+            "total_duration_min": int(round(sum((a.get("duration") or 0) / 60.0 for a in acts_7d))),
+            "total_distance_km": round(sum((a.get("distance") or 0) / 1000.0 for a in acts_7d), 2),
+            "total_calories": int(round(sum(a.get("calories") or 0 for a in acts_7d))),
+            "total_load": round(sum(float(a.get("activityTrainingLoad") or 0) for a in acts_7d), 1),
+            "run_count": run_count,
+            "gym_count": gym_count,
+            "other_count": other_count,
+            "breakdown_tr": " · ".join(bd_parts) if bd_parts else "0 Seans",
+            "window_label": f"{start_dt_str[8:10]}.{start_dt_str[5:7]} – {end_dt_str[8:10]}.{end_dt_str[5:7]}",
+            "items": w7_items,
+        }
 
         # Son 5K koşusunu ve kadansı dinamik bul
         latest_5k_str = "29:07 (5:48 /km)"
@@ -227,22 +349,52 @@ class TelemetryMixin:
             "rhr": rhr_mean,
             "overnight_hrv": hrv_night,
             "hrv_7d": hrv_7d,
+            "hrv_status": hrv_status,
             "sleep_score": sleep_score,
+            "sleep_score_7d": sleep_score_7d,
             "sleep_hours": round(sleep_h, 2),
+            "sleep_hours_7d": sleep_hours_7d,
             "sleep_duration_hours": sleep_h_mean,
             "deep_sleep_pct": deep_pct,
+            "rem_sleep_pct": rem_sleep_pct,
+            "rem_sleep_pct_7d": rem_sleep_pct_7d,
             "rem_hours": round(rem_h, 2),
             "deep_hours": round(deep_h, 2),
             "readiness_score": readiness_score,
+            "readiness_7d_avg": readiness_7d_avg,
+            "readiness_status": readiness_status,
             "stress": round(stress_latest, 1),
+            "stress_7d_avg": stress_7d_avg,
+            "stress_prev_full_day": stress_prev_full_day,
+            "stress_status": stress_status,
             "resp_sleep": resp_val,
             "bb_wake": bb_wake,
             "bb_low": bb_low,
+            "steps": steps,
+            "step_goal": step_goal,
+            "steps_pct": steps_pct,
+            "steps_7d_avg": steps_7d_avg,
+            "steps_7d_total": steps_7d_total,
+            "steps_prev_full_day": steps_prev_full_day,
+            "total_kcal": total_kcal,
+            "active_kcal": active_kcal,
+            "bmr_kcal": bmr_kcal,
+            "is_partial_day": is_partial_day,
+            "prev_full_day_kcal": prev_full_day_kcal,
+            "prev_full_day_active_kcal": prev_full_day_active_kcal,
+            "prev_full_day_bmr_kcal": prev_full_day_bmr_kcal,
+            "kcal_7d_avg": kcal_7d_avg,
+            "active_kcal_7d_avg": active_kcal_7d_avg,
+            "bmr_kcal_7d_avg": bmr_kcal_7d_avg,
             "vo2max": vo2_val,
             "acute_load": acute_load,
             "chronic_load": chronic_load,
             "acwr": acwr_val,
             "acwr_status": acwr_status,
+            "tunnel_min": tunnel_min,
+            "tunnel_max": tunnel_max,
+            "load_focus_summary": load_focus_summary,
+            "workouts_7d": workouts_7d,
             "training_status": cur_st.get("status_tr", "Form Korunuyor"),
             "training_balance": load_focus.get("balance_phrase", "BALANCED"),
             "recovery_time_h": round(rec_min / 60.0, 1),

@@ -70,6 +70,14 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertIn("weight", data)
         self.assertIn("schedule", data)
         self.assertEqual(len(data["schedule"]), 7)
+        for key in (
+            "overnight_hrv", "vo2max", "sleep_score", "sleep_hours", "rem_sleep_pct",
+            "steps", "acute_load", "load_focus_summary", "stress", "readiness_score",
+            "workouts_7d", "total_kcal", "kcal_7d_avg"
+        ):
+            self.assertIn(key, data, f"İlk ekran metriği eksik: {key}")
+        self.assertGreater(data["workouts_7d"]["count"], 0)
+        self.assertIn("anaerobic_pct", data["load_focus_summary"])
 
     def test_training_load_endpoint(self):
         """GET /api/training-load endpointini test eder."""
