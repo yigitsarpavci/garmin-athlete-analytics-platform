@@ -89,7 +89,7 @@ function setTab(tabId) {
   });
 
   if (tabId === 'sports') {
-    setSubTab('plan', 'cards');
+    setSubTab('plan', 'prog');
   } else if (tabId === 'activities') {
     setSubTab('training_load', 'activities');
   } else if (tabId === 'settings') {

@@ -363,78 +363,99 @@ async function runCalculator() {
   }
 }
 
-function renderSports(sports) {
-  const container = document.getElementById('sportsCardsContainer');
-  if (!container || !sports) return;
-  container.innerHTML = '';
-  const iconNames = { running: 'footprints', strength: 'dumbbell', sailing: 'compass', basketball: 'trophy' };
-  const coreKeys = ['running', 'strength', 'sailing', 'basketball'].filter(k => sports[k] && typeof sports[k] === 'object');
-  const coreList = coreKeys.map(k => ({ key: k, sp: sports[k] }));
-  const extraList = Array.isArray(sports.extra_sports)
-    ? sports.extra_sports.map(sp => ({ key: sp.sport_key || 'extra', sp }))
-    : [];
-  const allCards = [...coreList, ...extraList];
+function _renderBranchSummaryInto(containerId, sp, iconName) {
+  const container = document.getElementById(containerId);
+  if (!container || !sp) return;
 
-  const tabBtn = document.getElementById('sportsCountTabBtn');
-  if (tabBtn) tabBtn.textContent = `Branş Özetleri (${allCards.length})`;
+  const extraKpis = [];
+  if (sp.current_pace) extraKpis.push({ label: 'Mevcut 5K / Tempo', val: sp.current_pace });
+  if (sp.target_pace) extraKpis.push({ label: 'Hedef Tempo', val: sp.target_pace });
+  if (sp.efficiency_factor !== undefined && sp.efficiency_factor !== null) extraKpis.push({ label: 'Verimlilik (EF)', val: `${sp.efficiency_factor} m/atım` });
+  if (sp.cadence) extraKpis.push({ label: 'Kadans Formu', val: sp.cadence });
+  if (sp.current_status) extraKpis.push({ label: 'Rutin Durumu', val: sp.current_status });
+  if (sp.goal) extraKpis.push({ label: 'Branş Hedefi', val: sp.goal });
 
-  allCards.forEach(({ key, sp }, index) => {
-    const card = document.createElement('div');
-    const isPrimaryFeatured = index === 0;
-    const isExtra = Boolean(sp.is_dynamic_extra);
-    card.className = `surface-card p-6 space-y-4 ${isPrimaryFeatured ? 'border-l-[3px] border-l-[var(--accent)]' : ''}`;
-    const iconName = iconNames[key] || getSportLucideIcon(sp.sport_key || sp.name);
-
-    card.innerHTML = `
-      <div class="space-y-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-3">
-            <div class="icon-box w-9 h-9 shrink-0">${lucideSvg(iconName, 'w-4 h-4')}</div>
-            <h4 class="font-editorial text-lg font-medium tracking-tight leading-snug">${escapeHtml(sp.name)}</h4>
+  const extraGridHtml = extraKpis.length
+    ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        ${extraKpis.map(k => `
+          <div class="tint-panel p-2.5">
+            <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] block">${escapeHtml(k.label)}</span>
+            <span class="text-xs font-semibold text-[var(--text-primary)] break-words">${escapeHtml(String(k.val))}</span>
           </div>
-          <span class="stamp-tag ${isExtra ? 'stamp-moss' : 'stamp-accent'}">${escapeHtml(sp.schedule_status || sp.cadence || 'Aktif')}</span>
-        </div>
-        <p class="font-mono text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(sp.stats_summary || sp.current_status || sp.current_pace || '')}</p>
-      </div>
+        `).join('')}
+      </div>`
+    : '';
 
-      <div class="text-xs text-[var(--text-secondary)] space-y-1.5 tint-panel p-4 leading-relaxed">
+  const tipsHtml = (sp.how_to_improve || []).length
+    ? `<div class="text-xs text-[var(--text-secondary)] space-y-1.5 tint-panel p-4 leading-relaxed">
         <p class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-1">Öneriler</p>
         ${(sp.how_to_improve || []).map(item => `<p class="flex items-start gap-2"><span class="accent-text mt-0.5">·</span><span>${escapeHtml(item)}</span></p>`).join('')}
-      </div>
+      </div>`
+    : '';
 
-      ${sp.last_workout ? `
-      <div class="text-xs tint-moss-panel p-3.5 space-y-1.5">
-        <div class="flex items-center justify-between gap-2">
-          <span class="font-semibold">${escapeHtml(sp.last_workout.date)}</span>
-          <span class="stamp-tag stamp-moss">${escapeHtml(sp.last_workout.title)}</span>
+  const lastHtml = sp.last_workout
+    ? `<div class="text-xs tint-moss-panel p-3.5 space-y-1.5">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="font-semibold">${escapeHtml(sp.last_workout.date || '')}</span>
+          <span class="stamp-tag stamp-moss">${escapeHtml(sp.last_workout.title || '')}</span>
         </div>
         <p class="text-[11px] moss-text leading-relaxed">${sp.last_workout.exercises ? sp.last_workout.exercises.map(escapeHtml).join(' · ') : ''}</p>
-      </div>` : ''}
+      </div>`
+    : '';
 
-      <div class="border-t border-[var(--border-subtle)] pt-4 space-y-2.5">
-        <p class="font-mono text-[10px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
-          ${lucideSvg('calendar', 'w-3.5 h-3.5 accent-text')}
-          <span>Bu Hafta Kalan / Sıradaki Seçenekler</span>
-        </p>
-        ${sp.upcoming_sessions && sp.upcoming_sessions.length > 0 ? sp.upcoming_sessions.map(sess => `
-          <div class="tint-panel p-3 text-xs space-y-1">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <span class="font-semibold">${escapeHtml(sess.day)}</span>
-              <span class="stamp-tag stamp-accent">${escapeHtml(sess.type || 'Seans')}</span>
-            </div>
-            <p class="font-medium text-[12px]">${escapeHtml(sess.title)} <span class="font-mono text-[11px] text-[var(--text-muted)]">(${escapeHtml(sess.duration || '')})</span></p>
-            <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(sess.details || '')}</p>
+  const upcomingList = Array.isArray(sp.upcoming_sessions) && sp.upcoming_sessions.length
+    ? sp.upcoming_sessions.map(sess => `
+        <div class="tint-panel p-3 text-xs space-y-1">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span class="font-semibold">${escapeHtml(sess.day || '')}</span>
+            <span class="stamp-tag stamp-accent">${escapeHtml(sess.type || 'Seans')}</span>
           </div>
-        `).join('') : (sp.next_workout ? `
-          <div class="text-xs tint-panel p-3">
-            <p class="font-semibold">${escapeHtml(sp.next_workout.day)}: ${escapeHtml(sp.next_workout.title)} <span class="font-mono text-[var(--text-muted)]">(${escapeHtml(sp.next_workout.duration || '')})</span></p>
-            <p class="text-[11px] text-[var(--text-secondary)] mt-1">${escapeHtml(sp.next_workout.details || sp.next_workout.hydration_plan || (sp.next_workout.exercises ? sp.next_workout.exercises.join(', ') : ''))}</p>
+          <p class="font-medium text-[12px]">${escapeHtml(sess.title || '')} <span class="font-mono text-[11px] text-[var(--text-muted)]">(${escapeHtml(sess.duration || '')})</span></p>
+          ${(sess.target_hr || sess.target_pace) ? `<p class="font-mono text-[10.5px] accent-text">${[sess.target_hr, sess.target_pace].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
+          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(sess.details || '')}</p>
+        </div>
+      `).join('')
+    : (sp.next_workout ? `
+        <div class="text-xs tint-panel p-3">
+          <p class="font-semibold">${escapeHtml(sp.next_workout.day)}: ${escapeHtml(sp.next_workout.title)} <span class="font-mono text-[var(--text-muted)]">(${escapeHtml(sp.next_workout.duration || '')})</span></p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-1">${escapeHtml(sp.next_workout.details || (sp.next_workout.exercises ? sp.next_workout.exercises.join(', ') : ''))}</p>
+        </div>
+      ` : '');
+
+  container.innerHTML = `
+    <div class="space-y-3.5 min-w-0">
+      <div class="space-y-1.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <div class="icon-box w-8 h-8 shrink-0">${lucideSvg(iconName, 'w-4 h-4')}</div>
+            <h4 class="font-editorial text-lg font-medium tracking-tight leading-snug">${escapeHtml(sp.name || '')}</h4>
           </div>
-        ` : '')}
+          <span class="stamp-tag stamp-accent">${escapeHtml(sp.schedule_status || 'Aktif')}</span>
+        </div>
+        <p class="font-mono text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(sp.stats_summary || '')}</p>
       </div>
-    `;
-    container.appendChild(card);
-  });
+      ${extraGridHtml}
+      ${tipsHtml}
+      ${lastHtml}
+    </div>
+    <div class="space-y-2.5 min-w-0 lg:border-l lg:border-[var(--border-subtle)] lg:pl-4">
+      <p class="font-mono text-[10px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
+        ${lucideSvg('calendar', 'w-3.5 h-3.5 accent-text')}
+        <span>Bu Hafta Kalan / Sıradaki Seçenekler</span>
+      </p>
+      <div class="space-y-2.5">${upcomingList}</div>
+    </div>
+  `;
+}
+
+function renderSports(sports) {
+  if (!sports) return;
+  if (sports.running) {
+    _renderBranchSummaryInto('runningBranchSummaryContainer', sports.running, 'footprints');
+  }
+  if (sports.strength) {
+    _renderBranchSummaryInto('gymBranchSummaryContainer', sports.strength, 'dumbbell');
+  }
   if (typeof refreshIcons === 'function') refreshIcons();
 }
 

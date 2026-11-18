@@ -510,14 +510,13 @@
         <div>
           <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">PLAN &amp; BRANŞLAR</span>
           <h2 class="section-heading text-2xl sm:text-3xl mt-1">Antrenman Planı ve Branşlar</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Esnek haftalık kota, seans reçeteleri, branş özetleri, 5x5 kuvvet geçmişi ve seviye durumu.</p>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Esnek haftalık kota, seans reçeteleri, 5x5 kuvvet geçmişi ve koşu / dinamik ilerleme durumu.</p>
         </div>
         <div class="subtab-bar">
           <button type="button" onclick="setSubTab('plan', 'schedule')" data-subtab-group="plan" data-subtab="schedule" class="subtab-btn subtab-btn-active">Haftalık Takvim</button>
           <button type="button" onclick="setSubTab('plan', 'protocols')" data-subtab-group="plan" data-subtab="protocols" class="subtab-btn">Antrenman İçerikleri</button>
-          <button type="button" id="sportsCountTabBtn" onclick="setSubTab('plan', 'cards')" data-subtab-group="plan" data-subtab="cards" class="subtab-btn">Branş Özetleri (4)</button>
           <button type="button" onclick="setSubTab('plan', 'gym')" data-subtab-group="plan" data-subtab="gym" class="subtab-btn">Kuvvet &amp; 5x5</button>
-          <button type="button" onclick="setSubTab('plan', 'prog')" data-subtab-group="plan" data-subtab="prog" class="subtab-btn">Dinamik İlerleme</button>
+          <button type="button" onclick="setSubTab('plan', 'prog')" data-subtab-group="plan" data-subtab="prog" class="subtab-btn">Koşu &amp; Dinamik İlerleme</button>
         </div>
       </div>
 
@@ -574,10 +573,6 @@
         </section>
       </div>
 
-      <div data-subpane-group="plan" data-subpane="cards" class="hidden">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="sportsCardsContainer"></div>
-      </div>
-
       <div data-subpane-group="plan" data-subpane="gym" class="hidden">
         <section class="surface-card p-6 sm:p-8 space-y-5" id="gymHistorySection">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -586,7 +581,7 @@
                 <span class="stamp-tag stamp-accent">SALON KAYITLARI</span>
                 <h3 class="font-editorial text-lg font-medium tracking-tight">Kuvvet Programı ve Ağırlık Geçmişi</h3>
               </div>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">Garmin kayıtlarından çekilen A/B antrenman setleri ve ağırlıkları:</p>
+              <p class="text-xs text-[var(--text-secondary)] mt-1">Garmin kayıtlarından çekilen A/B antrenman setleri, sıradaki döngü hedefleri ve ağırlıklar:</p>
             </div>
             <div id="gymHeaderBadges" class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
               <span class="stamp-tag stamp-moss">Squat --</span>
@@ -594,6 +589,8 @@
               <span class="stamp-tag">Row --</span>
             </div>
           </div>
+
+          <div id="gymBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
 
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="gymProgressionGrid"></div>
 
@@ -614,7 +611,11 @@
         </section>
       </div>
 
-      <div data-subpane-group="plan" data-subpane="prog" class="hidden">
+      <div data-subpane-group="plan" data-subpane="prog" class="hidden space-y-6">
+        <section class="surface-card p-6 sm:p-8 space-y-5">
+          <div id="runningBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+        </section>
+
         <section class="surface-card p-6 sm:p-8 space-y-5" id="progressionAssessmentSection">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
             <div>
@@ -1437,12 +1438,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js?v=20261118i"></script>
-  <script src="/js/quota_schedule.js?v=20261118i"></script>
-  <script src="/js/dashboard.js?v=20261118i"></script>
-  <script src="/js/health_analytics.js?v=20261118i"></script>
-  <script src="/js/charts.js?v=20261118i"></script>
-  <script src="/js/modals.js?v=20261118i"></script>
+  <script src="/js/core.js?v=20261118j"></script>
+  <script src="/js/quota_schedule.js?v=20261118j"></script>
+  <script src="/js/dashboard.js?v=20261118j"></script>
+  <script src="/js/health_analytics.js?v=20261118j"></script>
+  <script src="/js/charts.js?v=20261118j"></script>
+  <script src="/js/modals.js?v=20261118j"></script>
 </body>
 
 </html>
