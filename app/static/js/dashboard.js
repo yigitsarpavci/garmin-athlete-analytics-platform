@@ -483,17 +483,17 @@ function renderGymHistory(gym) {
     gym.sessions.forEach(sess => {
       const tr = document.createElement('tr');
       tr.className = "hover:bg-[var(--bg-subtle)] transition";
-      const exSummary = `<div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">` + (sess.exercises || []).map(ex => {
+      const exSummary = `<div class="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[10.5px] leading-tight">` + (sess.exercises || []).map(ex => {
         const setStr = (ex.sets || []).map(s => `${s.reps}x${s.weight_kg}kg`).join(', ');
         return `<span><strong class="font-semibold">${escapeHtml(ex.name)}</strong>: <span class="font-mono accent-text">${escapeHtml(setStr)}</span></span>`;
       }).join('') + `</div>`;
 
       tr.innerHTML = `
-<td class="py-2 px-3 font-mono font-medium whitespace-nowrap">${escapeHtml(sess.date)} <span class="text-[var(--text-muted)] text-[10px]">${escapeHtml(sess.time || '')}</span></td>
-<td class="py-2 px-3 font-semibold whitespace-nowrap ${sess.workout_type === 'Workout A' ? 'accent-text' : ''}">${escapeHtml(sess.workout_type)}</td>
-<td class="py-2 px-3 font-mono text-[var(--text-secondary)] whitespace-nowrap">${sess.duration_min} dk · ${sess.calories} kcal</td>
-<td class="py-2 px-3 font-mono font-semibold whitespace-nowrap">${(sess.total_volume_kg / 1000.0).toFixed(2)} Ton</td>
-<td class="py-2 px-3">${exSummary}</td>
+<td class="py-1 px-2 text-[11px] font-mono font-medium whitespace-nowrap">${escapeHtml(sess.date)} <span class="text-[var(--text-muted)] text-[10px]">${escapeHtml(sess.time || '')}</span></td>
+<td class="py-1 px-2 text-[11px] font-semibold whitespace-nowrap ${sess.workout_type === 'Workout A' ? 'accent-text' : ''}">${escapeHtml(sess.workout_type)}</td>
+<td class="py-1 px-2 text-[11px] font-mono text-[var(--text-secondary)] whitespace-nowrap">${sess.duration_min} dk · ${sess.calories} kcal</td>
+<td class="py-1 px-2 text-[11px] font-mono font-semibold whitespace-nowrap">${(sess.total_volume_kg / 1000.0).toFixed(2)} Ton</td>
+<td class="py-1 px-2">${exSummary}</td>
       `;
       tableBody.appendChild(tr);
     });
@@ -781,18 +781,18 @@ function renderActivities(acts, rebuildFilters = true, resetPage = true) {
     const durStr = a.dur_m !== null && a.dur_m !== undefined ? `${Number(a.dur_m).toFixed(0)} dk` : '--';
     const hrStr = `${a.avg_hr ?? '--'}/${a.max_hr ?? '--'}`;
     tr.innerHTML = `
-      <td class="py-1.5 px-2.5 font-mono font-medium whitespace-nowrap">${escapeHtml(a.date)} <span class="text-[var(--text-muted)]">${escapeHtml(a.time || '')}</span></td>
-      <td class="py-1.5 px-2.5 whitespace-nowrap"><span class="stamp-tag">${escapeHtml(getDynamicSportLabel(a.sport, a.sport_tr))}</span></td>
-      <td class="py-1.5 px-2.5 font-medium group-hover:text-[var(--accent)] transition max-w-[180px] truncate">${escapeHtml(a.name || '--')}</td>
-      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${durStr}</td>
-      <td class="py-1.5 px-2.5 font-mono font-semibold accent-text tabular-nums whitespace-nowrap">${a.dist_km > 0 ? Number(a.dist_km).toFixed(2) + ' km' : '--'}</td>
-      <td class="py-1.5 px-2.5 font-mono font-semibold tabular-nums whitespace-nowrap">${escapeHtml(a.pace_str || '--')}</td>
-      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${hrStr}</td>
-      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.norm_pwr ? a.norm_pwr + ' W' : '--'}</td>
-      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cadence ? Number(a.cadence).toFixed(0) : '--'}</td>
-      <td class="py-1.5 px-2.5 font-mono font-semibold tabular-nums whitespace-nowrap">${a.load ? Number(a.load).toFixed(1) : '0'}</td>
-      <td class="py-1.5 px-2.5 whitespace-nowrap">${teDisplay}</td>
-      <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cal ?? 0} kcal</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono font-medium whitespace-nowrap">${escapeHtml(a.date)} <span class="text-[var(--text-muted)]">${escapeHtml(a.time || '')}</span></td>
+      <td class="py-1.5 px-2 whitespace-nowrap"><span class="stamp-tag">${escapeHtml(getDynamicSportLabel(a.sport, a.sport_tr))}</span></td>
+      <td class="py-1.5 px-2 text-[11px] font-medium group-hover:text-[var(--accent)] transition max-w-[180px] truncate">${escapeHtml(a.name || '--')}</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${durStr}</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono font-semibold accent-text tabular-nums whitespace-nowrap">${a.dist_km > 0 ? Number(a.dist_km).toFixed(2) + ' km' : '--'}</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono font-semibold tabular-nums whitespace-nowrap">${escapeHtml(a.pace_str || '--')}</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${hrStr}</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.norm_pwr ? a.norm_pwr + ' W' : '--'}</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cadence ? Number(a.cadence).toFixed(0) : '--'}</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono font-semibold tabular-nums whitespace-nowrap">${a.load ? Number(a.load).toFixed(1) : '0'}</td>
+      <td class="py-1.5 px-2 whitespace-nowrap">${teDisplay}</td>
+      <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cal ?? 0} kcal</td>
     `;
     aBody.appendChild(tr);
   });

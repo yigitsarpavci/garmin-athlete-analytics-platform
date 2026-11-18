@@ -245,11 +245,11 @@ function renderSettingsAndZones(setData) {
       const tr = document.createElement('tr');
       tr.className = "hover:bg-[var(--bg-subtle)] transition";
       tr.innerHTML = `
-        <td class="py-2 px-2.5 font-semibold">${escapeHtml(z.zone)}</td>
-        <td class="py-2 px-2.5 font-mono text-[var(--text-secondary)]">${escapeHtml(z.current_hr)}</td>
-        <td class="py-2 px-2.5 font-mono font-semibold accent-text">${escapeHtml(z.rec_lthr)}</td>
-        <td class="py-2 px-2.5 font-mono font-medium moss-text">${escapeHtml(z.rec_hrr)}</td>
-        <td class="py-2 px-2.5 font-mono font-semibold">${escapeHtml(z.rec_pwr)}</td>
+        <td class="py-1.5 px-2 text-[10.5px] font-semibold leading-tight">${escapeHtml(String(z.zone || '').replace('Zone ', 'Z'))}</td>
+        <td class="py-1.5 px-2 text-[10.5px] font-mono text-[var(--text-secondary)] leading-tight">${escapeHtml(z.current_hr)}</td>
+        <td class="py-1.5 px-2 text-[10.5px] font-mono font-semibold accent-text leading-tight">${escapeHtml(z.rec_lthr)}</td>
+        <td class="py-1.5 px-2 text-[10.5px] font-mono font-medium moss-text leading-tight">${escapeHtml(z.rec_hrr)}</td>
+        <td class="py-1.5 px-2 text-[10.5px] font-mono font-semibold leading-tight">${escapeHtml(z.rec_pwr)}</td>
       `;
       zBody.appendChild(tr);
     });
@@ -566,44 +566,44 @@ function renderProgressionAssessment(data) {
   const grid = document.getElementById('progressionCardsGrid');
   if (grid) {
     grid.innerHTML = `
-      <div class="tint-panel p-4 space-y-2.5">
+      <div class="tint-panel p-3 space-y-1.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">1. Haftalık Gün Sayısı</span>
           <span class="stamp-tag ${vp.can_increase_days ? 'stamp-moss' : 'stamp-ochre'}">${escapeHtml(vp.verdict || '--')}</span>
         </div>
         <p class="text-xs font-semibold">${escapeHtml(vp.current_days)} <span class="text-[var(--text-muted)]">→</span> <span class="${vp.can_increase_days ? 'moss-text' : 'ochre-text'}">${escapeHtml(vp.next_level_days)}</span></p>
-        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(vp.advice || '')}</p>
+        <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(vp.advice || '')}</p>
       </div>
 
-      <div class="tint-panel p-4 space-y-2.5">
+      <div class="tint-panel p-3 space-y-1.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">2. Kuvvet: Mevcut Ağırlıklar ve Hedef</span>
           <span class="stamp-tag stamp-accent">${escapeHtml(st.verdict || '--')}</span>
         </div>
         <p class="text-xs font-semibold">Mevcut: <span class="moss-text">${escapeHtml(st.current_style)}</span></p>
-        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(st.advice || '')}</p>
+        <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(st.advice || '')}</p>
       </div>
 
-      <div class="tint-panel p-4 space-y-2.5 border-l-[3px] border-l-[var(--accent)]">
+      <div class="tint-panel p-3 space-y-1.5 border-l-[3px] border-l-[var(--accent)]">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">3. Koşu: Mevcut Durum ve Hedef</span>
           <span class="stamp-tag stamp-moss">${escapeHtml(rp.verdict || '80/20 KOŞU PLANI')}</span>
         </div>
         <p class="font-mono text-[11px] font-semibold accent-text">${escapeHtml(rp.current_metrics || '')}</p>
-        <p class="text-xs text-[var(--text-primary)] font-medium">${escapeHtml(rp.current_model || '')}</p>
+        <p class="text-xs text-[var(--text-primary)] font-medium leading-snug">${escapeHtml(rp.current_model || '')}</p>
         <p class="font-mono text-[10.5px] text-[var(--text-secondary)]">${escapeHtml(rp.load_balance || '')}</p>
-        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(rp.advice || st.running_style_advice || '')}</p>
-        <p class="text-[10.5px] moss-text tint-moss-panel p-2"><strong class="font-semibold">Sıradaki Koşu Hedefleri:</strong> ${escapeHtml(rp.next_milestone || '')}</p>
+        <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(rp.advice || st.running_style_advice || '')}</p>
+        <p class="text-[10.5px] moss-text tint-moss-panel p-1.5 leading-snug"><strong class="font-semibold">Sıradaki Koşu Hedefleri:</strong> ${escapeHtml(rp.next_milestone || '')}</p>
       </div>
 
-      <div class="tint-panel p-4 space-y-2.5">
+      <div class="tint-panel p-3 space-y-1.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">4. Yorgunluk ve Dinlenme</span>
           <span class="stamp-tag ${fd.needs_deload ? 'stamp-ochre' : 'stamp-moss'}">${escapeHtml(fd.status || '--')}</span>
         </div>
         <p class="text-xs font-semibold">${fd.needs_deload ? 'Hacmi %40 Düşür' : 'Normal Yükte Devam'}</p>
-        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(fd.note || '')}</p>
-        <p class="text-[10px] ochre-text tint-ochre-panel p-2"><strong class="font-semibold">Not:</strong> Yorgunluk yüksekse veya uyku düşükse antrenmanı hafif yürüyüşe çevirin.</p>
+        <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(fd.note || '')}</p>
+        <p class="text-[10px] ochre-text tint-ochre-panel p-1.5 leading-snug"><strong class="font-semibold">Not:</strong> Yorgunluk yüksekse veya uyku düşükse antrenmanı hafif yürüyüşe çevirin.</p>
       </div>
     `;
   }

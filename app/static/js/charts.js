@@ -1,13 +1,13 @@
-/* Garmin Athlete IQ — Editorial Telemetry Charts (Dark Mode Only) */
+/* Garmin Athlete IQ — Deep Forest Telemetry Charts (Dark Mode Only) */
 function getChartThemeColors() {
   return {
     isDark: true,
-    text: '#ADA698',
-    grid: 'rgba(243, 239, 230, 0.08)',
-    primary: '#E85B35',
-    secondary: '#4AB984',
-    accent: '#F3EFE6',
-    barBg: 'rgba(232, 91, 53, 0.28)'
+    text: '#A5C3B0',
+    grid: 'rgba(116, 198, 157, 0.10)',
+    primary: '#52B788',
+    secondary: '#E9B44C',
+    accent: '#ECF4EE',
+    barBg: 'rgba(45, 106, 79, 0.55)'
   };
 }
 

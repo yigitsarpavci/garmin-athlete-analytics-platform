@@ -105,7 +105,7 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
                   ${prioBadge}
                   ${meta ? `<span class="font-mono text-[10px] text-[var(--text-secondary)]">${escapeHtml(meta)}</span>` : ''}
                 </div>
-                ${detail ? `<p class="text-[10.5px] text-[var(--text-secondary)] mt-0.5 leading-tight truncate">${escapeHtml(detail)}</p>` : ''}
+                ${detail ? `<p class="text-[10px] text-[var(--text-secondary)] mt-0.5 leading-snug whitespace-normal break-words">${escapeHtml(detail)}</p>` : ''}
               </div>
               ${lucideSvg('arrow-right', 'w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] shrink-0 transition')}
             </button>`;
@@ -200,23 +200,29 @@ function buildQuotaLedgerHtml(quota) {
 
   const deviationHtml = deviations.length
     ? deviations.map(d => `
-      <div class="tint-ochre-panel px-2 py-1 text-[10.5px] flex items-center justify-between gap-2 min-w-0">
-        <div class="flex items-center gap-1.5 min-w-0">
-          ${lucideSvg('alert-triangle', 'w-3 h-3 shrink-0 ochre-text')}
-          <span class="ochre-text font-medium leading-tight line-clamp-2">${escapeHtml(d.note || '')}</span>
+      <div class="tint-ochre-panel px-2.5 py-1.5 text-[10.5px] space-y-1 min-w-0">
+        <div class="flex flex-wrap items-center justify-between gap-1.5">
+          <span class="font-mono text-[9.5px] uppercase tracking-wider ochre-text font-semibold flex items-center gap-1">
+            ${lucideSvg('alert-triangle', 'w-3 h-3 shrink-0 ochre-text')}
+            <span>Plan Uyarlaması</span>
+          </span>
+          <span class="stamp-tag stamp-ochre">${escapeHtml(d.badge || 'Güncellendi')}</span>
         </div>
-        <span class="stamp-tag stamp-ochre shrink-0">${escapeHtml(d.badge || 'Güncellendi')}</span>
+        <p class="ochre-text leading-snug">${escapeHtml(d.note || '')}</p>
       </div>
     `).join('')
     : '';
 
   const adaptHtml = adapt && adapt.adaptation_note
-    ? `<div class="${hasMissedCarry ? 'tint-ochre-panel' : 'tint-moss-panel'} px-2 py-1 text-[10.5px] flex items-center justify-between gap-2 min-w-0">
-        <div class="flex items-center gap-1.5 min-w-0">
-          ${lucideSvg(hasMissedCarry ? 'refresh-cw' : 'check', `w-3 h-3 shrink-0 ${hasMissedCarry ? 'ochre-text' : 'moss-text'}`)}
-          <span class="${hasMissedCarry ? 'ochre-text font-medium' : 'moss-text'} leading-tight line-clamp-2">${escapeHtml(adapt.adaptation_note)}</span>
+    ? `<div class="${hasMissedCarry ? 'tint-ochre-panel' : 'tint-moss-panel'} px-2.5 py-1.5 text-[10.5px] space-y-1 min-w-0">
+        <div class="flex flex-wrap items-center justify-between gap-1.5">
+          <span class="font-mono text-[9.5px] uppercase tracking-wider ${hasMissedCarry ? 'ochre-text' : 'moss-text'} font-semibold flex items-center gap-1">
+            ${lucideSvg(hasMissedCarry ? 'refresh-cw' : 'check', `w-3 h-3 shrink-0 ${hasMissedCarry ? 'ochre-text' : 'moss-text'}`)}
+            <span>Haftalık Kota Geçişi</span>
+          </span>
+          ${adapt.monday_reset_enforced ? '<span class="font-mono text-[9.5px] text-[var(--text-secondary)] shrink-0">Pzt 0/2</span>' : ''}
         </div>
-        ${adapt.monday_reset_enforced ? '<span class="font-mono text-[9.5px] text-[var(--text-secondary)] shrink-0">Pzt 0/2</span>' : ''}
+        <p class="${hasMissedCarry ? 'ochre-text' : 'moss-text'} leading-snug">${escapeHtml(adapt.adaptation_note)}</p>
       </div>`
     : '';
 
@@ -243,7 +249,7 @@ function buildQuotaLedgerHtml(quota) {
     </div>
 
     ${bannerRowHtml}
-    ${quota.flexibility_note ? `<p class="text-[10.5px] text-[var(--text-secondary)] truncate" title="${escapeHtml(quota.flexibility_note)}">${escapeHtml(quota.flexibility_note)}</p>` : ''}
+    ${quota.flexibility_note ? `<p class="text-[10.5px] text-[var(--text-secondary)] leading-snug">${escapeHtml(quota.flexibility_note)}</p>` : ''}
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
       ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[var(--accent)]')}
@@ -287,29 +293,47 @@ function renderWeeklyScheduleTable(scheduleList) {
       || (s.primary || '').startsWith('Koşu #')
       || (s.primary || '').startsWith('Kuvvet #')
     );
+    const devBadge = isDone && s.deviation_badge
+      ? `<span class="stamp-tag stamp-ochre">${escapeHtml(s.deviation_badge)}</span>`
+      : '';
     const slotBadge = isDone
-      ? (`<div class="flex flex-wrap items-center gap-1"><span class="stamp-tag stamp-moss">TAMAMLANDI</span>`
-        + (s.deviation_badge ? `<span class="stamp-tag stamp-ochre">${escapeHtml(s.deviation_badge)}</span>` : '')
-        + `</div>`)
+      ? `<span class="stamp-tag stamp-moss">TAMAMLANDI</span>`
       : (isQuotaSlot
         ? '<span class="stamp-tag stamp-accent">ESNEK KOTA</span>'
         : '<span class="stamp-tag">REJENERASYON</span>');
 
+    const rawDay = String(s.day || '');
+    const dParen = rawDay.indexOf('(');
+    const dayMain = dParen >= 0 ? rawDay.slice(0, dParen).trim() : rawDay.trim();
+    const daySub = dParen >= 0 ? rawDay.slice(dParen + 1).replace(/\)\s*$/, '').trim() : '';
+
+    const rawMacro = String(s.macro || '');
+    const mParen = rawMacro.indexOf('(');
+    const macroKcal = mParen >= 0 ? rawMacro.slice(0, mParen).trim() : rawMacro.trim();
+    const macroSplit = mParen >= 0 ? rawMacro.slice(mParen).trim() : '';
+
     tr.innerHTML = `
-      <td class="py-1 px-2 text-[11px] leading-tight font-semibold group-hover:text-[var(--accent)] transition whitespace-nowrap">
-        <div class="flex items-center justify-between gap-1.5">
-          <div class="flex items-center gap-1.5 min-w-0">
-            <span>${escapeHtml(s.day)}</span>
-            ${slotBadge}
-          </div>
-          ${lucideSvg('arrow-right', 'w-3 h-3 accent-text opacity-0 group-hover:opacity-100 transition shrink-0')}
+      <td class="py-1 px-2 text-[11px] leading-tight group-hover:text-[var(--accent)] transition align-top">
+        <div class="flex flex-wrap items-center gap-1">
+          <span class="font-semibold text-[var(--text-primary)] whitespace-nowrap">${escapeHtml(dayMain)}</span>
+          ${slotBadge}
+          ${devBadge}
+          ${lucideSvg('arrow-right', 'w-3 h-3 accent-text opacity-0 group-hover:opacity-100 transition shrink-0 ml-auto')}
         </div>
+        ${daySub ? `<p class="text-[10px] text-[var(--text-secondary)] leading-tight mt-0.5">${escapeHtml(daySub)}</p>` : ''}
       </td>
-      <td class="py-1 px-2 text-[11px] leading-tight font-medium whitespace-nowrap">${escapeHtml(s.primary)}</td>
-      <td class="py-1 px-2 text-[11px] leading-tight ${isDone ? 'font-mono moss-text font-semibold' : 'text-[var(--text-secondary)]'}"><div class="line-clamp-1" title="${escapeHtml(s.secondary)}">${escapeHtml(s.secondary)}</div></td>
-      <td class="py-1 px-2 font-mono text-[10.5px] leading-tight font-medium accent-text whitespace-nowrap">${escapeHtml(s.target)}</td>
-      <td class="py-1 px-2 font-mono text-[10.5px] leading-tight text-[var(--text-secondary)] whitespace-nowrap">${escapeHtml(s.calories)}</td>
-      <td class="py-1 px-2 font-mono text-[10.5px] leading-tight text-[var(--text-secondary)]"><div class="line-clamp-1" title="${escapeHtml(s.macro)}">${escapeHtml(s.macro)}</div></td>
+      <td class="py-1 px-2 text-[11px] leading-snug font-medium align-top">
+        <p class="line-clamp-2 text-[var(--text-primary)]" title="${escapeHtml(s.primary)}">${escapeHtml(s.primary)}</p>
+      </td>
+      <td class="py-1 px-2 text-[10.5px] leading-snug align-top ${isDone ? 'font-mono moss-text font-semibold' : 'text-[var(--text-secondary)]'}">
+        <p class="line-clamp-2" title="${escapeHtml(s.secondary)}">${escapeHtml(s.secondary)}</p>
+      </td>
+      <td class="py-1 px-2 font-mono text-[10.5px] leading-snug font-medium accent-text align-top">${escapeHtml(s.target)}</td>
+      <td class="py-1 px-2 font-mono text-[10.5px] leading-tight align-top">
+        <span class="font-semibold text-[var(--text-primary)]">${escapeHtml(macroKcal)}</span>
+        ${s.calories ? `<span class="text-[9.5px] text-[var(--text-muted)]"> (${escapeHtml(s.calories)})</span>` : ''}
+        ${macroSplit ? `<span class="block text-[9.5px] text-[var(--text-secondary)] mt-0.5">${escapeHtml(macroSplit)}</span>` : ''}
+      </td>
     `;
     sBody.appendChild(tr);
   });
@@ -369,30 +393,30 @@ function renderDailyProtocols(protocols) {
   let exerciseHtml = '';
   if (p.category === 'gym') {
     exerciseHtml = `
-<div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region mt-1.5">
-  <table class="w-full text-left text-[11.5px]">
+<div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region mt-1">
+  <table class="w-full text-left text-[11px]">
     <thead>
       <tr>
-        <th class="py-1.5 px-2.5">#</th>
-        <th class="py-1.5 px-2.5">Egzersiz</th>
-        <th class="py-1.5 px-2.5">Set x Tekrar</th>
-        <th class="py-1.5 px-2.5">Mevcut &amp; Hedef Ağırlık</th>
-        <th class="py-1.5 px-2.5">Dinlenme &amp; RPE</th>
-        <th class="py-1.5 px-2.5">Koçluk İpucu</th>
+        <th class="py-1 px-1.5">#</th>
+        <th class="py-1 px-1.5">Egzersiz</th>
+        <th class="py-1 px-1.5">Set x Tekrar</th>
+        <th class="py-1 px-1.5">Mevcut &amp; Hedef Ağırlık</th>
+        <th class="py-1 px-1.5">Dinlenme &amp; RPE</th>
+        <th class="py-1 px-1.5">Koçluk İpucu</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-[var(--border-subtle)]">
       ${(p.exercises || []).map(ex => `
         <tr class="hover:bg-[var(--bg-subtle)]">
-          <td class="py-1.5 px-2.5 font-mono font-semibold text-[var(--text-muted)]">${ex.num}</td>
-          <td class="py-1.5 px-2.5 font-semibold whitespace-nowrap">${escapeHtml(ex.name)}</td>
-          <td class="py-1.5 px-2.5 font-mono font-semibold accent-text whitespace-nowrap">${ex.sets} x ${ex.reps}</td>
-          <td class="py-1.5 px-2.5">
+          <td class="py-1 px-1.5 font-mono font-semibold text-[var(--text-muted)]">${ex.num}</td>
+          <td class="py-1 px-1.5 font-semibold">${escapeHtml(ex.name)}</td>
+          <td class="py-1 px-1.5 font-mono font-semibold accent-text whitespace-nowrap">${ex.sets} x ${ex.reps}</td>
+          <td class="py-1 px-1.5">
             <span class="stamp-tag stamp-moss">${escapeHtml(ex.target_weight)}</span>
-            ${ex.current_achieved ? `<span class="font-mono text-[10px] text-[var(--text-muted)] ml-1.5">Son: ${escapeHtml(ex.current_achieved)}</span>` : ''}
+            ${ex.current_achieved ? `<span class="font-mono text-[10px] text-[var(--text-muted)] ml-1">Son: ${escapeHtml(ex.current_achieved)}</span>` : ''}
           </td>
-          <td class="py-1.5 px-2.5 font-mono text-[var(--text-secondary)] whitespace-nowrap">${escapeHtml(ex.rest_sec)} <span class="text-[var(--text-muted)]">(${escapeHtml(ex.target_rpe || 'RPE 8')})</span></td>
-          <td class="py-1.5 px-2.5 text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(ex.coaching_cue)}</td>
+          <td class="py-1 px-1.5 font-mono text-[var(--text-secondary)] whitespace-nowrap">${escapeHtml(ex.rest_sec)} <span class="text-[var(--text-muted)]">(${escapeHtml(ex.target_rpe || 'RPE 8')})</span></td>
+          <td class="py-1 px-1.5 text-[10.5px] text-[var(--text-secondary)] leading-tight"><div class="line-clamp-1" title="${escapeHtml(ex.coaching_cue)}">${escapeHtml(ex.coaching_cue)}</div></td>
         </tr>
       `).join('')}
     </tbody>
@@ -436,26 +460,26 @@ function renderDailyProtocols(protocols) {
   }
 
   container.innerHTML = `
-    <div class="surface-card p-3.5 space-y-2 h-full flex flex-col justify-between overflow-hidden">
-      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2 shrink-0">
+    <div class="surface-card p-2.5 space-y-1 h-full flex flex-col justify-between overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-1.5 shrink-0">
         <div class="flex flex-wrap items-center gap-2">
           <span class="stamp-tag stamp-accent">${escapeHtml(p.badge)}</span>
           ${getQuotaStatusStamp(p.quota_status)}
-          <h4 class="font-editorial text-base font-medium tracking-tight">${escapeHtml(p.day_title)}</h4>
+          <h4 class="font-editorial text-sm sm:text-base font-medium tracking-tight">${escapeHtml(p.day_title)}</h4>
         </div>
-        <span class="font-mono text-[11px] text-[var(--text-secondary)]">${escapeHtml(p.status_note)}</span>
+        <span class="font-mono text-[10.5px] text-[var(--text-secondary)]">${escapeHtml(p.status_note)}</span>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] shrink-0">
-        <p class="text-[var(--text-secondary)] tint-panel p-2 leading-snug"><strong class="text-[var(--text-primary)] font-semibold">Seans Hedefi:</strong> ${escapeHtml(p.objective)}</p>
-        <p class="text-[var(--text-secondary)] tint-panel p-2 leading-snug"><strong class="text-[var(--text-primary)] font-semibold">Isınma &amp; Mobilite:</strong> ${escapeHtml(p.warmup)}</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-1.5 text-[10.5px] shrink-0">
+        <p class="text-[var(--text-secondary)] tint-panel px-2 py-1.5 leading-tight"><strong class="text-[var(--text-primary)] font-semibold">Seans Hedefi:</strong> ${escapeHtml(p.objective)}</p>
+        <p class="text-[var(--text-secondary)] tint-panel px-2 py-1.5 leading-tight"><strong class="text-[var(--text-primary)] font-semibold">Isınma &amp; Mobilite:</strong> ${escapeHtml(p.warmup)}</p>
       </div>
 
       ${exerciseHtml}
 
-      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)] shrink-0">
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-[var(--border-subtle)] text-[10.5px] text-[var(--text-secondary)] shrink-0">
         <p><strong class="text-[var(--text-primary)]">Soğuma:</strong> ${escapeHtml(p.cooldown)}</p>
-        <p class="font-mono font-medium tint-panel px-2.5 py-1">${escapeHtml(p.telemetry_targets ? p.telemetry_targets.nutrition : '')}</p>
+        <p class="font-mono font-medium tint-panel px-2 py-0.5">${escapeHtml(p.telemetry_targets ? p.telemetry_targets.nutrition : '')}</p>
       </div>
     </div>
   `;

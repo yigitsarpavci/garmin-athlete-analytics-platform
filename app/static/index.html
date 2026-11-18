@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..500&family=IBM+Plex+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/theme.css?v=20261118k">
 </head>
 
 <body class="h-screen overflow-hidden flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] antialiased">
@@ -214,7 +214,7 @@
         <!-- LEFT 7 COLS: Weekly Flexible Quota Panel -->
         <div class="lg:col-span-7 flex flex-col min-h-0">
           <!-- HAFTALIK KOTA & KALAN SEANSLAR LEDGER PANELİ -->
-          <section id="weeklyQuotaPanel" aria-label="Haftalık Kota ve Kalan Seanslar" class="field-dossier p-4 space-y-2.5 flex-1 min-h-0 overflow-hidden">
+          <section id="weeklyQuotaPanel" aria-label="Haftalık Kota ve Kalan Seanslar" class="field-dossier p-3.5 space-y-2 flex-1 min-h-0 overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık Kota &amp; Kalan Seanslar</span>
               <span class="stamp-tag stamp-accent">Yükleniyor...</span>
@@ -475,7 +475,7 @@
       </div>
 
       <div data-subpane-group="plan" data-subpane="schedule" class="single-screen-pane hidden">
-        <section class="surface-card p-4 sm:p-5 space-y-3 h-full flex flex-col justify-between overflow-hidden">
+        <section class="surface-card p-3.5 sm:p-4 space-y-2 h-full flex flex-col justify-between overflow-hidden">
           <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
               <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Haftalık Takip &amp; Esnek Kalan Kotalar (Hedef İdeal Kilo: 81,0 kg)</h3>
@@ -484,15 +484,14 @@
             <span class="stamp-tag stamp-moss">Esnek 2 Koşu + 2 Kuvvet</span>
           </div>
           <div tabindex="0" role="region" aria-label="Haftalık takip ve esnek kota tablosu" class="table-scroll-region flex-1 min-h-0">
-            <table class="w-full text-left text-xs">
+            <table class="table-fixed w-full text-left text-xs">
               <thead>
                 <tr>
-                  <th class="py-2 px-3">Gün / Esnek Slot</th>
-                  <th class="py-2 px-3">Seans Türü &amp; Kota</th>
-                  <th class="py-2 px-3">Durum / Esnek Planlama</th>
-                  <th class="py-2 px-3">Hedef Nabız &amp; Tempo</th>
-                  <th class="py-2 px-3">Harcama</th>
-                  <th class="py-2 px-3">Hedef Kalori &amp; Makro</th>
+                  <th class="w-[20%] py-1.5 px-2">Gün / Esnek Slot</th>
+                  <th class="w-[27%] py-1.5 px-2">Seans Türü &amp; Kota</th>
+                  <th class="w-[25%] py-1.5 px-2">Durum &amp; Esnek Planlama</th>
+                  <th class="w-[13%] py-1.5 px-2">Hedef Nabız</th>
+                  <th class="w-[15%] py-1.5 px-2">Kalori &amp; Makro</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="overviewScheduleBody"></tbody>
@@ -502,8 +501,8 @@
       </div>
 
       <div data-subpane-group="plan" data-subpane="protocols" class="single-screen-pane hidden">
-        <section class="surface-card p-4 sm:p-5 space-y-3 h-full flex flex-col overflow-hidden" id="dailyProtocolsSection">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2.5 shrink-0">
+        <section class="surface-card p-3 sm:p-3.5 space-y-2 h-full flex flex-col overflow-hidden" id="dailyProtocolsSection">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-1.5 shrink-0">
             <div class="flex flex-wrap items-center gap-2">
               <span class="stamp-tag stamp-accent">ANTRENMAN İÇERİKLERİ</span>
               <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Seans Detayları</h3>
@@ -562,7 +561,7 @@
       </div>
 
       <div data-subpane-group="sports" data-subpane="gym_history" class="single-screen-pane hidden">
-        <section class="surface-card p-4 sm:p-5 space-y-3 h-full flex flex-col overflow-hidden">
+        <section class="surface-card p-3.5 sm:p-4 space-y-2 h-full flex flex-col overflow-hidden">
           <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div class="flex items-center gap-2">
               <span class="stamp-tag stamp-accent">SALON KAYITLARI</span>
@@ -574,11 +573,11 @@
             <table class="w-full text-left text-xs">
               <thead>
                 <tr>
-                  <th class="py-2 px-3">Tarih</th>
-                  <th class="py-2 px-3">Rutin</th>
-                  <th class="py-2 px-3">Süre &amp; Kalori</th>
-                  <th class="py-2 px-3">Toplam Hacim</th>
-                  <th class="py-2 px-3">Egzersizler, Setler &amp; Ağırlıklar (kg)</th>
+                  <th class="py-1.5 px-2">Tarih</th>
+                  <th class="py-1.5 px-2">Rutin</th>
+                  <th class="py-1.5 px-2">Süre &amp; Kalori</th>
+                  <th class="py-1.5 px-2">Toplam Hacim</th>
+                  <th class="py-1.5 px-2">Egzersizler, Setler &amp; Ağırlıklar (kg)</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="gymHistoryTableBody"></tbody>
@@ -588,15 +587,15 @@
       </div>
 
       <div data-subpane-group="sports" data-subpane="prog" class="single-screen-pane hidden">
-        <section class="surface-card p-4 sm:p-5 space-y-3.5 h-full flex flex-col overflow-hidden" id="progressionAssessmentSection">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2.5 shrink-0">
+        <section class="surface-card p-3.5 sm:p-4 space-y-2 h-full flex flex-col overflow-hidden" id="progressionAssessmentSection">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2 shrink-0">
             <div class="flex items-center gap-2">
               <span class="stamp-tag stamp-ochre">SEVİYE &amp; İLERLEME</span>
               <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Seviye ve İlerleme Durumu</h3>
             </div>
             <span class="stamp-tag stamp-accent" id="progressionTierBadge">Kuvvet: Temel Güç İnşası (0.75x VA) · Koşu: Orta Seviye</span>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 flex-1 content-start" id="progressionCardsGrid"></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 flex-1 content-start" id="progressionCardsGrid"></div>
         </section>
       </div>
 
@@ -979,14 +978,14 @@
               <p class="text-[11px] text-[var(--text-secondary)]">Mevcut (RHR=65), LTHR (179 bpm), Karvonen %HRR ve Koşu Gücü (FTP) referans tablosu:</p>
             </div>
             <div tabindex="0" role="region" aria-label="Koşu nabız ve güç zonları" class="table-scroll-region flex-1 min-h-0">
-              <table class="w-full text-left text-xs">
+              <table class="w-full text-left text-[11px]">
                 <thead>
                   <tr>
-                    <th class="py-2 px-2.5">Bölge</th>
-                    <th class="py-2 px-2.5">Mevcut (RHR=65)</th>
-                    <th class="py-2 px-2.5">Önerilen LTHR (179)</th>
-                    <th class="py-2 px-2.5">Karvonen %HRR</th>
-                    <th class="py-2 px-2.5">Koşu Gücü (FTP)</th>
+                    <th class="py-1.5 px-2">Bölge</th>
+                    <th class="py-1.5 px-2">Mevcut HR</th>
+                    <th class="py-1.5 px-2">Önerilen LTHR</th>
+                    <th class="py-1.5 px-2">Karvonen %HRR</th>
+                    <th class="py-1.5 px-2">Güç (FTP)</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--border-subtle)]" id="zonesTableBody"></tbody>
@@ -1231,23 +1230,23 @@
     style="height: min(600px, calc(100dvh - 5rem));">
 
     <!-- Chat Header -->
-    <div class="bg-[#181715] text-[#F3EFE6] px-4 py-3.5 flex items-center justify-between border-b border-[#2D2B25] flex-shrink-0 gap-2">
+    <div class="bg-[var(--bg-surface-elevated)] text-[var(--text-primary)] px-4 py-3.5 flex items-center justify-between border-b border-[var(--border-subtle)] flex-shrink-0 gap-2">
       <div class="flex items-center gap-2.5 min-w-0">
         <div class="w-8 h-8 rounded-[3px] accent-bg flex items-center justify-center font-mono font-bold text-xs shrink-0">AI</div>
         <div class="min-w-0">
           <div class="flex items-center gap-1.5">
             <h4 class="font-editorial text-sm font-medium tracking-tight whitespace-nowrap">Garmin Koçu</h4>
           </div>
-          <p class="font-mono text-[10px] text-[#ADA698] truncate">93G Telemetri Motoru</p>
+          <p class="font-mono text-[10px] text-[var(--text-secondary)] truncate">93G Telemetri Motoru</p>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <select id="aiModelSelect" class="font-mono bg-[#23221D] text-[10px] text-[#F3EFE6] border border-[#3F3C34] rounded-[2px] px-2 py-1 max-w-[9.5rem] sm:max-w-[11rem] truncate">
+        <select id="aiModelSelect" class="font-mono bg-[var(--bg-surface)] text-[10px] text-[var(--text-primary)] border border-[var(--border-medium)] rounded-[2px] px-2 py-1 max-w-[9.5rem] sm:max-w-[11rem] truncate">
           <option value="gemini-3.8-flash-low" selected>Gemini 3.8 Flash</option>
           <option value="gemini-4-hydrogen-high">Gemini 4 Hydrogen</option>
           <option value="claude-sonnet-5-5-medium">Claude Sonnet 5.5</option>
         </select>
-        <button type="button" onclick="toggleAICoach()" class="text-[#ADA698] hover:text-white p-1 transition" aria-label="Sohbeti Kapat">
+        <button type="button" onclick="toggleAICoach()" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1 transition" aria-label="Sohbeti Kapat">
           <i data-lucide="x" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
         </button>
       </div>
@@ -1286,12 +1285,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js?v=20261118j"></script>
-  <script src="/js/quota_schedule.js?v=20261118j"></script>
-  <script src="/js/dashboard.js?v=20261118j"></script>
-  <script src="/js/health_analytics.js?v=20261118j"></script>
-  <script src="/js/charts.js?v=20261118j"></script>
-  <script src="/js/modals.js?v=20261118j"></script>
+  <script src="/js/core.js?v=20261118k"></script>
+  <script src="/js/quota_schedule.js?v=20261118k"></script>
+  <script src="/js/dashboard.js?v=20261118k"></script>
+  <script src="/js/health_analytics.js?v=20261118k"></script>
+  <script src="/js/charts.js?v=20261118k"></script>
+  <script src="/js/modals.js?v=20261118k"></script>
 </body>
 
 </html>
