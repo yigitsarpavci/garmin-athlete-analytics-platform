@@ -582,12 +582,11 @@
         <div>
           <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">03 / ÇOKLU BRANŞ &amp; PROGRESSIVE OVERLOAD</span>
           <h2 class="section-heading text-2xl sm:text-3xl mt-1">Branş Rehberliği ve Kuvvet Rutini</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Koşu, A/B 5x5 kuvvet progresyonu, yelken, basketbol ve aynı gün sıralama kanıtları.</p>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Koşu, A/B 5x5 kuvvet progresyonu, yelken, basketbol ve dinamik branş rehberliği.</p>
         </div>
         <div class="subtab-bar">
           <button type="button" id="sportsCountTabBtn" onclick="setSubTab('sports', 'cards')" data-subtab-group="sports" data-subtab="cards" class="subtab-btn subtab-btn-active">Branş Özetleri (4)</button>
           <button type="button" onclick="setSubTab('sports', 'gym')" data-subtab-group="sports" data-subtab="gym" class="subtab-btn">Kuvvet &amp; 5x5</button>
-          <button type="button" onclick="setSubTab('sports', 'seq')" data-subtab-group="sports" data-subtab="seq" class="subtab-btn">Aynı Gün Sırası</button>
           <button type="button" onclick="setSubTab('sports', 'prog')" data-subtab-group="sports" data-subtab="prog" class="subtab-btn">Dinamik İlerleme</button>
         </div>
       </div>
@@ -628,40 +627,6 @@
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="gymHistoryTableBody"></tbody>
             </table>
-          </div>
-        </section>
-      </div>
-
-      <div data-subpane-group="sports" data-subpane="seq" class="hidden">
-        <section class="surface-card p-6 sm:p-8 space-y-5">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="stamp-tag stamp-accent">TELEMETRİ KANITI</span>
-              <h3 class="font-editorial text-lg font-medium tracking-tight">Aynı Gün Kuvvet ve Koşu Sıralaması</h3>
-            </div>
-            <p class="text-xs text-[var(--text-secondary)] mt-1">Aynı günde yapılan kuvvet ve koşu sıralamasının nabız ve verimlilik üzerindeki somut etkisi:</p>
-          </div>
-
-          <div tabindex="0" role="region" aria-label="Aynı gün sıralama analizi" class="table-scroll-region custom-scrollbar">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr>
-                  <th class="py-3 px-4">Tarih</th>
-                  <th class="py-3 px-4">Uygulanan Sıralama</th>
-                  <th class="py-3 px-4">Kuvvet Bilgisi</th>
-                  <th class="py-3 px-4">Koşu Mesafe / Tempo</th>
-                  <th class="py-3 px-4">Koşu Nabzı</th>
-                  <th class="py-3 px-4">Z4 Oranı</th>
-                  <th class="py-3 px-4">Sonuç</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="sameDayTableBody"></tbody>
-            </table>
-          </div>
-
-          <div class="tint-moss-panel p-4 text-xs space-y-1">
-            <p class="font-semibold moss-text flex items-center gap-1.5"><i data-lucide="target" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i><span>Pratik Koçluk Kuralı</span></p>
-            <p class="text-[var(--text-secondary)]">Ağırlıktan hemen sonra koşmak nabzı doğrudan <strong class="text-[var(--text-primary)]">+7 bpm yükseltir</strong> ve Z4 süresini 2 katına (%26,5'ten %50,0'a) çıkarır. Çift günlerde mutlaka <strong class="text-[var(--text-primary)]">ÖNCE KOŞU, SONRA KUVVET</strong> uygulayın.</p>
           </div>
         </section>
       </div>
@@ -1612,12 +1577,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js?v=20261118c"></script>
-  <script src="/js/quota_schedule.js?v=20261118c"></script>
-  <script src="/js/dashboard.js?v=20261118c"></script>
-  <script src="/js/health_analytics.js?v=20261118c"></script>
-  <script src="/js/charts.js?v=20261118c"></script>
-  <script src="/js/modals.js?v=20261118c"></script>
+  <script src="/js/core.js?v=20261118d"></script>
+  <script src="/js/quota_schedule.js?v=20261118d"></script>
+  <script src="/js/dashboard.js?v=20261118d"></script>
+  <script src="/js/health_analytics.js?v=20261118d"></script>
+  <script src="/js/charts.js?v=20261118d"></script>
+  <script src="/js/modals.js?v=20261118d"></script>
 </body>
 
 </html>

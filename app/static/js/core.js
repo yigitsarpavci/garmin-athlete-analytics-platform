@@ -118,8 +118,10 @@ async function initApp() {
     const tlData = await safeFetchJson('/api/training-load');
     if (tlData) renderTrainingLoad(tlData);
 
-    const seqData = await safeFetchJson('/api/same-day-sequence');
-    if (seqData) renderSameDaySequence(seqData);
+    if (document.getElementById('sameDayTableBody')) {
+      const seqData = await safeFetchJson('/api/same-day-sequence');
+      if (seqData) renderSameDaySequence(seqData);
+    }
 
     globalActivities = await safeFetchJson('/api/activities');
     if (globalActivities) {
