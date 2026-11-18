@@ -94,6 +94,23 @@ function openActivityModal(act) {
   const cad = act.cadence ? `${act.cadence.toFixed(0)} spm` : '--';
   document.getElementById('modalPowerCadence').textContent = `${pwr} · ${cad}`;
 
+  const rdRow = document.getElementById('modalRunningDynamicsRow');
+  const rdEl = document.getElementById('modalRunningDynamics');
+  if (rdRow && rdEl) {
+    const rdParts = [];
+    if (act.gct_ms) rdParts.push(`GCT ${Number(act.gct_ms).toFixed(1)} ms`);
+    if (act.vert_osc_cm) rdParts.push(`VO ${Number(act.vert_osc_cm).toFixed(1)} cm`);
+    if (act.vert_ratio) rdParts.push(`VR %${Number(act.vert_ratio).toFixed(1)}`);
+    if (act.stride_cm) rdParts.push(`Adım ${Number(act.stride_cm).toFixed(0)} cm`);
+    if (rdParts.length) {
+      rdEl.textContent = rdParts.join(' · ');
+      rdRow.classList.remove('hidden');
+    } else {
+      rdEl.textContent = '--';
+      rdRow.classList.add('hidden');
+    }
+  }
+
   const btnAi = document.getElementById('btnAskAiAboutAct');
   if (btnAi) {
     btnAi.onclick = () => {

@@ -234,6 +234,7 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
                 "cadence": a.get("averageRunningCadenceInStepsPerMinute"),
                 "stride_cm": a.get("avgStrideLength"),
                 "gct_ms": a.get("avgGroundContactTime"),
+                "vert_osc_cm": a.get("avgVerticalOscillation"),
                 "vert_ratio": a.get("avgVerticalRatio"),
                 "avg_pwr": a.get("avgPower"),
                 "norm_pwr": npwr,

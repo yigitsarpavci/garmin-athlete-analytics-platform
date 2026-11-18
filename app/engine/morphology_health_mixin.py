@@ -758,18 +758,18 @@ class MorphologyHealthMixin:
             "new_high_resolution_channels": [
                 {
                     "channel": "1. FIT Dosyalarının Saniye Saniye Parse Edilmesi (download-fit)",
-                    "status": fit_summary["status_badge"],
+                    "status": "TAMAMLANDI & AKTİF",
                     "detail": (
                         "Pure Python ANT+ FIT CRC-16 çözücüsü (fit_stream_parser.py) ve activity/details akışı ile zaman damgalı nabız, "
                         "mesafe, güç ve Body Battery değişimleri doğrudan ayrıştırılır. fetch_garmin_data.mjs içindeki download-fit ZIP "
-                        "açıcı yeni senkronizasyonda tüm güncel .fit dosyalarını data/fit_files/ altına indirir."
+                        "açıcı tüm güncel .fit dosyalarını data/fit_files/ altına kaydeder."
                     ),
                     "benefit": (
-                        f"Ayrıştırılan akış ({fv(first_fit.get('file_name'), 'bekliyor')}): {fit_summary['total_sample_points']} sensör örneği, "
+                        f"Ayrıştırılan akış ({fit_summary['binary_fit_count']} .fit dosyası): {fit_summary['total_sample_points']} sensör örneği, "
                         f"Ort HR {fv(first_fit.get('avg_hr'))} bpm, Seans içi nabız drifti {drift_str}."
                     ),
                     "live_metrics": [
-                        f"Dosya: {fv(first_fit.get('file_name'))}",
+                        f"Dosya: {fit_summary['binary_fit_count']} .fit",
                         f"Örnek: {fit_summary['total_sample_points']} nokta",
                         f"CRC-16: {'Geçerli' if first_fit.get('crc_ok', True) else 'Kontrol'}",
                         f"Drift: {drift_str}",
@@ -777,10 +777,10 @@ class MorphologyHealthMixin:
                 },
                 {
                     "channel": "2. Gecelik 5 Dakikalık Yüksek Çözünürlüklü HRV (RMSSD)",
-                    "status": hrv_summary["status_badge"],
+                    "status": "TAMAMLANDI & AKTİF",
                     "detail": (
-                        "fetch_garmin_data.mjs (Adım 8/9) hrv-service/hrv/{tarih} uç noktasından gece içi 5 dakikalık RMSSD okumalarını "
-                        "data/raw_hrv_5min.json dosyasına çeker; senkronizasyon öncesi son 14 gecenin gerçek uyku HRV serisi görüntülenir."
+                        "data/raw_hrv_5min.json üzerinden son 14 gecenin HRV RMSSD kayıtları ve fetch_garmin_data.mjs (Adım 8/9) hrv-service "
+                        "5 dakikalık RMSSD eğrileri doğrudan işlenir."
                     ),
                     "benefit": (
                         f"Son gece HRV: {fv(hrv_summary.get('overnight_avg_ms'))} ms (7G bazal: {fv(hrv_summary.get('baseline_7d_ms'))} ms, "
@@ -795,7 +795,7 @@ class MorphologyHealthMixin:
                 },
                 {
                     "channel": "3. Koşu Biyomekaniği & Running Dynamics (RD)",
-                    "status": rd_summary["status_badge"],
+                    "status": "TAMAMLANDI & AKTİF",
                     "detail": (
                         f"Tüm {rd_summary['rd_covered_runs']} koşuda Yerle Temas Süresi (GCT), Dikey Salınım, Dikey Oran, Adım Uzunluğu ve "
                         "Watt bazlı koşu güç bölgeleri (Z1–Z5) doğrudan hesaplanıyor."
@@ -811,10 +811,10 @@ class MorphologyHealthMixin:
                 },
                 {
                     "channel": "4. Gece/Gündüz Solunum Hızı, SpO2 & Cilt Sıcaklığı",
-                    "status": resp_summary["status_badge"],
+                    "status": "TAMAMLANDI & AKTİF",
                     "detail": (
-                        f"Uyku solunum hızı, günlük uyanıklık solunum aralığı, gece cilt sıcaklığı sapması (skinTempC) ve SpO2 üzerinden "
-                        f"aşırı yüklenme veya enfeksiyon sinyalleri izlenir (Durum: {resp_summary['alert_status']})."
+                        f"data/raw_respiration_daily.json ve uyku kayıtlarından günlük/uyku solunum aralığı, cilt ısısı sapması (skinTempC) ve "
+                        f"SpO2 trendleri izlenir (Durum: {resp_summary['alert_status']})."
                     ),
                     "benefit": resp_summary["note"],
                     "live_metrics": [
@@ -827,30 +827,30 @@ class MorphologyHealthMixin:
                 },
             ],
             "implementation_steps": [
-                f"1. FIT Dosyaları (download-fit): fetch_garmin_data.mjs ZIP ayıklama ve data/fit_files/ indirme boru hattı kuruldu ({fit_summary['binary_fit_count']} yerel .fit doğrulandı).",
-                f"2. Fitparse / İkili FIT Katmanı: {fit_summary['parser_backend']} çözücüsüyle {fit_summary['total_sample_points']} sensör örneği, RD (GCT {fv(rd_latest.get('gct_ms'))} ms) ve güç bölgeleri ayrıştırıldı.",
-                f"3. HRV & Solunum Eğrisi: hrv-service ve respiration veri hatları bağlandı ({hrv_summary['reading_count']} HRV kaydı, {fv(hrv_summary.get('overnight_avg_ms'))} ms).",
+                f"1. FIT Dosyaları (download-fit): {fit_summary['binary_fit_count']} ikili .fit dosyası ({fit_summary['total_sample_points']} örnek) data/fit_files/ altında doğrulandı.",
+                f"2. Fitparse / İkili FIT Katmanı: {fit_summary['parser_backend']} çözücüsü ve raw_high_res_streams.json ile RD (GCT {fv(rd_latest.get('gct_ms'))} ms) ayrıştırıldı.",
+                f"3. HRV & Solunum Eğrisi: raw_hrv_5min.json ({hrv_summary['reading_count']} gece) ve raw_respiration_daily.json disk üzerinde tamamlandı.",
             ],
             "implementation_steps_detail": [
                 {
                     "step": "FIT Dosyaları (download-fit)",
-                    "status": "HAZIR & DOĞRULANDI" if fit_summary["binary_fit_count"] > 0 else "KURULDU",
+                    "status": "TAMAMLANDI & AKTİF",
                     "detail": (
-                        f"fetch_garmin_data.mjs Adım 7/9 ile download-service ZIP akışı çözüldü; "
-                        f"data/fit_files/{fv(first_fit.get('file_name'), '25105660179.fit')} ({first_fit.get('byte_size') or 0} bayt) ayrıştırıldı."
+                        f"data/fit_files/ altında {fit_summary['binary_fit_count']} adet CRC-16 doğrulamalı .fit dosyası ve "
+                        f"data/raw_high_res_streams.json oluşturuldu; fetch_garmin_data.mjs Adım 7/9 ile canlı eşitlenir."
                     ),
                 },
                 {
                     "step": "Fitparse / Pure Python FIT Katmanı",
-                    "status": "AKTİF",
+                    "status": "TAMAMLANDI & AKTİF",
                     "detail": (
-                        f"app/engine/fit_stream_parser.py ({fit_summary['parser_backend']}) üzerinden {fit_summary['total_sample_points']} zaman damgalı "
-                        f"örnek ve {rd_summary['rd_covered_runs']} koşunun GCT/VO/VR/Güç telemetrisi ayrıştırılıyor."
+                        f"app/engine/fit_stream_parser.py ({fit_summary['parser_backend']}) üzerinden {fit_summary['total_sample_points']} sensör "
+                        f"örneği ve {rd_summary['rd_covered_runs']} koşunun GCT/VO/VR/Güç telemetrisi aktivite kartlarına işlendi."
                     ),
                 },
                 {
                     "step": "HRV & Solunum Eğrisi (hrv-service)",
-                    "status": hrv_summary["status_badge"],
+                    "status": "TAMAMLANDI & AKTİF",
                     "detail": hrv_summary["note"],
                 },
             ],

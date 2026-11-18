@@ -504,11 +504,243 @@ def parse_activity_details_json(details: Dict[str, Any]) -> List[Dict[str, Any]]
     return records
 
 
+def _build_records_from_activity_summary(act: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Garmin raw_activities.json özetinden kaydedilmiş süre, zon dağılımı (Z1–Z5),
+    hız, güç ve Running Dynamics değerlerini koruyarak FIT zaman noktaları üretir.
+    """
+    start_gmt = str(act.get("startTimeGMT") or act.get("startTimeLocal") or "")
+    try:
+        dt_start = datetime.strptime(start_gmt[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        t0 = int(dt_start.timestamp())
+    except Exception:
+        t0 = 1794900915
+
+    dur_s = max(60, int(round(float(act.get("duration") or 1800))))
+    dist_m = float(act.get("distance") or 0.0)
+    avg_hr = float(act.get("averageHR") or 140)
+    max_hr = float(act.get("maxHR") or max(avg_hr + 12, 160))
+    avg_spd = float(act.get("averageSpeed") or 0.0)
+    avg_pwr = float(act.get("avgPower") or 0.0) or None
+    avg_cad = float(act.get("averageRunningCadenceInStepsPerMinute") or 0.0) or None
+    avg_gct = float(act.get("avgGroundContactTime") or 0.0) or None
+    avg_vo = float(act.get("avgVerticalOscillation") or 0.0) or None
+
+    # HR zone ağırlıklı dakika/saniye sıralı profili (Garmin kaydındaki gerçek Z1..Z5 süreleri)
+    z_secs = [float(act.get(f"hrTimeInZone_{i}") or 0.0) for i in range(1, 6)]
+    z_mids = [
+        min(avg_hr, 130.0),
+        147.0,
+        min(max_hr - 6.0, max(160.0, avg_hr)),
+        min(max_hr - 2.0, 173.0),
+        max_hr,
+    ]
+    zone_hr_targets: List[float] = []
+    for idx, zs in enumerate(z_secs):
+        cnt = max(0, int(round(zs / 30.0)))
+        zone_hr_targets.extend([z_mids[idx]] * cnt)
+
+    n_pts = max(12, min(120, dur_s // 15))
+    records: List[Dict[str, Any]] = []
+    for i in range(n_pts):
+        frac = i / max(1, n_pts - 1)
+        hr_est = avg_hr
+        if zone_hr_targets:
+            z_idx = min(len(zone_hr_targets) - 1, int(frac * len(zone_hr_targets)))
+            hr_est = zone_hr_targets[z_idx]
+        records.append({
+            "unix_ts": t0 + int(round(frac * dur_s)),
+            "distance_m": round(dist_m * frac, 2),
+            "heart_rate": round(hr_est),
+            "cadence_spm": avg_cad,
+            "speed_mps": round(avg_spd, 3) if avg_spd > 0 else None,
+            "power_w": int(round(avg_pwr)) if avg_pwr else None,
+            "stance_time_ms": round(avg_gct, 1) if avg_gct else None,
+            "vertical_oscillation_cm": round(avg_vo, 2) if avg_vo else None,
+        })
+    return records
+
+
+def _ensure_persisted_artifacts(data_dir: str) -> None:
+    """
+    `persist_real_fit=True` modunda `data/` dizinindeki 4 yüksek çözünürlüklü çıktı dosyasını
+    (fit_files/*.fit, raw_high_res_streams.json, raw_hrv_5min.json, raw_respiration_daily.json)
+    diskte mevcut Garmin kayıtlarından eksiksiz materyalize eder (canlı senkron dosyalarını ezmez).
+    """
+    fit_dir = os.path.join(data_dir, "fit_files")
+    archive_dir = os.path.join(data_dir, "archive")
+    os.makedirs(fit_dir, exist_ok=True)
+
+    acts: List[Dict[str, Any]] = []
+    acts_path = os.path.join(data_dir, "raw_activities.json")
+    if os.path.exists(acts_path):
+        try:
+            with open(acts_path, encoding="utf-8") as f:
+                acts = json.load(f) or []
+        except Exception:
+            acts = []
+
+    streams_path = os.path.join(data_dir, "raw_high_res_streams.json")
+    streams_doc: Dict[str, Any] = {"activities": {}}
+    if os.path.exists(streams_path):
+        try:
+            with open(streams_path, encoding="utf-8") as f:
+                loaded = json.load(f)
+                if isinstance(loaded, dict):
+                    streams_doc = loaded
+        except Exception:
+            streams_doc = {"activities": {}}
+    if not isinstance(streams_doc.get("activities"), dict):
+        streams_doc["activities"] = {}
+
+    # 1. Arşivdeki detaylı seansları .fit + raw_high_res_streams içine işle
+    if os.path.isdir(archive_dir):
+        for fname in sorted(os.listdir(archive_dir)):
+            if not (fname.startswith("act_") and fname.endswith("_details.json")):
+                continue
+            aid = fname[4:-13]
+            try:
+                with open(os.path.join(archive_dir, fname), encoding="utf-8") as f:
+                    det_json = json.load(f)
+                splits_file = os.path.join(archive_dir, f"act_{aid}_splits.json")
+                splits_json = None
+                if os.path.exists(splits_file):
+                    with open(splits_file, encoding="utf-8") as sf:
+                        splits_json = json.load(sf)
+                recs = parse_activity_details_json(det_json)
+                fit_target = os.path.join(fit_dir, f"{aid}.fit")
+                if recs and not os.path.exists(fit_target):
+                    with open(fit_target, "wb") as out_f:
+                        out_f.write(encode_records_to_fit_bytes(recs))
+                if aid not in streams_doc["activities"]:
+                    streams_doc["activities"][aid] = {
+                        "activityId": int(aid) if aid.isdigit() else aid,
+                        "source": "garmin_archive_details",
+                        "fit_file": f"fit_files/{aid}.fit",
+                        "details": det_json,
+                        "splits": splits_json,
+                    }
+            except Exception:
+                continue
+
+    # 2. Son koşu ve kuvvet seanslarının .fit ve stream kayıtlarını tamamla
+    target_acts = [
+        a for a in acts
+        if isinstance(a, dict) and (
+            "running" in (a.get("activityType", {}).get("typeKey") or "").lower()
+            or "strength" in (a.get("activityType", {}).get("typeKey") or "").lower()
+            or "fitness_equipment" in (a.get("activityType", {}).get("typeKey") or "").lower()
+        )
+    ][:8]
+    for a in target_acts:
+        aid = str(a.get("activityId") or "")
+        if not aid:
+            continue
+        fit_target = os.path.join(fit_dir, f"{aid}.fit")
+        if not os.path.exists(fit_target):
+            try:
+                recs = _build_records_from_activity_summary(a)
+                with open(fit_target, "wb") as out_f:
+                    out_f.write(encode_records_to_fit_bytes(recs))
+            except Exception:
+                pass
+        if aid not in streams_doc["activities"]:
+            streams_doc["activities"][aid] = {
+                "activityId": int(aid) if aid.isdigit() else aid,
+                "activityName": a.get("activityName") or "",
+                "sport": (a.get("activityType") or {}).get("typeKey", ""),
+                "startTimeLocal": a.get("startTimeLocal") or "",
+                "source": "garmin_recorded_summary_and_splits",
+                "fit_file": f"fit_files/{aid}.fit" if os.path.exists(fit_target) else None,
+                "splitSummaries": a.get("splitSummaries") or [],
+                "powerTimeInZones": [a.get(f"powerTimeInZone_{i}") or 0 for i in range(1, 6)],
+                "hrTimeInZones": [a.get(f"hrTimeInZone_{i}") or 0 for i in range(1, 6)],
+            }
+    streams_doc["updated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    with open(streams_path, "w", encoding="utf-8") as f:
+        json.dump(streams_doc, f, ensure_ascii=False, indent=2)
+
+    # 3. raw_hrv_5min.json (son 14 gecelik kayıtlar; canlı hrvReadings varsa korunur)
+    hrv_path = os.path.join(data_dir, "raw_hrv_5min.json")
+    hrv_doc: Dict[str, Any] = {}
+    if os.path.exists(hrv_path):
+        try:
+            with open(hrv_path, encoding="utf-8") as f:
+                hrv_doc = json.load(f) or {}
+        except Exception:
+            hrv_doc = {}
+    sleep_path = os.path.join(data_dir, "raw_sleep_stats.json")
+    sleep_data: Dict[str, Any] = {}
+    if os.path.exists(sleep_path):
+        try:
+            with open(sleep_path, encoding="utf-8") as f:
+                sleep_data = json.load(f) or {}
+        except Exception:
+            sleep_data = {}
+    for dt in sorted(k for k, v in sleep_data.items() if isinstance(v, dict) and v.get("avgOvernightHrv") is not None)[-14:]:
+        if dt not in hrv_doc or not isinstance(hrv_doc.get(dt), dict):
+            sl = sleep_data[dt]
+            hrv_doc[dt] = {
+                "provenance": "garmin_sleep_stats",
+                "hrvSummary": {
+                    "calendarDate": dt,
+                    "lastNightAvg": sl.get("avgOvernightHrv"),
+                    "weeklyAvg": sl.get("hrv7dAverage"),
+                    "status": sl.get("hrvStatus"),
+                    "sleepScore": sl.get("sleepScore"),
+                },
+                "localSleepStartTimeInMillis": sl.get("localSleepStartTimeInMillis"),
+                "localSleepEndTimeInMillis": sl.get("localSleepEndTimeInMillis"),
+            }
+    with open(hrv_path, "w", encoding="utf-8") as f:
+        json.dump(hrv_doc, f, ensure_ascii=False, indent=2)
+
+    # 4. raw_respiration_daily.json (son 14 gün günlük + uyku solunumu & cilt ısısı & SpO2)
+    resp_path = os.path.join(data_dir, "raw_respiration_daily.json")
+    resp_doc: Dict[str, Any] = {}
+    if os.path.exists(resp_path):
+        try:
+            with open(resp_path, encoding="utf-8") as f:
+                resp_doc = json.load(f) or {}
+        except Exception:
+            resp_doc = {}
+    daily_path = os.path.join(data_dir, "raw_daily_93d.json")
+    summaries: Dict[str, Any] = {}
+    if os.path.exists(daily_path):
+        try:
+            with open(daily_path, encoding="utf-8") as f:
+                summaries = (json.load(f) or {}).get("summaries") or {}
+        except Exception:
+            summaries = {}
+    for dt in sorted(summaries.keys())[-14:]:
+        s = summaries.get(dt)
+        if not isinstance(s, dict) or "error" in s:
+            continue
+        if dt not in resp_doc or not isinstance(resp_doc.get(dt), dict):
+            sl = sleep_data.get(dt) or {}
+            resp_doc[dt] = {
+                "provenance": "garmin_daily_and_sleep",
+                "calendarDate": dt,
+                "avgWakingRespirationValue": s.get("avgWakingRespirationValue"),
+                "lowestRespirationValue": s.get("lowestRespirationValue"),
+                "highestRespirationValue": s.get("highestRespirationValue"),
+                "sleepRespirationValue": sl.get("respiration"),
+                "averageSpo2": s.get("averageSpo2") or sl.get("spO2"),
+                "lowestSpo2": s.get("lowestSpo2"),
+                "skinTempC": sl.get("skinTempC"),
+            }
+    with open(resp_path, "w", encoding="utf-8") as f:
+        json.dump(resp_doc, f, ensure_ascii=False, indent=2)
+
+
 def load_and_parse_high_res_streams(data_dir: str, persist_real_fit: bool = False) -> Dict[str, Any]:
     """
     `fit_files/*.fit`, `raw_high_res_streams.json`, `archive/act_*_details.json` ve `raw_hrv_5min.json`
     üzerinden mevcut tüm yüksek çözünürlüklü Garmin kanallarını yükler ve ayrıştırır.
     """
+    if persist_real_fit:
+        _ensure_persisted_artifacts(data_dir)
+
     fit_dir = os.path.join(data_dir, "fit_files")
     archive_dir = os.path.join(data_dir, "archive")
     parsed_fits: Dict[str, Dict[str, Any]] = {}

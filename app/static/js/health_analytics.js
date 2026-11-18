@@ -183,6 +183,61 @@ function renderSettingsAndZones(setData) {
     });
   }
 
+  const zChart = document.getElementById('hrZonesVisualChart');
+  if (zChart && Array.isArray(setData.zones) && setData.zones.length) {
+    const totalRunMin = setData.zones.reduce((s, z) => s + (Number(z.run_minutes) || 0), 0);
+    const totalAllMin = setData.zones.reduce((s, z) => s + (Number(z.all_minutes) || 0), 0);
+    const maxRunPct = Math.max(10, ...setData.zones.map(z => Number(z.run_pct) || 0));
+
+    const stackBarHtml = `
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between text-[11px] font-mono">
+          <span class="text-[var(--text-secondary)] uppercase tracking-wider">Koşu Z1–Z5 Dağılımı</span>
+          <span class="text-[var(--text-primary)] font-semibold">${Math.round(totalRunMin)} dk Koşu · ${Math.round(totalAllMin)} dk Toplam</span>
+        </div>
+        <div class="flex h-3 w-full overflow-hidden rounded-[2px] bg-[var(--bg-surface-elevated)] gap-px">
+          ${setData.zones.map(z => {
+            const pct = Number(z.run_pct) || 0;
+            if (pct <= 0) return '';
+            return `<div style="width: ${pct}%; background-color: ${escapeHtml(z.color || 'var(--accent)')};" title="${escapeHtml(z.zone_short || '')} ${escapeHtml(z.rec_lthr)}: %${pct} (${z.run_minutes} dk)"></div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    const rowsHtml = setData.zones.map(z => {
+      const rPct = Number(z.run_pct) || 0;
+      const aPct = Number(z.all_pct) || 0;
+      const wPct = Math.max(4, Math.min(100, Math.round((rPct / maxRunPct) * 100)));
+      const barCol = escapeHtml(z.color || 'var(--accent)');
+      const lthrBpm = String(z.rec_lthr || '').split('(')[0].trim();
+      const pwrRng = String(z.rec_pwr || '').split('(')[0].trim();
+      return `
+        <div class="tint-panel p-3.5 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] text-[var(--bg-surface)] shrink-0" style="background-color: ${barCol};">${escapeHtml(z.zone_short || '')}</span>
+              <span class="font-semibold truncate">${escapeHtml(z.zone)}</span>
+            </div>
+            <div class="font-mono text-[11px] shrink-0">
+              <span class="accent-text font-semibold">${escapeHtml(lthrBpm)}</span>
+              <span class="text-[var(--text-muted)]"> · ${escapeHtml(pwrRng)}</span>
+            </div>
+          </div>
+          <div class="w-full h-2.5 bg-[var(--bg-surface-elevated)] rounded-[2px] overflow-hidden">
+            <div class="h-full transition-all duration-500 rounded-[2px]" style="width: ${wPct}%; background-color: ${barCol};"></div>
+          </div>
+          <div class="flex items-center justify-between font-mono text-[10.5px] text-[var(--text-secondary)]">
+            <span>Koşu: <strong class="text-[var(--text-primary)]">%${rPct.toFixed(1)}</strong> (${z.run_minutes} dk)</span>
+            <span>Tüm Branşlar: %${aPct.toFixed(1)} (${z.all_minutes} dk)</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    zChart.innerHTML = `${stackBarHtml}<div class="space-y-2.5">${rowsHtml}</div>`;
+  }
+
   const zBody = document.getElementById('zonesTableBody');
   if (zBody && Array.isArray(setData.zones)) {
     zBody.innerHTML = '';
@@ -190,11 +245,11 @@ function renderSettingsAndZones(setData) {
       const tr = document.createElement('tr');
       tr.className = "hover:bg-[var(--bg-subtle)] transition";
       tr.innerHTML = `
-        <td class="py-3 px-4 font-semibold">${escapeHtml(z.zone)}</td>
-        <td class="py-3 px-4 font-mono text-[var(--text-secondary)]">${escapeHtml(z.current_hr)}</td>
-        <td class="py-3 px-4 font-mono font-semibold accent-text">${escapeHtml(z.rec_lthr)}</td>
-        <td class="py-3 px-4 font-mono font-medium moss-text">${escapeHtml(z.rec_hrr)}</td>
-        <td class="py-3 px-4 font-mono font-semibold">${escapeHtml(z.rec_pwr)}</td>
+        <td class="py-3 px-3 font-semibold">${escapeHtml(z.zone)}</td>
+        <td class="py-3 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(z.current_hr)}</td>
+        <td class="py-3 px-3 font-mono font-semibold accent-text">${escapeHtml(z.rec_lthr)}</td>
+        <td class="py-3 px-3 font-mono font-medium moss-text">${escapeHtml(z.rec_hrr)}</td>
+        <td class="py-3 px-3 font-mono font-semibold">${escapeHtml(z.rec_pwr)}</td>
       `;
       zBody.appendChild(tr);
     });

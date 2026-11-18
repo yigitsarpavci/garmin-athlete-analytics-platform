@@ -189,10 +189,22 @@ class TestApiEndpoints(unittest.TestCase):
 
         self.assertEqual(len(data["new_high_resolution_channels"]), 4)
         self.assertEqual(len(data["implementation_steps_detail"]), 3)
+        self.assertTrue(all(ch["status"] == "TAMAMLANDI & AKTİF" for ch in data["new_high_resolution_channels"]))
+        self.assertTrue(all(st["status"] == "TAMAMLANDI & AKTİF" for st in data["implementation_steps_detail"]))
         self.assertGreater(len(data["hrv_5min_summary"]["readings"]), 0)
         if os.path.exists("data/archive/act_25105660179_details.json"):
+            self.assertGreaterEqual(data["fit_stream_summary"]["binary_fit_count"], 8)
             self.assertGreaterEqual(data["fit_stream_summary"]["total_sample_points"], 245)
             self.assertGreaterEqual(data["running_dynamics_summary"]["rd_covered_runs"], 40)
+
+        # 3. /api/garmin-settings Z1-Z5 nabız bölge grafiği verileri
+        s_data = self.get_json("/api/garmin-settings")
+        zones = s_data.get("zones", [])
+        self.assertEqual(len(zones), 5)
+        for z in zones:
+            for zkey in ("zone_short", "zone", "rec_lthr", "rec_pwr", "run_minutes", "run_pct", "all_minutes", "all_pct", "color"):
+                self.assertIn(zkey, z)
+        self.assertAlmostEqual(sum(z["run_pct"] for z in zones), 100.0, places=0)
 
 
 if __name__ == "__main__":

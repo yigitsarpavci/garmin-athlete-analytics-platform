@@ -332,20 +332,63 @@ class SleepAnalyticsMixin:
         ]
 
     def get_hr_power_zones(self) -> List[Dict[str, Any]]:
-        """Canli vucut agirligina gore olceklenen fizyolojik HR, LTHR, HRR ve Koşu Guc (Watt) zonlarini döner."""
+        """Canlı vücut ağırlığına göre ölçeklenen HR/LTHR/HRR/Güç zonlarını ve gerçekleşen Z1–Z5 süre dağılımını döner."""
         cur_w = self.get_current_weight()
         scale = cur_w / 87.0
 
         def _w(val: int) -> int:
             return int(round(val * scale))
 
-        return [
-            {"zone": "Zone 1 (Isınma / Toparlanma)", "current_hr": "116 - 141 bpm (%65-79)", "rec_lthr": "116 - 139 bpm (%65-78)", "rec_hrr": "128 - 143 bpm (%50-60)", "rec_pwr": f"{_w(222)} - {_w(273)} W (%65-80)"},
-            {"zone": "Zone 2 (Aerobik Taban / Yağ Yakımı)", "current_hr": "142 - 157 bpm (%80-88)", "rec_lthr": "140 - 155 bpm (%78-87)", "rec_hrr": "143 - 158 bpm (%60-70)", "rec_pwr": f"{_w(274)} - {_w(308)} W (%80-90)"},
-            {"zone": "Zone 3 (Aerobik Tempo)", "current_hr": "158 - 167 bpm (%88-93)", "rec_lthr": "156 - 167 bpm (%87-93)", "rec_hrr": "158 - 173 bpm (%70-80)", "rec_pwr": f"{_w(309)} - {_w(342)} W (%90-100)"},
-            {"zone": "Zone 4 (Laktat Eşiği)", "current_hr": "168 - 176 bpm (%94-98)", "rec_lthr": "168 - 179 bpm (%94-100)", "rec_hrr": "173 - 188 bpm (%80-90)", "rec_pwr": f"{_w(343)} - {_w(393)} W (%100-115)"},
-            {"zone": "Zone 5 (Anaerobik / Maks)", "current_hr": "177 - 203 bpm (≥%99)", "rec_lthr": "180 - 203 bpm (>%100)", "rec_hrr": "188 - 203 bpm (%90-100)", "rec_pwr": f"> {_w(393)} W (>%115)"},
+        run_secs = [0.0] * 5
+        all_secs = [0.0] * 5
+        acts = getattr(self, "activities_all", []) or []
+        for a in acts:
+            if not isinstance(a, dict):
+                continue
+            dt_date = (a.get("startTimeLocal") or "")[:10]
+            if dt_date and dt_date < "2026-08-01":
+                continue
+            is_run = "running" in ((a.get("activityType") or {}).get("typeKey") or "").lower()
+            for idx in range(5):
+                sec = float(a.get(f"hrTimeInZone_{idx + 1}") or 0.0)
+                if sec > 0:
+                    all_secs[idx] += sec
+                    if is_run:
+                        run_secs[idx] += sec
+
+        run_tot = sum(run_secs)
+        all_tot = sum(all_secs)
+        zone_colors = [
+            "var(--text-secondary)",
+            "var(--moss)",
+            "var(--accent)",
+            "var(--ochre)",
+            "var(--crimson)",
         ]
+        defs = [
+            ("Z1", "Zone 1 (Isınma / Toparlanma)", "116 - 141 bpm (%65-79)", "116 - 139 bpm (%65-78)", "128 - 143 bpm (%50-60)", f"{_w(222)} - {_w(273)} W (%65-80)"),
+            ("Z2", "Zone 2 (Aerobik Taban / Yağ Yakımı)", "142 - 157 bpm (%80-88)", "140 - 155 bpm (%78-87)", "143 - 158 bpm (%60-70)", f"{_w(274)} - {_w(308)} W (%80-90)"),
+            ("Z3", "Zone 3 (Aerobik Tempo)", "158 - 167 bpm (%88-93)", "156 - 167 bpm (%87-93)", "158 - 173 bpm (%70-80)", f"{_w(309)} - {_w(342)} W (%90-100)"),
+            ("Z4", "Zone 4 (Laktat Eşiği)", "168 - 176 bpm (%94-98)", "168 - 179 bpm (%94-100)", "173 - 188 bpm (%80-90)", f"{_w(343)} - {_w(393)} W (%100-115)"),
+            ("Z5", "Zone 5 (Anaerobik / Maks)", "177 - 203 bpm (≥%99)", "180 - 203 bpm (>%100)", "188 - 203 bpm (%90-100)", f"> {_w(393)} W (>%115)"),
+        ]
+
+        out: List[Dict[str, Any]] = []
+        for idx, (z_short, z_name, cur_hr, lthr, hrr, pwr) in enumerate(defs):
+            out.append({
+                "zone_short": z_short,
+                "zone": z_name,
+                "current_hr": cur_hr,
+                "rec_lthr": lthr,
+                "rec_hrr": hrr,
+                "rec_pwr": pwr,
+                "run_minutes": round(run_secs[idx] / 60.0, 1),
+                "run_pct": round((run_secs[idx] / run_tot) * 100.0, 1) if run_tot > 0 else 0.0,
+                "all_minutes": round(all_secs[idx] / 60.0, 1),
+                "all_pct": round((all_secs[idx] / all_tot) * 100.0, 1) if all_tot > 0 else 0.0,
+                "color": zone_colors[idx],
+            })
+        return out
 
     def get_all_activities(self) -> List[Dict[str, Any]]:
         """Tüm kayıtlı antrenmanların detaylı listesini döner."""

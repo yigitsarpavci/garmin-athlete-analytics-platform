@@ -58,11 +58,9 @@
       <!-- Primary Single-Row Navigation -->
       <nav aria-label="Ana Navigasyon" class="nav-tablist custom-scrollbar">
         <button type="button" onclick="setTab('overview')" id="nav-overview" aria-current="page" class="nav-tab nav-tab-active">Genel Bakış</button>
-        <button type="button" onclick="setTab('plan')" id="nav-plan" class="nav-tab">Antrenman Planı</button>
-        <button type="button" onclick="setTab('sports')" id="nav-sports" class="nav-tab">Branşlar</button>
-        <button type="button" onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Yük &amp; Aktiviteler</button>
+        <button type="button" onclick="setTab('plan')" id="nav-plan" class="nav-tab">Plan &amp; Branşlar</button>
+        <button type="button" onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Yük, Aktiviteler &amp; Saat</button>
         <button type="button" onclick="setTab('health')" id="nav-health" class="nav-tab">Sağlık &amp; Uyku</button>
-        <button type="button" onclick="setTab('settings')" id="nav-settings" class="nav-tab">Saat Ayarları</button>
       </nav>
     </div>
   </header>
@@ -506,17 +504,20 @@
       </section>
     </div>
 
-    <!-- 2. ANTRENMAN PLANI -->
+    <!-- 2. PLAN & BRANŞLAR -->
     <div id="section-plan" class="pt-10 space-y-6 hidden">
       <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
         <div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">HAFTALIK PLAN</span>
-          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Haftalık Antrenman Planı</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Tamamlanan antrenmanlar kotadan düşülür; kalan koşu ve kuvvet seanslarını uygun günlere yerleştirebilirsin.</p>
+          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">PLAN &amp; BRANŞLAR</span>
+          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Antrenman Planı ve Branşlar</h2>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Esnek haftalık kota, seans reçeteleri, branş özetleri, 5x5 kuvvet geçmişi ve seviye durumu.</p>
         </div>
         <div class="subtab-bar">
           <button type="button" onclick="setSubTab('plan', 'schedule')" data-subtab-group="plan" data-subtab="schedule" class="subtab-btn subtab-btn-active">Haftalık Takvim</button>
           <button type="button" onclick="setSubTab('plan', 'protocols')" data-subtab-group="plan" data-subtab="protocols" class="subtab-btn">Antrenman İçerikleri</button>
+          <button type="button" id="sportsCountTabBtn" onclick="setSubTab('plan', 'cards')" data-subtab-group="plan" data-subtab="cards" class="subtab-btn">Branş Özetleri (4)</button>
+          <button type="button" onclick="setSubTab('plan', 'gym')" data-subtab-group="plan" data-subtab="gym" class="subtab-btn">Kuvvet &amp; 5x5</button>
+          <button type="button" onclick="setSubTab('plan', 'prog')" data-subtab-group="plan" data-subtab="prog" class="subtab-btn">Dinamik İlerleme</button>
         </div>
       </div>
 
@@ -572,28 +573,12 @@
           <div class="space-y-4" id="dailyProtocolsContainer"></div>
         </section>
       </div>
-    </div>
 
-    <!-- 3. BRANŞLAR -->
-    <div id="section-sports" class="pt-10 space-y-6 hidden">
-      <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
-        <div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">BRANŞLAR</span>
-          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Branşlar ve Kuvvet Programı</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Koşu, A/B 5x5 kuvvet ağırlıkları, yelken, basketbol ve seviye durumu.</p>
-        </div>
-        <div class="subtab-bar">
-          <button type="button" id="sportsCountTabBtn" onclick="setSubTab('sports', 'cards')" data-subtab-group="sports" data-subtab="cards" class="subtab-btn subtab-btn-active">Branş Özetleri (4)</button>
-          <button type="button" onclick="setSubTab('sports', 'gym')" data-subtab-group="sports" data-subtab="gym" class="subtab-btn">Kuvvet &amp; 5x5</button>
-          <button type="button" onclick="setSubTab('sports', 'prog')" data-subtab-group="sports" data-subtab="prog" class="subtab-btn">Dinamik İlerleme</button>
-        </div>
-      </div>
-
-      <div data-subpane-group="sports" data-subpane="cards">
+      <div data-subpane-group="plan" data-subpane="cards" class="hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="sportsCardsContainer"></div>
       </div>
 
-      <div data-subpane-group="sports" data-subpane="gym" class="hidden">
+      <div data-subpane-group="plan" data-subpane="gym" class="hidden">
         <section class="surface-card p-6 sm:p-8 space-y-5" id="gymHistorySection">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
@@ -629,7 +614,7 @@
         </section>
       </div>
 
-      <div data-subpane-group="sports" data-subpane="prog" class="hidden">
+      <div data-subpane-group="plan" data-subpane="prog" class="hidden">
         <section class="surface-card p-6 sm:p-8 space-y-5" id="progressionAssessmentSection">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
             <div>
@@ -652,17 +637,18 @@
       </div>
     </div>
 
-    <!-- 4. YÜK & AKTİVİTELER -->
+    <!-- 3. YÜK, AKTİVİTELER & SAAT -->
     <div id="section-training_load" class="pt-10 space-y-6 hidden">
       <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
         <div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">YÜK &amp; AKTİVİTELER</span>
-          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Antrenman Yükü ve Aktiviteler</h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Akut / kronik yük oranı (ACWR), 4 haftalık yoğunluk dağılımı ve tüm aktivite kayıtları.</p>
+          <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">YÜK, AKTİVİTELER &amp; SAAT</span>
+          <h2 class="section-heading text-2xl sm:text-3xl mt-1">Yük, Aktiviteler ve Nabız Bölgeleri</h2>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Akut/kronik yük dengesi (ACWR), aktivite günlüğü ve LTHR/FTP nabız bölgeleri.</p>
         </div>
         <div class="subtab-bar">
           <button type="button" onclick="setSubTab('training_load', 'load')" data-subtab-group="training_load" data-subtab="load" class="subtab-btn subtab-btn-active">Yük &amp; ACWR</button>
           <button type="button" onclick="setSubTab('training_load', 'activities')" data-subtab-group="training_load" data-subtab="activities" class="subtab-btn">Aktivite Geçmişi</button>
+          <button type="button" onclick="setSubTab('training_load', 'zones')" data-subtab-group="training_load" data-subtab="zones" class="subtab-btn">Saat Ayarları (Nabız Zonları)</button>
         </div>
       </div>
 
@@ -831,9 +817,47 @@
           </div>
         </section>
       </div>
+
+      <div data-subpane-group="training_load" data-subpane="zones" class="hidden">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+          <section class="xl:col-span-6 surface-card p-6 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
+              <div>
+                <h3 class="font-editorial text-lg font-medium tracking-tight">Nabız Bölgelerine Göre Zone Grafiği (Z1–Z5)</h3>
+                <p class="text-xs text-[var(--text-secondary)] mt-0.5">Gerçekleşen koşu &amp; toplam antrenman süre dağılımı ve LTHR (179 bpm) pencereleri</p>
+              </div>
+              <span class="stamp-tag stamp-accent">LTHR 179 bpm</span>
+            </div>
+            <div id="hrZonesVisualChart" class="space-y-4">
+              <p class="text-xs text-[var(--text-secondary)]">Nabız bölge grafiği yükleniyor...</p>
+            </div>
+          </section>
+
+          <section class="xl:col-span-6 surface-card p-6 space-y-4">
+            <div class="border-b border-[var(--border-subtle)] pb-3">
+              <h3 class="font-editorial text-lg font-medium tracking-tight">Doğru Koşu Nabız ve Güç Bölgeleri</h3>
+              <p class="text-xs text-[var(--text-secondary)] mt-0.5">Mevcut (RHR=65), LTHR (179 bpm), Karvonen %HRR ve Koşu Gücü (FTP) referans tablosu:</p>
+            </div>
+            <div tabindex="0" role="region" aria-label="Koşu nabız ve güç zonları" class="table-scroll-region custom-scrollbar">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr>
+                    <th class="py-2.5 px-3">Bölge</th>
+                    <th class="py-2.5 px-3">Mevcut (RHR=65)</th>
+                    <th class="py-2.5 px-3">Önerilen LTHR (179)</th>
+                    <th class="py-2.5 px-3">Karvonen %HRR</th>
+                    <th class="py-2.5 px-3">Koşu Gücü (FTP)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]" id="zonesTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
 
-    <!-- 5. SAĞLIK, UYKU & ANALİTİK -->
+    <!-- 4. SAĞLIK & UYKU -->
     <div id="section-health" class="pt-10 space-y-6 hidden">
       <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-medium)] pb-4">
         <div>
@@ -969,80 +993,6 @@
                 <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
               </table>
             </div>
-          </section>
-        </div>
-      </div>
-    </div>
-
-    <!-- 6. SAAT AYARLARI -->
-    <div id="section-settings" class="pt-10 space-y-6 hidden">
-      <div class="border-b border-[var(--border-medium)] pb-4">
-        <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">SAAT AYARLARI</span>
-        <h2 class="section-heading text-2xl sm:text-3xl mt-1">Saat Ayarları, Nabız Bölgeleri ve Yüksek Çözünürlüklü Veri</h2>
-        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Doğru LTHR/FTP nabız ve güç bölgeleri, FIT akış çözümlemesi, 5dk HRV ve Running Dynamics kanalları.</p>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <!-- LEFT 5 COLS: HR/Power Zones Table + Active Implementation Steps -->
-        <div class="lg:col-span-5 space-y-5">
-          <section class="surface-card p-6 space-y-4">
-            <div>
-              <h3 class="font-editorial text-lg font-medium tracking-tight">Doğru Koşu Nabız ve Güç Bölgeleri</h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-1">LTHR (179 bpm), Karvonen %HRR ve FTP (342 W) karşılıkları:</p>
-            </div>
-            <div tabindex="0" role="region" aria-label="Koşu nabız ve güç zonları" class="table-scroll-region custom-scrollbar">
-              <table class="w-full text-left text-xs">
-                <thead>
-                  <tr>
-                    <th class="py-2.5 px-3">Bölge</th>
-                    <th class="py-2.5 px-3">Mevcut</th>
-                    <th class="py-2.5 px-3">LTHR (179)</th>
-                    <th class="py-2.5 px-3">%HRR</th>
-                    <th class="py-2.5 px-3">Güç (342W)</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--border-subtle)]" id="zonesTableBody"></tbody>
-              </table>
-            </div>
-          </section>
-
-          <section class="surface-card p-6 space-y-4">
-            <div class="flex items-center justify-between gap-2">
-              <p class="font-semibold text-sm flex items-center gap-2">
-                <i data-lucide="terminal" class="w-4 h-4 accent-text" stroke-width="1.5" aria-hidden="true"></i>
-                <span>Yüksek Çözünürlüklü Veri Adımları</span>
-              </p>
-              <span id="expansionPipelineBadge" class="stamp-tag stamp-moss">Pipelined</span>
-            </div>
-            <div id="garminExpansionStepsList" class="space-y-2.5 text-xs">
-              <div class="tint-panel p-3 text-[var(--text-secondary)]">Veri akış durumu yükleniyor...</div>
-            </div>
-          </section>
-        </div>
-
-        <!-- RIGHT 7 COLS: 2x2 High-Res Channels + Live FIT & HRV RMSSD Curve Panel -->
-        <div class="lg:col-span-7 space-y-5">
-          <section class="surface-card p-6 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3.5">
-              <div class="flex items-center gap-3">
-                <div class="icon-box w-9 h-9"><i data-lucide="radio" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i></div>
-                <div>
-                  <h3 class="font-editorial text-lg font-medium tracking-tight">Ek Veri Kanalları</h3>
-                  <p class="text-xs text-[var(--text-secondary)] mt-0.5">FIT ikili çözümleme, 5dk HRV, Running Dynamics ve Solunum / Isı</p>
-                </div>
-              </div>
-              <span class="stamp-tag stamp-accent">FIT &amp; HRV &amp; RD</span>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" id="garminExpansionCardsContainer"></div>
-          </section>
-
-          <section id="highResTelemetryPanel" class="surface-card p-6 space-y-4">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">FIT Akışı &amp; Gece HRV (RMSSD) Eğrisi</span>
-              <span class="stamp-tag stamp-accent">Yükleniyor...</span>
-            </div>
-            <p class="text-xs text-[var(--text-secondary)]">Yüksek çözünürlüklü FIT ve HRV sensör verileri ayrıştırılıyor...</p>
           </section>
         </div>
       </div>
@@ -1261,6 +1211,7 @@
             <div class="flex justify-between py-1 border-b border-[var(--border-subtle)]"><span class="text-[var(--text-secondary)]">Aerobik TE</span><span id="modalAeroTe" class="font-mono font-semibold moss-text">3.2 / 5.0</span></div>
             <div class="flex justify-between py-1 border-b border-[var(--border-subtle)]"><span class="text-[var(--text-secondary)]">Anaerobik TE</span><span id="modalAnaeroTe" class="font-mono font-semibold crimson-text">0.8 / 5.0</span></div>
             <div class="flex justify-between py-1"><span class="text-[var(--text-secondary)]">Güç &amp; Kadans</span><span id="modalPowerCadence" class="font-mono font-semibold">312 W · 162 spm</span></div>
+            <div id="modalRunningDynamicsRow" class="flex justify-between py-1 border-t border-[var(--border-subtle)] hidden"><span class="text-[var(--text-secondary)]">Running Dynamics</span><span id="modalRunningDynamics" class="font-mono font-semibold accent-text">--</span></div>
           </div>
         </div>
       </div>
@@ -1486,12 +1437,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js?v=20261118h"></script>
-  <script src="/js/quota_schedule.js?v=20261118h"></script>
-  <script src="/js/dashboard.js?v=20261118h"></script>
-  <script src="/js/health_analytics.js?v=20261118h"></script>
-  <script src="/js/charts.js?v=20261118h"></script>
-  <script src="/js/modals.js?v=20261118h"></script>
+  <script src="/js/core.js?v=20261118i"></script>
+  <script src="/js/quota_schedule.js?v=20261118i"></script>
+  <script src="/js/dashboard.js?v=20261118i"></script>
+  <script src="/js/health_analytics.js?v=20261118i"></script>
+  <script src="/js/charts.js?v=20261118i"></script>
+  <script src="/js/modals.js?v=20261118i"></script>
 </body>
 
 </html>
