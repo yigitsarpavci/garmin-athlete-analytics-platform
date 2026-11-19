@@ -249,8 +249,8 @@ class WeeklyQuotaMixin:
         gym_sequence = ["gym_a", "gym_b"]
 
         # 2) Koşu fitliğine göre temel gün sayısı (yalnızca 2 veya 3 gün; maks 3). Eşikler sporcunun kendi verisinden gelir:
-        #    kronik yük Garmin'in kendi "optimal tünel" üst sınırının %90'ına ulaştıysa 3 gün (tünel yoksa son 28 günde haftada >=3 koşu).
-        capacity_ok = (chronic_load >= 0.9 * tunnel_max) if tunnel_max > 0 else (runs_per_wk >= 3.0)
+        #    kronik yük Garmin'in kendi "optimal tünel" üst sınırının %90'ına ulaştıysa 3 gün; tünel verisi yoksa 2 gün.
+        capacity_ok = (chronic_load >= 0.9 * tunnel_max) if tunnel_max > 0 else False
         base_run_target = 3 if capacity_ok and acwr_now <= 1.3 else 2
 
         # Her koşu sonrası güncel fitlik ve load_focus değerlerine göre bu haftaki hedefi ayarla:

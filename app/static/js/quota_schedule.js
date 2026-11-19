@@ -172,9 +172,6 @@ function renderWeeklyQuotaPanels(quota) {
   if (!quota || !quota.total) return;
 
   const html = buildQuotaLedgerHtml(quota);
-  const overviewPanel = document.getElementById('weeklyQuotaPanel');
-  if (overviewPanel) overviewPanel.innerHTML = html;
-
   const planPanel = document.getElementById('planQuotaSummary');
   if (planPanel) planPanel.innerHTML = html;
 

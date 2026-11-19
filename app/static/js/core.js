@@ -266,7 +266,6 @@ async function initApp() {
       });
       renderGymHistory(gymData);
     }
-    if (tlData) renderTrainingLoad(tlData);
     if (activities) {
       globalActivities = activities;
       renderActivities(globalActivities);

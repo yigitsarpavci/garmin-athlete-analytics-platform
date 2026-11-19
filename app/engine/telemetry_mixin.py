@@ -578,9 +578,17 @@ class TelemetryMixin:
         """Garmin toparlanma süresinden, anlık görüntüden bu yana geçen süreyi düşerek kalan dakikayı hesaplar."""
         raw_rec_min = latest.get("recovery_time_min")
         rec_ts_str = latest.get("recovery_timestamp_local")
-        if raw_rec_min is not None:
+        rec_date = latest.get("date")
+        if not pd.notna(raw_rec_min) and "recovery_time_min" in self.df.columns:
+            valid_rec = self.df[self.df["recovery_time_min"].notna()]
+            if not valid_rec.empty:
+                last_r = valid_rec.iloc[-1]
+                raw_rec_min = last_r.get("recovery_time_min")
+                rec_ts_str = last_r.get("recovery_timestamp_local")
+                rec_date = last_r.get("date")
+        if pd.notna(raw_rec_min):
             rec_min = float(raw_rec_min)
-            if rec_ts_str and latest.get("date") == today_str:
+            if rec_ts_str and rec_date == today_str:
                 try:
                     snap_dt = datetime.fromisoformat(str(rec_ts_str).split(".")[0])
                     elapsed_min = max(0.0, (datetime.now() - snap_dt).total_seconds() / 60.0)

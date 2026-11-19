@@ -247,12 +247,11 @@ function renderDebriefModalContent(d, idx) {
 let _coachOpener = null;
 function toggleAICoach() {
   const flyout = document.getElementById('aiCoachFlyout');
-  const launcher = document.getElementById('aiCoachLauncherBtn');
   if (!flyout) return;
   flyout.classList.toggle('hidden');
   const open = !flyout.classList.contains('hidden');
-  if (launcher) launcher.classList.toggle('hidden', open);
-  document.querySelectorAll('#aiCoachHeaderBtn, #aiCoachLauncherBtn').forEach(b => b.setAttribute('aria-expanded', open ? 'true' : 'false'));
+  const headerBtn = document.getElementById('aiCoachHeaderBtn');
+  if (headerBtn) headerBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   if (open) {
     _coachOpener = document.activeElement;
     const input = document.getElementById('chatInputBox');

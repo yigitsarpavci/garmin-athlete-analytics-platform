@@ -71,7 +71,7 @@ class ProgressionDebriefMixin:
             next_level_days = "Akut yük toparlanınca ve kapasite artınca 3 Koşu + 2 Kuvvet"
         else:
             volume_verdict = "2 KOŞU + 2 KUVVET (Koru)"
-            need_txt = "3. koşu için %90 gerekiyor" if cap_pct is not None else "Garmin tünel verisi yok; son 28 günde haftada 3 koşu yapılırsa 3. koşu açılır"
+            need_txt = "3. koşu için %90 gerekiyor" if cap_pct is not None else "Garmin tünel verisi yok; kapasite verisi gelince 3. koşu değerlendirilir"
             volume_advice = f"{cap_txt}; {need_txt}. Haftalık 2 Koşu + 2 Kuvvet (A/B) düzenini koru."
             next_level_days = "Kapasite artınca 3 Koşu + 2 Kuvvet"
         if week_runs < base_runs:

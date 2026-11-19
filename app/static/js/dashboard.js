@@ -441,61 +441,6 @@ function renderGymHistory(gym) {
   if (typeof refreshIcons === 'function') refreshIcons();
 }
 
-function renderTrainingLoad(tl) {
-  if (!tl) return;
-
-  const wBody = document.getElementById('trainingLoadWeeklyBody');
-  if (wBody && tl.weekly_progression) {
-    wBody.innerHTML = '';
-    tl.weekly_progression.forEach(w => {
-      const tr = document.createElement('tr');
-      tr.className = "hover:bg-[var(--bg-subtle)] transition";
-      const acwrColor = (w.acwr >= 0.8 && w.acwr <= 1.3) ? "moss-text font-semibold" : ((w.acwr > 1.5) ? "crimson-text font-semibold" : "ochre-text font-semibold");
-      tr.innerHTML = `
-<td class="py-2.5 px-3 font-mono font-medium whitespace-nowrap">${escapeHtml(w.date)}</td>
-<td class="py-2.5 px-3 font-semibold accent-text">${escapeHtml(w.status_tr)}</td>
-<td class="py-2.5 px-3 font-mono font-semibold tabular-nums">${w.acute_load}</td>
-<td class="py-2.5 px-3 font-mono text-[var(--text-secondary)] tabular-nums">${w.chronic_load}</td>
-<td class="py-2.5 px-3 font-mono ${acwrColor} tabular-nums">${Number(w.acwr || 1.0).toFixed(2)}</td>
-<td class="py-2.5 px-3 text-[var(--text-secondary)]">${escapeHtml(w.acwr_status)}</td>
-<td class="py-2.5 px-3 font-mono accent-text tabular-nums">${w.low_aero}</td>
-<td class="py-2.5 px-3 font-mono ochre-text tabular-nums">${w.high_aero}</td>
-<td class="py-2.5 px-3 font-mono crimson-text tabular-nums">${w.anaerobic}</td>
-<td class="py-2.5 px-3 font-medium">${escapeHtml(w.balance_tr)}</td>
-      `;
-      wBody.appendChild(tr);
-    });
-  }
-
-  const tBody = document.getElementById('trainingLoadTopActsBody');
-  if (tBody && tl.top_load_acts) {
-    tBody.innerHTML = '';
-    tl.top_load_acts.forEach(a => {
-      const tr = document.createElement('tr');
-      tr.className = "hover:bg-[var(--bg-subtle)] transition cursor-pointer group";
-      tr.title = "Aktivite telemetrisini incelemek için tıklayın";
-      tr.onclick = () => openActivityModal(a);
-      tr.innerHTML = `
-<td class="py-3 px-4 font-mono font-medium group-hover:text-[var(--accent)] transition">
-  <div class="flex items-center justify-between gap-2">
-    <span>${escapeHtml(a.date)}</span>
-    ${lucideSvg('arrow-up-right', 'w-3.5 h-3.5 accent-text opacity-0 group-hover:opacity-100 transition')}
-  </div>
-</td>
-<td class="py-3 px-4 font-medium">${escapeHtml(getDynamicSportLabel(a.sport, a.sport_tr))}</td>
-<td class="py-3 px-4 text-[var(--text-secondary)] max-w-[180px] truncate">${escapeHtml(a.name)}</td>
-<td class="py-3 px-4 font-mono text-[var(--text-secondary)]">${a.dur_m} dk</td>
-<td class="py-3 px-4 font-mono font-semibold accent-text">${a.load}</td>
-<td class="py-3 px-4 font-mono font-semibold moss-text">${a.aTE ? Number(a.aTE).toFixed(1) : '--'}</td>
-<td class="py-3 px-4 font-mono font-semibold crimson-text">${a.anTE ? Number(a.anTE).toFixed(1) : '--'}</td>
-<td class="py-3 px-4"><span class="stamp-tag">${escapeHtml(a.te_label)}</span></td>
-      `;
-      tBody.appendChild(tr);
-    });
-  }
-  if (typeof refreshIcons === 'function') refreshIcons();
-}
-
 // AKTİVİTELER & DİNAMİK BRANŞ FİLTRELEME
 let currentSportFilter = 'all';
 
