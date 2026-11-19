@@ -102,11 +102,6 @@ function renderProgressionAssessment(data) {
   const st = data.style_transition || {};
   const rp = data.running_progression || {};
 
-  const tierBadge = document.getElementById('progressionTierBadge');
-  if (tierBadge && data.current_tier_label) {
-    tierBadge.textContent = data.current_tier_label;
-  }
-
   const grid = document.getElementById('progressionCardsGrid');
   if (grid) {
     grid.innerHTML = `
