@@ -200,9 +200,6 @@ function renderStatusBanner(overview) {
     msgs.push('Sunucuya ulaşılamadı. Uygulamanın çalıştığından emin olun (<code>make run</code>) ve sayfayı yenileyin.');
   } else if (overview.weight === undefined || overview.weight === null) {
     msgs.push('Henüz Garmin verisi yok. <code>make fetch</code> ile verilerinizi indirin veya <code>python3 app/server.py --demo</code> ile demo verisini deneyin.');
-  } else if (overview.data_is_stale) {
-    const hh = String(overview.data_as_of).slice(11, 16);
-    msgs.push('Garmin verileri ' + escapeHtml(hh) + ' itibarıyla (' + Math.round(overview.data_age_min / 60) + ' sa önce). Adım ve kalori, saatiniz telefondaki Garmin Connect ile eşitlendiğinde güncellenir: saati eşitleyin, sonra üstteki "Eşitle"ye basın.');
   } else if (overview.athlete && Array.isArray(overview.athlete.profile_missing) && overview.athlete.profile_missing.length) {
     msgs.push('Profiliniz eksik (' + overview.athlete.profile_missing.map(escapeHtml).join(', ') + '). <code>data/athlete_profile.json</code> dosyasını <code>athlete_profile.example.json</code> örneğine göre doldurun; yoksa tahmini varsayılanlar kullanılır.');
   }
