@@ -112,11 +112,9 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass, extraHtml 
           }).join('')}
         </div>
       </div>`
-    : `<p class="text-[11px] ${isDone ? 'moss-text font-medium' : 'text-[var(--text-secondary)]'} pt-0.5">
-        ${isDone
-          ? (completed > target ? `✓ Bu haftanın kotası tamamlandı (+${completed - target} ekstra seans).` : '✓ Bu haftanın kotası tamamlandı.')
-          : escapeHtml(bucket.status_text || 'Kota tanımlanmadı.')}
-      </p>`;
+    : (!isDone && bucket.status_text
+      ? `<p class="text-[11px] text-[var(--text-secondary)] pt-0.5">${escapeHtml(bucket.status_text)}</p>`
+      : '');
 
   return `
     <div class="tint-panel p-2.5 space-y-1.5 flex flex-col justify-between min-w-0">
