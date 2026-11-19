@@ -112,7 +112,9 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
         </div>
       </div>`
     : `<p class="text-[11px] ${isDone ? 'moss-text font-medium' : 'text-[var(--text-secondary)]'} pt-0.5">
-        ${isDone ? '✓ Bu haftanın kotası tamamlandı.' : escapeHtml(bucket.status_text || 'Kota tanımlanmadı.')}
+        ${isDone
+          ? (completed > target ? `✓ Bu haftanın kotası tamamlandı (+${completed - target} ekstra seans).` : '✓ Bu haftanın kotası tamamlandı.')
+          : escapeHtml(bucket.status_text || 'Kota tanımlanmadı.')}
       </p>`;
 
   return `
