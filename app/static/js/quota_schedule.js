@@ -364,16 +364,24 @@ function renderDailyProtocols(protocols) {
   if (!container || !protocols || !Array.isArray(protocols) || !protocols.length) return;
   cachedDailyProtocols = protocols;
 
+  const orderMap = { tuesday: 0, saturday: 1, thursday: 2, monday: 3, friday: 4, sunday: 5, wednesday: 6 };
+  const sortedIndices = protocols.map((_, idx) => idx).sort((a, b) => {
+    const oa = orderMap[protocols[a]?.day_code] ?? (10 + a);
+    const ob = orderMap[protocols[b]?.day_code] ?? (10 + b);
+    return oa - ob;
+  });
+
   let activeIdx = typeof selectedProtocolMode === 'number' && protocols[selectedProtocolMode]
     ? selectedProtocolMode
-    : protocols.findIndex(p => p.quota_status === 'remaining');
-  if (activeIdx < 0 || activeIdx >= protocols.length) activeIdx = 0;
+    : (sortedIndices.find(idx => protocols[idx]?.quota_status === 'remaining') ?? sortedIndices[0]);
+  if (activeIdx < 0 || activeIdx >= protocols.length) activeIdx = sortedIndices[0] ?? 0;
   selectedProtocolMode = activeIdx;
 
   if (tabsEl) {
     const activeCls = 'subtab-btn subtab-btn-active';
     const idleCls = 'subtab-btn';
-    tabsEl.innerHTML = `<div class="subtab-bar">${protocols.map((p, idx) => {
+    tabsEl.innerHTML = `<div class="subtab-bar">${sortedIndices.map((idx) => {
+      const p = protocols[idx];
       const remDot = p.quota_status === 'remaining' ? ' <span class="accent-text">●</span>' : '';
       return `<button type="button" onclick="selectProtocolDay(${idx})" class="${activeIdx === idx ? activeCls : idleCls}">${escapeHtml(getProtocolTabLabel(p))}${remDot}</button>`;
     }).join('')}</div>`;
