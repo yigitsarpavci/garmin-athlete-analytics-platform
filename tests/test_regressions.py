@@ -195,7 +195,8 @@ class TestDataDrivenAnalytics(unittest.TestCase):
     def test_correlation_insight_follows_the_sign_of_r(self):
         for c in self.engine.get_correlations():
             self.assertEqual(c["direction"], "negatif" if c["r"] < 0 else "pozitif")
-            self.assertIn(f"r = {c['r']:.2f}"[:7], c["insight"])
+            self.assertNotIn("(r =", c["insight"])
+            self.assertNotIn("n =", c["insight"])
             if not c["significant"]:
                 self.assertIn("Anlamlı bir ilişki saptanmadı", c["insight"])
 

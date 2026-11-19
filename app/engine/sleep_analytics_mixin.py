@@ -124,9 +124,9 @@ class SleepAnalyticsMixin:
             strength = self._corr_strength(r_val)
             p_str = "< 0,0001" if p_val < 0.0001 else f"{p_val:.4f}".replace(".", ",")
             if significant:
-                insight = f"{neg_txt if r_val < 0 else pos_txt} (r = {r_val:.2f}, {strength}, n = {n_c})"
+                insight = f"{neg_txt if r_val < 0 else pos_txt}"
             else:
-                insight = f"Anlamlı bir ilişki saptanmadı (r = {r_val:.2f}, {strength}, n = {n_c})."
+                insight = "Anlamlı bir ilişki saptanmadı."
             results.append({
                 "pair": f"{l1} ↔ {l2}",
                 "r": round(r_val, 3),
