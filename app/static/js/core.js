@@ -365,7 +365,11 @@ function renderWeeklyStreak(activities) {
   const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
   const order = [1, 2, 3, 4, 5, 6, 0];
   const latestStr = (activities[0].date || activities[0].startTimeLocal || '').slice(0, 10);
-  const refDate = latestStr ? new Date(latestStr + 'T12:00:00') : new Date();
+  const todayIso = (typeof globalOverview !== 'undefined' && globalOverview && globalOverview.date)
+    ? String(globalOverview.date).slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+  const refStr = todayIso || latestStr;
+  const refDate = refStr ? new Date(refStr + 'T12:00:00') : new Date();
   const refDay = refDate.getDay();
   const diffToMon = (refDay === 0 ? -6 : 1 - refDay);
   const monday = new Date(refDate);
@@ -421,6 +425,9 @@ function renderWeeklyStreak(activities) {
         ? 'accent-bg border border-[var(--accent)]'
         : 'bg-[var(--text-primary)] text-[var(--bg-surface)] border border-[var(--text-primary)]';
       return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${cls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
+    }
+    if (iso < todayIso) {
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[#6BA7D6] font-medium mb-1.5">${lbl}</span><span title="Dinlenme Günü" class="w-7 h-7 rounded-[2px] bg-[rgba(75,142,194,0.14)] text-[#6BA7D6] border border-[rgba(75,142,194,0.35)] flex items-center justify-center">${lucideSvg('bed', 'w-3.5 h-3.5')}</span></div>`;
     }
     return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-muted)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
   }).join('');
