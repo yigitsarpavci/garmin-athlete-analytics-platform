@@ -39,19 +39,8 @@
       <div class="flex items-center justify-between gap-3">
         <!-- 6 Primary Top-Level Navigation Headings with Dropdown Sub-Menus -->
         <nav aria-label="Ana Navigasyon" class="nav-tablist min-w-0 flex-1">
-          <div class="nav-dropdown" data-nav-dropdown="overview">
-            <button type="button" onclick="toggleNavDropdown('overview', event)" id="nav-overview" aria-current="page"
-              class="nav-tab nav-tab-active">
-              <span>Genel Bakış</span>
-              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
-            </button>
-            <div class="nav-dropdown-menu" role="menu">
-              <button type="button" onclick="selectNavSubTab('overview', 'kpi12', event)" data-subtab-group="overview"
-                data-subtab="kpi12" class="nav-dropdown-item nav-dropdown-item-active">Günlük Durum</button>
-              <button type="button" onclick="selectNavSubTab('overview', 'ledger', event)" data-subtab-group="overview"
-                data-subtab="ledger" class="nav-dropdown-item">Performans &amp; Trend</button>
-            </div>
-          </div>
+          <button type="button" onclick="closeAllNavDropdowns(); setTab('overview')" id="nav-overview" aria-current="page"
+            class="nav-tab nav-tab-active">Genel Bakış</button>
 
           <div class="nav-dropdown" data-nav-dropdown="plan">
             <button type="button" onclick="toggleNavDropdown('plan', event)" id="nav-plan" class="nav-tab">
@@ -308,120 +297,83 @@
             </div>
           </div>
         </aside>
-      </div>
 
-      <!-- OVERVIEW SUBPANE 3: PERFORMANS & TREND ÖZETİ -->
-      <div data-subpane-group="overview" data-subpane="ledger" class="single-screen-pane hidden">
-        <!-- RULED ARCHITECTURAL TELEMETRY LEDGER (Replaces Symmetrical Bubble-Card Grid) -->
-        <section aria-label="Temel Telemetri Göstergeleri"
-          class="surface-ledger overflow-hidden h-full grid grid-rows-2">
-          <!-- Upper 12-Col Ledger Row: Training Status + Autonomic Reserve -->
-          <div
-            class="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border-subtle)] border-b border-[var(--border-subtle)] min-h-0">
-            <!-- Training Status Cell (6 Cols) -->
-            <div class="lg:col-span-6 p-6 flex flex-col space-y-4">
-              <div class="flex items-center justify-between">
-                <span
-                  class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)] flex items-center gap-2">
-                  <i data-lucide="gauge" class="w-3.5 h-3.5 accent-text" stroke-width="1.5" aria-hidden="true"></i>
-                  <span>Antrenman Durumu</span>
-                </span>
-                <span class="font-mono text-[10px] font-semibold accent-text">ACWR</span>
-              </div>
-              <div class="min-w-0">
-                <span id="inFocusTrainingStatus"
-                  class="font-editorial text-2xl font-medium tracking-tight block truncate">Maintaining</span>
-                <p id="inFocusStatusSub" class="font-mono text-[11px] text-[var(--text-secondary)] mt-1 truncate">
-                  Optimal Load · Balanced HRV</p>
-              </div>
-            </div>
-
-            <!-- Autonomic Reserve & Recovery Cell (6 Cols) -->
-            <div class="lg:col-span-6 p-6 flex flex-col justify-between space-y-3">
-              <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">Toparlanma &amp; Rezerv</span>
-              <div class="py-1 min-w-0 space-y-1">
-                <p id="inFocusHrvWakeBb" class="font-mono text-xl font-bold tabular-nums">Sabah BB: -- · -- ms</p>
-                <p id="inFocusStressResp" class="font-mono text-[11px] text-[var(--text-secondary)] break-words">Stres: -- · Solunum: -- br/dk</p>
-                <p id="inFocusSteps" class="font-mono text-[11px] text-[var(--text-secondary)] break-words">Adım: -- · Toparlanma: -- sa</p>
-              </div>
-              <span class="font-mono text-[10px] text-[var(--text-muted)]">Otonom Denge</span>
-            </div>
+        <!-- Kompakt Performans & Trend Şeridi -->
+        <section aria-label="Performans & Trend Özeti"
+          class="surface-ledger mt-2.5 overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
+          <!-- Antrenman Durumu -->
+          <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
+            <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)]">Antrenman Durumu</span>
+            <span id="inFocusTrainingStatus" class="font-editorial text-base font-medium tracking-tight block truncate">Maintaining</span>
+            <p id="inFocusStatusSub" class="font-mono text-[9.5px] text-[var(--text-secondary)] truncate">Optimal Load</p>
           </div>
 
-          <!-- Lower 4-Column Ruled Metrics Ledger (Weight, 5K, EF, ACWR) -->
-          <div
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)] min-h-0">
-            <!-- 1. Weight -->
-            <div class="p-6 flex flex-col justify-between">
-              <div class="flex items-center justify-between">
-                <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Mevcut Kilo &amp; DSÖ</p>
-              </div>
-              <div class="flex items-baseline gap-2.5 mt-2">
-                <span class="font-mono text-2xl font-bold tabular-nums" id="kpi-weight">-- kg</span>
-                <span id="kpi-weight-badge" class="stamp-tag stamp-moss tabular-nums">--</span>
-              </div>
-              <div class="w-full bg-[var(--bg-surface-elevated)] h-1 mt-3">
-                <div id="kpi-weight-bar" class="bg-[var(--accent)] h-1" style="width: 58%"></div>
-              </div>
-              <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-2 flex justify-between">
-                <span id="kpi-weight-bmi">VKİ: --</span>
-              </p>
-            </div>
+          <!-- Toparlanma & Rezerv -->
+          <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
+            <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)]">Toparlanma &amp; Rezerv</span>
+            <p id="inFocusHrvWakeBb" class="font-mono text-sm font-bold tabular-nums truncate">Sabah BB: -- · -- ms</p>
+            <p id="inFocusStressResp" class="font-mono text-[9.5px] text-[var(--text-secondary)] truncate">Stres: -- · Solunum: --</p>
+          </div>
 
-            <!-- 2. 5K Time -->
-            <div class="p-6 flex flex-col justify-between">
-              <div class="flex items-center justify-between">
-                <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">5K Derece &amp; Kadans</p>
-              </div>
-              <div class="flex items-baseline gap-2.5 mt-2">
-                <span class="font-mono text-2xl font-bold tabular-nums" id="kpi-5k">--:--</span>
-                <span id="kpi-5k-pace" class="font-mono text-xs text-[var(--text-secondary)] tabular-nums">(--
-                  /km)</span>
-              </div>
-              <div class="w-full bg-[var(--bg-surface-elevated)] h-1 mt-3">
-                <div id="kpi-5k-bar" class="bg-[var(--accent)] h-1" style="width: 72%"></div>
-              </div>
-              <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-2 flex justify-between">
-                <span id="kpi-5k-delta">Ağustos vs <strong class="moss-text">-1:46 /km</strong></span>
-                <span id="kpi-5k-cad">162 spm</span>
-              </p>
+          <!-- Mevcut Kilo & DSÖ -->
+          <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
+            <p class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Mevcut Kilo &amp; DSÖ</p>
+            <div class="flex items-baseline gap-1.5">
+              <span class="font-mono text-base font-bold tabular-nums" id="kpi-weight">-- kg</span>
+              <span id="kpi-weight-badge" class="stamp-tag stamp-moss tabular-nums">--</span>
             </div>
+            <div class="w-full bg-[var(--bg-surface-elevated)] h-1">
+              <div id="kpi-weight-bar" class="bg-[var(--accent)] h-1" style="width: 58%"></div>
+            </div>
+            <p class="font-mono text-[9.5px] text-[var(--text-secondary)] truncate" id="kpi-weight-bmi">VKİ: --</p>
+          </div>
 
-            <!-- 3. Cardiac Efficiency -->
-            <div class="p-6 flex flex-col justify-between">
-              <div class="flex items-center justify-between">
-                <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Verimlilik &amp; HRV</p>
-              </div>
-              <div class="flex items-baseline gap-2 mt-2">
-                <span class="font-mono text-2xl font-bold tabular-nums" id="kpi-ef">--</span>
-                <span class="font-mono text-xs text-[var(--text-secondary)]">m/atım (EF)</span>
-              </div>
-              <div class="w-full bg-[var(--bg-surface-elevated)] h-1 mt-3">
-                <div id="kpi-ef-bar" class="bg-[var(--moss)] h-1" style="width: 65%"></div>
-              </div>
-              <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-2 flex justify-between">
-                <span id="kpi-ef-hrv">Gece HRV: -- ms</span>
-                <span id="kpi-ef-rhr">RHR: -- bpm</span>
-              </p>
+          <!-- 5K Derece & Kadans -->
+          <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
+            <p class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">5K Derece &amp; Kadans</p>
+            <div class="flex items-baseline gap-1.5">
+              <span class="font-mono text-base font-bold tabular-nums" id="kpi-5k">--:--</span>
+              <span id="kpi-5k-pace" class="font-mono text-[10px] text-[var(--text-secondary)] tabular-nums">(-- /km)</span>
             </div>
+            <div class="w-full bg-[var(--bg-surface-elevated)] h-1">
+              <div id="kpi-5k-bar" class="bg-[var(--accent)] h-1" style="width: 72%"></div>
+            </div>
+            <p class="font-mono text-[9.5px] text-[var(--text-secondary)] flex justify-between gap-1 truncate">
+              <span id="kpi-5k-delta">Ağustos vs <strong class="moss-text">-1:46 /km</strong></span>
+              <span id="kpi-5k-cad">162 spm</span>
+            </p>
+          </div>
 
-            <!-- 4. Weekly Load & ACWR -->
-            <div class="p-6 flex flex-col justify-between">
-              <div class="flex items-center justify-between">
-                <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Haftalık Yük &amp; ACWR</p>
-              </div>
-              <div class="flex items-baseline gap-2.5 mt-2">
-                <span class="font-mono text-2xl font-bold tabular-nums" id="kpi-load">--</span>
-                <span id="kpi-acwr-badge" class="stamp-tag stamp-accent tabular-nums">ACWR --</span>
-              </div>
-              <div class="w-full bg-[var(--bg-surface-elevated)] h-1 mt-3">
-                <div id="kpi-load-bar" class="bg-[var(--accent)] h-1" style="width: 78%"></div>
-              </div>
-              <p class="font-mono text-[11px] text-[var(--text-secondary)] mt-2 flex justify-between">
-                <span id="kpi-tunnel-text">Tünel: --</span>
-                <span id="kpi-chronic-text">Kronik: --</span>
-              </p>
+          <!-- Verimlilik & HRV -->
+          <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
+            <p class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Verimlilik &amp; HRV</p>
+            <div class="flex items-baseline gap-1">
+              <span class="font-mono text-base font-bold tabular-nums" id="kpi-ef">--</span>
+              <span class="font-mono text-[10px] text-[var(--text-secondary)]">m/atım</span>
             </div>
+            <div class="w-full bg-[var(--bg-surface-elevated)] h-1">
+              <div id="kpi-ef-bar" class="bg-[var(--moss)] h-1" style="width: 65%"></div>
+            </div>
+            <p class="font-mono text-[9.5px] text-[var(--text-secondary)] flex justify-between gap-1 truncate">
+              <span id="kpi-ef-hrv">HRV: -- ms</span>
+              <span id="kpi-ef-rhr">RHR: --</span>
+            </p>
+          </div>
+
+          <!-- Haftalık Yük & ACWR -->
+          <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
+            <p class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Haftalık Yük &amp; ACWR</p>
+            <div class="flex items-baseline gap-1.5">
+              <span class="font-mono text-base font-bold tabular-nums" id="kpi-load">--</span>
+              <span id="kpi-acwr-badge" class="stamp-tag stamp-accent tabular-nums">ACWR --</span>
+            </div>
+            <div class="w-full bg-[var(--bg-surface-elevated)] h-1">
+              <div id="kpi-load-bar" class="bg-[var(--accent)] h-1" style="width: 78%"></div>
+            </div>
+            <p class="font-mono text-[9.5px] text-[var(--text-secondary)] flex justify-between gap-1 truncate">
+              <span id="kpi-tunnel-text">Tünel: --</span>
+              <span id="kpi-chronic-text">K: --</span>
+            </p>
           </div>
         </section>
       </div>
