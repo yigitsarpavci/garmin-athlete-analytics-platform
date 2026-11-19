@@ -230,8 +230,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const highPct = Number(lf.high_aerobic_pct ?? (lf.aerobic_high && lf.aerobic_high.pct_of_target) ?? 0);
   const anPct = Number(lf.anaerobic_pct ?? (lf.anaerobic && lf.anaerobic.pct_of_target) ?? 0);
   setText('fs-loadfocus-val', lf.recommended_focus_label || 'Anaerobik & Laktat İntervali');
-  const lfBasis = lf.targets_available === false ? ' · hedef bandı yok, toplam yük payı' : '';
-  setText('fs-loadfocus-sub', `Düşük %${fmtDec(lowPct, 0)} · Yüksek %${fmtDec(highPct, 0)} · Anaer %${fmtDec(anPct, 0)}${lfBasis}`);
   const lfBarEl = document.getElementById('fs-loadfocus-bar');
   if (lfBarEl) {
     const bar = (cls, label, pct) => {
