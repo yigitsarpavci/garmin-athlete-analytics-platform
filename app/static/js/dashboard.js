@@ -205,24 +205,32 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   setText('fs-loadfocus-val', lf.recommended_focus_label || 'Anaerobik & Laktat İntervali');
   const lfBarEl = document.getElementById('fs-loadfocus-bar');
   if (lfBarEl) {
-    const bar = (cls, label, pct) => {
+    const drift = lf.weekly_bar_drift || null;
+    const bar = (cls, label, pct, dObj) => {
       const w = Math.min(100, Math.max(6, pct));
       const pin = Math.max(3, Math.min(97, w));
+      const dTxt = dObj && dObj.expiring_pct > 0
+        ? ` <span class="text-[var(--text-muted)]">→%${Math.round(dObj.week_end_pct)} (-%${Math.round(dObj.expiring_pct)})</span>`
+        : '';
       return `
         <div>
           <div class="garmin-fill-track garmin-fill-track--pin">
             <div class="${cls} h-full" style="width:${w}%"></div>
             <span class="garmin-gauge-pin" style="left:${pin}%"></span>
           </div>
-          <div class="garmin-gauge-scale mt-0.5"><span>${label}</span><span>%${Math.round(pct)}</span></div>
+          <div class="garmin-gauge-scale mt-0.5"><span>${label}</span><span>%${Math.round(pct)}${dTxt}</span></div>
         </div>`;
     };
+    const driftFooter = drift
+      ? `<p class="font-mono text-[10.5px] text-[var(--text-secondary)] mt-1.5 leading-tight">Hafta sonu (düşüşle): Düşük %${Math.round(drift.low_aerobic?.week_end_pct ?? lowPct)} · Yüksek %${Math.round(drift.high_aerobic?.week_end_pct ?? highPct)} · Anaer %${Math.round(drift.anaerobic?.week_end_pct ?? anPct)}</p>`
+      : '';
     lfBarEl.innerHTML = `
       <div class="garmin-focus-mini">
-        ${bar('seg-blue', 'Düşük', lowPct)}
-        ${bar('seg-amber', 'Yüksek', highPct)}
-        ${bar('seg-purple', 'Anaer', anPct)}
+        ${bar('seg-blue', 'Düşük', lowPct, drift?.low_aerobic)}
+        ${bar('seg-amber', 'Yüksek', highPct, drift?.high_aerobic)}
+        ${bar('seg-purple', 'Anaer', anPct, drift?.anaerobic)}
       </div>
+      ${driftFooter}
     `;
   }
 }

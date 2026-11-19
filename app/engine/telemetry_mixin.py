@@ -197,6 +197,11 @@ class TelemetryMixin:
         tunnel_max = int(round(_num(cur_st.get("tunnel_max"), 0)))
         vo2_val = float(tl.get("vo2max_current") or 0.0)
 
+        try:
+            from engine.run_load_predictor import compute_weekly_bar_drift
+        except ImportError:
+            from app.engine.run_load_predictor import compute_weekly_bar_drift
+
         load_focus_summary = {
             "targets_available": bool(load_focus.get("targets_available", True)),
             "low_aerobic_pct": float(load_focus.get("aerobic_low", {}).get("pct_of_target", 0.0)),
@@ -208,6 +213,7 @@ class TelemetryMixin:
             "primary_deficit": load_focus.get("primary_deficit", "anaerobic"),
             "recommended_focus_label": load_focus.get("recommended_focus_label", "Anaerobik & Laktat İntervali"),
             "balance_phrase": load_focus.get("balance_phrase", "BALANCED (Dengeli)"),
+            "weekly_bar_drift": compute_weekly_bar_drift(load_focus, getattr(self, "activities_all", []) or []),
         }
 
         workouts_7d = self._summarize_last_7_days(latest)

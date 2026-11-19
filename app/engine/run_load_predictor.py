@@ -347,3 +347,83 @@ def compute_maintenance_runs_for_85(
         if min(_compute_bar_pcts(sim_low, sim_high, sim_an, low_max, high_max, an_max, True)) >= threshold:
             return min(k, base_run_target)
     return base_run_target
+
+
+def compute_weekly_bar_drift(
+    load_focus: Dict[str, Any],
+    activities_all: List[Dict[str, Any]],
+    ref_dt: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    """
+    Haftanın kalan günlerinde (bugün -> Pazar) ve tüm hafta boyunca (Pzt -> Pazar)
+    28 günlük pencereden düşecek yükler nedeniyle her bir barın yüzde kaç eksileceğini
+    ve hafta sonunda kaça ineceğini hesaplar.
+    """
+    al = (load_focus or {}).get("aerobic_low") or {}
+    ah = (load_focus or {}).get("aerobic_high") or {}
+    an = (load_focus or {}).get("anaerobic") or {}
+
+    low_act = float(al.get("actual") or 0.0)
+    high_act = float(ah.get("actual") or 0.0)
+    an_act = float(an.get("actual") or 0.0)
+    low_max = float(al.get("target_max") or 0.0)
+    high_max = float(ah.get("target_max") or 0.0)
+    an_max = float(an.get("target_max") or 0.0)
+    targets_available = bool((load_focus or {}).get("targets_available", True) and low_max > 0 and an_max > 0)
+
+    cur_low_pct, cur_high_pct, cur_an_pct = _compute_bar_pcts(
+        low_act, high_act, an_act, low_max, high_max, an_max, targets_available
+    )
+
+    now_dt = ref_dt or datetime.now()
+    ref_day = now_dt.date()
+    monday = ref_day - timedelta(days=ref_day.weekday())
+    sunday = monday + timedelta(days=6)
+
+    rem_win_start = ref_day - timedelta(days=28)
+    rem_win_end = sunday - timedelta(days=27)  # inclusive of sunday - 28d
+    wk_win_start = monday - timedelta(days=28)
+
+    rem_exp = [0.0, 0.0, 0.0]
+    wk_exp = [0.0, 0.0, 0.0]
+    for act in activities_all or []:
+        d_str = (act.get("startTimeLocal") or "")[:10]
+        if not d_str:
+            continue
+        try:
+            d_obj = datetime.strptime(d_str, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if wk_win_start <= d_obj < rem_win_end:
+            c = estimate_activity_load_contribution(act)
+            if rem_win_start <= d_obj < rem_win_end:
+                rem_exp[0] += c["low_aerobic"]
+                rem_exp[1] += c["high_aerobic"]
+                rem_exp[2] += c["anaerobic"]
+            wk_exp[0] += c["low_aerobic"]
+            wk_exp[1] += c["high_aerobic"]
+            wk_exp[2] += c["anaerobic"]
+
+    end_low_pct, end_high_pct, end_an_pct = _compute_bar_pcts(
+        max(0.0, low_act - rem_exp[0]),
+        max(0.0, high_act - rem_exp[1]),
+        max(0.0, an_act - rem_exp[2]),
+        low_max, high_max, an_max, targets_available,
+    )
+
+    def _entry(cur_p: float, end_p: float, exp_load: float, wk_load: float) -> Dict[str, float]:
+        drop_p = round(max(0.0, cur_p - end_p), 1)
+        return {
+            "current_pct": round(cur_p, 1),
+            "week_end_pct": round(end_p, 1),
+            "expiring_pct": drop_p,
+            "expiring_load": round(exp_load, 1),
+            "week_total_expiring_load": round(wk_load, 1),
+        }
+
+    return {
+        "targets_available": targets_available,
+        "low_aerobic": _entry(cur_low_pct, end_low_pct, rem_exp[0], wk_exp[0]),
+        "high_aerobic": _entry(cur_high_pct, end_high_pct, rem_exp[1], wk_exp[1]),
+        "anaerobic": _entry(cur_an_pct, end_an_pct, rem_exp[2], wk_exp[2]),
+    }

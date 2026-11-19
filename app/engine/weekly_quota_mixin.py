@@ -303,25 +303,22 @@ class WeeklyQuotaMixin:
         slot_keys = ["gym_a", "gym_b", "gym_c"][:num_slots]
 
         if num_slots == 2:
-            has_gym_capacity = chronic_load >= 360 and plateau_score >= 45
-            if active_split in ("push_pull", "upper_lower") and has_gym_capacity and (
-                gyms_per_wk >= 3.2 or (chronic_load >= 420 and plateau_score >= 55)
-            ):
+            if active_split in ("push_pull", "upper_lower") and chronic_load >= 420 and plateau_score >= 55:
                 gym_target = 4
             else:
                 gym_target = 2
             gym_sequence = slot_keys * (gym_target // 2)
         else:
-            cycles = 2 if (gyms_per_wk >= 4.8 and chronic_load >= 600) else 1
+            cycles = 2 if (chronic_load >= 600 and plateau_score >= 85) else 1
             gym_target = num_slots * cycles
             gym_sequence = slot_keys * cycles
 
-        # 2) Koşu fitliğine göre temel gün sayısı (1, 2, 3 veya 4) + tüm barlar >= %85 ise koruma sayısına düşürme
-        if runs_per_wk >= 3.25 and chronic_load >= 450 and vo2max >= 50:
+        # 2) Koşu fitliğine göre temel gün sayısı (1, 2, 3 veya 4) — fazla/az yapmaya göre değil fitlik skoruna göre belirlenir
+        if chronic_load >= 460 and vo2max >= 50:
             base_run_target = 4
-        elif (chronic_load >= 360 and runs_per_wk >= 2.2) or (vo2max >= 50 and chronic_load >= 320 and runs_per_wk >= 2.0):
+        elif chronic_load >= 360 or (vo2max >= 50 and chronic_load >= 320):
             base_run_target = 3
-        elif 0 < chronic_load < 140 and runs_per_wk < 1.0:
+        elif 0 < chronic_load < 140:
             base_run_target = 1
         else:
             base_run_target = 2
