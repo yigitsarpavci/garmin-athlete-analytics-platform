@@ -411,15 +411,16 @@ function renderWeeklyStreak(activities) {
   strip.innerHTML = keys.map((iso, idx) => {
     const items = dayMap[iso] || [];
     const lbl = dayNames[order[idx]];
-    if (items.length) {
-      const boxCls = items.length > 1 ? 'w-6 h-7' : 'w-7 h-7';
-      const iconsHtml = items.map(info => {
-        const cls = info.isRun
-          ? 'accent-bg border border-[var(--accent)]'
-          : 'bg-[var(--text-primary)] text-[var(--bg-surface)] border border-[var(--text-primary)]';
-        return `<span title="${String(info.title).replace(/"/g, '&quot;')}" class="${boxCls} rounded-[2px] ${cls} flex items-center justify-center shrink-0">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span>`;
-      }).join('');
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><div class="inline-flex items-center justify-center gap-0.5">${iconsHtml}</div></div>`;
+    if (items.length > 1) {
+      const tip = items.map(i => i.title).join(' · ').replace(/"/g, '&quot;');
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><span title="${tip}" class="w-7 h-7 rounded-[2px] accent-bg border border-[var(--accent)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
+    }
+    if (items.length === 1) {
+      const info = items[0];
+      const cls = info.isRun
+        ? 'accent-bg border border-[var(--accent)]'
+        : 'bg-[var(--text-primary)] text-[var(--bg-surface)] border border-[var(--text-primary)]';
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${cls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
     }
     return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-muted)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
   }).join('');
