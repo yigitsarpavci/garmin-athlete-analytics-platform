@@ -8,7 +8,7 @@ sıradaki N (varsayılan 4) seansı kapalı çevrim simüle eder:
   2. En düşük doluluktaki barı hedefler:
      - Düşük Aerobik en düşükse -> Zone 2 (zone2)
      - Yüksek Aerobik en düşükse -> Tempo (tempo; yalnızca Garmin hedef bantları varsa)
-     - Anaerobik en düşükse -> Hız İntervali (interval)
+     - Anaerobik en düşükse -> İnterval (interval)
   3. Seçilen türün en son gerçek Garmin koşusunun EPOC/TE katkısını barlara ekler.
 """
 
@@ -95,8 +95,8 @@ def get_latest_run_profiles(activities_all: List[Dict[str, Any]]) -> Dict[str, D
 
     default_names = {
         "zone2": "Zone 2 Koşusu",
-        "tempo": "Tempo Koşusu",
-        "interval": "Hız İntervali",
+        "tempo": "Tempo",
+        "interval": "İnterval",
     }
     profiles: Dict[str, Dict[str, Any]] = {}
     for k in ("zone2", "tempo", "interval"):
@@ -209,9 +209,9 @@ def predict_next_n_runs(
     steps: List[Dict[str, Any]] = []
 
     labels = {
-        "zone2": "Zone 2 Rahat Taban",
-        "tempo": "Tempo Koşusu (Yüksek Aerobik)",
-        "interval": "5K Hız İntervali (Z4-5)",
+        "zone2": "Zone 2",
+        "tempo": "Tempo",
+        "interval": "İnterval",
     }
 
     for step_idx in range(1, n + 1):

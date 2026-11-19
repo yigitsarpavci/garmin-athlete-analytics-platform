@@ -292,7 +292,7 @@ class TestEngineCalculations(unittest.TestCase):
 
         cls_res = classify_run_workout(mon_tempo)
         self.assertEqual(cls_res["kind"], "tempo")
-        self.assertEqual(cls_res["label_tr"], "Tempo Koşusu (Zone 3)")
+        self.assertEqual(cls_res["label_tr"], "Tempo (Zone 3)")
         self.assertFalse(cls_res["is_planned_archetype"])
 
         with patch.object(self.engine, "activities_all", [mon_tempo, tue_gym_a]):
@@ -304,7 +304,7 @@ class TestEngineCalculations(unittest.TestCase):
                 protocols = self.engine.get_detailed_daily_workout_protocols()
 
         # 1) Pazartesi (sched[0]) İnterval değil Tempo Koşusu yazmalı ve kotaya sayıldığını belirtmeli
-        self.assertIn("Tempo Koşusu", sched[0]["primary"])
+        self.assertIn("Tempo", sched[0]["primary"])
         self.assertIn("haftalık koşu kotasına sayıldı", sched[0]["secondary"])
 
         # 2) Arka arkaya Pzt Tempo + Salı Gym A yapıldığı için Çarşamba (sched[2]) uyarlanmış toparlanma olmalı
@@ -369,7 +369,7 @@ class TestEngineCalculations(unittest.TestCase):
         # Geçen haftadan eksik kalan İnterval ve Workout B ilk sıraya önceliklendirilmeli
         self.assertEqual(q["running"]["remaining_items"][0]["slot_kind"], "interval")
         self.assertEqual(q["strength"]["remaining_items"][0]["slot_kind"], "gym_b")
-        self.assertIn("5K Hız İntervali", q["last_week_adaptation"]["missed_sessions"])
+        self.assertIn("İnterval", q["last_week_adaptation"]["missed_sessions"])
         self.assertIn("Workout B", q["last_week_adaptation"]["missed_sessions"])
 
     def test_unknown_sport_dynamic_weight_and_anaerobic_focus(self):

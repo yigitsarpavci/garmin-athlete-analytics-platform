@@ -210,7 +210,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const lowPct = Number(lf.low_aerobic_pct ?? (lf.aerobic_low && lf.aerobic_low.pct_of_target) ?? 0);
   const highPct = Number(lf.high_aerobic_pct ?? (lf.aerobic_high && lf.aerobic_high.pct_of_target) ?? 0);
   const anPct = Number(lf.anaerobic_pct ?? (lf.anaerobic && lf.anaerobic.pct_of_target) ?? 0);
-  setText('fs-loadfocus-val', lf.recommended_focus_label || 'Anaerobik & Laktat İntervali');
+  setText('fs-loadfocus-val', lf.recommended_focus_label || 'Anaerobik (İnterval)');
   const lfBarEl = document.getElementById('fs-loadfocus-bar');
   if (lfBarEl) {
     const drift = lf.weekly_bar_drift || null;

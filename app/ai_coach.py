@@ -99,12 +99,12 @@ class AthleteAICoach:
         run_items = []
         if rem_runs >= 2:
             run_items = [
-                {"category": "running", "type": "Zone 2 Koşu", "title": "Koşu #1 · Zone 2 Rahat Taban", "target_hr": "[[Z2_HR]]", "target_pace": "[[Z2_PACE]]", "duration": "45-50 dk"},
-                {"category": "running", "type": "Hız İntervali", "title": "Koşu #2 · 5K Hız İntervali (4x1.000m)", "target_hr": "[[INT_HR]]", "target_pace": "[[INT_PACE]]", "duration": "45 dk"},
+                {"category": "running", "type": "Zone 2", "title": "Koşu #1 · Quick Workout · Zone 2", "target_hr": "[[Z2_HR]]", "duration": "Quick Workout"},
+                {"category": "running", "type": "İnterval", "title": "Koşu #2 · Quick Workout · İnterval", "target_hr": "[[INT_HR]]", "duration": "Quick Workout"},
             ]
         elif rem_runs == 1:
             run_items = [
-                {"category": "running", "type": "Zone 2 Koşu", "title": "Koşu #2 · Zone 2 Rahat Taban", "target_hr": "[[Z2_HR]]", "target_pace": "[[Z2_PACE]]", "duration": "45-50 dk"},
+                {"category": "running", "type": "Zone 2", "title": "Koşu #2 · Quick Workout · Zone 2", "target_hr": "[[Z2_HR]]", "duration": "Quick Workout"},
             ]
 
         gym_items = []
@@ -236,7 +236,7 @@ class AthleteAICoach:
         rw_p = prog_map.get("row", {})
         ohp_p = prog_map.get("ohp", {})
         dl_p = prog_map.get("deadlift", {})
-        focus_rec = load_foc.get("recommended_workout", "Anaerobik barı %62 seviyesinde olduğu için haftalık 4x1000m hız intervali önceliklidir.")
+        focus_rec = load_foc.get("recommended_workout", "Quick Workout'tan en eksik yük barına uygun antrenmanı (Zone 2 / Tempo / İnterval) seç.")
 
         context = f"""Sen, {age} yaşında elit çoklu-branş sporcusuna (Koşu, Ağırlık/Kuvvet, Yelken, Basketbol, Kayak ve tüm Garmin branşları) 7/24 kişisel danışmanlık yapan spor bilimci ve GERÇEK bir AI Koçsun.
 Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen BİREBİR GÜNCEL veriler yer almaktadır:

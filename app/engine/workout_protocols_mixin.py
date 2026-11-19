@@ -225,15 +225,15 @@ class WorkoutProtocolsMixin:
                 "bacaklar yorgunsa kalan 1 koşu kotasında alternatif dengeleme olarak seçilebilir"
             )
         else:
-            int_note = _quota_note(int_status == "remaining", runs_done, rem_runs, "Koşu", "Taze bacakla ve Anaerobik eksiği kapatmak için uygun günde uygula")
-            z2_note = _quota_note(z2_status == "remaining", runs_done, rem_runs, "Koşu", "Bacakların taze olduğu herhangi bir günde uygula")
+            int_note = _quota_note(int_status == "remaining", runs_done, rem_runs, "Koşu", "Anaerobik eksiği kapatmak için taze bacakla Quick Workout > İnterval seç")
+            z2_note = _quota_note(z2_status == "remaining", runs_done, rem_runs, "Koşu", "Bacakların taze olduğu bir günde Quick Workout > Zone 2 seç")
 
         if tempo_done:
-            tempo_note = f"{runs_done}/2 Koşu Yapıldı · Bu hafta Yüksek Aerobik Tempo koşusu tamamlandı"
+            tempo_note = f"{runs_done}/2 Koşu Yapıldı · Bu hafta Tempo koşusu tamamlandı"
         elif tempo_status == "remaining":
-            tempo_note = _quota_note(True, runs_done, rem_runs, "Koşu", "Yüksek Aerobik barını doldurmak için sabit eşik temposunda uygula")
+            tempo_note = _quota_note(True, runs_done, rem_runs, "Koşu", "Yüksek Aerobik barını doldurmak için Quick Workout > Tempo seç")
         else:
-            tempo_note = "Esnek Şablon • Yüksek Aerobik (Zone 3–4 Tempo) barı açıldığında uygulanır"
+            tempo_note = "Esnek Şablon • Yüksek Aerobik barı açıldığında Quick Workout > Tempo uygulanır"
 
         prog = self.get_gym_exercise_history().get("progression", {})
         sq = prog.get("squat", {})
@@ -350,40 +350,36 @@ class WorkoutProtocolsMixin:
         }
 
     def _protocol_thursday_zone2_run(self, prot_g, z2_note, z2_status) -> Dict[str, Any]:
-        """Perşembe: Zone 2 aerobik taban koşu reçetesi."""
+        """Perşembe slotu: Quick Workout > Zone 2."""
         return {
             "day_code": "thursday",
             "slot_label": "Zone 2",
             "quota_status": z2_status,
-            "day_title": "Koşu Reçetesi #1: Zone 2 Aerobik Taban (45-50 dk)",
+            "day_title": "Koşu: Quick Workout · Zone 2",
             "category": "running",
-            "badge": "Zone 2 Taban",
+            "badge": "Zone 2",
             "badge_color": "emerald",
             "status_note": z2_note,
-            "objective": "Sol karıncık atım hacmini büyütmek ve aerobik tabanı nabız tavanını aşmadan korumak.",
-            "warmup": "5-8 dk dinamik kalça ve ayak bileği mobilitesi.",
+            "objective": "Düşük Aerobik barını nabız tavanını aşmadan doldurmak.",
+            "warmup": "Quick Workout'ın kendi ısınma/soğuma adımlarını kullan.",
             "exercises": [
                 {
-                    "num": 1, "name": "Ana Koşu: Zone 2 Taban Koşusu",
-                    "duration": "45 - 50 dakika kesintisiz",
-                    "distance_est": "6.8 - 7.5 km",
+                    "num": 1, "name": "Quick Workout: Zone 2",
+                    "duration": "Quick Workout'ın önerdiği süre",
                     "target_hr": "[[Z2_HR]] (Katı Tavan [[Z2_HR_CAP]] bpm)",
-                    "target_pace": "[[Z2_PACE]]",
-                    "cadence_target": "160 - 165 spm",
-                    "ground_contact_time": "Hedef <275 ms",
-                    "coaching_cue": "Burundan rahat konuşma temposu. Nabız [[Z2_HR_CAP]]+ bpm olduğunda yürüyüşe düşüp indirin.",
+                    "coaching_cue": "Saatte Quick Workout > Zone 2 seç. Nabız [[Z2_HR_CAP]]+ bpm olursa yavaşla.",
                 }
             ],
-            "cooldown": "8 dk baldır, aşil ve kuadriseps statik esnemesi.",
+            "cooldown": "Quick Workout'ın soğuma adımı + hafif esneme.",
             "telemetry_targets": {
-                "hr_range": "[[Z2_HR]] (Zone 2 Taban)",
+                "hr_range": "[[Z2_HR]] (Zone 2)",
                 "est_calories": self.nutrition_texts("run").get("spend_line", "--"),
                 "nutrition": f"{self.nutrition_texts('run')['line']} | 3.5 L Su",
             },
         }
 
     def _protocol_tempo_run(self, tempo_note, tempo_status, prot_g) -> Dict[str, Any]:
-        """Yüksek Aerobik: Tempo / Eşik koşu reçetesi."""
+        """Yüksek Aerobik: Quick Workout > Tempo."""
         mx = fnum(getattr(self, "max_hr_estimate", 0), 200)
         z3_lo = int(round(0.77 * mx))
         z3_hi = int(round(0.84 * mx))
@@ -391,26 +387,24 @@ class WorkoutProtocolsMixin:
             "day_code": "tempo",
             "slot_label": "Tempo",
             "quota_status": tempo_status,
-            "day_title": "Koşu Reçetesi #3: Yüksek Aerobik Tempo (30-35 dk)",
+            "day_title": "Koşu: Quick Workout · Tempo",
             "category": "running",
-            "badge": "Yüksek Aerobik",
+            "badge": "Tempo",
             "badge_color": "amber",
             "status_note": tempo_note,
-            "objective": "Laktat eşiği altında sürekli tempo ile Yüksek Aerobik barını verimli doldurmak.",
-            "warmup": "10 dk kolay jog + dinamik kalça açma.",
+            "objective": "Yüksek Aerobik barını verimli doldurmak.",
+            "warmup": "Quick Workout'ın kendi ısınma/soğuma adımlarını kullan.",
             "exercises": [
                 {
-                    "num": 1, "name": "Ana Koşu: Sürekli Tempo / Eşik Bloğu",
-                    "duration": "10 dk ısınma + 20 dk Tempo + 5 dk soğuma",
-                    "distance_est": "5.0 - 6.0 km",
+                    "num": 1, "name": "Quick Workout: Tempo",
+                    "duration": "Quick Workout'ın önerdiği süre",
                     "target_hr": f"{z3_lo} - {z3_hi} bpm (Zone 3 - 4)",
-                    "cadence_target": "162 - 168 spm",
-                    "coaching_cue": "10 dk rahat ısınma sonrası 20 dk kontrollü ve akıcı eşik temposunu koruyun; sprinte kaçmadan Yüksek Aerobik yükü biriktirin.",
+                    "coaching_cue": "Saatte Quick Workout > Tempo seç; sprinte kaçmadan Yüksek Aerobik yükü biriktir.",
                 }
             ],
-            "cooldown": "5 dk yürüyüş + baldır ve hamstring esnemesi.",
+            "cooldown": "Quick Workout'ın soğuma adımı + hafif esneme.",
             "telemetry_targets": {
-                "hr_range": f"{z3_lo} - {z3_hi} bpm (Zone 3-4 Tempo)",
+                "hr_range": f"{z3_lo} - {z3_hi} bpm (Tempo)",
                 "est_calories": self.nutrition_texts("tempo").get("spend_line", "--"),
                 "nutrition": f"{self.nutrition_texts('tempo')['line']} | 3.5 L Su",
             },
@@ -547,33 +541,30 @@ class WorkoutProtocolsMixin:
         }
 
     def _protocol_monday_interval_run(self, int_note, int_status, prot_g) -> Dict[str, Any]:
-        """Pazartesi: 5K hız intervali ve anaerobik yük koşu reçetesi."""
+        """Quick Workout > İnterval."""
         return {
             "day_code": "monday",
-            "slot_label": "5K İnterval",
+            "slot_label": "İnterval",
             "quota_status": int_status,
-            "day_title": "Koşu Reçetesi #2: 5K Hız İntervali & Anaerobik Yük (4 x 1.000m)",
+            "day_title": "Koşu: Quick Workout · İnterval",
             "category": "running",
-            "badge": "5K İnterval",
+            "badge": "İnterval",
             "badge_color": "purple",
             "status_note": int_note,
-            "objective": "Laktat eşiğini ve barın ortasında kalan Anaerobik (Zone 5) yükünü yukarı çekmek.",
-            "warmup": "10 dk hafif jog @ [[WARM_HR]] + 3 adet 50m strides + kalça mobilitesi.",
+            "objective": "Anaerobik (Zone 5) barını ve laktat eşiğini yukarı çekmek.",
+            "warmup": "Quick Workout'ın kendi ısınma/soğuma adımlarını kullan.",
             "exercises": [
                 {
-                    "num": 1, "name": "4 x 1.000 Metre Hız Tekrarları (Laktat Eşiği & Anaerobik)",
-                    "sets": 4, "reps": "1.000 Metre",
-                    "target_pace": "[[INT_PACE]] tempo",
+                    "num": 1, "name": "Quick Workout: İnterval",
+                    "duration": "Quick Workout'ın önerdiği süre",
                     "target_hr": "[[Z45_HR]] (Zone 4 - 5)",
-                    "rest_between_reps": "Her 1000m sonrası 3 DAKİKA yavaş yürüyüş / hafif jog",
-                    "cadence_target": "165 - 170 spm",
-                    "coaching_cue": "Ağır bacak gününün ertesi günü değil, taze bacakla (veya kuvvetten önce) 4 tekrar boyunca eşit [[INT_PACE]] temposu koruyun.",
+                    "coaching_cue": "Saatte Quick Workout > İnterval seç; taze bacakla (ağır bacak gününün ertesinde değil) yap.",
                 }
             ],
-            "cooldown": "8-10 dk hafif toparlanma jogu + derin baldır esnemesi.",
+            "cooldown": "Quick Workout'ın soğuma adımı + hafif esneme.",
             "telemetry_targets": {
                 "hr_range": "[[Z45_HR]] (Zirve Zone 4-5)",
                 "est_calories": self.nutrition_texts("interval").get("spend_line", "--"),
-                "nutrition": f"{self.nutrition_texts('interval')['line']} | 3.5 L Su + Elektrolit",
+                "nutrition": f"{self.nutrition_texts('interval')['line']} | 3.5 L Su",
             },
         }

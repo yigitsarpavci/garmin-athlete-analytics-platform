@@ -233,7 +233,7 @@ class TelemetryMixin:
             "high_aerobic_actual": float(load_focus.get("aerobic_high", {}).get("actual", 0.0)),
             "anaerobic_actual": float(load_focus.get("anaerobic", {}).get("actual", 0.0)),
             "primary_deficit": load_focus.get("primary_deficit", "anaerobic"),
-            "recommended_focus_label": load_focus.get("recommended_focus_label", "Anaerobik & Laktat İntervali"),
+            "recommended_focus_label": load_focus.get("recommended_focus_label", "Anaerobik (İnterval)"),
             "balance_phrase": load_focus.get("balance_phrase", "BALANCED (Dengeli)"),
             "weekly_bar_drift": compute_weekly_bar_drift(load_focus, getattr(self, "activities_all", []) or []),
         }
@@ -530,7 +530,7 @@ class TelemetryMixin:
                 "status": "Sarı Işık (Orta Hazırlık)",
                 "color": "amber",
                 "summary": "Toparlanma orta seviyede. Aşırı yük yerine kontrollü tempo seçin.",
-                "suggestion": "40-45 dk rahat Zone 2 veya teknik üst vücut kuvvet seansı.",
+                "suggestion": "Quick Workout'tan Zone 2 veya planlı kuvvet seansı (hafif).",
             }
         else:
             rec = {
@@ -927,26 +927,25 @@ class TelemetryMixin:
                 "koşu yok, planlı kuvvet seanslarını hafif tut (hacim ~%40 düşür), yürüyüş ve mobilite ile toparlan."
             ).format(low_pct, high_pct, an_pct, we.get("low_aerobic", 0), we.get("high_aerobic", 0), we.get("anaerobic", 0))
         elif lowest_zone == "aerobic_low":
-            prio_label = "Düşük Aerobik (Zone 2 Taban)"
+            prio_label = "Düşük Aerobik (Zone 2)"
             rec_workout = (
                 "Düşük Aerobik barı (%{:.0f}) en düşük dolulukta olduğu için "
-                "45-50 dk Zone 2 ([[Z2_HR]]) koşu önerilir."
+                "Quick Workout'tan Zone 2 ([[Z2_HR]]) seç."
             ).format(low_pct)
         elif lowest_zone == "aerobic_high":
-            prio_label = "Yüksek Aerobik (Tempo / Eşik)"
+            prio_label = "Yüksek Aerobik (Tempo)"
             rec_workout = (
                 "Yüksek Aerobik barı (%{:.0f}) en düşük dolulukta olduğu için "
-                "30-35 dk Yüksek Aerobik Tempo koşusu önerilir."
+                "Quick Workout'tan Tempo seç."
             ).format(high_pct)
         else:
-            prio_label = "Anaerobik & Laktat İntervali"
+            prio_label = "Anaerobik (İnterval)"
             high_note = (
                 " (Yüksek Aerobik %{:.0f} açığını da birlikte kapatır)".format(high_pct)
                 if high_pct < 75.0 else ""
             )
             rec_workout = (
-                "Anaerobik barı (%{:.0f}{}) en boş/öncelikli bantta olduğu için öncelik 4x1000m @ Z4-5 "
-                "Hız İntervali veya patlayıcı sprint çalışmasıdır{}; Düşük Aerobik %{:.0f} seviyesindedir."
+                "Anaerobik barı (%{:.0f}{}) en boş bantta olduğu için Quick Workout'tan İnterval seç{}; Düşük Aerobik %{:.0f} seviyesindedir."
             ).format(an_pct, f" · {an_act}/{an_max} birim" if an_max else f" · {an_act} birim", high_note, low_pct)
         return prio_label, rec_workout
 

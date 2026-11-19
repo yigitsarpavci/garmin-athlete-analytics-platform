@@ -100,14 +100,15 @@ class ProgressionDebriefMixin:
         focus_label = load_focus.get("recommended_focus_label") or "dengeli"
         focus_short = {"anaerobic": "ANAEROBİK", "aerobic_low": "DÜŞÜK AEROBİK", "aerobic_high": "YÜKSEK AEROBİK", "deload": "YOK · DELOAD"}.get(load_focus.get("primary_deficit"), "DENGELİ")
         next_run = ((dyn.get("run_prediction") or {}).get("steps") or [None])[0]
-        run_names = {"zone2": "Zone 2 Taban ([[Z2_HR]])", "tempo": "Tempo / Eşik", "interval": "5K Hız İntervali ([[INT_PACE]])"}
+        run_names = {"zone2": "Zone 2", "tempo": "Tempo", "interval": "İnterval"}
         next_run_txt = run_names.get((next_run or {}).get("kind"), "en eksik bara göre seçilir")
+        next_run_txt = f"Quick Workout > {next_run_txt}" if next_run_txt in run_names.values() else next_run_txt
         if load_focus.get("primary_deficit") == "deload":
             next_run_txt = "yok; tüm barlar dolu ve düşmüyor, hafta sonuna kadar deload"
         running_style_advice = (
             f"Firstbeat yük dengesi: Düşük Aerobik %{low_pct:.0f} · Yüksek Aerobik %{high_pct:.0f} · Anaerobik %{an_pct:.0f}. "
             f"En eksik bar: {focus_label}; sıradaki koşuyu buna göre seç. "
-            "Zone 2 hızın [[Z2_HR_MID]] bpm'de 6:00 /km altına indiğinde ve kapasite uygunsa koşu 2'den 3 güne çıkarılabilir (kuvvet 2 gün sabit)."
+            "Kapasite uygunsa koşu 2'den 3 güne çıkarılabilir (kuvvet 2 gün sabit)."
         )
 
         return {
@@ -130,7 +131,7 @@ class ProgressionDebriefMixin:
                 "verdict": f"EN EKSİK BAR: {focus_short}",
                 "current_metrics": f"VO2 Max: {vo2max:.1f} · En İyi 5K: {latest_5k} · Kadans: {cadence} spm",
                 "load_balance": f"Düşük Aer: %{low_pct:.0f} · Yüksek Aer: %{high_pct:.0f} · Anaerobik: %{an_pct:.0f}",
-                "current_model": f"Plan: her koşu o günkü en eksik Firstbeat barını doldurur. Sıradaki koşu: {next_run_txt}",
+                "current_model": f"Plan: her koşu o günkü en eksik Firstbeat barını doldurur; antrenmanı saatte Quick Workout'tan seçersin (Zone 2 / Tempo / İnterval). Sıradaki: {next_run_txt}",
                 "next_milestone": f"Orta Vade: 5K < {self.get_goal_5k()['label']} ({self.get_goal_5k()['pace']}) · Zone 2 @ 6:00 /km altı",
                 "advice": running_style_advice,
             },
@@ -217,7 +218,7 @@ class ProgressionDebriefMixin:
                 "status_reason": (
                     f"Akut ({acute_load}) / Kronik ({chronic_load}) dengesi (ACWR {acwr:.2f}) ve güncel VO2 Max ({vo2_val} mL/kg/dk) bazında durum '{status_tr}'."
                 ),
-                "how_to_reach_productive": load_focus.get("recommended_workout", "Anaerobik & VO2 Max İnterval (4x1000m @ Z4-5) ile barın orta bandındaki anaerobik odağı doldurun."),
+                "how_to_reach_productive": load_focus.get("recommended_workout", "Quick Workout'tan en eksik bara uygun antrenmanı seç."),
                 "load_focus": load_focus,
             },
             "daily_biometrics_24h": {

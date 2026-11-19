@@ -368,7 +368,7 @@ class MorphologyHealthMixin:
                 {"rule": "Kadansı 160+ spm'de tutun", "why": "Adımları uzatmak frenleme yapar; kısa ve sık adım elastik geri sekme sağlar."},
                 {"rule": f"{target_w:.0f} kg Hedefine İnin ({cur_w:.1f} -> {target_w:.1f} kg)", "why": "Vücut kütlesindeki her -1 kg düşüş yerçekimi işini azaltarak pace'i ~4 sn/km hızlandırır."},
                 {"rule": f"{z2_cap} bpm Katı Tavan Kuralı", "why": f"Nabız {z2_cap + 1} olduğunda yavaşlayın veya yürüyün; sol ventrikül adaptasyonu Zone 2'de maksimumdur."},
-                {"rule": "Haftada 1 Seans 4x1000m İnterval", "why": "Anaerobik barı ve laktat eşiğini yukarı iter; eşik yükseldikçe Z2 hızı artar."},
+                {"rule": "Haftada 1 İnterval (Quick Workout)", "why": "Anaerobik barı ve laktat eşiğini yukarı iter; eşik yükseldikçe Z2 hızı artar."},
                 {"rule": "A/B 5x5 Squat ve Deadlift", "why": "Arka zincir gücü koşuda her adımda yer tepki kuvvetini artırır."},
             ],
             "timeline_milestones": [

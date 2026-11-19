@@ -145,9 +145,9 @@ def classify_run_workout(act: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if is_interval:
         return {
             "kind": "interval",
-            "label_tr": "5K Hız İntervali",
-            "short_label": "5K Hız İntervali",
-            "badge_tr": "5K Hız İntervali (Z4-5)",
+            "label_tr": "İnterval",
+            "short_label": "İnterval",
+            "badge_tr": "İnterval",
             "is_planned_archetype": True,
             "te_label": te_label or "SPEED",
             "an_te": round(an_te, 1),
@@ -170,9 +170,9 @@ def classify_run_workout(act: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if is_zone2:
         return {
             "kind": "zone2",
-            "label_tr": "Zone 2 Rahat Taban",
-            "short_label": "Zone 2 Koşu",
-            "badge_tr": "Zone 2 Taban",
+            "label_tr": "Zone 2",
+            "short_label": "Zone 2",
+            "badge_tr": "Zone 2",
             "is_planned_archetype": True,
             "te_label": te_label or "AEROBIC_BASE",
             "an_te": round(an_te, 1),
@@ -180,15 +180,15 @@ def classify_run_workout(act: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         }
 
     label_tr = (
-        "Laktat Eşiği Tempo Koşusu (Zone 4)"
+        "Tempo (Zone 4)"
         if (te_label == "LACTATE_THRESHOLD" or z4_pct >= 55.0)
-        else "Tempo Koşusu (Zone 3)"
+        else "Tempo (Zone 3)"
     )
     return {
         "kind": "tempo",
         "label_tr": label_tr,
-        "short_label": "Tempo Koşusu",
-        "badge_tr": "Tempo Koşusu (Plan Dışı)",
+        "short_label": "Tempo",
+        "badge_tr": "Tempo",
         "is_planned_archetype": False,
         "te_label": te_label or "TEMPO",
         "an_te": round(an_te, 1),

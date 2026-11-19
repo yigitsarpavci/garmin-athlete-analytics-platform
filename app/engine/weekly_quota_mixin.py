@@ -22,39 +22,39 @@ except ImportError:
 _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
     "zone2": {
         "category": "running",
-        "type": "Zone 2 Koşu",
-        "short_label": "Zone 2 Koşu",
-        "title_prefix": "Zone 2 Rahat Taban",
+        "type": "Zone 2",
+        "short_label": "Zone 2",
+        "title_prefix": "Quick Workout · Zone 2",
         "target_hr": "[[Z2_HR]]",
-        "target_pace": "[[Z2_PACE]]",
-        "duration": "45-50 dk",
-        "badge": "Zone 2 Taban",
+        "target_pace": "",
+        "duration": "Quick Workout",
+        "badge": "Zone 2",
         "protocol_day_code": "thursday",
-        "coaching_note": "[[Z2_HR]] nabız tavanını aşmadan, 160+ spm kadans ve burundan rahat nefesle haftanın uygun bir gününde uygula.",
+        "coaching_note": "Saatte Quick Workout > Zone 2 seç; Düşük Aerobik barını doldurur. [[Z2_HR]] nabız tavanını aşma, haftanın uygun bir gününde yap.",
     },
     "interval": {
         "category": "running",
-        "type": "5K Hız İntervali",
-        "short_label": "5K Hız İntervali",
-        "title_prefix": "5K Hız İntervali (4x1.000m)",
+        "type": "İnterval",
+        "short_label": "İnterval",
+        "title_prefix": "Quick Workout · İnterval",
         "target_hr": "[[INT_HR]]",
-        "target_pace": "[[INT_PACE]]",
-        "duration": "45 dk",
-        "badge": "5K İnterval",
+        "target_pace": "",
+        "duration": "Quick Workout",
+        "badge": "İnterval",
         "protocol_day_code": "monday",
-        "coaching_note": "10 dk ısınma + 4x1.000m @ [[INT_PACE]] (aralarda 3 dk yürüyüş/jog) + 8 dk soğuma; bacakların taze olduğu bir günde uygula.",
+        "coaching_note": "Saatte Quick Workout > İnterval seç; Anaerobik barını doldurur. Bacakların taze olduğu bir günde yap.",
     },
     "tempo": {
         "category": "running",
-        "type": "Tempo Koşusu",
-        "short_label": "Tempo Koşusu",
-        "title_prefix": "Yüksek Aerobik Tempo (30-35 dk)",
+        "type": "Tempo",
+        "short_label": "Tempo",
+        "title_prefix": "Quick Workout · Tempo",
         "target_hr": "[[Z3_HR]]",
-        "target_pace": "[[TEMPO_PACE]]",
-        "duration": "35 dk",
-        "badge": "Yüksek Aerobik",
+        "target_pace": "",
+        "duration": "Quick Workout",
+        "badge": "Tempo",
         "protocol_day_code": "monday",
-        "coaching_note": "10 dk ısınma + 20 dk sabit eşik/tempo + 5 dk soğuma; Yüksek Aerobik barını doldurmak için uygula.",
+        "coaching_note": "Saatte Quick Workout > Tempo seç; Yüksek Aerobik barını doldurur.",
     },
     "gym_a": {
         "category": "strength",
@@ -382,12 +382,12 @@ class WeeklyQuotaMixin:
 
         if len(prev_runs_sorted) < run_target and run_target > 0:
             if len(prev_runs_sorted) == 0 and any(True for _ in prev_gyms_sorted):
-                missed_sessions.extend(["Zone 2 Koşu", "5K Hız İntervali"])
+                missed_sessions.extend(["Zone 2", "İnterval"])
             elif len(prev_runs_sorted) == 1:
                 if prev_had_zone2 and not prev_had_interval:
-                    missed_sessions.append("5K Hız İntervali")
+                    missed_sessions.append("İnterval")
                 elif prev_had_interval and not prev_had_zone2:
-                    missed_sessions.append("Zone 2 Koşu")
+                    missed_sessions.append("Zone 2")
                 else:
                     missed_sessions.append("2. Koşu seansı")
 
@@ -713,7 +713,7 @@ class WeeklyQuotaMixin:
                     titles.append(f"Koşu #{run_c[0]} • {r_cls['label_tr']} — {act_name}{dist_txt}")
                     te_txt = f" • TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']}"
                     if r_cls.get("kind") == "tempo":
-                        exp_lbl = r_cls.get("expected_label", "5K Hız İntervali")
+                        exp_lbl = r_cls.get("expected_label", "İnterval")
                         details.append(
                             f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm{te_txt}) — "
                             f"{r_cls['label_tr']} haftalık koşu kotasına sayıldı (kota 1 düşüldü); {exp_lbl} kalan koşu kotasında korundu"
@@ -775,17 +775,17 @@ class WeeklyQuotaMixin:
             if slot_kind == "tempo":
                 quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
                 return {
-                    "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Yüksek Aerobik Tempo (30-35 dk)",
-                    "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), Yüksek Aerobik barını doldurmak için uygula • 10 dk ısınma + 20 dk tempo",
-                    "target": "Zone 3-4 Eşik/Tempo",
+                    "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Quick Workout · Tempo",
+                    "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), Yüksek Aerobik barını doldurmak için saatte Quick Workout > Tempo seç",
+                    "target": "[[Z3_HR]] (Tempo)",
                     **{k: v for k, v in self.nutrition_texts("tempo").items() if k in ("calories", "macro")},
                 }
             if slot_kind == "zone2":
                 quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
                 return {
-                    "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Zone 2 Rahat Taban (45-50 dk)",
-                    "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), toparlanmana uygun günde uygula • 160+ kadans, burundan nefes",
-                    "target": "[[Z2_HR]] ([[Z2_PACE]])",
+                    "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Quick Workout · Zone 2",
+                    "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), Düşük Aerobik barını doldurmak için saatte Quick Workout > Zone 2 seç",
+                    "target": "[[Z2_HR]] (Zone 2)",
                     **{k: v for k, v in self.nutrition_texts("run").items() if k in ("calories", "macro")},
                 }
             quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
@@ -794,8 +794,8 @@ class WeeklyQuotaMixin:
                 if post_tempo_adapted else ""
             )
             return {
-                "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · 5K Hız İntervali (45 dk, 4x1.000m)",
-                "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), taze bacaklarla uygun günde uygula{extra_tempo_note} • [[INT_PACE]] tempo, 3 dk jog",
+                "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Quick Workout · İnterval",
+                "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), Anaerobik barını doldurmak için taze bacaklarla saatte Quick Workout > İnterval seç{extra_tempo_note}",
                 "target": "[[Z45_HR]] (Zone 4-5)",
                 **{k: v for k, v in self.nutrition_texts("interval").items() if k in ("calories", "macro")},
             }
