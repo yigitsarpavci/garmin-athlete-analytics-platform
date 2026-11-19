@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Sporcu Telemetri &amp; Performans Paneli</title>
-    <script src="/vendor/chart-4.6.1.umd.min.js"></script>
   <script src="/vendor/lucide-1.76.0.umd.min.js"></script>
   <link rel="stylesheet" href="/vendor/fonts.css">
   <link rel="stylesheet" href="/css/theme.css?v=20261119c">
@@ -22,52 +21,70 @@
         <span class="mobile-title" aria-hidden="true">Sporcu Paneli</span>
         <!-- 6 Primary Top-Level Navigation Headings with Dropdown Sub-Menus -->
         <nav aria-label="Ana Navigasyon" class="nav-tablist min-w-0 flex-1">
-          <button type="button" data-calls="[[&quot;closeAllNavDropdowns&quot;], [&quot;setTab&quot;, &quot;overview&quot;]]" id="nav-overview" aria-current="page"
-            class="nav-tab nav-tab-active"><span class="nav-full">Genel Bakış</span><span class="nav-short">Genel</span></button>
+          <button type="button"
+            data-calls="[[&quot;closeAllNavDropdowns&quot;], [&quot;setTab&quot;, &quot;overview&quot;]]"
+            id="nav-overview" aria-current="page" class="nav-tab nav-tab-active"><span class="nav-full">Genel
+              Bakış</span><span class="nav-short">Genel</span></button>
 
-          <button type="button" data-calls="[[&quot;setTab&quot;, &quot;plan&quot;]]" id="nav-plan" class="nav-tab"><span class="nav-full">Antrenman Planı</span><span class="nav-short">Plan</span></button>
+          <button type="button" data-calls="[[&quot;setTab&quot;, &quot;plan&quot;]]" id="nav-plan"
+            class="nav-tab"><span class="nav-full">Antrenman Planı</span><span class="nav-short">Plan</span></button>
 
           <div class="nav-dropdown" data-nav-dropdown="sports">
-            <button type="button" data-calls="[[&quot;toggleNavDropdown&quot;, &quot;sports&quot;, &quot;@event&quot;]]" id="nav-sports" aria-haspopup="true" aria-expanded="false" class="nav-tab">
+            <button type="button" data-calls="[[&quot;toggleNavDropdown&quot;, &quot;sports&quot;, &quot;@event&quot;]]"
+              id="nav-sports" aria-haspopup="true" aria-expanded="false" class="nav-tab">
               <span>Branşlar</span>
               <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
             </button>
             <div class="nav-dropdown-menu" role="menu">
-              <button type="button" data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;run_branch&quot;, &quot;@event&quot;]]" data-subtab-group="sports"
-                data-subtab="run_branch" class="nav-dropdown-item nav-dropdown-item-active">Koşu Branş Özeti</button>
-              <button type="button" data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym_branch&quot;, &quot;@event&quot;]]" data-subtab-group="sports"
-                data-subtab="gym_branch" class="nav-dropdown-item">Kuvvet Branş Özeti</button>
-              <button type="button" data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym&quot;, &quot;@event&quot;]]" data-subtab-group="sports"
-                data-subtab="gym" class="nav-dropdown-item">5x5 Ağırlık Hedefleri</button>
-              <button type="button" data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym_history&quot;, &quot;@event&quot;]]" data-subtab-group="sports"
-                data-subtab="gym_history" class="nav-dropdown-item">Salon Geçmişi</button>
-              <button type="button" data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;prog&quot;, &quot;@event&quot;]]" data-subtab-group="sports"
-                data-subtab="prog" class="nav-dropdown-item">Seviye &amp; İlerleme</button>
-              <button type="button" data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;tiers&quot;, &quot;@event&quot;]]" data-subtab-group="sports"
-                data-subtab="tiers" class="nav-dropdown-item">Referans Tablosu</button>
+              <button type="button"
+                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;run_branch&quot;, &quot;@event&quot;]]"
+                data-subtab-group="sports" data-subtab="run_branch"
+                class="nav-dropdown-item nav-dropdown-item-active">Koşu Branş Özeti</button>
+              <button type="button"
+                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym_branch&quot;, &quot;@event&quot;]]"
+                data-subtab-group="sports" data-subtab="gym_branch" class="nav-dropdown-item">Kuvvet Branş
+                Özeti</button>
+              <button type="button"
+                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym&quot;, &quot;@event&quot;]]"
+                data-subtab-group="sports" data-subtab="gym" class="nav-dropdown-item">5x5 Ağırlık Hedefleri</button>
+              <button type="button"
+                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym_history&quot;, &quot;@event&quot;]]"
+                data-subtab-group="sports" data-subtab="gym_history" class="nav-dropdown-item">Salon Geçmişi</button>
+              <button type="button"
+                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;prog&quot;, &quot;@event&quot;]]"
+                data-subtab-group="sports" data-subtab="prog" class="nav-dropdown-item">Seviye &amp; İlerleme</button>
+              <button type="button"
+                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;tiers&quot;, &quot;@event&quot;]]"
+                data-subtab-group="sports" data-subtab="tiers" class="nav-dropdown-item">Referans Tablosu</button>
             </div>
           </div>
 
-          <button type="button" data-calls="[[&quot;setTab&quot;, &quot;training_load&quot;]]" id="nav-training_load" class="nav-tab">Geçmiş</button>
+          <button type="button" data-calls="[[&quot;setTab&quot;, &quot;training_load&quot;]]" id="nav-training_load"
+            class="nav-tab">Geçmiş</button>
 
           <div class="nav-dropdown" data-nav-dropdown="health">
-            <button type="button" data-calls="[[&quot;toggleNavDropdown&quot;, &quot;health&quot;, &quot;@event&quot;]]" id="nav-health" aria-haspopup="true" aria-expanded="false" class="nav-tab">
+            <button type="button" data-calls="[[&quot;toggleNavDropdown&quot;, &quot;health&quot;, &quot;@event&quot;]]"
+              id="nav-health" aria-haspopup="true" aria-expanded="false" class="nav-tab">
               <span>Analizler</span>
               <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
             </button>
             <div class="nav-dropdown-menu" role="menu">
-              <button type="button" data-calls="[[&quot;selectNavSubTab&quot;, &quot;health&quot;, &quot;sleep&quot;, &quot;@event&quot;]]" data-subtab-group="health"
-                data-subtab="sleep" class="nav-dropdown-item nav-dropdown-item-active">Uyku &amp; Korelasyonlar</button>
-              <button type="button" data-calls="[[&quot;selectNavSubTab&quot;, &quot;health&quot;, &quot;metrics&quot;, &quot;@event&quot;]]" data-subtab-group="health"
-                data-subtab="metrics" class="nav-dropdown-item">93G Ortalamalar</button>
+              <button type="button"
+                data-calls="[[&quot;selectNavSubTab&quot;, &quot;health&quot;, &quot;sleep&quot;, &quot;@event&quot;]]"
+                data-subtab-group="health" data-subtab="sleep" class="nav-dropdown-item nav-dropdown-item-active">Uyku
+                &amp; Korelasyonlar</button>
+              <button type="button"
+                data-calls="[[&quot;selectNavSubTab&quot;, &quot;health&quot;, &quot;metrics&quot;, &quot;@event&quot;]]"
+                data-subtab-group="health" data-subtab="metrics" class="nav-dropdown-item">93G Ortalamalar</button>
             </div>
           </div>
         </nav>
 
         <div class="flex items-center gap-2 shrink-0 py-1">
           <span id="firstScreenDateBadge" class="stamp-tag stamp-accent hidden md:inline-flex">Son Güncelleme: --</span>
-          <button type="button" data-calls="[[&quot;syncGarminData&quot;]]" id="syncBtn" class="header-btn px-2.5 py-1 text-[11px]"
-            style="min-block-size:1.95rem" title="Garmin Connect verilerini şimdi eşitle">
+          <button type="button" data-calls="[[&quot;syncGarminData&quot;]]" id="syncBtn"
+            class="header-btn px-2.5 py-1 text-[11px]" style="min-block-size:1.95rem"
+            title="Garmin Connect verilerini şimdi eşitle">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[var(--text-secondary)]" stroke-width="1.5"
               aria-hidden="true"></i>
             <span class="hidden sm:inline">Eşitle</span>
@@ -84,10 +101,11 @@
 
   <!-- NON-SCROLLABLE SINGLE-SCREEN WORKSPACE CONTAINER -->
   <!-- Durum bandı: veri yok / bağlantı hatası / profil eksik ipuçları -->
-  <div id="statusBanner" class="hidden px-4 sm:px-6 py-2 text-xs border-b border-[var(--border-medium)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)]" role="status" aria-live="polite"></div>
+  <div id="statusBanner"
+    class="hidden px-4 sm:px-6 py-2 text-xs border-b border-[var(--border-medium)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)]"
+    role="status" aria-live="polite"></div>
 
-  <main
-    class="single-screen-main flex-1 min-h-0 w-full px-4 sm:px-6 py-2.5 overflow-hidden flex flex-col">
+  <main class="single-screen-main flex-1 min-h-0 w-full px-4 sm:px-6 py-2.5 overflow-hidden flex flex-col">
 
     <!-- 1. GENEL BAKIŞ (3 ALT SEKME: 12 TEMEL GÖSTERGE / GÜNLÜK DURUM & KOTA / PERFORMANS & TREND) -->
     <div id="section-overview" class="single-screen-section gap-2.5">
@@ -103,84 +121,118 @@
               <!-- HRV -->
               <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
                 <div class="flex items-center justify-between gap-1.5 min-w-0">
-                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">HRV · Günlük</span>
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">HRV
+                    · Günlük</span>
                 </div>
-                <p id="fs-hrv-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">-- ms</p>
+                <p id="fs-hrv-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">
+                  -- ms</p>
                 <div id="fs-hrv-bar"></div>
-                <p id="fs-hrv-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · RHR (Günlük): --</p>
+                <p id="fs-hrv-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">
+                  7G Ort: -- · RHR (Günlük): --</p>
               </div>
 
               <!-- VO2 Max -->
               <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
                 <div class="flex items-center justify-between gap-1.5 min-w-0">
-                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">VO2 Max · Günlük</span>
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">VO2
+                    Max · Günlük</span>
                 </div>
-                <p id="fs-vo2-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
+                <p id="fs-vo2-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">
+                  --</p>
                 <div id="fs-vo2-bar"></div>
-                <p id="fs-vo2-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">Trend: --</p>
+                <p id="fs-vo2-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">
+                  Trend: --</p>
               </div>
 
               <!-- Günlük Adım -->
               <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
                 <div class="flex items-center justify-between gap-1.5 min-w-0">
-                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Adım · Günlük</span>
+                  <span
+                    class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Adım ·
+                    Günlük</span>
                 </div>
-                <p id="fs-steps-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
+                <p id="fs-steps-val"
+                  class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
                 <div id="fs-steps-bar"></div>
-                <p id="fs-steps-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- · Hedef: --</p>
+                <p id="fs-steps-sub"
+                  class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- ·
+                  Hedef: --</p>
               </div>
 
               <!-- Acute Load -->
               <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
                 <div class="flex items-center justify-between gap-1.5 min-w-0">
-                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Acute Load · 7G</span>
+                  <span
+                    class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Acute
+                    Load · 7G</span>
                 </div>
-                <p id="fs-acuteload-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
+                <p id="fs-acuteload-val"
+                  class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
                 <div id="fs-acuteload-bar"></div>
-                <p id="fs-acuteload-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">Kronik (28G): -- · Tünel: --</p>
+                <p id="fs-acuteload-sub"
+                  class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">Kronik (28G): -- ·
+                  Tünel: --</p>
               </div>
 
               <!-- Load Focus -->
-              <div class="col-span-2 bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
+              <div
+                class="col-span-2 bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
                 <div class="flex items-center justify-between gap-1.5 min-w-0">
-                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Load Focus · 28G</span>
+                  <span
+                    class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Load
+                    Focus · 28G</span>
                 </div>
                 <p id="fs-loadfocus-val" class="font-mono text-xs sm:text-sm font-bold tracking-tight truncate">--</p>
                 <div id="fs-loadfocus-bar"></div>
-                <p id="fs-loadfocus-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">Düşük -- · Yüksek -- · Anaer --</p>
+                <p id="fs-loadfocus-sub"
+                  class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">Düşük -- · Yüksek
+                  -- · Anaer --</p>
               </div>
             </div>
 
             <!-- Sağ 1x3: Uyku Özeti (3 Satır Yüksekliğinde Tek Balon) -->
-            <div class="lg:col-span-1 bg-[var(--bg-surface)] flex flex-col justify-between divide-y divide-[var(--border-subtle)] min-w-0">
+            <div
+              class="lg:col-span-1 bg-[var(--bg-surface)] flex flex-col justify-between divide-y divide-[var(--border-subtle)] min-w-0">
               <!-- Sleep Score -->
               <div class="flex-1 p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
                 <div class="flex items-center justify-between gap-1.5 min-w-0">
-                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Sleep Score · Günlük</span>
+                  <span
+                    class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Sleep
+                    Score · Günlük</span>
                 </div>
-                <p id="fs-sleepscore-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
+                <p id="fs-sleepscore-val"
+                  class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
                 <div id="fs-sleepscore-bar"></div>
-                <p id="fs-sleepscore-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: --</p>
+                <p id="fs-sleepscore-sub"
+                  class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: --</p>
               </div>
 
               <!-- Sleep Süre -->
               <div class="flex-1 p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
                 <div class="flex items-center justify-between gap-1.5 min-w-0">
-                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Uyku Süresi · Günlük</span>
+                  <span
+                    class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Uyku
+                    Süresi · Günlük</span>
                 </div>
-                <p id="fs-sleephours-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--s --dk</p>
+                <p id="fs-sleephours-val"
+                  class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--s --dk</p>
                 <div id="fs-sleephours-bar"></div>
-                <p id="fs-sleephours-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · 93G Ort: --</p>
+                <p id="fs-sleephours-sub"
+                  class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · 93G
+                  Ort: --</p>
               </div>
 
               <!-- REM Oranı -->
               <div class="flex-1 p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
                 <div class="flex items-center justify-between gap-1.5 min-w-0">
-                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">REM Oranı · Günlük</span>
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">REM
+                    Oranı · Günlük</span>
                 </div>
-                <p id="fs-rem-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">%--</p>
+                <p id="fs-rem-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">
+                  %--</p>
                 <div id="fs-rem-bar"></div>
-                <p id="fs-rem-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">7G REM: %-- · Derin (Günlük): %--</p>
+                <p id="fs-rem-sub" class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug break-words">
+                  7G REM: %-- · Derin (Günlük): %--</p>
               </div>
             </div>
           </div>
@@ -191,7 +243,8 @@
           <div class="lg:col-span-7 space-y-1.5">
             <div class="flex items-center justify-between">
               <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)]">Bu Hafta</span>
-              <span id="weeklyStreakBadge" class="font-mono text-[11px] font-semibold accent-text tabular-nums">-- Seans</span>
+              <span id="weeklyStreakBadge" class="font-mono text-[11px] font-semibold accent-text tabular-nums">--
+                Seans</span>
             </div>
             <div id="weeklyStreakStrip" class="grid grid-cols-7 gap-1.5 text-center">
               <!-- Populated cleanly via JS -->
@@ -199,14 +252,14 @@
           </div>
 
           <div id="decisionCard" class="lg:col-span-5 lg:border-l lg:border-[var(--border-subtle)] lg:pl-3">
-            <div
-              data-calls="[[&quot;openLatestActivityOrDebrief&quot;]]"
+            <div data-calls="[[&quot;openLatestActivityOrDebrief&quot;]]"
               class="cursor-pointer group tint-panel p-2.5 hover:border-[var(--border-hover)] transition">
               <div class="flex items-center justify-between font-mono text-[11px] mb-1">
                 <span class="text-[var(--text-secondary)] uppercase tracking-wider">Son Antrenman</span>
                 <div class="flex items-center gap-2.5">
                   <button type="button" data-calls="[[&quot;openDebriefModal&quot;, 0]]"
-                    class="accent-text hover:underline font-semibold inline-flex items-center gap-1">Son Seans Özeti</button>
+                    class="accent-text hover:underline font-semibold inline-flex items-center gap-1">Son Seans
+                    Özeti</button>
                   <span
                     class="text-[var(--text-secondary)] group-hover:text-[var(--accent)] font-semibold inline-flex items-center gap-1 transition">Detay
                     <i data-lucide="arrow-up-right" class="w-3 h-3" stroke-width="1.5" aria-hidden="true"></i></span>
@@ -225,14 +278,20 @@
           class="surface-ledger mt-2.5 overflow-hidden grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
           <!-- Antrenman Durumu -->
           <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
-            <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)]">Antrenman Durumu</span>
-            <span id="inFocusTrainingStatus" class="font-editorial text-base font-medium moss-text tracking-tight block truncate">Form Korunuyor (Maintaining)</span>
-            <p id="inFocusStatusSub" class="font-mono text-[11px] text-[var(--text-secondary)] truncate">Kondisyon: <span class="moss-text font-medium">Pozitif Trend</span></p>
+            <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)]">Antrenman
+              Durumu</span>
+            <span id="inFocusTrainingStatus"
+              class="font-editorial text-base font-medium moss-text tracking-tight block truncate">Form Korunuyor
+              (Maintaining)</span>
+            <p id="inFocusStatusSub" class="font-mono text-[11px] text-[var(--text-secondary)] truncate">Kondisyon:
+              <span class="moss-text font-medium">Pozitif Trend</span>
+            </p>
           </div>
 
           <!-- Mevcut Kilo & DSÖ -->
           <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
-            <p class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Mevcut Kilo &amp; DSÖ</p>
+            <p class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Mevcut Kilo
+              &amp; DSÖ</p>
             <div class="flex items-baseline gap-1.5">
               <span class="font-mono text-base font-bold tabular-nums" id="kpi-weight">-- kg</span>
               <span id="kpi-weight-badge" class="stamp-tag stamp-moss tabular-nums">--</span>
@@ -245,10 +304,12 @@
 
           <!-- 5K Derece -->
           <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
-            <p class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">5K Derece</p>
+            <p class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">5K Derece
+            </p>
             <div class="flex items-baseline gap-1.5">
               <span class="font-mono text-base font-bold tabular-nums" id="kpi-5k">--:--</span>
-              <span id="kpi-5k-pace" class="font-mono text-[11px] text-[var(--text-secondary)] tabular-nums">(-- /km)</span>
+              <span id="kpi-5k-pace" class="font-mono text-[11px] text-[var(--text-secondary)] tabular-nums">(--
+                /km)</span>
             </div>
             <div class="w-full bg-[var(--bg-surface-elevated)] h-1">
               <div id="kpi-5k-bar" class="bg-[var(--accent)] h-1" style="width: 72%"></div>
@@ -384,88 +445,89 @@
     <!-- 4. YÜK & AKTİVİTELER (BİRLEŞİK: YÜK & ACWR ODAĞI + AKTİVİTE GEÇMİŞİ) -->
     <div id="section-training_load" class="single-screen-section gap-3 overflow-y-auto custom-scrollbar pr-0.5 hidden">
       <section id="activitiesCard" class="surface-card p-3.5 sm:p-4 space-y-2.5 flex flex-col shrink-0">
-          <div
-            class="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--border-subtle)] pb-2 shrink-0">
-            <div>
-              <h3 id="activitiesSectionTitle" class="font-editorial text-base sm:text-lg font-medium tracking-tight">
-                Aktivite Geçmişi</h3>
-            </div>
-            <div class="relative w-full sm:w-64">
-              <input type="text" id="actSearchInput" data-input-call="searchActivities"
-                placeholder="Aktivite adı, tarih veya branş ara..."
-                class="w-full text-xs bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] pl-7 pr-3 py-1.5 placeholder-[var(--text-muted)]">
-              <i data-lucide="search" class="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2 top-2"
-                stroke-width="1.5" aria-hidden="true"></i>
-            </div>
+        <div
+          class="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--border-subtle)] pb-2 shrink-0">
+          <div>
+            <h3 id="activitiesSectionTitle" class="font-editorial text-base sm:text-lg font-medium tracking-tight">
+              Aktivite Geçmişi</h3>
           </div>
+          <div class="relative w-full sm:w-64">
+            <input type="text" id="actSearchInput" data-input-call="searchActivities"
+              placeholder="Aktivite adı, tarih veya branş ara..."
+              class="w-full text-xs bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] pl-7 pr-3 py-1.5 placeholder-[var(--text-muted)]">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2 top-2"
+              stroke-width="1.5" aria-hidden="true"></i>
+          </div>
+        </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 px-3 py-2 tint-panel text-xs shrink-0">
-            <div>
-              <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Seans</span>
-              <strong id="actSumCount" class="font-mono font-bold text-xs tabular-nums">49 Seans</strong>
-            </div>
-            <div>
-              <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Süre</span>
-              <strong id="actSumDur" class="font-mono accent-text font-bold text-xs tabular-nums">73.5 Saat</strong>
-            </div>
-            <div>
-              <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Koşu</span>
-              <strong id="actSumDist" class="font-mono moss-text font-bold text-xs tabular-nums">174.8 km</strong>
-            </div>
-            <div>
-              <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Toplam Yük</span>
-              <strong id="actSumLoad" class="font-mono font-bold text-xs tabular-nums">3.140</strong>
-            </div>
-            <div>
-              <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Kalori</span>
-              <strong id="actSumCal" class="font-mono font-bold text-xs tabular-nums">42.500 kcal</strong>
-            </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 px-3 py-2 tint-panel text-xs shrink-0">
+          <div>
+            <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Seans</span>
+            <strong id="actSumCount" class="font-mono font-bold text-xs tabular-nums">49 Seans</strong>
           </div>
+          <div>
+            <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Süre</span>
+            <strong id="actSumDur" class="font-mono accent-text font-bold text-xs tabular-nums">73.5 Saat</strong>
+          </div>
+          <div>
+            <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Koşu</span>
+            <strong id="actSumDist" class="font-mono moss-text font-bold text-xs tabular-nums">174.8 km</strong>
+          </div>
+          <div>
+            <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Toplam Yük</span>
+            <strong id="actSumLoad" class="font-mono font-bold text-xs tabular-nums">3.140</strong>
+          </div>
+          <div>
+            <span class="font-mono text-[11px] text-[var(--text-secondary)] block uppercase">Kalori</span>
+            <strong id="actSumCal" class="font-mono font-bold text-xs tabular-nums">42.500 kcal</strong>
+          </div>
+        </div>
 
-          <div id="activityFilterBar" class="flex flex-wrap items-center gap-1 text-xs shrink-0">
-            <button type="button" data-calls="[[&quot;filterActivities&quot;, &quot;all&quot;]]" id="af-all"
-              class="btn-primary text-[11px] px-2.5 py-1">Tümü</button>
-          </div>
+        <div id="activityFilterBar" class="flex flex-wrap items-center gap-1 text-xs shrink-0">
+          <button type="button" data-calls="[[&quot;filterActivities&quot;, &quot;all&quot;]]" id="af-all"
+            class="btn-primary text-[11px] px-2.5 py-1">Tümü</button>
+        </div>
 
-          <div tabindex="0" role="region" aria-label="Aktivite telemetri tablosu"
-            class="table-scroll-region max-h-[calc(100vh-15rem)] overflow-y-auto">
-            <table class="w-full text-left text-[12px]">
-              <thead>
-                <tr>
-                  <th class="py-1.5 px-2.5">Tarih</th>
-                  <th class="py-1.5 px-2.5">Branş</th>
-                  <th class="py-1.5 px-2.5">Aktivite Adı</th>
-                  <th class="py-1.5 px-2.5">Süre</th>
-                  <th class="py-1.5 px-2.5">Mesafe</th>
-                  <th class="py-1.5 px-2.5">Tempo</th>
-                  <th class="py-1.5 px-2.5">Ort/Maks HR</th>
-                  <th class="py-1.5 px-2.5">Güç</th>
-                  <th class="py-1.5 px-2.5">Kadans</th>
-                  <th class="py-1.5 px-2.5">Yük</th>
-                  <th class="py-1.5 px-2.5">TE (A/An)</th>
-                  <th class="py-1.5 px-2.5">Kalori (Ter)</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="activitiesTableBody"></tbody>
-            </table>
-          </div>
+        <div tabindex="0" role="region" aria-label="Aktivite telemetri tablosu"
+          class="table-scroll-region max-h-[calc(100vh-15rem)] overflow-y-auto">
+          <table class="w-full text-left text-[12px]">
+            <thead>
+              <tr>
+                <th class="py-1.5 px-2.5">Tarih</th>
+                <th class="py-1.5 px-2.5">Branş</th>
+                <th class="py-1.5 px-2.5">Aktivite Adı</th>
+                <th class="py-1.5 px-2.5">Süre</th>
+                <th class="py-1.5 px-2.5">Mesafe</th>
+                <th class="py-1.5 px-2.5">Tempo</th>
+                <th class="py-1.5 px-2.5">Ort/Maks HR</th>
+                <th class="py-1.5 px-2.5">Güç</th>
+                <th class="py-1.5 px-2.5">Kadans</th>
+                <th class="py-1.5 px-2.5">Yük</th>
+                <th class="py-1.5 px-2.5">TE (A/An)</th>
+                <th class="py-1.5 px-2.5">Kalori (Ter)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border-subtle)]" id="activitiesTableBody"></tbody>
+          </table>
+        </div>
 
-          <div id="activitiesPaginationBar"
-            class="flex items-center justify-between gap-2 pt-1 shrink-0 font-mono text-[11px]">
-            <span id="activitiesPageInfo" class="text-[var(--text-secondary)]">Sayfa 1 / 1</span>
-            <div class="flex items-center gap-1.5">
-              <button type="button" data-calls="[[&quot;changeActivityPage&quot;, -1]]" id="actPrevBtn"
-                class="btn-secondary text-[11px] px-2.5 py-1" style="min-block-size:1.75rem">Önceki</button>
-              <button type="button" data-calls="[[&quot;changeActivityPage&quot;, 1]]" id="actNextBtn"
-                class="btn-secondary text-[11px] px-2.5 py-1" style="min-block-size:1.75rem">Sonraki</button>
-            </div>
+        <div id="activitiesPaginationBar"
+          class="flex items-center justify-between gap-2 pt-1 shrink-0 font-mono text-[11px]">
+          <span id="activitiesPageInfo" class="text-[var(--text-secondary)]">Sayfa 1 / 1</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" data-calls="[[&quot;changeActivityPage&quot;, -1]]" id="actPrevBtn"
+              class="btn-secondary text-[11px] px-2.5 py-1" style="min-block-size:1.75rem">Önceki</button>
+            <button type="button" data-calls="[[&quot;changeActivityPage&quot;, 1]]" id="actNextBtn"
+              class="btn-secondary text-[11px] px-2.5 py-1" style="min-block-size:1.75rem">Sonraki</button>
           </div>
-        </section>
+        </div>
+      </section>
     </div>
 
     <!-- 5. SAĞLIK & UYKU (2 ALT SEKME: UYKU, YATIŞ SAATİ & KORELASYONLAR / 93G BİYOMETRİK ORTALAMALAR) -->
     <div id="section-health" class="single-screen-section gap-2.5 hidden">
-      <div data-subpane-group="health" data-subpane="sleep" class="single-screen-pane gap-3 overflow-y-auto custom-scrollbar pr-0.5">
+      <div data-subpane-group="health" data-subpane="sleep"
+        class="single-screen-pane gap-3 overflow-y-auto custom-scrollbar pr-0.5">
         <section id="correlationsCard" class="surface-card p-4 sm:p-5 space-y-2.5 flex flex-col shrink-0">
           <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight shrink-0">Korelasyonlar</h3>
           <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi"
@@ -528,7 +590,8 @@
           <p id="modalActivitySub" class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5">--</p>
         </div>
       </div>
-      <button type="button" data-calls="[[&quot;closeActivityModal&quot;]]" autofocus class="btn-secondary p-1.5" aria-label="Kapat">
+      <button type="button" data-calls="[[&quot;closeActivityModal&quot;]]" autofocus class="btn-secondary p-1.5"
+        aria-label="Kapat">
         <i data-lucide="x" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
       </button>
     </div>
@@ -613,7 +676,8 @@
             stroke-width="1.5" aria-hidden="true"></i></div>
         <div class="min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
-            <h3 id="debriefTitle" class="font-editorial text-lg font-medium tracking-tight truncate">Antrenman Özeti</h3>
+            <h3 id="debriefTitle" class="font-editorial text-lg font-medium tracking-tight truncate">Antrenman Özeti
+            </h3>
             <span id="debriefBadge" class="stamp-tag stamp-moss shrink-0">Kuvvet #1</span>
           </div>
           <p id="debriefSub" class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5 truncate">--</p>
@@ -622,7 +686,8 @@
 
       <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
         <div id="debriefSwitchBar" class="subtab-bar text-xs flex-nowrap whitespace-nowrap"></div>
-        <button type="button" data-calls="[[&quot;closeDebriefModal&quot;]]" autofocus class="btn-secondary p-1.5" aria-label="Kapat">
+        <button type="button" data-calls="[[&quot;closeDebriefModal&quot;]]" autofocus class="btn-secondary p-1.5"
+          aria-label="Kapat">
           <i data-lucide="x" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
         </button>
       </div>
@@ -798,25 +863,30 @@
         class="coach-chip btn-secondary text-[11px] px-2.5 py-1">Bugün ne yapmalıyım?</button>
       <button type="button" data-calls="[[&quot;askCoachPrompt&quot;, &quot;Hedef kilomuza kaç günde ulaşırım?&quot;]]"
         class="coach-chip btn-secondary text-[11px] px-2.5 py-1">Hedef kiloya kaç gün?</button>
-      <button type="button" data-calls="[[&quot;askCoachPrompt&quot;, &quot;Koşu ve ağırlık sıralaması nasıl olmalı?&quot;]]"
+      <button type="button"
+        data-calls="[[&quot;askCoachPrompt&quot;, &quot;Koşu ve ağırlık sıralaması nasıl olmalı?&quot;]]"
         class="coach-chip btn-secondary text-[11px] px-2.5 py-1">Koşu vs Ağırlık sırası</button>
-      <button type="button" data-calls="[[&quot;askCoachPrompt&quot;, &quot;Günde kaç kalori almalıyım ve ne kadar protein tüketmeliyim?&quot;]]"
+      <button type="button"
+        data-calls="[[&quot;askCoachPrompt&quot;, &quot;Günde kaç kalori almalıyım ve ne kadar protein tüketmeliyim?&quot;]]"
         class="coach-chip btn-secondary text-[11px] px-2.5 py-1">Beslenme &amp; Kalori</button>
-      <button type="button" data-calls="[[&quot;askCoachPrompt&quot;, &quot;5K derecemi hedefime nasıl düşürürüm?&quot;]]"
+      <button type="button"
+        data-calls="[[&quot;askCoachPrompt&quot;, &quot;5K derecemi hedefime nasıl düşürürüm?&quot;]]"
         class="coach-chip btn-secondary text-[11px] px-2.5 py-1">5K Hedef Rehberi</button>
-      <button type="button" data-calls="[[&quot;askCoachPrompt&quot;, &quot;Garmin saatimde hangi ayarları düzeltmeliyim?&quot;]]"
+      <button type="button"
+        data-calls="[[&quot;askCoachPrompt&quot;, &quot;Garmin saatimde hangi ayarları düzeltmeliyim?&quot;]]"
         class="coach-chip btn-secondary text-[11px] px-2.5 py-1">Saat ayarları</button>
-      <button type="button" data-calls="[[&quot;askCoachPrompt&quot;, &quot;Uzun antrenmanlarda ne kadar su ve tuz almalıyım?&quot;]]"
+      <button type="button"
+        data-calls="[[&quot;askCoachPrompt&quot;, &quot;Uzun antrenmanlarda ne kadar su ve tuz almalıyım?&quot;]]"
         class="coach-chip btn-secondary text-[11px] px-2.5 py-1">Hidrasyon planı</button>
     </div>
 
     <!-- Chat Input -->
     <div
       class="p-3 bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] flex items-center gap-2 flex-shrink-0">
-      <input type="text" id="chatInputBox" placeholder="Koçunuza bir soru sorun..."
-        data-enter-call="sendCoachMessage"
+      <input type="text" id="chatInputBox" placeholder="Koçunuza bir soru sorun..." data-enter-call="sendCoachMessage"
         class="flex-1 min-w-0 text-xs border border-[var(--border-medium)] rounded-[3px] px-3.5 py-2 bg-[var(--bg-base)] placeholder-[var(--text-muted)]">
-      <button type="button" data-calls="[[&quot;sendCoachMessage&quot;]]" class="btn-primary p-2.5 shrink-0" aria-label="Gönder">
+      <button type="button" data-calls="[[&quot;sendCoachMessage&quot;]]" class="btn-primary p-2.5 shrink-0"
+        aria-label="Gönder">
         <i data-lucide="send-horizontal" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
       </button>
     </div>
@@ -826,7 +896,6 @@
   <script src="/js/quota_schedule.js?v=20261119c"></script>
   <script src="/js/dashboard.js?v=20261119c"></script>
   <script src="/js/health_analytics.js?v=20261119c"></script>
-  <script src="/js/charts.js?v=20261119c"></script>
   <script src="/js/modals.js?v=20261119c"></script>
 </body>
 

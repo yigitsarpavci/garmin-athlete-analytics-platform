@@ -7,11 +7,15 @@ ve activity-service/.../details zaman serilerini saniye bazlı kayıt listelerin
 Kuruluysa isteğe bağlı olarak `fitparse` kütüphanesini de destekler.
 """
 
+import logging
 import json
 import os
 import struct
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
+
 
 FIT_EPOCH_OFFSET = 631065600  # 1989-12-31T00:00:00Z Unix epoch farkı
 
@@ -514,6 +518,7 @@ def _build_records_from_activity_summary(act: Dict[str, Any]) -> List[Dict[str, 
         dt_start = datetime.strptime(start_gmt[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
         t0 = int(dt_start.timestamp())
     except Exception:
+        logger.debug("_build_records_from_activity_summary: yedek davranış uygulandı", exc_info=True)
         t0 = 1794900915
 
     dur_s = max(60, int(round(float(act.get("duration") or 1800))))
@@ -561,6 +566,29 @@ def _build_records_from_activity_summary(act: Dict[str, Any]) -> List[Dict[str, 
     return records
 
 
+def _write_json_if_changed(path: str, doc: Dict[str, Any], ignore_keys: Tuple[str, ...] = ("updated_at",)) -> bool:
+    """
+    JSON'u yalnızca içeriği (ignore_keys hariç) diskteki dosyadan farklıysa yazar. Böylece her `load_data()` çağrısında
+    7 MB'lık akış dosyaları gereksiz yere yeniden yazılmaz (disk aşınması, iCloud/Spotlight tetiklenmesi).
+    Yazarsa True döner; yazma atomiktir (geçici dosya + os.replace).
+    """
+    def _strip(d: Any) -> Any:
+        return {k: v for k, v in d.items() if k not in ignore_keys} if isinstance(d, dict) else d
+
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                if _strip(json.load(f)) == _strip(doc):
+                    return False
+        except (OSError, ValueError):
+            logger.debug("_write_json_if_changed: mevcut dosya okunamadı, yeniden yazılacak", exc_info=True)
+    tmp = f"{path}.{os.getpid()}.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
+    return True
+
+
 def _ensure_persisted_artifacts(data_dir: str) -> None:
     """
     `persist_real_fit=True` modunda `data/` dizinindeki 4 yüksek çözünürlüklü çıktı dosyasını
@@ -578,8 +606,15 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
             with open(acts_path, encoding="utf-8") as f:
                 acts = json.load(f) or []
         except Exception:
+            logger.debug("_ensure_persisted_artifacts: yedek davranış uygulandı", exc_info=True)
             acts = []
 
+    _persist_streams_artifact(acts, archive_dir, data_dir, fit_dir)
+    sleep_data = _persist_hrv_artifact(data_dir)
+    _persist_respiration_artifact(data_dir, sleep_data)
+
+def _persist_streams_artifact(acts, archive_dir, data_dir, fit_dir):
+    """Aktivite arşivlerinden ve özetlerinden yüksek çözünürlüklü akış belgesini (raw_high_res_streams.json) tamamlayıp diske yazar."""
     streams_path = os.path.join(data_dir, "raw_high_res_streams.json")
     streams_doc: Dict[str, Any] = {"activities": {}}
     if os.path.exists(streams_path):
@@ -589,6 +624,7 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
                 if isinstance(loaded, dict):
                     streams_doc = loaded
         except Exception:
+            logger.debug("_ensure_persisted_artifacts: yedek davranış uygulandı", exc_info=True)
             streams_doc = {"activities": {}}
     if not isinstance(streams_doc.get("activities"), dict):
         streams_doc["activities"] = {}
@@ -621,6 +657,7 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
                         "splits": splits_json,
                     }
             except Exception:
+                logger.debug("_ensure_persisted_artifacts: yedek davranış uygulandı", exc_info=True)
                 continue
 
     # 2. Son koşu ve kuvvet seanslarının .fit ve stream kayıtlarını tamamla
@@ -643,7 +680,7 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
                 with open(fit_target, "wb") as out_f:
                     out_f.write(encode_records_to_fit_bytes(recs))
             except Exception:
-                pass
+                logger.debug("_ensure_persisted_artifacts: yedek davranış uygulandı", exc_info=True)
         if aid not in streams_doc["activities"]:
             streams_doc["activities"][aid] = {
                 "activityId": int(aid) if aid.isdigit() else aid,
@@ -657,9 +694,11 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
                 "hrTimeInZones": [a.get(f"hrTimeInZone_{i}") or 0 for i in range(1, 6)],
             }
     streams_doc["updated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    with open(streams_path, "w", encoding="utf-8") as f:
-        json.dump(streams_doc, f, ensure_ascii=False, indent=2)
+    _write_json_if_changed(streams_path, streams_doc)
 
+
+def _persist_hrv_artifact(data_dir):
+    """Eksik 5 dakikalık gece HRV kanalını uyku istatistiklerinden üretip diske yazar."""
     # 3. raw_hrv_5min.json (son 14 gecelik kayıtlar; canlı hrvReadings varsa korunur)
     hrv_path = os.path.join(data_dir, "raw_hrv_5min.json")
     hrv_doc: Dict[str, Any] = {}
@@ -668,6 +707,7 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
             with open(hrv_path, encoding="utf-8") as f:
                 hrv_doc = json.load(f) or {}
         except Exception:
+            logger.debug("_ensure_persisted_artifacts: yedek davranış uygulandı", exc_info=True)
             hrv_doc = {}
     sleep_path = os.path.join(data_dir, "raw_sleep_stats.json")
     sleep_data: Dict[str, Any] = {}
@@ -676,6 +716,7 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
             with open(sleep_path, encoding="utf-8") as f:
                 sleep_data = json.load(f) or {}
         except Exception:
+            logger.debug("_ensure_persisted_artifacts: yedek davranış uygulandı", exc_info=True)
             sleep_data = {}
     for dt in sorted(k for k, v in sleep_data.items() if isinstance(v, dict) and v.get("avgOvernightHrv") is not None)[-14:]:
         if dt not in hrv_doc or not isinstance(hrv_doc.get(dt), dict):
@@ -692,9 +733,12 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
                 "localSleepStartTimeInMillis": sl.get("localSleepStartTimeInMillis"),
                 "localSleepEndTimeInMillis": sl.get("localSleepEndTimeInMillis"),
             }
-    with open(hrv_path, "w", encoding="utf-8") as f:
-        json.dump(hrv_doc, f, ensure_ascii=False, indent=2)
+    _write_json_if_changed(hrv_path, hrv_doc)
+    return sleep_data
 
+
+def _persist_respiration_artifact(data_dir, sleep_data):
+    """Eksik günlük solunum (respiration) kanalını günlük özetlerden sentetik olarak üretip diske yazar."""
     # 4. raw_respiration_daily.json (son 14 gün günlük + uyku solunumu & cilt ısısı & SpO2)
     resp_path = os.path.join(data_dir, "raw_respiration_daily.json")
     resp_doc: Dict[str, Any] = {}
@@ -703,6 +747,7 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
             with open(resp_path, encoding="utf-8") as f:
                 resp_doc = json.load(f) or {}
         except Exception:
+            logger.debug("_ensure_persisted_artifacts: yedek davranış uygulandı", exc_info=True)
             resp_doc = {}
     daily_path = os.path.join(data_dir, "raw_daily_93d.json")
     summaries: Dict[str, Any] = {}
@@ -711,6 +756,7 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
             with open(daily_path, encoding="utf-8") as f:
                 summaries = (json.load(f) or {}).get("summaries") or {}
         except Exception:
+            logger.debug("_ensure_persisted_artifacts: yedek davranış uygulandı", exc_info=True)
             summaries = {}
     for dt in sorted(summaries.keys())[-14:]:
         s = summaries.get(dt)
@@ -729,8 +775,8 @@ def _ensure_persisted_artifacts(data_dir: str) -> None:
                 "lowestSpo2": s.get("lowestSpo2"),
                 "skinTempC": sl.get("skinTempC"),
             }
-    with open(resp_path, "w", encoding="utf-8") as f:
-        json.dump(resp_doc, f, ensure_ascii=False, indent=2)
+    _write_json_if_changed(resp_path, resp_doc)
+
 
 
 def load_and_parse_high_res_streams(data_dir: str, persist_real_fit: bool = False) -> Dict[str, Any]:
@@ -768,6 +814,7 @@ def load_and_parse_high_res_streams(data_dir: str, persist_real_fit: bool = Fals
                         decoded["byte_size"] = len(fit_bytes)
                         parsed_fits[aid] = decoded
                 except Exception:
+                    logger.debug("load_and_parse_high_res_streams: yedek davranış uygulandı", exc_info=True)
                     continue
 
     # 2. Diskte bulunan tüm .fit ikili dosyalarını ayrıştır (download-fit ile gelenler önceliklidir)
@@ -784,6 +831,7 @@ def load_and_parse_high_res_streams(data_dir: str, persist_real_fit: bool = Fals
                     decoded["source"] = "garmin_download_fit"
                 parsed_fits[aid] = decoded
             except Exception:
+                logger.debug("load_and_parse_high_res_streams: yedek davranış uygulandı", exc_info=True)
                 continue
 
     # 3. raw_high_res_streams.json (canlı details & splits önbelleği)
@@ -794,6 +842,7 @@ def load_and_parse_high_res_streams(data_dir: str, persist_real_fit: bool = Fals
             with open(streams_path, encoding="utf-8") as f:
                 raw_streams = json.load(f) or {}
         except Exception:
+            logger.debug("load_and_parse_high_res_streams: yedek davranış uygulandı", exc_info=True)
             raw_streams = {}
 
     for aid, entry in (raw_streams.get("activities") or {}).items():
@@ -822,6 +871,7 @@ def load_and_parse_high_res_streams(data_dir: str, persist_real_fit: bool = Fals
             with open(hrv_5min_path, encoding="utf-8") as f:
                 hrv_5min_raw = json.load(f) or {}
         except Exception:
+            logger.debug("load_and_parse_high_res_streams: yedek davranış uygulandı", exc_info=True)
             hrv_5min_raw = {}
 
     # 5. raw_respiration_daily.json (canlı solunum serileri)
@@ -832,6 +882,7 @@ def load_and_parse_high_res_streams(data_dir: str, persist_real_fit: bool = Fals
             with open(resp_path, encoding="utf-8") as f:
                 resp_daily_raw = json.load(f) or {}
         except Exception:
+            logger.debug("load_and_parse_high_res_streams: yedek davranış uygulandı", exc_info=True)
             resp_daily_raw = {}
 
     return {

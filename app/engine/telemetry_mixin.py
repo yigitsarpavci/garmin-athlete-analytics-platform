@@ -4,16 +4,46 @@
 Temel Biyometrik Özetler, 93 Günlük Dinamik İstatistik Tablosu ve Firstbeat Yük Odak Analizi Mixin'i.
 """
 
+import logging
 import math
+import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import numpy as np
 import pandas as pd
 
 try:
-    from engine.helpers import format_sport_tr, fmt_pace_sec, classify_sport_bucket
+    from engine.helpers import request_cached, zone_text, format_sport_tr, classify_sport_bucket
 except ImportError:
-    from app.engine.helpers import format_sport_tr, fmt_pace_sec, classify_sport_bucket
+    from app.engine.helpers import request_cached, zone_text, format_sport_tr, classify_sport_bucket
+
+
+logger = logging.getLogger(__name__)
+
+
+_STATUS_BASE_TR = {
+    "MAINTAINING": "Form Korunuyor (Maintaining)",
+    "PRODUCTIVE": "Üretken (Productive)",
+    "UNPRODUCTIVE": "Verimsiz (Unproductive)",
+    "RECOVERY": "Toparlanma (Recovery)",
+    "DETRAINING": "Kondisyon Kaybı (Detraining)",
+    "OVERREACHING": "Aşırı Yüklenme (Overreaching)",
+    "PEAKING": "Zirve Formu (Peaking)",
+    "NO_STATUS": "Durum Yok",
+}
+
+
+class _StatusLabels(dict):
+    """Garmin antrenman durumu kodlarını (PRODUCTIVE_6, MAINTAINING_3 ...) Türkçe etikete çevirir; sonek rakamı yok sayılır."""
+
+    def get(self, code, default=None):
+        raw = str(code or "")
+        base = re.sub(r"_\d+$", "", raw.upper())
+        if base in _STATUS_BASE_TR:
+            return _STATUS_BASE_TR[base]
+        if default and default != raw:
+            return default
+        return raw.replace("_", " ").title() if raw else "--"
 
 
 class TelemetryMixin:
@@ -91,18 +121,176 @@ class TelemetryMixin:
             })
         return rows
 
+    @staticmethod
+    def _num(val, default=0.0):
+        """None/NaN güvenli float dönüşümü."""
+        return float(val) if val is not None and pd.notnull(val) else float(default)
+
+    def _tail_stat(self, col, op="mean", n=7, default=0.0):
+        """Sütunun son n gününün ortalaması (veya toplamı); sütun/veri yoksa varsayılan."""
+        if col not in self.df.columns:
+            return float(default)
+        ser = pd.to_numeric(self.df[col], errors="coerce").dropna().tail(n)
+        if ser.empty:
+            return float(default)
+        return float(ser.sum() if op == "sum" else ser.mean())
+
+    def _snapshot_freshness(self, latest_date: str) -> Dict[str, Any]:
+        """
+        Günün Garmin özetinin ne zamana ait olduğunu (wellnessEndTimeLocal) ve yaşını döner. Garmin Connect, adım ve kaloriyi
+        yalnızca saat telefona/Garmin Connect'e eşitlendiğinde günceller; bu yüzden "saatimle aynı değil" durumunu açıklamak için gerekir.
+        """
+        s = self.summaries.get(latest_date, {}) if isinstance(self.summaries.get(latest_date), dict) else {}
+        raw = str(s.get("wellnessEndTimeLocal") or "")
+        out: Dict[str, Any] = {"data_as_of": None, "data_age_min": None, "data_is_stale": False}
+        try:
+            as_of = datetime.fromisoformat(raw.split(".")[0])
+        except ValueError:
+            return out
+        age_min = max(0, int((datetime.now() - as_of).total_seconds() // 60))
+        is_today = latest_date == datetime.now().strftime("%Y-%m-%d")
+        out.update({
+            "data_as_of": as_of.strftime("%Y-%m-%d %H:%M"),
+            "data_age_min": age_min,
+            # Bugünün verisi 90 dakikadan eskiyse saat büyük olasılıkla Garmin Connect ile eşitlenmemiştir
+            "data_is_stale": bool(is_today and age_min > 90),
+        })
+        return out
+
+    @request_cached
     def get_latest_metrics(self) -> Dict[str, Any]:
         """Sporcunun güncel kilo, HRV, uyku, Firstbeat ACWR, kilometre taşları ve günlük kararını döner."""
         if self.df.empty:
             return {}
         latest = self.df.iloc[-1]
 
-        current_weight = round(float(self.get_current_weight() if hasattr(self, "get_current_weight") else 87.0), 1)
-        start_weight = round(float(self.get_start_weight() if hasattr(self, "get_start_weight") else 95.0), 1)
+        current_weight = round(float(self.get_current_weight()), 1)
+        start_weight = round(float(self.get_start_weight()), 1)
         current_bmi = current_weight / self.height_m2
         total_loss = round(start_weight - current_weight, 1)
         loss_pct = (total_loss / start_weight) * 100.0 if start_weight > 0 else 0.0
 
+        deep_h, deep_pct, hrv_7d, hrv_night, rem_h, rem_sleep_pct, rhr, rhr_mean, sleep_h, sleep_h_mean, sleep_score = self._sleep_and_rhr_basics(latest)
+
+        _num = self._num
+        _tail_stat = self._tail_stat
+
+        bb_low, bb_wake, hrv_status, readiness_7d_avg, readiness_score, readiness_status, rem_sleep_pct_7d, resp_val, sleep_hours_7d, sleep_score_7d, stress_7d_avg, stress_latest, stress_status = self._readiness_hrv_stress_metrics(hrv_7d, hrv_night, latest, rem_sleep_pct, sleep_h, sleep_score)
+
+        active_kcal, active_kcal_7d_avg, bmr_kcal, bmr_kcal_7d_avg, is_partial_day, kcal_7d_avg, prev_full_day_active_kcal, prev_full_day_bmr_kcal, prev_full_day_kcal, step_goal, steps, steps_7d_avg, steps_7d_total, steps_pct, steps_prev_full_day, stress_prev_full_day, total_kcal = self._activity_energy_metrics(latest, stress_latest)
+
+        tl = self.get_training_load_analytics()
+        cur_st = tl.get("current_status", {})
+        load_focus = tl.get("load_focus", {})
+        acute_load = cur_st.get("acute_load") or int(_num(latest.get("acute_load"), 0))
+        chronic_load = cur_st.get("chronic_load") or 0
+        acwr_val = float(cur_st.get("acwr") or 1.0)
+        acwr_status = cur_st.get("acwr_status") or ("OPTIMAL" if 0.8 <= acwr_val <= 1.3 else ("HIGH" if acwr_val > 1.3 else "LOW"))
+        tunnel_min = int(round(_num(cur_st.get("tunnel_min"), 0)))
+        tunnel_max = int(round(_num(cur_st.get("tunnel_max"), 0)))
+        vo2_val = float(tl.get("vo2max_current") or 0.0)
+
+        load_focus_summary = {
+            "targets_available": bool(load_focus.get("targets_available", True)),
+            "low_aerobic_pct": float(load_focus.get("aerobic_low", {}).get("pct_of_target", 0.0)),
+            "high_aerobic_pct": float(load_focus.get("aerobic_high", {}).get("pct_of_target", 0.0)),
+            "anaerobic_pct": float(load_focus.get("anaerobic", {}).get("pct_of_target", 0.0)),
+            "low_aerobic_actual": float(load_focus.get("aerobic_low", {}).get("actual", 0.0)),
+            "high_aerobic_actual": float(load_focus.get("aerobic_high", {}).get("actual", 0.0)),
+            "anaerobic_actual": float(load_focus.get("anaerobic", {}).get("actual", 0.0)),
+            "primary_deficit": load_focus.get("primary_deficit", "anaerobic"),
+            "recommended_focus_label": load_focus.get("recommended_focus_label", "Anaerobik & Laktat İntervali"),
+            "balance_phrase": load_focus.get("balance_phrase", "BALANCED (Dengeli)"),
+        }
+
+        workouts_7d = self._summarize_last_7_days(latest)
+
+        latest_5k_str, latest_cadence = self._latest_5k_and_cadence()
+
+        rec, today_str = self._build_daily_recommendation(current_weight, hrv_night, load_focus, readiness_score)
+
+        milestone_data = self._build_weight_milestones(current_weight)
+
+        rec_min = self._remaining_recovery_minutes(latest, today_str)
+
+        hrv_7d_series = self._build_hrv_7d_series()
+
+        vo2max_trend = self._compute_vo2max_trend(vo2_val)
+
+        return {
+            "date": latest["date"],
+            "weight": current_weight,
+            "start_weight": start_weight,
+            "target_weight": self.get_target_weight() if current_weight > self.get_target_weight() else round(max(self.get_target_weight() - 6.0, current_weight - 2.0), 1),
+            "bmi": round(current_bmi, 2),
+            "total_loss_kg": total_loss,
+            "loss_pct": round(loss_pct, 1),
+            "weekly_pace_kg": self._weekly_weight_pace_kg(),
+            "resting_hr": rhr,
+            "rhr": rhr_mean,
+            "overnight_hrv": hrv_night,
+            "hrv_7d": hrv_7d,
+            "hrv_status": hrv_status,
+            "hrv_7d_series": hrv_7d_series,
+            "sleep_score": sleep_score,
+            "sleep_score_7d": sleep_score_7d,
+            "sleep_hours": round(sleep_h, 2),
+            "sleep_hours_7d": sleep_hours_7d,
+            "sleep_duration_hours": sleep_h_mean,
+            "deep_sleep_pct": deep_pct,
+            "rem_sleep_pct": rem_sleep_pct,
+            "rem_sleep_pct_7d": rem_sleep_pct_7d,
+            "rem_hours": round(rem_h, 2),
+            "deep_hours": round(deep_h, 2),
+            "readiness_score": readiness_score,
+            "readiness_7d_avg": readiness_7d_avg,
+            "readiness_status": readiness_status,
+            "stress": round(stress_latest, 1),
+            "stress_7d_avg": stress_7d_avg,
+            "stress_prev_full_day": stress_prev_full_day,
+            "stress_status": stress_status,
+            "resp_sleep": resp_val,
+            "bb_wake": bb_wake,
+            "bb_low": bb_low,
+            "steps": steps,
+            "step_goal": step_goal,
+            "steps_pct": steps_pct,
+            "steps_7d_avg": steps_7d_avg,
+            "steps_7d_total": steps_7d_total,
+            "steps_prev_full_day": steps_prev_full_day,
+            **self._snapshot_freshness(str(latest["date"])[:10]),
+            "total_kcal": total_kcal,
+            "active_kcal": active_kcal,
+            "bmr_kcal": bmr_kcal,
+            "is_partial_day": is_partial_day,
+            "prev_full_day_kcal": prev_full_day_kcal,
+            "prev_full_day_active_kcal": prev_full_day_active_kcal,
+            "prev_full_day_bmr_kcal": prev_full_day_bmr_kcal,
+            "kcal_7d_avg": kcal_7d_avg,
+            "active_kcal_7d_avg": active_kcal_7d_avg,
+            "bmr_kcal_7d_avg": bmr_kcal_7d_avg,
+            "vo2max": vo2_val,
+            "vo2max_trend": vo2max_trend,
+            "acute_load": acute_load,
+            "chronic_load": chronic_load,
+            "acwr": acwr_val,
+            "acwr_status": acwr_status,
+            "tunnel_min": tunnel_min,
+            "tunnel_max": tunnel_max,
+            "load_focus_summary": load_focus_summary,
+            "workouts_7d": workouts_7d,
+            "training_status": cur_st.get("status_tr", "Form Korunuyor"),
+            "training_balance": load_focus.get("balance_phrase", "BALANCED"),
+            "recovery_time_h": round(rec_min / 60.0, 1),
+            "recommendation": rec,
+            "milestones": milestone_data,
+            "latest_5k": latest_5k_str,
+            "latest_cadence": latest_cadence,
+            "biometrics_93d": self._compute_93d_biometrics_table(),
+        }
+
+    def _sleep_and_rhr_basics(self, latest):
+        """Dinlenik nabız, gece HRV, uyku süresi/evreleri ve yüzdelerini son günden hesaplar."""
         rhr = int(round(float(latest.get("rhr") or 53)))
         rhr_mean = round(float(self.df["rhr"].dropna().mean()), 1) if self.df["rhr"].notna().any() else float(rhr)
         hrv_night = float(latest.get("hrv_night") or 44)
@@ -114,18 +302,13 @@ class TelemetryMixin:
         rem_h = float(latest.get("rem_h") or 1.4)
         deep_pct = round((deep_h / max(1.0, sleep_h)) * 100.0, 1)
         rem_sleep_pct = round((rem_h / max(1.0, sleep_h)) * 100.0, 1)
+        return deep_h, deep_pct, hrv_7d, hrv_night, rem_h, rem_sleep_pct, rhr, rhr_mean, sleep_h, sleep_h_mean, sleep_score
 
-        def _num(val, default=0.0):
-            return float(val) if val is not None and pd.notnull(val) else float(default)
 
-        def _tail_stat(col, op="mean", n=7, default=0.0):
-            if col not in self.df.columns:
-                return float(default)
-            ser = pd.to_numeric(self.df[col], errors="coerce").dropna().tail(n)
-            if ser.empty:
-                return float(default)
-            return float(ser.sum() if op == "sum" else ser.mean())
-
+    def _readiness_hrv_stress_metrics(self, hrv_7d, hrv_night, latest, rem_sleep_pct, sleep_h, sleep_score):
+        """Uyku ortalamaları, hazırlık, HRV/stres durumu (kişisel taban çizgisine göre), solunum ve Body Battery değerlerini hesaplar."""
+        _num = self._num
+        _tail_stat = self._tail_stat
         sleep_score_7d = round(_tail_stat("sleep_score", "mean", 7, sleep_score), 1)
         sleep_hours_7d = round(_tail_stat("sleep_h", "mean", 7, sleep_h), 2)
         if {"rem_h", "sleep_h"}.issubset(self.df.columns):
@@ -139,14 +322,25 @@ class TelemetryMixin:
         readiness_7d_avg = round(_tail_stat("readiness_score", "mean", 7, readiness_score), 1)
         readiness_status = "Yüksek Hazırlık" if readiness_score >= 70 else ("Orta Hazırlık" if readiness_score >= 45 else "Toparlanma Gerekli")
 
-        hrv_status = "Dengeli" if abs(hrv_night - hrv_7d) <= 6 else ("Yüksek Rezerv" if hrv_night > hrv_7d else "Baskılanmış")
+        # Eşikler sporcunun kendi 28 günlük taban çizgisinden (yeterli veri yoksa genel bantlardan) türetilir
+        hrv_base = self.get_personal_baseline("hrv_night")
+        hrv_band = max(3.0, 0.75 * hrv_base["std"]) if hrv_base["reliable"] else 6.0
+        hrv_status = "Dengeli" if abs(hrv_night - hrv_7d) <= hrv_band else ("Yüksek Rezerv" if hrv_night > hrv_7d else "Baskılanmış")
         stress_latest = float(latest.get("avg_stress")) if pd.notnull(latest.get("avg_stress")) else round(_tail_stat("avg_stress", "mean", len(self.df), 28.4), 1)
         stress_7d_avg = round(_tail_stat("avg_stress", "mean", 7, stress_latest), 1)
-        stress_status = "Düşük / Rahat" if stress_latest <= 25 else ("Normal / Dengeli" if stress_latest <= 38 else "Yüksek Stres")
+        stress_base = self.get_personal_baseline("avg_stress")
+        s_lo, s_hi = (stress_base["p25"], stress_base["p75"]) if stress_base["reliable"] else (25.0, 38.0)
+        stress_status = "Düşük / Rahat" if stress_latest <= s_lo else ("Normal / Dengeli" if stress_latest <= s_hi else "Yüksek Stres")
         resp_val = round(float(latest.get("resp_sleep") or self.df["resp_sleep"].dropna().mean() or 13.8), 1)
         bb_wake = int(round(_num(latest.get("bb_wake"), 78)))
         bb_low = int(round(_num(latest.get("bb_low"), 20)))
+        return bb_low, bb_wake, hrv_status, readiness_7d_avg, readiness_score, readiness_status, rem_sleep_pct_7d, resp_val, sleep_hours_7d, sleep_score_7d, stress_7d_avg, stress_latest, stress_status
 
+
+    def _activity_energy_metrics(self, latest, stress_latest):
+        """Adım, hedef ve kalori değerlerini (bugün, önceki tam gün, 7 günlük ortalama) hesaplar."""
+        _num = self._num
+        _tail_stat = self._tail_stat
         steps = int(round(_num(latest.get("steps"), 0)))
         step_goal = int(round(_num(latest.get("step_goal"), 10000))) or 10000
         steps_pct = round((steps / max(1, step_goal)) * 100.0, 1)
@@ -168,30 +362,11 @@ class TelemetryMixin:
         kcal_7d_avg = int(round(_tail_stat("total_kcal", "mean", 7, total_kcal)))
         active_kcal_7d_avg = int(round(_tail_stat("active_kcal", "mean", 7, active_kcal)))
         bmr_kcal_7d_avg = int(round(_tail_stat("bmr_kcal", "mean", 7, bmr_kcal)))
+        return active_kcal, active_kcal_7d_avg, bmr_kcal, bmr_kcal_7d_avg, is_partial_day, kcal_7d_avg, prev_full_day_active_kcal, prev_full_day_bmr_kcal, prev_full_day_kcal, step_goal, steps, steps_7d_avg, steps_7d_total, steps_pct, steps_prev_full_day, stress_prev_full_day, total_kcal
 
-        tl = self.get_training_load_analytics()
-        cur_st = tl.get("current_status", {})
-        load_focus = tl.get("load_focus", {})
-        acute_load = cur_st.get("acute_load") or int(_num(latest.get("acute_load"), 279))
-        chronic_load = cur_st.get("chronic_load") or 279
-        acwr_val = float(cur_st.get("acwr") or 1.0)
-        acwr_status = cur_st.get("acwr_status") or ("OPTIMAL" if 0.8 <= acwr_val <= 1.3 else ("HIGH" if acwr_val > 1.3 else "LOW"))
-        tunnel_min = int(round(_num(cur_st.get("tunnel_min"), 223)))
-        tunnel_max = int(round(_num(cur_st.get("tunnel_max"), 419)))
-        vo2_val = float(tl.get("vo2max_current") or 45.4)
 
-        load_focus_summary = {
-            "low_aerobic_pct": float(load_focus.get("aerobic_low", {}).get("pct_of_target", 92.3)),
-            "high_aerobic_pct": float(load_focus.get("aerobic_high", {}).get("pct_of_target", 91.5)),
-            "anaerobic_pct": float(load_focus.get("anaerobic", {}).get("pct_of_target", 61.9)),
-            "low_aerobic_actual": float(load_focus.get("aerobic_low", {}).get("actual", 385.9)),
-            "high_aerobic_actual": float(load_focus.get("aerobic_high", {}).get("actual", 537.8)),
-            "anaerobic_actual": float(load_focus.get("anaerobic", {}).get("actual", 162.3)),
-            "primary_deficit": load_focus.get("primary_deficit", "anaerobic"),
-            "recommended_focus_label": load_focus.get("recommended_focus_label", "Anaerobik & Laktat İntervali"),
-            "balance_phrase": load_focus.get("balance_phrase", "BALANCED (Dengeli)"),
-        }
-
+    def _summarize_last_7_days(self, latest):
+        """Son 7 günün antrenmanlarını (sayı, süre, mesafe, yük, tür dağılımı) özetler."""
         # Son 7 gün yapılan antrenmanların özeti (tarih penceresi en güncel kayıt üzerinden kurulur)
         end_dt_str = str(latest["date"])[:10]
         if self.activities_all:
@@ -249,10 +424,14 @@ class TelemetryMixin:
             "window_label": f"{start_dt_str[8:10]}.{start_dt_str[5:7]} – {end_dt_str[8:10]}.{end_dt_str[5:7]}",
             "items": w7_items,
         }
+        return workouts_7d
 
+
+    def _latest_5k_and_cadence(self):
+        """En iyi 5K koşusunu ve son kadansı aktivite tablosundan bulur."""
         # Son 5K koşusunu ve kadansı dinamik bul
-        latest_5k_str = "29:07 (5:48 /km)"
-        latest_cadence = 162
+        latest_5k_str = "--"
+        latest_cadence = 0
         if hasattr(self, "adf") and not self.adf.empty:
             r_5k = self.adf[
                 self.adf["sport"].str.contains("running", case=False, na=False)
@@ -266,7 +445,16 @@ class TelemetryMixin:
             cads = self.adf[self.adf["cadence"].notna()]["cadence"]
             if not cads.empty:
                 latest_cadence = int(round(float(cads.iloc[0])))
+        return latest_5k_str, latest_cadence
 
+
+    def _hrv_ready_floor(self) -> float:
+        """'Hazır' sayılmak için gece HRV alt sınırı: kişisel tabanın 0,5 std altı (yeterli veri yoksa 40 ms)."""
+        base = self.get_personal_baseline("hrv_night")
+        return base["mean"] - 0.5 * base["std"] if base["reliable"] else 40.0
+
+    def _build_daily_recommendation(self, current_weight, hrv_night, load_focus, readiness_score):
+        """Hazırlık, HRV ve bugünkü antrenman durumuna göre günün trafik ışığı kararını üretir."""
         # Antrenman Kararı
         today_str = datetime.now().strftime("%Y-%m-%d")
         today_acts = [a for a in self.activities_all if (a.get("startTimeLocal") or "")[:10] == today_str]
@@ -284,7 +472,7 @@ class TelemetryMixin:
                 "summary": f"Bugün {act_name} başarıyla tamamlandı ({act_dur} dk • {act_cals} kcal • {act_hr} bpm).",
                 "suggestion": f"Toparlanmaya geçin: ~{prot_g}g protein hedefi, hidrasyon ve erken yatış (00:30 öncesi).",
             }
-        elif readiness_score >= 75 and hrv_night >= 40:
+        elif readiness_score >= 75 and hrv_night >= self._hrv_ready_floor():
             rec = {
                 "status": "Yeşil Işık (Hazır)",
                 "color": "emerald",
@@ -305,14 +493,21 @@ class TelemetryMixin:
                 "summary": "Otonom yorgunluk yüksek veya uyku yetersiz.",
                 "suggestion": "Sert antrenmanı erteleyin; kalan kotayı daha dinç bir güne kaydırın.",
             }
+        return rec, today_str
 
+
+    def _build_weight_milestones(self, current_weight):
+        """Kilo hedeflerine (kilometre taşlarına) hızlı ve optimal tempoda ulaşma projeksiyonlarını üretir."""
         # Kilometre taşları artık calculate_custom_projection() çıktısından dinamik hesaplanır!
+        # Aşamalar sporcunun KENDİ hedef kilosuna (profil) göre kurulur: DSÖ normal VKİ sınırı, hedef+4, hedef+2, hedef, hedef-2.
+        target = self.get_target_weight()
+        who_cutoff = math.floor(24.99 * self.height_m2 * 10) / 10.0
         stage_defs = [
-            ("Aşama 1: Normal VKİ Sınırı", round(min(24.99 * self.height_m2, 86.4), 1) if current_weight > 86.4 else round(current_weight - 0.5, 1)),
-            ("Aşama 2: Kısa Vadeli Form", 85.0 if current_weight > 85.0 else round(current_weight - 1.5, 1)),
-            ("Aşama 3: Atletik Form Başlangıcı", 83.0 if current_weight > 83.0 else round(current_weight - 2.5, 1)),
-            ("Aşama 4: İdeal Çoklu-Branş Formu", 81.0 if current_weight > 81.0 else round(current_weight - 3.5, 1)),
-            ("Aşama 5: Saf Koşucu Kütlesi", 79.0 if current_weight > 79.0 else round(max(74.0, current_weight - 5.0), 1)),
+            ("Aşama 1: Normal VKİ Sınırı", who_cutoff if current_weight > who_cutoff else round(current_weight - 0.5, 1)),
+            ("Aşama 2: Kısa Vadeli Form", round(target + 4.0, 1) if current_weight > target + 4.0 else round(current_weight - 1.5, 1)),
+            ("Aşama 3: Atletik Form Başlangıcı", round(target + 2.0, 1) if current_weight > target + 2.0 else round(current_weight - 2.5, 1)),
+            ("Aşama 4: İdeal Çoklu-Branş Formu", target if current_weight > target else round(current_weight - 3.5, 1)),
+            ("Aşama 5: Saf Koşucu Kütlesi", round(target - 2.0, 1) if current_weight > target - 2.0 else round(max(target - 7.0, current_weight - 5.0), 1)),
         ]
         milestone_data = []
         for title, t_kg in stage_defs:
@@ -330,7 +525,11 @@ class TelemetryMixin:
                 "expected_5k": p_opt.get("expected_5k", "--"),
                 "expected_vo2": p_opt.get("expected_vo2", "--"),
             })
+        return milestone_data
 
+
+    def _remaining_recovery_minutes(self, latest, today_str):
+        """Garmin toparlanma süresinden, anlık görüntüden bu yana geçen süreyi düşerek kalan dakikayı hesaplar."""
         raw_rec_min = latest.get("recovery_time_min")
         rec_ts_str = latest.get("recovery_timestamp_local")
         if raw_rec_min is not None:
@@ -340,23 +539,35 @@ class TelemetryMixin:
                     snap_dt = datetime.fromisoformat(str(rec_ts_str).split(".")[0])
                     elapsed_min = max(0.0, (datetime.now() - snap_dt).total_seconds() / 60.0)
                     rec_min = max(0.0, rec_min - elapsed_min)
-                except Exception:
-                    pass
+                except (ValueError, TypeError):
+                    logger.debug("get_latest_metrics: yedek davranış uygulandı", exc_info=True)
         else:
             rec_min = 0.0
+        return rec_min
 
+
+    def _build_hrv_7d_series(self):
+        """Son 7 gecenin HRV serisini, 7 günlük taban değerine göre gece durumuyla birlikte üretir."""
         # Son 7 günün gece HRV bar grafiği serisi
         hrv_7d_series = []
         for _, row in self.df.tail(7).iterrows():
             v_hrv = row.get("hrv_night")
             hrv_val = None if v_hrv is None or pd.isna(v_hrv) else round(float(v_hrv), 1)
-            v_st = row.get("hrv_status")
+            v_base = row.get("hrv_7d")
+            night_status = None
+            if hrv_val is not None and v_base is not None and not pd.isna(v_base):
+                diff = hrv_val - float(v_base)
+                night_status = "Dengeli" if abs(diff) <= 6 else ("Yüksek" if diff > 0 else "Düşük")
             hrv_7d_series.append({
                 "date": str(row.get("date") or ""),
                 "hrv": hrv_val,
-                "status": None if v_st is None or pd.isna(v_st) else str(v_st),
+                "status": night_status,
             })
+        return hrv_7d_series
 
+
+    def _compute_vo2max_trend(self, vo2_val):
+        """Garmin VO2 Max geçmişinden trend yönünü (yukarı / aşağı / sabit) ve son iki ölçümü hesaplar."""
         # VO2 Max trend yönü (yukarı / aşağı / sabit)
         vo2_vals = []
         for item in (getattr(self, "vo2max_history", None) or []):
@@ -401,78 +612,45 @@ class TelemetryMixin:
                 "prev_date": None,
                 "current_date": None,
             }
+        return vo2max_trend
 
-        return {
-            "date": latest["date"],
-            "weight": current_weight,
-            "start_weight": start_weight,
-            "target_weight": 81.0 if current_weight > 81.0 else round(max(75.0, current_weight - 2.0), 1),
-            "bmi": round(current_bmi, 2),
-            "total_loss_kg": total_loss,
-            "loss_pct": round(loss_pct, 1),
-            "weekly_pace_kg": -0.89,
-            "resting_hr": rhr,
-            "rhr": rhr_mean,
-            "overnight_hrv": hrv_night,
-            "hrv_7d": hrv_7d,
-            "hrv_status": hrv_status,
-            "hrv_7d_series": hrv_7d_series,
-            "sleep_score": sleep_score,
-            "sleep_score_7d": sleep_score_7d,
-            "sleep_hours": round(sleep_h, 2),
-            "sleep_hours_7d": sleep_hours_7d,
-            "sleep_duration_hours": sleep_h_mean,
-            "deep_sleep_pct": deep_pct,
-            "rem_sleep_pct": rem_sleep_pct,
-            "rem_sleep_pct_7d": rem_sleep_pct_7d,
-            "rem_hours": round(rem_h, 2),
-            "deep_hours": round(deep_h, 2),
-            "readiness_score": readiness_score,
-            "readiness_7d_avg": readiness_7d_avg,
-            "readiness_status": readiness_status,
-            "stress": round(stress_latest, 1),
-            "stress_7d_avg": stress_7d_avg,
-            "stress_prev_full_day": stress_prev_full_day,
-            "stress_status": stress_status,
-            "resp_sleep": resp_val,
-            "bb_wake": bb_wake,
-            "bb_low": bb_low,
-            "steps": steps,
-            "step_goal": step_goal,
-            "steps_pct": steps_pct,
-            "steps_7d_avg": steps_7d_avg,
-            "steps_7d_total": steps_7d_total,
-            "steps_prev_full_day": steps_prev_full_day,
-            "total_kcal": total_kcal,
-            "active_kcal": active_kcal,
-            "bmr_kcal": bmr_kcal,
-            "is_partial_day": is_partial_day,
-            "prev_full_day_kcal": prev_full_day_kcal,
-            "prev_full_day_active_kcal": prev_full_day_active_kcal,
-            "prev_full_day_bmr_kcal": prev_full_day_bmr_kcal,
-            "kcal_7d_avg": kcal_7d_avg,
-            "active_kcal_7d_avg": active_kcal_7d_avg,
-            "bmr_kcal_7d_avg": bmr_kcal_7d_avg,
-            "vo2max": vo2_val,
-            "vo2max_trend": vo2max_trend,
-            "acute_load": acute_load,
-            "chronic_load": chronic_load,
-            "acwr": acwr_val,
-            "acwr_status": acwr_status,
-            "tunnel_min": tunnel_min,
-            "tunnel_max": tunnel_max,
-            "load_focus_summary": load_focus_summary,
-            "workouts_7d": workouts_7d,
-            "training_status": cur_st.get("status_tr", "Form Korunuyor"),
-            "training_balance": load_focus.get("balance_phrase", "BALANCED"),
-            "recovery_time_h": round(rec_min / 60.0, 1),
-            "recommendation": rec,
-            "milestones": milestone_data,
-            "latest_5k": latest_5k_str,
-            "latest_cadence": latest_cadence,
-            "biometrics_93d": self._compute_93d_biometrics_table(),
-        }
 
+    def _weekly_weight_pace_kg(self, window_days: int = 56) -> float:
+        """Son ~8 haftanın tartı kayıtlarından doğrusal regresyonla haftalık kilo değişimini (kg/hf) hesaplar."""
+        hist = self.get_weight_history() if hasattr(self, "get_weight_history") else []
+        if len(hist) < 2:
+            return -0.89  # Tartı geçmişi yoksa profil başlangıç temposu
+        last_dt = datetime.strptime(hist[-1]["date"], "%Y-%m-%d")
+        pts = [
+            ((datetime.strptime(h["date"], "%Y-%m-%d") - last_dt).days, h["weight_kg"])
+            for h in hist
+            if (last_dt - datetime.strptime(h["date"], "%Y-%m-%d")).days <= window_days
+        ]
+        if len(pts) < 2 or pts[-1][0] - pts[0][0] < 7:
+            return -0.89
+        n = len(pts)
+        mx = sum(x for x, _ in pts) / n
+        my = sum(y for _, y in pts) / n
+        den = sum((x - mx) ** 2 for x, _ in pts)
+        if den <= 0:
+            return -0.89
+        slope_per_day = sum((x - mx) * (y - my) for x, y in pts) / den
+        return round(slope_per_day * 7.0, 2)
+
+    @staticmethod
+    def _interpret_acwr(acwr: float) -> str:
+        """ACWR değerini Gabbett bantlarına göre sporcu diliyle yorumlar."""
+        val = f"{acwr:.2f}".replace(".", ",")
+        if acwr < 0.80:
+            return f"ACWR {val}: 0,80 altı — akut yük kronik tabanın gerisinde; form kaybı riskine karşı yükü kademeli artır."
+        if acwr <= 1.30:
+            return f"ACWR {val}: 0,80–1,30 Sweet Spot bandında; sakatlık riski düşük, plana devam."
+        if acwr < 1.50:
+            return f"ACWR {val}: 1,30–1,50 dikkat bandı; yeni yük ekleme, sert seansları seyrelt."
+        return f"ACWR {val}: 1,50 üzeri tehlike bölgesi; bu hafta hacmi %40-50 azalt ve toparlanmaya öncelik ver."
+
+    @request_cached
+    @zone_text
     def get_training_load_analytics(self) -> Dict[str, Any]:
         """Firstbeat Training Load, ACWR ve gerçek bar doluluklarına göre enerji odak tavsiyesi döner."""
         lb_map = self.training_status_latest.get("mostRecentTrainingLoadBalance", {}).get("metricsTrainingLoadBalanceDTOMap", {})
@@ -482,18 +660,7 @@ class TelemetryMixin:
         st = list(st_map.values())[0] if st_map else {}
         ac = st.get("acuteTrainingLoadDTO", {}) or {}
 
-        status_tr_map = {
-            "MAINTAINING_1": "Form Korunuyor (Maintaining)",
-            "MAINTAINING_3": "Form Korunuyor (Maintaining)",
-            "MAINTAINING_4": "Form Korunuyor (Maintaining)",
-            "MAINTAINING_6": "Form Korunuyor (Maintaining)",
-            "MAINTAINING_7": "Form Korunuyor (Maintaining)",
-            "PRODUCTIVE_2": "Üretken (Productive)",
-            "UNPRODUCTIVE_5": "Verimsiz (Unproductive)",
-            "RECOVERY_1": "Toparlanma (Recovery)",
-            "DETRAINING": "Kondisyon Kaybı (Detraining)",
-            "OVERREACHING_5": "Aşırı Yüklenme (Overreaching)",
-        }
+        status_tr_map = _StatusLabels()
         balance_tr_map = {
             "BALANCED": "Dengeli",
             "AEROBIC_HIGH_FOCUS": "Yüksek Aerobik Odaklı",
@@ -505,6 +672,95 @@ class TelemetryMixin:
             "ABOVE_TARGETS": "Hedeflerin Üzerinde",
         }
 
+        weekly_progression = self._build_weekly_load_progression(balance_tr_map, status_tr_map)
+
+        sport_loads = self._summarize_sport_loads()
+
+        top_load_acts = self._top_load_activities()
+
+        vo2_current, vo2_points = self._collect_vo2_points()
+
+        cur_acwr = float(ac.get("dailyAcuteChronicWorkloadRatio") or 1.0)
+        cur_acute = ac.get("dailyTrainingLoadAcute") or 0
+        cur_chronic = ac.get("dailyTrainingLoadChronic") or 0
+        cur_acwr_status = ac.get("acwrStatus") or "OPTIMAL"
+        cur_status_code = st.get("trainingStatusFeedbackPhrase", "MAINTAINING_3")
+        cur_status_tr = status_tr_map.get(cur_status_code, cur_status_code)
+
+        # Load Focus Hesaplaması — Gerçek bar doluluk oranına göre eksik sistemi seç.
+        # Garmin hedef bantlarını (TargetMax) vermiyorsa yüzde "hedefe oran" yerine üç yükün toplam içindeki payıdır.
+        low_act = round(float(lb.get("monthlyLoadAerobicLow", 0.0)), 1)
+        high_act = round(float(lb.get("monthlyLoadAerobicHigh", 0.0)), 1)
+        an_act = round(float(lb.get("monthlyLoadAnaerobic", 0.0)), 1)
+        low_min = lb.get("monthlyLoadAerobicLowTargetMin", 0)
+        high_min = lb.get("monthlyLoadAerobicHighTargetMin", 0)
+        an_min = lb.get("monthlyLoadAnaerobicTargetMin", 0)
+        low_max = lb.get("monthlyLoadAerobicLowTargetMax", 0) or 0
+        high_max = lb.get("monthlyLoadAerobicHighTargetMax", 0) or 0
+        an_max = lb.get("monthlyLoadAnaerobicTargetMax", 0) or 0
+        targets_available = bool(low_max and high_max and an_max)
+        if targets_available:
+            low_pct = round((low_act / low_max) * 100.0, 1)
+            high_pct = round((high_act / high_max) * 100.0, 1)
+            an_pct = round((an_act / an_max) * 100.0, 1)
+        else:
+            total = (low_act + high_act + an_act) or 1.0
+            low_pct, high_pct, an_pct = (round(v / total * 100.0, 1) for v in (low_act, high_act, an_act))
+
+        def _bucket_status(actual, t_min, pct):
+            if not targets_available:
+                return f"HEDEF VERİSİ YOK (toplam yükün %{pct:.0f}'i)"
+            if actual < t_min:
+                return f"EKSİK (Hedef Altı · %{pct:.0f})"
+            if pct < 72.0:
+                return f"ORTA BANT · GELİŞİME AÇIK (%{pct:.0f})"
+            return f"ÜST BANT · OPTİMAL (%{pct:.0f})"
+
+        fill_map = {"aerobic_low": low_pct, "aerobic_high": high_pct, "anaerobic": an_pct}
+        lowest_zone = min(fill_map, key=fill_map.get)
+
+        prio_label, rec_workout = self._pick_load_focus(an_act, an_max, an_pct, high_pct, low_pct, lowest_zone)
+
+        raw_bal_phrase = lb.get("trainingBalanceFeedbackPhrase", "BALANCED")
+        return {
+            "acwr": {"acwr_ratio": cur_acwr, "status": cur_acwr_status},
+            "vo2max_current": round(vo2_current, 1),
+            "current_status": {
+                "status_code": cur_status_code,
+                "status_tr": cur_status_tr,
+                "vo2max": round(vo2_current, 1),
+                "fitness_trend": (
+                    "Düşük Akut Yük" if cur_acwr < 0.8
+                    else ("Pozitif / Dengeli" if cur_acwr <= 1.3 else "Yüksek Akut Yük")
+                ),
+                "acute_load": cur_acute,
+                "chronic_load": cur_chronic,
+                "acwr": cur_acwr,
+                "acwr_status": cur_acwr_status,
+                "acwr_interpretation": self._interpret_acwr(cur_acwr),
+                "tunnel_min": ac.get("minTrainingLoadChronic", 0.0),
+                "tunnel_max": ac.get("maxTrainingLoadChronic", 0.0),
+            },
+            "load_focus": {
+                "aerobic_low": {"actual": low_act, "target_min": low_min, "target_max": low_max, "status": _bucket_status(low_act, low_min, low_pct), "pct_of_target": low_pct},
+                "aerobic_high": {"actual": high_act, "target_min": high_min, "target_max": high_max, "status": _bucket_status(high_act, high_min, high_pct), "pct_of_target": high_pct},
+                "anaerobic": {"actual": an_act, "target_min": an_min, "target_max": an_max, "status": _bucket_status(an_act, an_min, an_pct), "pct_of_target": an_pct},
+                "targets_available": targets_available,
+                "pct_basis": "target" if targets_available else "share",
+                "primary_deficit": lowest_zone,
+                "recommended_focus_label": prio_label,
+                "recommended_workout": rec_workout,
+                "balance_phrase": f"{raw_bal_phrase} ({balance_tr_map.get(raw_bal_phrase, raw_bal_phrase)})",
+                "balance_note": rec_workout,
+            },
+            "weekly_progression": weekly_progression,
+            "sport_loads": sport_loads,
+            "top_load_acts": top_load_acts,
+            "vo2_points": vo2_points,
+        }
+
+    def _build_weekly_load_progression(self, balance_tr_map, status_tr_map):
+        """Haftalık Firstbeat durum, ACWR ve yük dengesi serisini üretir."""
         weekly_progression = []
         for dt, obj in sorted(self.training_status_weekly.items()):
             dev_map_w = obj.get("mostRecentTrainingLoadBalance", {}).get("metricsTrainingLoadBalanceDTOMap", {})
@@ -528,7 +784,11 @@ class TelemetryMixin:
                 "balance_code": raw_bal,
                 "balance_tr": balance_tr_map.get(raw_bal, raw_bal),
             })
+        return weekly_progression
 
+
+    def _summarize_sport_loads(self):
+        """Son 3 ayın branş bazında toplam/ortalama yük dağılımını hesaplar."""
         sport_loads = []
         if hasattr(self, "adf_3m") and not self.adf_3m.empty:
             sp_grp = self.adf_3m.groupby("sport").agg(
@@ -546,7 +806,11 @@ class TelemetryMixin:
                     "pct": round((float(r["total_load"]) / total_load_all) * 100, 1),
                     "count": int(r["count"]),
                 })
+        return sport_loads
 
+
+    def _top_load_activities(self):
+        """En yüksek antrenman yüküne sahip 10 aktiviteyi listeler."""
         top_load_acts = []
         if hasattr(self, "adf") and not self.adf.empty:
             for _, r in self.adf.sort_values("load", ascending=False).head(10).iterrows():
@@ -561,88 +825,32 @@ class TelemetryMixin:
                     "anTE": r.get("anTE"),
                     "te_label": r.get("te_label") or "--",
                 })
+        return top_load_acts
 
+
+    def _collect_vo2_points(self):
+        """VO2 Max geçmişinden grafik noktalarını ve güncel değeri çıkarır."""
         vo2_points = []
-        vo2_current = 45.4
+        vo2_current = 0.0
         for pt in self.vo2max_history:
             cal = pt.get("generic", {})
             if cal.get("vo2MaxPreciseValue"):
                 val = float(cal.get("vo2MaxPreciseValue"))
                 vo2_current = val
                 vo2_points.append({"date": cal.get("calendarDate"), "vo2": val, "sport": cal.get("sport", "RUNNING")})
+        return vo2_current, vo2_points
 
-        cur_acwr = float(ac.get("dailyAcuteChronicWorkloadRatio") or 1.0)
-        cur_acute = ac.get("dailyTrainingLoadAcute") or 279
-        cur_chronic = ac.get("dailyTrainingLoadChronic") or 279
-        cur_acwr_status = ac.get("acwrStatus") or "OPTIMAL"
-        cur_status_code = st.get("trainingStatusFeedbackPhrase", "MAINTAINING_3")
-        cur_status_tr = status_tr_map.get(cur_status_code, cur_status_code)
 
-        # Load Focus Hesaplaması — Gerçek bar doluluk oranına göre eksik sistemi seç
-        low_act = round(float(lb.get("monthlyLoadAerobicLow", 385.9)), 1)
-        low_min = lb.get("monthlyLoadAerobicLowTargetMin", 155)
-        low_max = lb.get("monthlyLoadAerobicLowTargetMax", 418) or 418
-        low_pct = round((low_act / low_max) * 100.0, 1)
-
-        high_act = round(float(lb.get("monthlyLoadAerobicHigh", 537.8)), 1)
-        high_min = lb.get("monthlyLoadAerobicHighTargetMin", 325)
-        high_max = lb.get("monthlyLoadAerobicHighTargetMax", 588) or 588
-        high_pct = round((high_act / high_max) * 100.0, 1)
-
-        an_act = round(float(lb.get("monthlyLoadAnaerobic", 162.3)), 1)
-        an_min = lb.get("monthlyLoadAnaerobicTargetMin", 0)
-        an_max = lb.get("monthlyLoadAnaerobicTargetMax", 262) or 262
-        an_pct = round((an_act / an_max) * 100.0, 1)
-
-        def _bucket_status(actual, t_min, pct):
-            if actual < t_min:
-                return f"EKSİK (Hedef Altı · %{pct:.0f})"
-            if pct < 72.0:
-                return f"ORTA BANT · GELİŞİME AÇIK (%{pct:.0f})"
-            return f"ÜST BANT · OPTİMAL (%{pct:.0f})"
-
-        fill_map = {"aerobic_low": low_pct, "aerobic_high": high_pct, "anaerobic": an_pct}
-        lowest_zone = min(fill_map, key=fill_map.get)
-
+    def _pick_load_focus(self, an_act, an_max, an_pct, high_pct, low_pct, lowest_zone):
+        """En boş yük barına göre öncelikli odak etiketini ve önerilen antrenmanı seçer."""
         if lowest_zone == "anaerobic":
             prio_label = "Anaerobik & Laktat İntervali"
-            rec_workout = "Anaerobik barı (%{:.0f} · {}/{} birim) en boş/orta bantta olduğu için öncelik 4x1000m @ Z4-5 Hız İntervali veya patlayıcı sprint çalışmasıdır; Düşük Aerobik zaten %{:.0f} ile üst tavana yakındır.".format(an_pct, an_act, an_max, low_pct)
+            rec_workout = "Anaerobik barı (%{:.0f}{}) en boş/orta bantta olduğu için öncelik 4x1000m @ Z4-5 Hız İntervali veya patlayıcı sprint çalışmasıdır; Düşük Aerobik zaten %{:.0f} ile üst tavana yakındır.".format(an_pct, f" · {an_act}/{an_max} birim" if an_max else f" · {an_act} birim", low_pct)
         elif lowest_zone == "aerobic_low":
             prio_label = "Düşük Aerobik (Zone 2 Taban)"
-            rec_workout = "Düşük Aerobik barı en düşük dolulukta (%{:.0f}) olduğu için 45-50 dk Zone 2 (140-150 bpm) koşu önerilir.".format(low_pct)
+            rec_workout = "Düşük Aerobik barı en düşük dolulukta (%{:.0f}) olduğu için 45-50 dk Zone 2 ([[Z2_HR]]) koşu önerilir.".format(low_pct)
         else:
             prio_label = "Yüksek Aerobik (Tempo / Eşik)"
             rec_workout = "Yüksek Aerobik barı en düşük dolulukta (%{:.0f}) olduğu için 25-30 dk tempo koşusu önerilir.".format(high_pct)
+        return prio_label, rec_workout
 
-        raw_bal_phrase = lb.get("trainingBalanceFeedbackPhrase", "BALANCED")
-        return {
-            "acwr": {"acwr_ratio": cur_acwr, "status": cur_acwr_status},
-            "vo2max_current": round(vo2_current, 1),
-            "current_status": {
-                "status_code": cur_status_code,
-                "status_tr": cur_status_tr,
-                "vo2max": round(vo2_current, 1),
-                "fitness_trend": "Pozitif / Dengeli" if cur_acwr <= 1.3 else "Yüksek Akut Yük",
-                "acute_load": cur_acute,
-                "chronic_load": cur_chronic,
-                "acwr": cur_acwr,
-                "acwr_status": cur_acwr_status,
-                "acwr_interpretation": f"ACWR oranı {cur_acwr:.2f} seviyesinde; 0,80–1,30 Sweet Spot bandı içinde sakatlık riski düşüktür.",
-                "tunnel_min": ac.get("minTrainingLoadChronic", 223.2),
-                "tunnel_max": ac.get("maxTrainingLoadChronic", 418.5),
-            },
-            "load_focus": {
-                "aerobic_low": {"actual": low_act, "target_min": low_min, "target_max": low_max, "status": _bucket_status(low_act, low_min, low_pct), "pct_of_target": low_pct},
-                "aerobic_high": {"actual": high_act, "target_min": high_min, "target_max": high_max, "status": _bucket_status(high_act, high_min, high_pct), "pct_of_target": high_pct},
-                "anaerobic": {"actual": an_act, "target_min": an_min, "target_max": an_max, "status": _bucket_status(an_act, an_min, an_pct), "pct_of_target": an_pct},
-                "primary_deficit": lowest_zone,
-                "recommended_focus_label": prio_label,
-                "recommended_workout": rec_workout,
-                "balance_phrase": f"{raw_bal_phrase} ({balance_tr_map.get(raw_bal_phrase, raw_bal_phrase)})",
-                "balance_note": rec_workout,
-            },
-            "weekly_progression": weekly_progression,
-            "sport_loads": sport_loads,
-            "top_load_acts": top_load_acts,
-            "vo2_points": vo2_points,
-        }

@@ -13,7 +13,7 @@ Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve First
 2. **Dogmatik Olmayan Çok Seviyeli Antrenman Mimarisi:**
    - Antrenman programları taşa kazınmış sabit kalıplar değildir; sporcunun seviyesine göre 4 kademeli bilimsel çerçeve sunulur:
      * **Başlangıç (Beginner):** Koş-Yürü (Run/Walk) / Saf Zone 1-2 + Vücut ağırlığı temel kalıplar (2-3 gün/hf).
-     * **Orta Seviye (Intermediate - Sarp'ın Temeli):** 80/20 Polarize koşu (1 Zone 2 + 1 5K Hız İntervali) + A/B Full Body 5x5 bileşik kuvvet (4 gün/hf).
+     * **Orta Seviye (Intermediate):** 80/20 Polarize koşu (1 Zone 2 + 1 5K Hız İntervali) + A/B Full Body 5x5 bileşik kuvvet (4 gün/hf).
      * **İleri Seviye (Advanced):** Piramidal / Laktat Eşik koşusu + Üst/Alt Vücut (Upper/Lower Split 4 gün) veya PPL (5 gün/hf).
      * **Elit (Elite):** Blok periyodizasyonu, çift seanslar ve patlayıcı pliometri (5-6 gün/hf).
    - **Dinamik Progresyon Tetikleyicileri:** ACWR stabil seyrettiğinde gün artırma (2 $\rightarrow$ 3 koşu), 5x5 lineer artışı doyduğunda Üst/Alt Vücut bölünmesine geçiş ve yorgunluk sinyallerinde (düşük HRV, yüksek RHR) deload esnekliği anlık telemetriyle otomatik önerilir.
@@ -119,3 +119,26 @@ garmin-athlete-analytics-platform/
 | `/api/status` | `GET` | Sunucu sağlık durumu, demo/canlı modu ve yuvarlanan oturum bilgisi. |
 | `/api/session/keepalive` | `GET` / `POST` | Adaptif 4 dk Garmin Connect oturum koruma ve kira yenileme nabzı. |
 | `/api/sync` | `POST` | Canlı Garmin senkronizasyonu veya yerel telemetri + kira yenileme. |
+
+## Sporcu Profili (kodda kişisel veri yok)
+
+Yaş, boy, cinsiyet ve hedefler **kodda tutulmaz**; çalışma anında şu sırayla okunur: (1) `data/athlete_profile.json` (isteğe bağlı, kendi yazdığın geçersiz kılmalar; örnek: `athlete_profile.example.json`), (2) `make fetch` ile Garmin'den inen `data/raw_profile.json` (doğum tarihi → yaş, boy, cinsiyet, laktat eşiği nabzı), (3) nötr varsayılanlar (`/api/overview` içindeki `athlete.profile_missing` eksik alanları söyler).
+
+Geri kalan her şey sporcunun **kendi Garmin verisinden** türetilir: kilo geçmişi, maks/dinlenik nabız, Zone 2 ve interval nabız bantları, Zone 2 / interval tempoları, HR ve güç zonları, kuvvet başlangıç yükleri ve progresyon. İsteğe bağlı anahtarlar: `target_weight_kg`, `max_hr`, `lactate_threshold_hr`, `goal_5k_time`, `z2_goal_pace`, `z2_goal_date`. Makro dönemler, aktivite penceresi, Zone 2 hedef çizelgesi ve misafir plan nabız bantları kendi tarih aralığından, Garmin verisinden veya profilden türetilir; kodda sabit tarih yoktur.
+
+## Güvenlik ve Gizlilik
+
+Panel kişisel sağlık verisi sunduğu için sunucu yalnızca bu bilgisayara kilitlidir:
+
+- Sadece `127.0.0.1` üzerinde dinler; `Host` başlığı `localhost` / `127.0.0.1` / `::1` olmayan istekler reddedilir (DNS rebinding savunması).
+- **CORS yoktur.** Farklı `Origin` veya `Sec-Fetch-Site: cross-site` içeren istekler `403` alır; tarayıcında açık başka bir site verini okuyamaz veya `/api/sync` tetikleyemez.
+- `GET` uç noktalarının yan etkisi yoktur (yalnızca `POST /api/sync` ve `POST /api/session/keepalive` Garmin'e bağlanır). POST gövdesi 1 MB ile sınırlıdır.
+- Arayüz **internetsiz** çalışır: Lucide ve fontlar sürümleri sabitlenmiş ve SHA-256 özetleriyle [`app/static/vendor/VENDOR.md`](app/static/vendor/VENDOR.md) içinde yerel olarak tutulur.
+- Kişisel telemetri `data/` klasöründedir (git'e girmez). Demo modu (`GARMIN_DEMO_MODE=1`) Garmin hesabına ve `data/` klasörüne dokunmaz.
+
+## Dil ve Kurallar
+
+- **Kod tanımlayıcıları, API anahtarları ve dosya adları İngilizcedir.** Sporcunun okuduğu metinler (arayüz, koç mesajları, motor docstring ve yorumları) bilinçli olarak **Türkçedir**. İngilizce README geliştiriciler içindir; bu dosya onun Türkçe karşılığıdır.
+- Her değişiklikte `python -B tests/run_tests.py` yeşil kalmalıdır. CI, testleri Python 3.10 ve 3.12'de sentetik `sample_data/` ile çalıştırır.
+- Bağımlılıklar: `pip install -r requirements.txt`.
+

@@ -1,0 +1,8 @@
+{
+  "_comment": "Sentetik demo profili (gerçek bir kişiye ait değildir).",
+  "name": "Demo Sporcu",
+  "age": 30,
+  "gender": "male",
+  "height_cm": 180,
+  "target_weight_kg": 76.0
+}

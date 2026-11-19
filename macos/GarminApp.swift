@@ -146,6 +146,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         return "/usr/bin/python3"
     }
 
+    private func openServerLogHandle() -> FileHandle? {
+        let fm = FileManager.default
+        let logDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/Garmin 2.0", isDirectory: true)
+        let logURL = logDir.appendingPathComponent("server.log")
+        do {
+            try fm.createDirectory(at: logDir, withIntermediateDirectories: true)
+            // Her açılışta log sıfırlanır; dosya sınırsız büyümez
+            fm.createFile(atPath: logURL.path, contents: nil)
+            return try FileHandle(forWritingTo: logURL)
+        } catch {
+            return FileHandle(forWritingAtPath: "/dev/null")
+        }
+    }
+
     private func startBackendServer(projectDir: String, port: UInt16) {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: resolvePythonPath())
@@ -158,9 +173,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         env["PYTHONUNBUFFERED"] = "1"
         proc.environment = env
 
-        let devNull = FileHandle(forWritingAtPath: "/dev/null")
-        proc.standardOutput = devNull
-        proc.standardError = devNull
+        // Sunucu çıktısı hata ayıklama için ~/Library/Logs/Garmin 2.0/server.log dosyasına yazılır
+        let logHandle = openServerLogHandle()
+        proc.standardOutput = logHandle
+        proc.standardError = logHandle
 
         do {
             try proc.run()

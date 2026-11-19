@@ -21,12 +21,14 @@ from app.garmin_engine import GarminAthleteEngine
 class TestEngineCalculations(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.engine = GarminAthleteEngine()
+        # Hermetik: testler kişisel data/ yerine sentetik sample_data/ üzerinde çalışır
+        sample_dir = os.path.join(BASE_DIR, "sample_data")
+        cls.engine = GarminAthleteEngine(sample_dir)
 
     def test_mifflin_st_jeor_bmr_formula(self):
         """Mifflin-St Jeor BMR formülünün matematiksel doğruluğunu test eder."""
         # Erkek: 10 * kg + 6.25 * cm - 5 * yaş + 5
-        # Sarp: 10 * 87 + 6.25 * 186 - 5 * 22 + 5 = 870 + 1162.5 - 110 + 5 = 1927.5 -> round: 1928 kcal
+        # Örnek: 10 * 87 + 6.25 * 186 - 5 * 22 + 5 = 870 + 1162.5 - 110 + 5 = 1927.5 -> round: 1928 kcal
         weight = 87.0
         height = 186.0
         age = 22
@@ -62,7 +64,9 @@ class TestEngineCalculations(unittest.TestCase):
         """Kilo projeksiyonunun gün ve hedef tarih matematiğini test eder."""
         from app.engine.morphology_health_mixin import _TR_FULL_MONTHS
 
-        proj = self.engine.calculate_custom_projection(target_kg=81.0, weekly_pace_kg=0.55)
+        from unittest.mock import patch
+        with patch.object(self.engine, "get_current_weight", return_value=87.0):
+            proj = self.engine.calculate_custom_projection(target_kg=81.0, weekly_pace_kg=0.55)
         # 87 kg -> 81 kg = 6.0 kg / 0.55 = 10.909 hafta * 7 = 76.36 -> 76 gün
         self.assertEqual(proj["days_needed"], 76)
         self.assertEqual(proj["remaining_kg"], 6.0)
@@ -128,7 +132,7 @@ class TestEngineCalculations(unittest.TestCase):
 
     def test_weekly_schedule_respects_completed_quota(self):
         """Hafta başında tamamlanan seansların 2 Koşu + 2 Gym kotasından düşülmesini doğrular."""
-        from datetime import datetime, timedelta
+        from datetime import datetime
         from unittest.mock import patch
 
         ref_now = datetime(2026, 11, 17, 15, 0, 0)  # Salı (16 Kas Pzt + 17 Kas Salı takvim haftası)
@@ -395,14 +399,26 @@ class TestEngineCalculations(unittest.TestCase):
         """Preset dışı sporları (Kayak), dinamik kilo/tarih değişimini ve Anaerobik Load Focus önceliğini doğrular."""
         from unittest.mock import patch
 
-        tl = self.engine.get_training_load_analytics()
+        lb_fixture = {
+            "mostRecentTrainingLoadBalance": {"metricsTrainingLoadBalanceDTOMap": {"d": {
+                "monthlyLoadAerobicLow": 385.9, "monthlyLoadAerobicLowTargetMin": 155, "monthlyLoadAerobicLowTargetMax": 418,
+                "monthlyLoadAerobicHigh": 537.8, "monthlyLoadAerobicHighTargetMin": 325, "monthlyLoadAerobicHighTargetMax": 588,
+                "monthlyLoadAnaerobic": 100.0, "monthlyLoadAnaerobicTargetMin": 0, "monthlyLoadAnaerobicTargetMax": 262,
+                "trainingBalanceFeedbackPhrase": "BALANCED",
+            }}},
+        }
+        with patch.object(self.engine, "training_status_latest", lb_fixture):
+            tl = self.engine.get_training_load_analytics()
         self.assertEqual(tl["load_focus"]["primary_deficit"], "anaerobic")
         self.assertIn("Anaerobik", tl["load_focus"]["recommended_focus_label"])
 
         # Yeni tarih geçtiğinde Zone 2 otomatik bir sonraki kademeye (4:45 /km) geçmeli
         z2_future = self.engine.get_z2_pace_5min_tracker(now=datetime(2027, 4, 20, 12, 0, 0))
         self.assertTrue(z2_future["goal_auto_advanced"])
-        self.assertEqual(z2_future["target_pace"], "4:45 /km")
+        # Yeni kademe: ilk hedef temponun %95'i (ilk hedef = Zone 2 tipik temposunun %75'i, 5 sn'ye yuvarlı)
+        goal = int(round(0.75 * self.engine.get_z2_center_pace_sec() / 5.0) * 5)
+        new_goal = int(round(goal * 0.95))
+        self.assertEqual(z2_future["target_pace"], f"{new_goal // 60}:{new_goal % 60:02d} /km")
 
         # Kayak gibi preset dışı spor hem kotada spontane hem spor kartlarında desteklenmeli
         ski_acts = [
@@ -426,7 +442,7 @@ class TestEngineCalculations(unittest.TestCase):
         with patch.object(self.engine, "get_current_weight", return_value=83.0):
             morph = self.engine.get_physique_morphology_tracker(now=datetime(2026, 12, 1, 10, 0, 0))
         self.assertEqual(morph["current"]["weight_kg"], 83.0)
-        self.assertEqual(morph["stages"][1]["target_kg"], 81.0)
+        self.assertEqual(morph["stages"][1]["target_kg"], round(self.engine.get_target_weight() + 3.0, 1))
         self.assertGreater(morph["stages"][1]["days_remaining"], 0)
 
     def test_adaptive_strength_progression_stall_deload_and_program_switch(self):
@@ -437,9 +453,9 @@ class TestEngineCalculations(unittest.TestCase):
         sp = self.engine.get_sports_guidance()
         upcoming = sp["strength"]["upcoming_sessions"]
         self.assertGreaterEqual(len(upcoming), 3)
-        self.assertIn("67.5 kg", upcoming[0]["details"])
-        self.assertIn("70.0 kg", upcoming[1]["details"])
-        self.assertIn("72.5 kg", upcoming[2]["details"])
+        import re
+        squat_kg = [float(re.search(r"Squat ([\d.]+) kg", u["details"]).group(1)) for u in upcoming[:3]]
+        self.assertEqual([round(b - a, 1) for a, b in zip(squat_kg, squat_kg[1:])], [2.5, 2.5])
 
         # 2. İzole geçici dizinde kısmi başarı (takılma) -> konsolidasyon -> 2. takılma -> %10 deload
         with tempfile.TemporaryDirectory() as tmpdir:

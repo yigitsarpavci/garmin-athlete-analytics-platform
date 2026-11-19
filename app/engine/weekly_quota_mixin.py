@@ -6,13 +6,15 @@ Pazartesi-Pazar penceresinde 2 Koşu + 2 Kuvvet kotasını takip eder; Pazartesi
 ancak geçen haftadan eksik kalan seans türünü yeni haftada öncelik sırasına yerleştirir.
 """
 
+import logging
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 
 try:
-    from engine.helpers import TR_DAYS, TR_MONTHS, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from engine.helpers import request_cached, zone_text, TR_DAYS, TR_MONTHS, format_sport_tr, classify_sport_bucket, classify_run_workout
 except ImportError:
-    from app.engine.helpers import TR_DAYS, TR_MONTHS, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from app.engine.helpers import request_cached, zone_text, TR_DAYS, TR_MONTHS, format_sport_tr, classify_sport_bucket, classify_run_workout
 
 
 _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
@@ -21,31 +23,31 @@ _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
         "type": "Zone 2 Koşu",
         "short_label": "Zone 2 Koşu",
         "title_prefix": "Zone 2 Rahat Taban",
-        "target_hr": "140 - 150 bpm",
-        "target_pace": "6:35 - 6:50 /km",
+        "target_hr": "[[Z2_HR]]",
+        "target_pace": "[[Z2_PACE]]",
         "duration": "45-50 dk",
         "badge": "Zone 2 Taban",
         "protocol_day_code": "thursday",
-        "coaching_note": "140-150 bpm nabız tavanını aşmadan, 160+ spm kadans ve burundan rahat nefesle haftanın uygun bir gününde uygula.",
+        "coaching_note": "[[Z2_HR]] nabız tavanını aşmadan, 160+ spm kadans ve burundan rahat nefesle haftanın uygun bir gününde uygula.",
     },
     "interval": {
         "category": "running",
         "type": "5K Hız İntervali",
         "short_label": "5K Hız İntervali",
         "title_prefix": "5K Hız İntervali (4x1.000m)",
-        "target_hr": "172 - 180 bpm",
-        "target_pace": "5:15 /km",
+        "target_hr": "[[INT_HR]]",
+        "target_pace": "[[INT_PACE]]",
         "duration": "45 dk",
         "badge": "5K İnterval",
         "protocol_day_code": "monday",
-        "coaching_note": "10 dk ısınma + 4x1.000m @ 5:15 /km (aralarda 3 dk yürüyüş/jog) + 8 dk soğuma; bacakların taze olduğu bir günde uygula.",
+        "coaching_note": "10 dk ısınma + 4x1.000m @ [[INT_PACE]] (aralarda 3 dk yürüyüş/jog) + 8 dk soğuma; bacakların taze olduğu bir günde uygula.",
     },
     "gym_a": {
         "category": "strength",
         "type": "Workout A",
         "short_label": "Workout A",
         "title_prefix": "Workout A (5x5)",
-        "exercises_summary": "Squat 67.5 kg (5x5) · Bench Press 52.5 kg (5x5 PR) · Barbell Row 62.5 kg (5x5) · Lateral Raise 25 kg (3x12) · Shrug 45 kg (3x12)",
+        "exercises_summary": "Squat (5x5) · Bench Press (5x5) · Barbell Row (5x5) · Lateral Raise (3x12) · Shrug (3x12)",
         "duration": "55 dk",
         "badge": "Workout A",
         "protocol_day_code": "tuesday",
@@ -56,13 +58,50 @@ _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
         "type": "Workout B",
         "short_label": "Workout B",
         "title_prefix": "Workout B (5x5)",
-        "exercises_summary": "Squat 67.5 kg (5x5) · OHP 40.0 kg (5x5) · Deadlift 65.0 kg (1x5) · Lat Pulldown 45.0 kg (4x12) · Lateral Raise 25 kg (3x12) · Shrug 45 kg (3x12)",
+        "exercises_summary": "Squat (5x5) · OHP (5x5) · Deadlift (1x5) · Lat Pulldown (4x12) · Lateral Raise (3x12) · Shrug (3x12)",
         "duration": "55 dk",
         "badge": "Workout B",
         "protocol_day_code": "saturday",
         "coaching_note": "Arka zincir ve omuz gelişimi için bacakların toparlandığı uygun bir günde uygula.",
     },
 }
+
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class _WeekState:
+    """Haftalık plan hesabı sırasında biriken durum (tamamlanan seanslar, sapmalar, gün aktiviteleri). Parametre listelerini sadeleştirir."""
+
+    planned_run_order: List[str]
+    planned_gym_order: List[str]
+    gym_type_by_date: Dict[str, str]
+    day_acts: List[List[Dict[str, Any]]] = field(default_factory=list)
+    runs_done_list: List[Dict[str, Any]] = field(default_factory=list)
+    gyms_done_list: List[Dict[str, Any]] = field(default_factory=list)
+    runs_completed_items: List[Dict[str, Any]] = field(default_factory=list)
+    gyms_completed_items: List[Dict[str, Any]] = field(default_factory=list)
+    spontaneous_items: List[Dict[str, Any]] = field(default_factory=list)
+    completed_run_kinds: List[str] = field(default_factory=list)
+    completed_gym_kinds: List[str] = field(default_factory=list)
+    plan_deviations: List[Dict[str, Any]] = field(default_factory=list)
+    run_cls_by_id: Dict[int, Dict[str, Any]] = field(default_factory=dict)
+    day_deviations: Dict[str, List[Dict[str, Any]]] = field(default_factory=dict)
+    last_gym_type: Optional[str] = None
+
+
+@dataclass
+class _DayCtx:
+    """Haftanın tek bir gününün bağlamı (sıra, tarih, etiket ve bugüne göre konumu)."""
+
+    i: int
+    d_str: str
+    base_day: str
+    is_today: bool
+    is_past: bool
+    is_tomorrow: bool
+    is_completed: bool
 
 
 class WeeklyQuotaMixin:
@@ -75,6 +114,7 @@ class WeeklyQuotaMixin:
             try:
                 prog = (self.get_gym_exercise_history() or {}).get("progression", {})
             except Exception:
+                logger.warning("_get_dynamic_gym_summaries: yedek davranış uygulandı", exc_info=True)
                 prog = {}
         if not prog:
             return {
@@ -82,14 +122,14 @@ class WeeklyQuotaMixin:
                 "gym_b": _BASE_QUOTA_TEMPLATES["gym_b"]["exercises_summary"],
             }
 
-        sq = prog.get("squat", {}).get("next_target", "67.5 kg x 5x5").split(" x ")[0]
-        bp = prog.get("bench", {}).get("next_target", "52.5 kg").split(" x ")[0]
-        rw = prog.get("row", {}).get("next_target", "62.5 kg").split(" x ")[0]
-        ohp = prog.get("ohp", {}).get("next_target", "40.0 kg").split(" x ")[0]
-        dl = prog.get("deadlift", {}).get("next_target", "65.0 kg").split(" x ")[0]
-        lat = prog.get("lat_pulldown", {}).get("next_target", "45.0-50.0 kg").split(" x ")[0]
-        lr = prog.get("lateral_raise", {}).get("next_target", "22.5-25.0 kg").split(" x ")[0]
-        sh = prog.get("shrug", {}).get("next_target", "45.0 kg").split(" x ")[0]
+        sq = prog.get("squat", {}).get("next_target", "--").split(" x ")[0]
+        bp = prog.get("bench", {}).get("next_target", "--").split(" x ")[0]
+        rw = prog.get("row", {}).get("next_target", "--").split(" x ")[0]
+        ohp = prog.get("ohp", {}).get("next_target", "--").split(" x ")[0]
+        dl = prog.get("deadlift", {}).get("next_target", "--").split(" x ")[0]
+        lat = prog.get("lat_pulldown", {}).get("next_target", "--").split(" x ")[0]
+        lr = prog.get("lateral_raise", {}).get("next_target", "--").split(" x ")[0]
+        sh = prog.get("shrug", {}).get("next_target", "--").split(" x ")[0]
 
         return {
             "gym_a": f"Squat {sq} (5x5) · Bench {bp} (5x5) · Row {rw} (5x5) · Lateral {lr} (3x12) · Shrug {sh} (3x12)",
@@ -140,7 +180,7 @@ class WeeklyQuotaMixin:
                         item["title"] = f"Kuvvet #{ordinal} · {p_type}"
                         item["exercises_summary"] = p_details
                 except Exception:
-                    pass
+                    logger.warning("_build_quota_remaining_item: yedek davranış uygulandı", exc_info=True)
         return item
 
     def _analyze_previous_week_carryover(
@@ -238,7 +278,7 @@ class WeeklyQuotaMixin:
                         f"Anaerobik yük (%{round(an_pct)}) Düşük Aerobik barından (%{round(low_pct)}) daha düşük olduğu için hız intervali ilk sıraya önerildi."
                     )
             except Exception:
-                pass
+                logger.warning("_analyze_previous_week_carryover: yedek davranış uygulandı", exc_info=True)
 
         has_prev_data = bool(prev_runs_sorted or prev_gyms_sorted)
         if not has_prev_data:
@@ -266,6 +306,7 @@ class WeeklyQuotaMixin:
             "adaptation_note": adaptation_note,
         }
 
+    @request_cached
     def _build_weekly_schedule_entries(self, now: Optional[datetime] = None) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """
         Takvim haftası (Pzt–Paz) içinde tamamlanan Garmin aktivitelerini haftalık
@@ -290,28 +331,17 @@ class WeeklyQuotaMixin:
 
         carryover = self._analyze_previous_week_carryover(monday_anchor, gym_type_by_date)
         gym_summaries = self._get_dynamic_gym_summaries()
-
-        planned_run_order = list(carryover["run_order"])
-        planned_gym_order = list(carryover["gym_order"])
-
-        day_acts: List[List[Dict[str, Any]]] = []
-        runs_done_list: List[Dict[str, Any]] = []
-        gyms_done_list: List[Dict[str, Any]] = []
-        runs_completed_items: List[Dict[str, Any]] = []
-        gyms_completed_items: List[Dict[str, Any]] = []
-        spontaneous_items: List[Dict[str, Any]] = []
-        completed_run_kinds: List[str] = []
-        completed_gym_kinds: List[str] = []
-        plan_deviations: List[Dict[str, Any]] = []
-        run_cls_by_id: Dict[int, Dict[str, Any]] = {}
-        day_deviations: Dict[str, List[Dict[str, Any]]] = {}
-        last_gym_type: Optional[str] = None
+        st = _WeekState(
+            planned_run_order=list(carryover["run_order"]),
+            planned_gym_order=list(carryover["gym_order"]),
+            gym_type_by_date=gym_type_by_date,
+        )
 
         for d_date in week_dates:
             d_str = d_date.strftime("%Y-%m-%d")
             day_short = f"{d_date.day} {TR_MONTHS[d_date.month - 1]} {TR_DAYS[d_date.weekday()]}"
             matched = [a for a in self.activities_all if (a.get("startTimeLocal") or "")[:10] == d_str]
-            day_acts.append(matched)
+            st.day_acts.append(matched)
             for act in matched:
                 sport_key = (act.get("sport") or (act.get("activityType") or {}).get("typeKey") or "").lower()
                 act_name = act.get("activityName") or "Antrenman"
@@ -323,165 +353,111 @@ class WeeklyQuotaMixin:
                 bucket = classify_sport_bucket(sport_key)
 
                 if bucket == "running":
-                    idx_r = len(runs_done_list)
-                    runs_done_list.append(act)
-                    r_cls = classify_run_workout(act)
-                    actual_kind = r_cls["kind"]
-                    completed_run_kinds.append(actual_kind)
-
-                    expected_kind = planned_run_order[idx_r] if idx_r < len(planned_run_order) else planned_run_order[-1]
-                    if expected_kind in completed_run_kinds[:-1]:
-                        alt = [k for k in planned_run_order if k != expected_kind]
-                        if alt:
-                            expected_kind = alt[0]
-                    expected_label = _BASE_QUOTA_TEMPLATES[expected_kind]["short_label"]
-                    r_cls["expected_kind"] = expected_kind
-                    r_cls["expected_label"] = expected_label
-                    r_cls["is_deviation"] = (actual_kind != expected_kind)
-                    run_cls_by_id[id(act)] = r_cls
-
-                    dist_km = round(dist_m / 1000.0, 2) if dist_m > 0 else 0.0
-                    dist_txt = f"{dist_km:.2f} km · " if dist_km > 0 else ""
-
-                    if actual_kind == "tempo":
-                        item_label = (
-                            f"{day_short} · {r_cls['label_tr']} [Haftalık Koşu Kotasına Sayıldı] "
-                            f"({dist_txt}{dur_m} dk{hr_txt} · TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']})"
-                        )
-                        dev = {
-                            "date": d_str,
-                            "day_label": day_short,
-                            "category": "running",
-                            "planned_kind": expected_kind,
-                            "planned_label": expected_label,
-                            "actual_kind": actual_kind,
-                            "actual_label": r_cls["label_tr"],
-                            "badge": f"Kota Güncellendi: {r_cls['short_label']}",
-                            "note": (
-                                f"{day_short} yapılan {r_cls['label_tr']} ({avg_hr} bpm, TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']}) "
-                                f"haftalık koşu kotasına sayıldı ve koşu kotası 1 düşürüldü. "
-                                f"{expected_label} ise henüz yapılmadığı için haftanın kalan koşu kotası olarak korundu."
-                            ),
-                        }
-                        plan_deviations.append(dev)
-                        day_deviations.setdefault(d_str, []).append(dev)
-                    elif r_cls["is_deviation"]:
-                        item_label = (
-                            f"{day_short} · {r_cls['label_tr']} [Haftalık Koşu Kotasına Sayıldı] "
-                            f"({dist_txt}{dur_m} dk{hr_txt})"
-                        )
-                        dev = {
-                            "date": d_str,
-                            "day_label": day_short,
-                            "category": "running",
-                            "planned_kind": expected_kind,
-                            "planned_label": expected_label,
-                            "actual_kind": actual_kind,
-                            "actual_label": r_cls["label_tr"],
-                            "badge": f"Kota Güncellendi: {r_cls['short_label']}",
-                            "note": (
-                                f"{day_short} yapılan {r_cls['label_tr']} haftalık koşu kotasına sayıldı ve kota 1 düşürüldü; "
-                                f"kalan koşu kotası {expected_label} olarak güncellendi."
-                            ),
-                        }
-                        plan_deviations.append(dev)
-                        day_deviations.setdefault(d_str, []).append(dev)
-                    else:
-                        item_label = f"{day_short} · {r_cls['label_tr']} ({dist_txt}{dur_m} dk{hr_txt})"
-
-                    runs_completed_items.append({
-                        "date": d_str,
-                        "day_label": day_short,
-                        "title": act_name,
-                        "workout_type": r_cls["label_tr"],
-                        "actual_kind": actual_kind,
-                        "expected_kind": expected_kind,
-                        "is_deviation": r_cls["is_deviation"],
-                        "te_label": r_cls["te_label"],
-                        "an_te": r_cls["an_te"],
-                        "distance_km": dist_km,
-                        "duration_min": dur_m,
-                        "avg_hr": avg_hr,
-                        "calories": cal,
-                        "label": item_label,
-                    })
+                    self._record_run_activity(st, act, act_name, avg_hr, cal, d_str, day_short, dist_m, dur_m, hr_txt)
                 elif bucket == "strength":
-                    idx_g = len(gyms_done_list)
-                    gyms_done_list.append(act)
-                    w_type = gym_type_by_date.get(d_str) or "Kuvvet"
-                    last_gym_type = w_type if w_type != "Kuvvet" else last_gym_type
-                    g_kind = "gym_a" if "Workout A" in w_type else ("gym_b" if "Workout B" in w_type else planned_gym_order[min(idx_g, len(planned_gym_order) - 1)])
-                    completed_gym_kinds.append(g_kind)
-                    expected_g = planned_gym_order[idx_g] if idx_g < len(planned_gym_order) else planned_gym_order[-1]
-                    if g_kind != expected_g and w_type != "Kuvvet":
-                        exp_g_lbl = _BASE_QUOTA_TEMPLATES[expected_g]["short_label"]
-                        dev = {
-                            "date": d_str,
-                            "day_label": day_short,
-                            "category": "strength",
-                            "planned_kind": expected_g,
-                            "planned_label": exp_g_lbl,
-                            "actual_kind": g_kind,
-                            "actual_label": w_type,
-                            "badge": f"Kota Güncellendi: {w_type}",
-                            "note": f"{day_short} günü {w_type} uygulandı ve haftalık kuvvet kotasına sayıldı; kalan kuvvet kotası {exp_g_lbl} olarak güncellendi.",
-                        }
-                        plan_deviations.append(dev)
-                        day_deviations.setdefault(d_str, []).append(dev)
-                    gyms_completed_items.append({
-                        "date": d_str,
-                        "day_label": day_short,
-                        "workout_type": w_type,
-                        "actual_kind": g_kind,
-                        "title": f"Kuvvet #{len(gyms_done_list)} · {w_type} (5x5)",
-                        "duration_min": dur_m,
-                        "avg_hr": avg_hr,
-                        "calories": cal,
-                        "label": f"{day_short} · {w_type} ({dur_m} dk{hr_txt})",
-                    })
+                    st.last_gym_type = self._record_strength_activity(st, act, avg_hr, cal, d_str, day_short, dur_m, hr_txt)
                 else:
-                    sport_tr = format_sport_tr(sport_key, act_name)
-                    spontaneous_items.append({
-                        "date": d_str,
-                        "day_label": day_short,
-                        "sport": sport_key or "other",
-                        "sport_tr": sport_tr,
-                        "title": act_name,
-                        "duration_min": dur_m,
-                        "avg_hr": avg_hr,
-                        "calories": cal,
-                        "label": f"{day_short} · {sport_tr}: {act_name} ({dur_m} dk{hr_txt})",
-                    })
+                    self._record_spontaneous_activity(st, act_name, avg_hr, cal, d_str, day_short, dur_m, hr_txt, sport_key)
 
-        runs_done = len(runs_done_list)
-        gyms_done = len(gyms_done_list)
+        runs_done = len(st.runs_done_list)
+        gyms_done = len(st.gyms_done_list)
         rem_runs = max(0, 2 - runs_done)
         rem_gyms = max(0, 2 - gyms_done)
+        adapted_recovery_day_idx, assigned_slot, needed_gyms, needed_runs, post_tempo_adapted = self._plan_open_slots(st, carryover, gyms_done, now, rem_gyms, rem_runs, runs_done, week_dates)
+
+        _format_completed_day = self._make_completed_day_formatter(st)
+
+        _build_planned_slot = self._make_planned_slot_builder(st, carryover, gym_summaries, gyms_done, post_tempo_adapted, rem_gyms, rem_runs, runs_done)
+
+        schedule: List[Dict[str, Any]] = []
+        meta_days: List[Dict[str, Any]] = []
+        run_counter = [0]
+        gym_counter = [0]
+        total_done = runs_done + gyms_done
+        total_rem = rem_runs + rem_gyms
+
+        for i, d_date in enumerate(week_dates):
+            d_str = d_date.strftime("%Y-%m-%d")
+            d_name = TR_DAYS[d_date.weekday()]
+            m_name = TR_MONTHS[d_date.month - 1]
+            is_today = (d_str == now.strftime("%Y-%m-%d"))
+            is_past = (d_date.date() < now.date())
+            is_tomorrow = (d_date.date() == (now + timedelta(days=1)).date())
+            base_day = f"{d_date.day} {m_name} {d_name}"
+
+            slot_kind = "completed"
+            is_completed = bool(st.day_acts[i])
+            day = _DayCtx(i, d_str, base_day, is_today, is_past, is_tomorrow, is_completed)
+            day_label, row_data, slot_kind = self._resolve_day_row(
+                st, day, _build_planned_slot, _format_completed_day, adapted_recovery_day_idx, assigned_slot,
+                gym_counter, run_counter, slot_kind, total_done, total_rem, week_dates,
+            )
+
+            entry: Dict[str, Any] = {
+                "day": day_label,
+                "slot_kind": slot_kind,
+                "is_completed": is_completed,
+                "is_flexible": not is_completed,
+                **row_data,
+            }
+            schedule.append(entry)
+            meta_days.append({
+                "date": d_date,
+                "date_str": d_str,
+                "day_label": day_label,
+                "slot_kind": slot_kind,
+                "is_completed": is_completed,
+                "is_past": is_past,
+                **row_data,
+            })
+
+        return schedule, {
+            "week_range": week_range,
+            "runs_done": runs_done,
+            "gyms_done": gyms_done,
+            "rem_runs": rem_runs,
+            "rem_gyms": rem_gyms,
+            "needed_runs": needed_runs,
+            "needed_gyms": needed_gyms,
+            "completed_run_kinds": st.completed_run_kinds,
+            "completed_gym_kinds": st.completed_gym_kinds,
+            "plan_deviations": st.plan_deviations,
+            "post_tempo_adapted": post_tempo_adapted,
+            "adapted_recovery_day_idx": adapted_recovery_day_idx,
+            "runs_completed_items": st.runs_completed_items,
+            "gyms_completed_items": st.gyms_completed_items,
+            "spontaneous_items": st.spontaneous_items,
+            "carryover": carryover,
+            "days": meta_days,
+        }
+
+    def _plan_open_slots(self, st, carryover, gyms_done, now, rem_gyms, rem_runs, runs_done, week_dates):
+        """Kalan koşu/kuvvet seanslarını (öncelik sırası, art arda yük ve toparlanma kurallarıyla) haftanın açık günlerine atar."""
         post_tempo_adapted = False
 
         needed_runs: List[Tuple[str, int]] = []
         if rem_runs == 2:
-            needed_runs = [(planned_run_order[0], 1), (planned_run_order[1], 2)]
+            needed_runs = [(st.planned_run_order[0], 1), (st.planned_run_order[1], 2)]
         elif rem_runs == 1:
-            if "interval" in completed_run_kinds and "zone2" not in completed_run_kinds:
+            if "interval" in st.completed_run_kinds and "zone2" not in st.completed_run_kinds:
                 needed_runs = [("zone2", runs_done + 1)]
-            elif "zone2" in completed_run_kinds and "interval" not in completed_run_kinds:
+            elif "zone2" in st.completed_run_kinds and "interval" not in st.completed_run_kinds:
                 needed_runs = [("interval", runs_done + 1)]
             else:
                 post_tempo_adapted = True
-                next_kind = "interval" if planned_run_order[0] == "interval" else "zone2"
+                next_kind = "interval" if st.planned_run_order[0] == "interval" else "zone2"
                 needed_runs = [(next_kind, runs_done + 1)]
 
         needed_gyms: List[Tuple[str, int]] = []
         if rem_gyms == 2:
-            needed_gyms = [(planned_gym_order[0], 1), (planned_gym_order[1], 2)]
+            needed_gyms = [(st.planned_gym_order[0], 1), (st.planned_gym_order[1], 2)]
         elif rem_gyms == 1:
-            if "gym_a" in completed_gym_kinds and "gym_b" not in completed_gym_kinds:
+            if "gym_a" in st.completed_gym_kinds and "gym_b" not in st.completed_gym_kinds:
                 next_gym = "gym_b"
-            elif "gym_b" in completed_gym_kinds and "gym_a" not in completed_gym_kinds:
+            elif "gym_b" in st.completed_gym_kinds and "gym_a" not in st.completed_gym_kinds:
                 next_gym = "gym_a"
             else:
-                next_gym = "gym_a" if last_gym_type and "Workout B" in last_gym_type else "gym_b"
+                next_gym = "gym_a" if st.last_gym_type and "Workout B" in st.last_gym_type else "gym_b"
             needed_gyms = [(next_gym, gyms_done + 1)]
 
         needed_queue: List[Tuple[str, int]] = []
@@ -491,8 +467,8 @@ class WeeklyQuotaMixin:
             if idx < len(needed_gyms):
                 needed_queue.append(needed_gyms[idx])
 
-        open_offsets = [i for i in range(7) if not day_acts[i] and week_dates[i].date() >= now.date()]
-        completed_day_indices = {i for i in range(7) if day_acts[i]}
+        open_offsets = [i for i in range(7) if not st.day_acts[i] and week_dates[i].date() >= now.date()]
+        completed_day_indices = {i for i in range(7) if st.day_acts[i]}
         adapted_recovery_day_idx: Optional[int] = None
         for i in open_offsets:
             if (i - 1) in completed_day_indices and (i - 2) in completed_day_indices:
@@ -532,12 +508,16 @@ class WeeklyQuotaMixin:
                     break
                 if i not in assigned_slot:
                     assigned_slot[i] = remaining.pop(0)
+        return adapted_recovery_day_idx, assigned_slot, needed_gyms, needed_runs, post_tempo_adapted
 
+
+    def _make_completed_day_formatter(self, st):
+        """Tamamlanmış günün özet satırını üreten fonksiyonu döner (sapma ve sınıflandırma verisi yakalanır)."""
         def _format_completed_day(matched: List[Dict[str, Any]], d_str: str, run_c: List[int], gym_c: List[int]) -> Dict[str, Any]:
             titles, details, hr_notes = [], [], []
             has_run = False
             has_gym = False
-            devs_today = day_deviations.get(d_str, [])
+            devs_today = st.day_deviations.get(d_str, [])
             dev_badge = devs_today[0]["badge"] if devs_today else None
             for act in matched:
                 sport_key = (act.get("sport") or (act.get("activityType") or {}).get("typeKey") or "").lower()
@@ -551,7 +531,7 @@ class WeeklyQuotaMixin:
                 if bucket == "running":
                     has_run = True
                     run_c[0] += 1
-                    r_cls = run_cls_by_id.get(id(act)) or classify_run_workout(act)
+                    r_cls = st.run_cls_by_id.get(id(act)) or classify_run_workout(act)
                     dist_txt = f" ({dist_m / 1000.0:.2f} km)" if dist_m > 0 else ""
                     titles.append(f"Koşu #{run_c[0]} • {r_cls['label_tr']} — {act_name}{dist_txt}")
                     te_txt = f" • TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']}"
@@ -572,7 +552,7 @@ class WeeklyQuotaMixin:
                 elif bucket == "strength":
                     has_gym = True
                     gym_c[0] += 1
-                    w_type = gym_type_by_date.get(d_str) or "Kuvvet"
+                    w_type = st.gym_type_by_date.get(d_str) or "Kuvvet"
                     titles.append(f"Kuvvet #{gym_c[0]} • {w_type} (5x5)")
                     details.append(f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm)")
                 else:
@@ -591,16 +571,20 @@ class WeeklyQuotaMixin:
                 "macro": macro_txt,
                 "deviation_badge": dev_badge,
             }
+        return _format_completed_day
 
+
+    def _make_planned_slot_builder(self, st, carryover, gym_summaries, gyms_done, post_tempo_adapted, rem_gyms, rem_runs, runs_done):
+        """Kalan kota seansları için planlanan slot satırı üreten fonksiyonu döner (kota durumu yakalanır)."""
         def _build_planned_slot(slot_kind: str, ordinal: int) -> Dict[str, str]:
             is_last_run = (rem_runs == 1 and runs_done == 1)
             is_last_gym = (rem_gyms == 1 and gyms_done == 1)
             prio_hint = ""
             if slot_kind in ("zone2", "interval") and post_tempo_adapted:
                 prio_hint = " (Tempo Sonrası Güncel Telafi)"
-            elif slot_kind == planned_run_order[0] and carryover["run_priority_reason"] and ordinal == 1:
+            elif slot_kind == st.planned_run_order[0] and carryover["run_priority_reason"] and ordinal == 1:
                 prio_hint = " (Öncelikli)"
-            elif slot_kind == planned_gym_order[0] and carryover["gym_priority_reason"] and ordinal == 1:
+            elif slot_kind == st.planned_gym_order[0] and carryover["gym_priority_reason"] and ordinal == 1:
                 prio_hint = " (Öncelikli)"
 
             if slot_kind == "gym_a":
@@ -626,7 +610,7 @@ class WeeklyQuotaMixin:
                 return {
                     "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Zone 2 Rahat Taban (45-50 dk)",
                     "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), toparlanmana uygun günde uygula • 160+ kadans, burundan nefes",
-                    "target": "140-150 bpm (6:35-6:50 /km)",
+                    "target": "[[Z2_HR]] ([[Z2_PACE]])",
                     "calories": "~2.950 kcal",
                     "macro": "2.550 kcal (175g P / 275g K / 80g Y)",
                 }
@@ -637,136 +621,229 @@ class WeeklyQuotaMixin:
             )
             return {
                 "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · 5K Hız İntervali (45 dk, 4x1.000m)",
-                "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), taze bacaklarla uygun günde uygula{extra_tempo_note} • 5:15 /km tempo, 3 dk jog",
-                "target": "170-183 bpm (Zone 4-5)",
+                "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), taze bacaklarla uygun günde uygula{extra_tempo_note} • [[INT_PACE]] tempo, 3 dk jog",
+                "target": "[[Z45_HR]] (Zone 4-5)",
                 "calories": "~3.050 kcal",
                 "macro": "2.650 kcal (175g P / 300g K / 80g Y)",
             }
+        return _build_planned_slot
 
-        schedule: List[Dict[str, Any]] = []
-        meta_days: List[Dict[str, Any]] = []
-        run_counter = [0]
-        gym_counter = [0]
-        total_done = runs_done + gyms_done
-        total_rem = rem_runs + rem_gyms
 
-        for i, d_date in enumerate(week_dates):
-            d_str = d_date.strftime("%Y-%m-%d")
-            d_name = TR_DAYS[d_date.weekday()]
-            m_name = TR_MONTHS[d_date.month - 1]
-            is_today = (d_str == now.strftime("%Y-%m-%d"))
-            is_past = (d_date.date() < now.date())
-            is_tomorrow = (d_date.date() == (now + timedelta(days=1)).date())
-            base_day = f"{d_date.day} {m_name} {d_name}"
-
-            slot_kind = "completed"
-            is_completed = bool(day_acts[i])
-            if is_completed:
-                day_label = f"{base_day} (Bugün)" if is_today else base_day
-                row_data = _format_completed_day(day_acts[i], d_str, run_counter, gym_counter)
-            elif i in assigned_slot:
-                slot_kind, ordinal = assigned_slot[i]
-                if is_today:
-                    day_label = f"{base_day} (Bugün · Güncel Plan)"
-                elif is_tomorrow:
-                    day_label = f"{base_day} (Yarın · Güncel Öneri)"
-                else:
-                    day_label = f"{base_day} (Güncel Önerilen Pencere)"
-                row_data = _build_planned_slot(slot_kind, ordinal)
-            elif i == adapted_recovery_day_idx:
-                slot_kind = "rest"
-                day_label = f"{base_day} ({'Bugün · ' if is_today else ''}Uyarlanmış Toparlanma)"
-                prev1_lbl = f"{week_dates[i - 1].day} {TR_MONTHS[week_dates[i - 1].month - 1]} {TR_DAYS[week_dates[i - 1].weekday()]}"
-                prev2_lbl = f"{week_dates[i - 2].day} {TR_MONTHS[week_dates[i - 2].month - 1]} {TR_DAYS[week_dates[i - 2].weekday()]}"
-                row_data = {
-                    "primary": "Uyarlanmış Toparlanma / Rejenerasyon Penceresi",
-                    "secondary": (
-                        f"{prev2_lbl} + {prev1_lbl} üst üste yüklendiği için bugün toparlanma günü olarak ayrıldı; "
-                        f"kalan {total_rem} seans dinlenmiş günlere kaydırıldı"
-                    ),
-                    "target": "<105 bpm (Aktif Dinlenme)",
-                    "calories": "~2.450 kcal",
-                    "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
-                }
-            elif i == 6:
-                slot_kind = "active_recovery"
-                day_label = f"{base_day} (Esnek Kapanış)" if not is_today else f"{base_day} (Bugün · Esnek Kapanış)"
-                quota_note = (
-                    "Haftalık 4/4 antrenman kotası tamamlandı"
-                    if total_rem == 0
-                    else f"Bu hafta {total_done}/4 seans tamamlandı, geriye {total_rem} esnek seans kaldı"
-                )
-                row_data = {
-                    "primary": "Aktif Toparlanma / Mobilite & Esnek Yürüyüş",
-                    "secondary": f"Esnek Gün — Hafif yürüyüş, esneme, nefes (NSDR) • {quota_note}",
-                    "target": "<110 bpm (Zone 1)",
-                    "calories": "~2.500 kcal",
-                    "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
-                }
+    def _resolve_day_row(self, st, day, _build_planned_slot, _format_completed_day, adapted_recovery_day_idx, assigned_slot, gym_counter, run_counter, slot_kind, total_done, total_rem, week_dates):
+        """Günün satırını belirler: tamamlanmış gün, atanmış kalan seans, uyarlanmış toparlanma, esnek kapanış veya dinlenme."""
+        if day.is_completed:
+            day_label = f"{day.base_day} (Bugün)" if day.is_today else day.base_day
+            row_data = _format_completed_day(st.day_acts[day.i], day.d_str, run_counter, gym_counter)
+        elif day.i in assigned_slot:
+            slot_kind, ordinal = assigned_slot[day.i]
+            if day.is_today:
+                day_label = f"{day.base_day} (Bugün · Güncel Plan)"
+            elif day.is_tomorrow:
+                day_label = f"{day.base_day} (Yarın · Güncel Öneri)"
             else:
-                slot_kind = "rest"
-                if is_past:
-                    day_label = f"{base_day} (Geçti · Dinlenme)"
-                    sec_txt = "Geçmiş Dinlenme / Ekstra Kayıt Yok"
-                else:
-                    prefix = "Bugün · " if is_today else ("Yarın · " if is_tomorrow else "")
-                    day_label = f"{base_day} ({prefix}Esnek Dinlenme)"
-                    sec_txt = (
-                        f"Esnek Gün — Bu hafta {total_done}/4 seans tamamlandı, geriye {total_rem} seans kaldı; kalan kotayı dilediğin uygun güne taşıyabilirsin"
-                        if total_rem > 0
-                        else "Haftalık 4/4 antrenman kotası tamamlandı — kas onarımı & 00:30 öncesi uyku"
-                    )
-                row_data = {
-                    "primary": "Esnek Toparlanma / Rejenerasyon Penceresi",
-                    "secondary": sec_txt,
-                    "target": "<100 bpm (Parasempatik gün)",
-                    "calories": "~2.450 kcal",
-                    "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
-                }
-
-            entry: Dict[str, Any] = {
-                "day": day_label,
-                "slot_kind": slot_kind,
-                "is_completed": is_completed,
-                "is_flexible": not is_completed,
-                **row_data,
+                day_label = f"{day.base_day} (Güncel Önerilen Pencere)"
+            row_data = _build_planned_slot(slot_kind, ordinal)
+        elif day.i == adapted_recovery_day_idx:
+            slot_kind = "rest"
+            day_label = f"{day.base_day} ({'Bugün · ' if day.is_today else ''}Uyarlanmış Toparlanma)"
+            prev1_lbl = f"{week_dates[day.i - 1].day} {TR_MONTHS[week_dates[day.i - 1].month - 1]} {TR_DAYS[week_dates[day.i - 1].weekday()]}"
+            prev2_lbl = f"{week_dates[day.i - 2].day} {TR_MONTHS[week_dates[day.i - 2].month - 1]} {TR_DAYS[week_dates[day.i - 2].weekday()]}"
+            row_data = {
+                "primary": "Uyarlanmış Toparlanma / Rejenerasyon Penceresi",
+                "secondary": (
+                    f"{prev2_lbl} + {prev1_lbl} üst üste yüklendiği için bugün toparlanma günü olarak ayrıldı; "
+                    f"kalan {total_rem} seans dinlenmiş günlere kaydırıldı"
+                ),
+                "target": "<105 bpm (Aktif Dinlenme)",
+                "calories": "~2.450 kcal",
+                "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
             }
-            schedule.append(entry)
-            meta_days.append({
-                "date": d_date,
-                "date_str": d_str,
-                "day_label": day_label,
-                "slot_kind": slot_kind,
-                "is_completed": is_completed,
-                "is_past": is_past,
-                **row_data,
-            })
+        elif day.i == 6:
+            slot_kind = "active_recovery"
+            day_label = f"{day.base_day} (Esnek Kapanış)" if not day.is_today else f"{day.base_day} (Bugün · Esnek Kapanış)"
+            quota_note = (
+                "Haftalık 4/4 antrenman kotası tamamlandı"
+                if total_rem == 0
+                else f"Bu hafta {total_done}/4 seans tamamlandı, geriye {total_rem} esnek seans kaldı"
+            )
+            row_data = {
+                "primary": "Aktif Toparlanma / Mobilite & Esnek Yürüyüş",
+                "secondary": f"Esnek Gün — Hafif yürüyüş, esneme, nefes (NSDR) • {quota_note}",
+                "target": "<110 bpm (Zone 1)",
+                "calories": "~2.500 kcal",
+                "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
+            }
+        else:
+            slot_kind = "rest"
+            if day.is_past:
+                day_label = f"{day.base_day} (Geçti · Dinlenme)"
+                sec_txt = "Geçmiş Dinlenme / Ekstra Kayıt Yok"
+            else:
+                prefix = "Bugün · " if day.is_today else ("Yarın · " if day.is_tomorrow else "")
+                day_label = f"{day.base_day} ({prefix}Esnek Dinlenme)"
+                sec_txt = (
+                    f"Esnek Gün — Bu hafta {total_done}/4 seans tamamlandı, geriye {total_rem} seans kaldı; kalan kotayı dilediğin uygun güne taşıyabilirsin"
+                    if total_rem > 0
+                    else "Haftalık 4/4 antrenman kotası tamamlandı — kas onarımı & 00:30 öncesi uyku"
+                )
+            row_data = {
+                "primary": "Esnek Toparlanma / Rejenerasyon Penceresi",
+                "secondary": sec_txt,
+                "target": "<100 bpm (Parasempatik gün)",
+                "calories": "~2.450 kcal",
+                "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
+            }
+        return day_label, row_data, slot_kind
 
-        return schedule, {
-            "week_range": week_range,
-            "runs_done": runs_done,
-            "gyms_done": gyms_done,
-            "rem_runs": rem_runs,
-            "rem_gyms": rem_gyms,
-            "needed_runs": needed_runs,
-            "needed_gyms": needed_gyms,
-            "completed_run_kinds": completed_run_kinds,
-            "completed_gym_kinds": completed_gym_kinds,
-            "plan_deviations": plan_deviations,
-            "post_tempo_adapted": post_tempo_adapted,
-            "adapted_recovery_day_idx": adapted_recovery_day_idx,
-            "runs_completed_items": runs_completed_items,
-            "gyms_completed_items": gyms_completed_items,
-            "spontaneous_items": spontaneous_items,
-            "carryover": carryover,
-            "days": meta_days,
-        }
 
+    def _record_run_activity(self, st, act, act_name, avg_hr, cal, d_str, day_short, dist_m, dur_m, hr_txt):
+        """Koşu aktivitesini sınıflandırır (interval / Zone 2 / tempo), haftalık kotaya sayar ve plan sapmasını kaydeder."""
+        idx_r = len(st.runs_done_list)
+        st.runs_done_list.append(act)
+        r_cls = classify_run_workout(act)
+        actual_kind = r_cls["kind"]
+        st.completed_run_kinds.append(actual_kind)
+
+        expected_kind = st.planned_run_order[idx_r] if idx_r < len(st.planned_run_order) else st.planned_run_order[-1]
+        if expected_kind in st.completed_run_kinds[:-1]:
+            alt = [k for k in st.planned_run_order if k != expected_kind]
+            if alt:
+                expected_kind = alt[0]
+        expected_label = _BASE_QUOTA_TEMPLATES[expected_kind]["short_label"]
+        r_cls["expected_kind"] = expected_kind
+        r_cls["expected_label"] = expected_label
+        r_cls["is_deviation"] = (actual_kind != expected_kind)
+        st.run_cls_by_id[id(act)] = r_cls
+
+        dist_km = round(dist_m / 1000.0, 2) if dist_m > 0 else 0.0
+        dist_txt = f"{dist_km:.2f} km · " if dist_km > 0 else ""
+
+        if actual_kind == "tempo":
+            item_label = (
+                f"{day_short} · {r_cls['label_tr']} [Haftalık Koşu Kotasına Sayıldı] "
+                f"({dist_txt}{dur_m} dk{hr_txt} · TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']})"
+            )
+            dev = {
+                "date": d_str,
+                "day_label": day_short,
+                "category": "running",
+                "planned_kind": expected_kind,
+                "planned_label": expected_label,
+                "actual_kind": actual_kind,
+                "actual_label": r_cls["label_tr"],
+                "badge": f"Kota Güncellendi: {r_cls['short_label']}",
+                "note": (
+                    f"{day_short} yapılan {r_cls['label_tr']} ({avg_hr} bpm, TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']}) "
+                    f"haftalık koşu kotasına sayıldı ve koşu kotası 1 düşürüldü. "
+                    f"{expected_label} ise henüz yapılmadığı için haftanın kalan koşu kotası olarak korundu."
+                ),
+            }
+            st.plan_deviations.append(dev)
+            st.day_deviations.setdefault(d_str, []).append(dev)
+        elif r_cls["is_deviation"]:
+            item_label = (
+                f"{day_short} · {r_cls['label_tr']} [Haftalık Koşu Kotasına Sayıldı] "
+                f"({dist_txt}{dur_m} dk{hr_txt})"
+            )
+            dev = {
+                "date": d_str,
+                "day_label": day_short,
+                "category": "running",
+                "planned_kind": expected_kind,
+                "planned_label": expected_label,
+                "actual_kind": actual_kind,
+                "actual_label": r_cls["label_tr"],
+                "badge": f"Kota Güncellendi: {r_cls['short_label']}",
+                "note": (
+                    f"{day_short} yapılan {r_cls['label_tr']} haftalık koşu kotasına sayıldı ve kota 1 düşürüldü; "
+                    f"kalan koşu kotası {expected_label} olarak güncellendi."
+                ),
+            }
+            st.plan_deviations.append(dev)
+            st.day_deviations.setdefault(d_str, []).append(dev)
+        else:
+            item_label = f"{day_short} · {r_cls['label_tr']} ({dist_txt}{dur_m} dk{hr_txt})"
+
+        st.runs_completed_items.append({
+            "date": d_str,
+            "day_label": day_short,
+            "title": act_name,
+            "workout_type": r_cls["label_tr"],
+            "actual_kind": actual_kind,
+            "expected_kind": expected_kind,
+            "is_deviation": r_cls["is_deviation"],
+            "te_label": r_cls["te_label"],
+            "an_te": r_cls["an_te"],
+            "distance_km": dist_km,
+            "duration_min": dur_m,
+            "avg_hr": avg_hr,
+            "calories": cal,
+            "label": item_label,
+        })
+
+
+    def _record_strength_activity(self, st, act, avg_hr, cal, d_str, day_short, dur_m, hr_txt):
+        """Kuvvet aktivitesini haftalık kotaya sayar, Workout A/B türünü belirler ve plan sapmasını kaydeder."""
+        idx_g = len(st.gyms_done_list)
+        st.gyms_done_list.append(act)
+        w_type = st.gym_type_by_date.get(d_str) or "Kuvvet"
+        st.last_gym_type = w_type if w_type != "Kuvvet" else st.last_gym_type
+        g_kind = "gym_a" if "Workout A" in w_type else ("gym_b" if "Workout B" in w_type else st.planned_gym_order[min(idx_g, len(st.planned_gym_order) - 1)])
+        st.completed_gym_kinds.append(g_kind)
+        expected_g = st.planned_gym_order[idx_g] if idx_g < len(st.planned_gym_order) else st.planned_gym_order[-1]
+        if g_kind != expected_g and w_type != "Kuvvet":
+            exp_g_lbl = _BASE_QUOTA_TEMPLATES[expected_g]["short_label"]
+            dev = {
+                "date": d_str,
+                "day_label": day_short,
+                "category": "strength",
+                "planned_kind": expected_g,
+                "planned_label": exp_g_lbl,
+                "actual_kind": g_kind,
+                "actual_label": w_type,
+                "badge": f"Kota Güncellendi: {w_type}",
+                "note": f"{day_short} günü {w_type} uygulandı ve haftalık kuvvet kotasına sayıldı; kalan kuvvet kotası {exp_g_lbl} olarak güncellendi.",
+            }
+            st.plan_deviations.append(dev)
+            st.day_deviations.setdefault(d_str, []).append(dev)
+        st.gyms_completed_items.append({
+            "date": d_str,
+            "day_label": day_short,
+            "workout_type": w_type,
+            "actual_kind": g_kind,
+            "title": f"Kuvvet #{len(st.gyms_done_list)} · {w_type} (5x5)",
+            "duration_min": dur_m,
+            "avg_hr": avg_hr,
+            "calories": cal,
+            "label": f"{day_short} · {w_type} ({dur_m} dk{hr_txt})",
+        })
+        return st.last_gym_type
+
+
+    def _record_spontaneous_activity(self, st, act_name, avg_hr, cal, d_str, day_short, dur_m, hr_txt, sport_key):
+        """Preset dışı (spontane) bir aktiviteyi haftalık spontane listeye ekler."""
+        sport_tr = format_sport_tr(sport_key, act_name)
+        st.spontaneous_items.append({
+            "date": d_str,
+            "day_label": day_short,
+            "sport": sport_key or "other",
+            "sport_tr": sport_tr,
+            "title": act_name,
+            "duration_min": dur_m,
+            "avg_hr": avg_hr,
+            "calories": cal,
+            "label": f"{day_short} · {sport_tr}: {act_name} ({dur_m} dk{hr_txt})",
+        })
+
+
+    @zone_text
     def get_weekly_schedule(self) -> List[Dict[str, Any]]:
         """Pazartesi-Pazar takvim haftası için esnek 2 Koşu + 2 Kuvvet görünümünü döner."""
         schedule, _ = self._build_weekly_schedule_entries()
         return schedule
 
+    @request_cached
+    @zone_text
     def get_weekly_quota_summary(self, now: Optional[datetime] = None) -> Dict[str, Any]:
         """Pazartesi sıfırlamalı esnek haftalık kota özetini, plan sapmalarını ve güncel yeniden planlamayı döner."""
         _, week_meta = self._build_weekly_schedule_entries(now=now)
@@ -803,49 +880,7 @@ class WeeklyQuotaMixin:
             for idx, (kind, ordinal) in enumerate(week_meta["needed_gyms"])
         ]
 
-        done_parts: List[str] = []
-        if runs_done > 0:
-            if post_tempo_adapted:
-                done_parts.append(f"{runs_done} Koşu (Tempo — Kotaya Sayıldı)")
-            else:
-                done_parts.append(f"{runs_done} Koşu")
-        if gyms_done > 0:
-            done_parts.append(f"{gyms_done} Kuvvet")
-        done_str = f"Bu hafta {' + '.join(done_parts)} tamamladın" if done_parts else "Bu hafta henüz planlı seans tamamlamadın"
-
-        rem_parts: List[str] = []
-        if rem_runs == 2:
-            rem_parts.append("2 Koşu (" + " + ".join(i["short_label"] for i in rem_run_items) + ")")
-        elif rem_runs == 1 and rem_run_items:
-            rem_parts.append(f"1 {rem_run_items[0]['short_label']}")
-        if rem_gyms == 2:
-            rem_parts.append("2 Kuvvet (" + " + ".join(i["short_label"] for i in rem_gym_items) + ")")
-        elif rem_gyms == 1 and rem_gym_items:
-            rem_parts.append(f"1 {rem_gym_items[0]['short_label']}")
-
-        rem_str = (
-            "Haftalık 4/4 temel antrenman kotan tamamlandı!"
-            if (rem_runs == 0 and rem_gyms == 0)
-            else f"Geriye {' + '.join(rem_parts)} kaldı"
-        )
-        headline = f"{done_str} · {rem_str}"
-
-        run_status_text = (
-            f"{runs_done}/2 Tamamlandı · Haftalık koşu kotası doldu"
-            if rem_runs == 0
-            else f"{runs_done}/2 Tamamlandı · Geriye {rem_runs} ({' + '.join(i['short_label'] for i in rem_run_items)}) kaldı"
-        )
-        gym_status_text = (
-            f"{gyms_done}/2 Tamamlandı · Haftalık kuvvet kotası doldu"
-            if rem_gyms == 0
-            else f"{gyms_done}/2 Tamamlandı · Geriye {rem_gyms} ({' + '.join(i['short_label'] for i in rem_gym_items)}) kaldı"
-        )
-        spontaneous_items = week_meta["spontaneous_items"]
-        spont_status_text = (
-            f"Bu hafta {len(spontaneous_items)} spontane seans ({', '.join(s['sport_tr'] for s in spontaneous_items)}) kaydedildi"
-            if spontaneous_items
-            else "Bu hafta henüz spontane branş (Yelken / Basketbol / Kayak vb.) kaydı yok"
-        )
+        gym_status_text, headline, run_status_text, spont_status_text, spontaneous_items = self._build_quota_status_texts(gyms_done, post_tempo_adapted, rem_gym_items, rem_gyms, rem_run_items, rem_runs, runs_done, week_meta)
 
         total_done = runs_done + gyms_done
         total_rem = rem_runs + rem_gyms
@@ -921,3 +956,51 @@ class WeeklyQuotaMixin:
                 ),
             },
         }
+
+    def _build_quota_status_texts(self, gyms_done, post_tempo_adapted, rem_gym_items, rem_gyms, rem_run_items, rem_runs, runs_done, week_meta):
+        """Haftalık kota başlığını ve koşu / kuvvet / spontane durum metinlerini üretir."""
+        done_parts: List[str] = []
+        if runs_done > 0:
+            if post_tempo_adapted:
+                done_parts.append(f"{runs_done} Koşu (Tempo — Kotaya Sayıldı)")
+            else:
+                done_parts.append(f"{runs_done} Koşu")
+        if gyms_done > 0:
+            done_parts.append(f"{gyms_done} Kuvvet")
+        done_str = f"Bu hafta {' + '.join(done_parts)} tamamladın" if done_parts else "Bu hafta henüz planlı seans tamamlamadın"
+
+        rem_parts: List[str] = []
+        if rem_runs == 2:
+            rem_parts.append("2 Koşu (" + " + ".join(i["short_label"] for i in rem_run_items) + ")")
+        elif rem_runs == 1 and rem_run_items:
+            rem_parts.append(f"1 {rem_run_items[0]['short_label']}")
+        if rem_gyms == 2:
+            rem_parts.append("2 Kuvvet (" + " + ".join(i["short_label"] for i in rem_gym_items) + ")")
+        elif rem_gyms == 1 and rem_gym_items:
+            rem_parts.append(f"1 {rem_gym_items[0]['short_label']}")
+
+        rem_str = (
+            "Haftalık 4/4 temel antrenman kotan tamamlandı!"
+            if (rem_runs == 0 and rem_gyms == 0)
+            else f"Geriye {' + '.join(rem_parts)} kaldı"
+        )
+        headline = f"{done_str} · {rem_str}"
+
+        run_status_text = (
+            f"{runs_done}/2 Tamamlandı · Haftalık koşu kotası doldu"
+            if rem_runs == 0
+            else f"{runs_done}/2 Tamamlandı · Geriye {rem_runs} ({' + '.join(i['short_label'] for i in rem_run_items)}) kaldı"
+        )
+        gym_status_text = (
+            f"{gyms_done}/2 Tamamlandı · Haftalık kuvvet kotası doldu"
+            if rem_gyms == 0
+            else f"{gyms_done}/2 Tamamlandı · Geriye {rem_gyms} ({' + '.join(i['short_label'] for i in rem_gym_items)}) kaldı"
+        )
+        spontaneous_items = week_meta["spontaneous_items"]
+        spont_status_text = (
+            f"Bu hafta {len(spontaneous_items)} spontane seans ({', '.join(s['sport_tr'] for s in spontaneous_items)}) kaydedildi"
+            if spontaneous_items
+            else "Bu hafta henüz spontane branş (Yelken / Basketbol / Kayak vb.) kaydı yok"
+        )
+        return gym_status_text, headline, run_status_text, spont_status_text, spontaneous_items
+

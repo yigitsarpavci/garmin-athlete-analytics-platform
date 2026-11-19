@@ -1,0 +1,9 @@
+# Çekirdek (sunucu stdlib http.server kullanır; web çatısı gerekmez)
+pandas>=2.0
+numpy>=1.26
+
+# Opsiyonel: gerçek AI koç sağlayıcıları (anahtar yoksa kural motoru devreye girer)
+# google-genai>=1.0     # GEMINI_API_KEY
+# openai>=1.0           # OPENAI_API_KEY
+# Opsiyonel: harici FIT çözücü (dahili ayrıştırıcı yoksa)
+# fitparse>=1.2

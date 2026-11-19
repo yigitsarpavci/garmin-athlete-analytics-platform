@@ -2,8 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests: Passed](https://img.shields.io/badge/Tests-Passed%20(100%25)-success)](tests/run_tests.py)
+[![Tests](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml/badge.svg)](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml)
 [![Architecture: MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-purple)](https://modelcontextprotocol.io)
 
 An end-to-end athletic performance intelligence and biometric telemetry platform. It ingests 93 days ($N=93$ days, 49+ multi-sport activities, 88+ sleep/HRV nights, and resistance sets) of raw Garmin Connect sensor data via the **Model Context Protocol (MCP)**, executing Tim Gabbett Acute:Chronic Workload Ratio (ACWR) injury risk modeling, Firstbeat training status algorithms, dynamic multi-sport weekly quota adaptation, and live dark-mode physiological analytics.
@@ -20,6 +19,9 @@ An end-to-end athletic performance intelligence and biometric telemetry platform
 - [Scientific & Mathematical Formulations](#scientific--mathematical-formulations)
 - [5-Point Post-Workout Debrief Protocol](#5-point-post-workout-debrief-protocol)
 - [Tech Stack](#tech-stack)
+- [Athlete Profile](#athlete-profile-nothing-personal-lives-in-the-code)
+- [Security & Privacy](#security--privacy)
+- [Language & Conventions](#language--conventions)
 - [Verification & Test Suite](#verification--test-suite)
 - [REST API Reference](#rest-api-reference)
 - [Local Setup & Quickstart](#local-setup--quickstart)
@@ -35,7 +37,7 @@ Commercial fitness trackers generate massive streams of biometric telemetry (hea
 **Garmin Athlete Analytics Platform** bridges this gap:
 1. **IoT Sensor Ingestion & High-Res FIT Parsing:** Connects directly to Garmin Connect via the Model Context Protocol (MCP) to extract raw 93-day activity, sleep, 5-minute overnight HRV (RMSSD), Running Dynamics (`GCT`, vertical oscillation/ratio, power), body weight, and `1 Hz` binary `.fit` streams (`app/engine/fit_stream_parser.py`).
 2. **Deterministic Physiology & Flexible Quota Engine:** Computes acute and chronic workload ratios, cardiac efficiency factors, energy expenditure, dynamic morphology projections, progressive overload weights, and Monday-reset flexible weekly quotas without heuristic guesswork.
-3. **Single-Screen Forest-Dark Telemetry Workspace:** Serves a zero-scroll (`100vh`) deep-forest dark-mode web dashboard backed by modular Python analytics engines, 15-minute live Garmin sync, 4-minute adaptive SSO keep-alive (`GET /api/session/keepalive`), and an offline synthetic demo mode (`GARMIN_DEMO_MODE=1` / `--demo`).
+3. **Single-Screen Forest-Dark Telemetry Workspace:** Serves a zero-scroll (`100vh`) deep-forest dark-mode web dashboard backed by modular Python analytics engines, hourly incremental Garmin sync (`GARMIN_SYNC_INTERVAL_SEC`), 4-minute adaptive SSO keep-alive (`GET /api/session/keepalive`), and an offline synthetic demo mode (`GARMIN_DEMO_MODE=1` / `--demo`).
 
 ---
 
@@ -66,7 +68,7 @@ Commercial fitness trackers generate massive streams of biometric telemetry (hea
   5. **Gym Tonnage Progression:** Computes total session tonnage and tracks individual compound PRs.
 
 ### 5. Dual-Provider AI Athletic Coach
-- Features a real-time conversational sports coach powered by **Google GenAI (Gemini 2.5 Flash)** with automatic fallback to **OpenAI (GPT-4o)** or deterministic sports science heuristics when API keys are absent.
+- Features a real-time conversational sports coach powered by **Google GenAI (Gemini 2.5 Flash)** with automatic fallback to **OpenAI (GPT-4o-mini)** or deterministic sports science heuristics when API keys are absent.
 
 ### 6. High-Res Binary FIT Streams, Session Keep-Alive & Demo Mode
 - **Binary `.fit` Decoder (`app/engine/fit_stream_parser.py`):** Decodes native Garmin FIT binary frames (`1 Hz` heart rate, cadence, stride length, ground contact time, and vertical oscillation) plus 5-minute overnight HRV and respiration series exposed via `GET /api/garmin-expansion`.
@@ -135,17 +137,17 @@ Following every session, the platform benchmarks live telemetry against baseline
 
 ## Tech Stack
 
-- **Backend & API:** Python 3.12, Modular Telemetry & Quota Engine, Standard Library HTTP Server.
+- **Backend & API:** Python 3.10+, Modular Telemetry & Quota Engine, multi-threaded Standard Library HTTP Server (`ThreadingHTTPServer`).
 - **Data Ingestion:** Model Context Protocol (MCP), `@etweisberg/garmin-connect-mcp`, live weight & exercise sets ingestion.
 - **Analytics & Math:** NumPy, Pandas, Gabbett ACWR, Dynamic Morphology & Exercise Physiology Engine.
-- **Frontend & Visualization:** Semantic HTML5, Vanilla ES6+ Modules, Chart.js, Dark-Mode Telemetry Design System.
+- **Frontend & Visualization:** Semantic HTML5, Vanilla ES6+ Modules, Tailwind (precompiled), Dark-Mode Telemetry Design System.
 - **Testing & QA:** Python `unittest`, Playwright Browser Automation.
 
 ---
 
 ## Verification & Test Suite
 
-The platform includes a comprehensive test suite of **36 unit and integration tests** guaranteeing calculation accuracy, FIT/high-res stream parsing, flexible weekly quota transitions, sample-data parity, and endpoint reliability:
+The platform includes a comprehensive test suite of **96 unit, integration, security and UI-contract tests** guaranteeing calculation accuracy, FIT/high-res stream parsing, flexible weekly quota transitions, sample-data parity, and endpoint reliability:
 
 ```bash
 python3 tests/run_tests.py
@@ -162,9 +164,9 @@ test_off_plan_tempo_run_not_counted_as_interval_and_replans_week ok
 test_unknown_sport_dynamic_weight_and_anaerobic_focus .......... ok
 test_weekly_quota_summary_states ............................... ok
 test_weekly_schedule_respects_completed_quota .................. ok
-... (+29 API, data-integrity, and sports-science tests) ......... ok
+... (+30 API, data-integrity, and sports-science tests) ......... ok
 ----------------------------------------------------------------------
-Ran 36 tests
+Ran 96 tests
 
 OK
 🎉 TÜM TESTLER BAŞARIYLA TAMAMLANDI! (%100 Geçti)
@@ -195,7 +197,7 @@ OK
 ## Local Setup & Quickstart
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.10+ and `pip install -r requirements.txt` (pandas, numpy)
 - (Optional) Node.js 18+ for live Garmin Connect telemetry sync (`make fetch`)
 - (Optional) Google GenAI or OpenAI API key for live AI coaching:
   ```bash
@@ -230,6 +232,42 @@ make fetch        # or node ./scripts/fetch_garmin_data.mjs
 
 ---
 
+## Athlete Profile (nothing personal lives in the code)
+
+Age, height, gender and goals are **never hard-coded**. They are read at runtime, in this order:
+
+1. `data/athlete_profile.json` – optional overrides you write yourself (git-ignored). Copy [`athlete_profile.example.json`](athlete_profile.example.json) and edit it.
+2. `data/raw_profile.json` – downloaded from Garmin Connect by `make fetch` (birth date → age, height, gender, lactate-threshold HR).
+3. Neutral defaults. `/api/overview` then reports `athlete.profile_missing`, so the UI/CLI can tell the user which fields to fill in.
+
+Everything else is derived from the athlete's **own Garmin data**: weight history, max/resting HR, Zone 2 and interval heart-rate bands (percentages of max HR), Zone 2 pace (efficiency factor at Z2 heart rate), interval pace (90 % of the current 5K pace), HR/power zones, lift starting loads (from body weight) and progression (from Garmin set data). Optional profile keys: `target_weight_kg`, `max_hr`, `lactate_threshold_hr`, `goal_5k_time` (e.g. `"24:30"`), `z2_goal_pace` (`"5:00"`), `z2_goal_date` (`"2027-04-15"`). Macro periods, the activity window, the Zone 2 goal timeline and guest-plan heart-rate bands are all derived from your own date range, Garmin data or profile; there are no hard-coded dates.
+
+## Security & Privacy
+
+The dashboard serves personal health data, so the server is locked down to the local machine:
+
+- Binds to `127.0.0.1` only. Requests whose `Host` header is not `localhost` / `127.0.0.1` / `::1` are rejected (DNS-rebinding defence).
+- **No CORS.** The UI is same-origin; requests carrying a foreign `Origin`, or `Sec-Fetch-Site: cross-site`, get `403`. A random website open in your browser cannot read your data or trigger `/api/sync`.
+- `GET` endpoints have no side effects (only `POST /api/sync` and `POST /api/session/keepalive` contact Garmin). POST bodies are capped at 1 MB.
+- Strict `Content-Security-Policy` (`script-src 'self'`, no inline scripts or inline event handlers: the UI uses `data-calls` attributes and one delegated listener), `X-Frame-Options: DENY`, `nosniff`.
+- The UI is fully **offline-capable**: Lucide and the fonts are vendored with pinned versions and SHA-256 hashes in [`app/static/vendor/VENDOR.md`](app/static/vendor/VENDOR.md). No CDN is contacted at runtime.
+- Personal telemetry lives in `data/` (git-ignored). Demo mode (`GARMIN_DEMO_MODE=1`) never touches your Garmin account or `data/`.
+
+## Language & Conventions
+
+- **Code identifiers, API keys and file names are English.** Product copy that the athlete reads (UI text, coaching messages, docstrings and comments in the engine) is **Turkish** by design: the app is a personal coaching tool for a Turkish-speaking athlete. The English README exists for developers; [README_TR.md](README_TR.md) mirrors it.
+- Engine modules are mixins composed by `GarminAthleteEngine`; computation stays in the backend and the UI only renders (see `app/athlete_principles.py` as the single source of truth for training rules).
+- Any change must keep `python -B tests/run_tests.py` green. CI (`.github/workflows/tests.yml`) runs the suite on Python 3.10 and 3.12 against synthetic `sample_data/`.
+- Install dependencies with `pip install -r requirements.txt`.
+
+### 4. Developer tooling
+```bash
+make css      # rebuild app/static/css/tailwind.css (Tailwind 3.4.17 CLI via npx; no runtime compiler in the browser)
+make lint     # ruff (pyflakes rules) over app/, tests/, scripts/
+make test     # 96 tests
+```
+CI also fails when `css/tailwind.css` is stale. The Garmin sync is **incremental** (finalised days are cached; `node scripts/fetch_garmin_data.mjs --full` forces a complete refresh).
+
 ## Project Structure
 
 ```
@@ -240,7 +278,7 @@ garmin-athlete-analytics-platform/
 │   ├── athlete_principles.py         # Single source of truth training rules
 │   ├── ai_coach.py                   # Multi-provider LLM coaching service
 │   ├── engine/                       # Modular telemetry, quota & morphology mixins
-│   └── static/                       # Dark-mode modular web dashboard
+│   └── static/                       # Dark-mode modular web dashboard (vendor/: pinned offline libs & fonts)
 ├── sample_data/                      # Synthetic demo telemetry for quickstarts
 ├── data/                             # Local Garmin telemetry JSONs (gitignored)
 │   └── archive/                      # Archived single-activity raw JSONs
@@ -253,6 +291,8 @@ garmin-athlete-analytics-platform/
 │   ├── test_api_endpoints.py
 │   ├── test_data_integrity.py
 │   └── test_athlete_principles.py
+├── .github/workflows/tests.yml       # CI: tests (Python 3.10 / 3.12) + JS syntax check
+├── requirements.txt                  # pandas, numpy (+ optional AI / FIT extras)
 ├── Makefile                          # Unified run, test, and fetch shortcuts
 ├── README.md                         # English documentation
 ├── README_TR.md                      # Turkish documentation

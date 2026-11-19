@@ -3,7 +3,6 @@ let globalOverview = null;
 let globalSports = null;
 let globalActivities = null;
 let globalCharts = null;
-let chartInstances = {};
 let currentActiveProfile = {
   is_current_athlete: true,
   athlete_name: "Athlete",
@@ -34,9 +33,6 @@ function applyTheme() {
   document.documentElement.classList.remove('light');
   localStorage.setItem('garmin_app_theme', 'dark');
   refreshIcons();
-  if (typeof updateChartThemes === 'function') {
-    updateChartThemes(true);
-  }
 }
 
 function toggleTheme() {
@@ -263,7 +259,6 @@ async function initApp() {
     if (progData) renderProgressionAssessment(progData);
     if (protocolsData) renderDailyProtocols(protocolsData);
 
-    chartInstances = {};
     // Garmin oturum keep-alive'ı sunucudaki arka plan döngüsü yönetir (server.py:_session_keepalive_loop).
     refreshIcons();
   } catch (err) {

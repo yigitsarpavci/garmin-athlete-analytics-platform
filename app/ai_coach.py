@@ -7,9 +7,10 @@ tüm sorularını Google DeepMind Gemini / OpenAI / Anthropic gerçek yapay zeka
 sporcu telemetrisi ve bağlamıyla aktararak gerçek yanıtlar üretir.
 """
 
+import logging
+import contextlib
 import os
 import sys
-import json
 import shutil
 import subprocess
 import time
@@ -17,7 +18,6 @@ from typing import List, Dict, Any, Optional
 
 try:
     from google import genai
-    from google.genai import types as genai_types
     HAS_GOOGLE_GENAI = True
 except ImportError:
     HAS_GOOGLE_GENAI = False
@@ -27,6 +27,9 @@ try:
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
+
+
+logger = logging.getLogger(__name__)
 
 
 class AthleteAICoach:
@@ -50,6 +53,36 @@ class AthleteAICoach:
         self.agy_path = os.environ.get("ANTIGRAVITY_AGENTAPI_EXE") or shutil.which("agy") or os.path.expanduser("~/.gemini/bin/agy")
         self.default_model = "gemini-3.8-flash-low"
         self.active_provider = "gemini_cli" # gemini_cli | google_genai | openai
+
+    AGY_CLI_MODELS = [
+        {"id": "gemini-3.8-flash-low", "name": "Gemini 3.8 Flash (Hızlı - Önerilen)", "recommended": True},
+        {"id": "gemini-4-hydrogen-high", "name": "Gemini 4 Hydrogen (Derin Analiz)", "recommended": False},
+        {"id": "claude-sonnet-5-5-medium", "name": "Claude Sonnet 5.5 (Alternatif)", "recommended": False},
+    ]
+
+    def _engine_scope(self):
+        """Motorun istek kapsamını (kilit + tek seferlik hesaplama) döner; motor desteklemiyorsa boş bağlam."""
+        scope = getattr(self.engine, "request_scope", None)
+        return scope() if callable(scope) else contextlib.nullcontext()
+
+    def describe_providers(self) -> Dict[str, Any]:
+        """Bu makinede gerçekten kullanılabilir AI sağlayıcılarını (öncelik sırasıyla) raporlar."""
+        providers = []
+        if HAS_GOOGLE_GENAI and os.environ.get("GEMINI_API_KEY"):
+            providers.append({"id": "google_genai", "model": "gemini-2.5-flash"})
+        if HAS_OPENAI and os.environ.get("OPENAI_API_KEY"):
+            providers.append({"id": "openai", "model": "gpt-4o-mini"})
+        has_agy = bool(self.agy_path) and os.path.exists(self.agy_path)
+        if has_agy:
+            providers.append({"id": "agy_cli", "model": self.default_model})
+        return {
+            "active_provider": providers[0]["id"] if providers else "fallback_rules",
+            "providers": providers,
+            "default_model": self.default_model,
+            "is_real_ai_available": bool(providers),
+            # Model seçimi yalnızca Antigravity CLI sağlayıcısında etkilidir
+            "available_models": self.AGY_CLI_MODELS if has_agy else [],
+        }
 
     def _get_weekly_quota_snapshot(self) -> Dict[str, Any]:
         """
@@ -78,33 +111,33 @@ class AthleteAICoach:
                         if "Kuvvet" in pri:
                             gyms_done += 1
             except Exception:
-                pass
+                logger.warning("_get_weekly_quota_snapshot: yedek davranış uygulandı", exc_info=True)
 
         rem_runs = max(0, 2 - runs_done)
         rem_gyms = max(0, 2 - gyms_done)
         run_items = []
         if rem_runs >= 2:
             run_items = [
-                {"category": "running", "type": "Zone 2 Koşu", "title": "Koşu #1 · Zone 2 Rahat Taban", "target_hr": "140 - 150 bpm", "target_pace": "6:35 - 6:50 /km", "duration": "45-50 dk"},
-                {"category": "running", "type": "Hız İntervali", "title": "Koşu #2 · 5K Hız İntervali (4x1.000m)", "target_hr": "172 - 180 bpm", "target_pace": "5:15 /km", "duration": "45 dk"},
+                {"category": "running", "type": "Zone 2 Koşu", "title": "Koşu #1 · Zone 2 Rahat Taban", "target_hr": "[[Z2_HR]]", "target_pace": "[[Z2_PACE]]", "duration": "45-50 dk"},
+                {"category": "running", "type": "Hız İntervali", "title": "Koşu #2 · 5K Hız İntervali (4x1.000m)", "target_hr": "[[INT_HR]]", "target_pace": "[[INT_PACE]]", "duration": "45 dk"},
             ]
         elif rem_runs == 1:
             run_items = [
-                {"category": "running", "type": "Zone 2 Koşu", "title": "Koşu #2 · Zone 2 Rahat Taban", "target_hr": "140 - 150 bpm", "target_pace": "6:35 - 6:50 /km", "duration": "45-50 dk"},
+                {"category": "running", "type": "Zone 2 Koşu", "title": "Koşu #2 · Zone 2 Rahat Taban", "target_hr": "[[Z2_HR]]", "target_pace": "[[Z2_PACE]]", "duration": "45-50 dk"},
             ]
 
         gym_items = []
         if rem_gyms >= 2:
             gym_items = [
-                {"category": "strength", "type": "Workout A", "title": "Kuvvet #1 · Workout A (5x5)", "exercises_summary": "Squat 67.5 kg (5x5) · Bench Press 52.5 kg (5x5) · Row 62.5 kg (5x5)", "duration": "55 dk"},
-                {"category": "strength", "type": "Workout B", "title": "Kuvvet #2 · Workout B (5x5)", "exercises_summary": "Squat 67.5 kg (5x5) · OHP 40.0 kg (5x5) · Deadlift 65.0 kg (1x5) · Lat Pulldown 45 kg (4x12)", "duration": "55 dk"},
+                {"category": "strength", "type": "Workout A", "title": "Kuvvet #1 · Workout A (5x5)", "exercises_summary": "Squat (5x5) · Bench Press (5x5) · Barbell Row (5x5) · Lateral Raise (3x12) · Shrug (3x12)", "duration": "55 dk"},
+                {"category": "strength", "type": "Workout B", "title": "Kuvvet #2 · Workout B (5x5)", "exercises_summary": "Squat (5x5) · OHP (5x5) · Deadlift (1x5) · Lat Pulldown (4x12) · Lateral Raise (3x12) · Shrug (3x12)", "duration": "55 dk"},
             ]
         elif rem_gyms == 1:
             gym_items = [
-                {"category": "strength", "type": "Workout B", "title": "Kuvvet #2 · Workout B (5x5)", "exercises_summary": "Squat 67.5 kg (5x5) · OHP 40.0 kg (5x5) · Deadlift 65.0 kg (1x5) · Lat Pulldown 45 kg (4x12)", "duration": "55 dk"},
+                {"category": "strength", "type": "Workout B", "title": "Kuvvet #2 · Workout B (5x5)", "exercises_summary": "Squat (5x5) · OHP (5x5) · Deadlift (1x5) · Lat Pulldown (4x12) · Lateral Raise (3x12) · Shrug (3x12)", "duration": "55 dk"},
             ]
 
-        return {
+        return self.engine.fill_zone_tokens({
             "week_range": "Bu Hafta (Esnek Kota)",
             "headline": f"Bu hafta {runs_done} Koşu + {gyms_done} Kuvvet tamamladın · Geriye {rem_runs} Koşu + {rem_gyms} Kuvvet kaldı",
             "flexibility_note": "Sabit gün zorunluluğu yok — kalan seansları toparlanmana ve programına göre haftanın herhangi bir uygun gününe yerleştirebilirsin.",
@@ -121,7 +154,7 @@ class AthleteAICoach:
             },
             "remaining_items": run_items + gym_items,
             "spontaneous": {"count": 0, "labels": [], "status_text": "Spontane branşlar yapıldıkça takip edilir"},
-        }
+        })
 
     @staticmethod
     def _format_remaining_item_line(item: Dict[str, Any]) -> str:
@@ -147,7 +180,6 @@ class AthleteAICoach:
         antrenman yükünü, esnek haftalık kota özetini, gym geçmişini ve ilkelerini
         gerçek AI modeline enjekte edilmek üzere kapsamlı bir sistem bağlamı olarak hazırlar.
         """
-        principles = self.engine.get_athlete_principles()
         metrics = self.engine.get_latest_metrics()
         gym = self.engine.get_gym_exercise_history()
         tl = self.engine.get_training_load_analytics()
@@ -155,18 +187,21 @@ class AthleteAICoach:
 
         load_foc = tl.get("load_focus", {}) if isinstance(tl, dict) else {}
         cur_status = tl.get("current_status", {}) if isinstance(tl, dict) else {}
-        acute_load = cur_status.get("acute_load", tl.get("acute_load", 279))
-        chronic_load = cur_status.get("chronic_load", tl.get("chronic_load", 279))
+        acute_load = cur_status.get("acute_load", tl.get("acute_load", 0))
+        chronic_load = cur_status.get("chronic_load", tl.get("chronic_load", 0))
         acwr_ratio = cur_status.get("acwr", 1.00)
         acwr_status = cur_status.get("acwr_status", "Kusursuz Sweet Spot - Sakatlık riski minimum")
 
-        cur_w = float(metrics.get("weight", 87.0))
-        cur_bmi = float(metrics.get("bmi", 25.15))
-        start_w = float(metrics.get("start_weight", 95.0))
+        cur_w = float(metrics.get("weight") or self.engine.get_current_weight())
+        cur_bmi = float(metrics.get("bmi") or round(cur_w / self.engine.height_m2, 2))
+        start_w = float(metrics.get("start_weight") or self.engine.get_start_weight())
+        age = self.engine.age
+        height_cm = self.engine.height_cm
+        target_w = self.engine.get_target_weight()
         lost_kg = round(start_w - cur_w, 1)
-        vo2_val = float(metrics.get("vo2max", tl.get("vo2max_current", 45.4)))
+        vo2_val = float(metrics.get("vo2max", tl.get("vo2max_current", 0.0)))
         stress_val = float(metrics.get("stress", 28.4))
-        proj_81 = self.engine.calculate_custom_projection(81.0, 0.55) if hasattr(self.engine, "calculate_custom_projection") else {"days_needed": 76, "target_date": "1 Şubat 2027"}
+        proj_81 = self.engine.calculate_custom_projection(target_w, 0.55)
         morph = self.engine.get_physique_morphology_tracker() if hasattr(self.engine, "get_physique_morphology_tracker") else {}
         z2_tr = self.engine.get_z2_pace_5min_tracker() if hasattr(self.engine, "get_z2_pace_5min_tracker") else {}
         fit_age = self.engine.get_fitness_age_analysis() if hasattr(self.engine, "get_fitness_age_analysis") else {}
@@ -222,13 +257,13 @@ class AthleteAICoach:
         dl_p = prog_map.get("deadlift", {})
         focus_rec = load_foc.get("recommended_workout", "Anaerobik barı %62 seviyesinde olduğu için haftalık 4x1000m hız intervali önceliklidir.")
 
-        context = f"""Sen, 22 yaşında elit çoklu-branş sporcusuna (Koşu, Ağırlık/Kuvvet, Yelken, Basketbol, Kayak ve tüm Garmin branşları) 7/24 kişisel danışmanlık yapan spor bilimci ve GERÇEK bir AI Koçsun.
+        context = f"""Sen, {age} yaşında elit çoklu-branş sporcusuna (Koşu, Ağırlık/Kuvvet, Yelken, Basketbol, Kayak ve tüm Garmin branşları) 7/24 kişisel danışmanlık yapan spor bilimci ve GERÇEK bir AI Koçsun.
 Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen BİREBİR GÜNCEL veriler yer almaktadır:
 
 =================== SPORCU BİYOMETRİK VE FİZYOLOJİK PROFİLİ ===================
-• Yaş / Boy: 22 Yaşında, 186 cm boy
+• Yaş / Boy: {age} Yaşında, {height_cm:.0f} cm boy
 • Kilo Seyri: {start_w:.1f} kg -> {cur_w:.1f} kg (-{lost_kg:.1f} kg verildi, VKİ: {cur_bmi:.2f})
-• HEDEF İDEAL ATLETİK KİLO: 81.0 kg (Kalan: {max(0.0, cur_w - 81.0):.1f} kg) -> ~{proj_81.get('days_needed', 76)} Gün ({proj_81.get('target_date', '1 Şubat 2027')})
+• HEDEF İDEAL ATLETİK KİLO: {target_w:.1f} kg (Kalan: {max(0.0, cur_w - target_w):.1f} kg) -> ~{proj_81.get('days_needed', 0)} Gün ({proj_81.get('target_date', '--')})
 • Günlük Protein Hedefi: ~{round(cur_w * 2.0)} g (2.0 g/kg yağsız kas koruması)
 
 =================== BU HAFTANIN ESNEK ANTRENMAN KOTASI ({q_week}) ===================
@@ -249,24 +284,24 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
 =================== CANLI GARMIN KUVVET (GYM) TELEMETRİSİ (A/B 5x5) ===================
 • Son Gym Kaydı: {last_session_summary}
 • Güncel Zirveler & Sıradaki Hedefler:
-  - Back Squat: {sq_p.get('max_kg', 65.0)} kg -> Sıradaki Hedef: {sq_p.get('next_target', '67.5 kg x 5x5')}
-  - Bench Press: {bp_p.get('max_kg', 50.0)} kg -> Sıradaki Hedef: {bp_p.get('next_target', '52.5 kg x 5x5')}
-  - Barbell Row: {rw_p.get('max_kg', 60.0)} kg -> Sıradaki Hedef: {rw_p.get('next_target', '62.5 kg x 5x5')}
-  - Overhead Press (OHP): {ohp_p.get('max_kg', 40.0)} kg -> Sıradaki Hedef: {ohp_p.get('next_target', '40.0 kg x 5x5')}
-  - Barbell Deadlift: {dl_p.get('max_kg', 60.0)} kg -> Sıradaki Hedef: {dl_p.get('next_target', '65.0 kg x 5')}
+  - Back Squat: {sq_p.get('max_kg', 0.0)} kg -> Sıradaki Hedef: {sq_p.get('next_target', '--')}
+  - Bench Press: {bp_p.get('max_kg', 0.0)} kg -> Sıradaki Hedef: {bp_p.get('next_target', '--')}
+  - Barbell Row: {rw_p.get('max_kg', 0.0)} kg -> Sıradaki Hedef: {rw_p.get('next_target', '--')}
+  - Overhead Press (OHP): {ohp_p.get('max_kg', 0.0)} kg -> Sıradaki Hedef: {ohp_p.get('next_target', '--')}
+  - Barbell Deadlift: {dl_p.get('max_kg', 0.0)} kg -> Sıradaki Hedef: {dl_p.get('next_target', '--')}
 
 =================== FIRSTBEAT ANTRENMAN YÜKÜ VE ENERJİ ODAĞI ===================
 • Akut Yük (7G ATL): {acute_load} birim | Kronik Yük (28G CTL): {chronic_load} birim | ACWR: {acwr_ratio:.2f} ({acwr_status})
 • Güncel Toparlanma: Dinlenme süresi {metrics.get('recovery_time_h', 0.0)} saat, Uyku skoru {metrics.get('sleep_score', 82)}/100, Gece HRV {metrics.get('overnight_hrv', 43)} ms
 • Load Focus (Gerçek Bar Dolulukları):
-  - Düşük Aerobik (Zone 1-2): {load_foc.get('aerobic_low', {}).get('actual', 385.9):.1f} / {load_foc.get('aerobic_low', {}).get('target_max', 418)} birim (%{load_foc.get('aerobic_low', {}).get('pct_of_target', 92.3)})
-  - Yüksek Aerobik (Zone 3-4): {load_foc.get('aerobic_high', {}).get('actual', 537.8):.1f} / {load_foc.get('aerobic_high', {}).get('target_max', 588)} birim (%{load_foc.get('aerobic_high', {}).get('pct_of_target', 91.5)})
-  - Anaerobik (Zone 5 / Sprint): {load_foc.get('anaerobic', {}).get('actual', 162.3):.1f} / {load_foc.get('anaerobic', {}).get('target_max', 262)} birim (%{load_foc.get('anaerobic', {}).get('pct_of_target', 61.9)})
+  - Düşük Aerobik (Zone 1-2): {load_foc.get('aerobic_low', {}).get('actual', 0.0):.1f} / {load_foc.get('aerobic_low', {}).get('target_max', 0)} birim (%{load_foc.get('aerobic_low', {}).get('pct_of_target', 92.3)})
+  - Yüksek Aerobik (Zone 3-4): {load_foc.get('aerobic_high', {}).get('actual', 0.0):.1f} / {load_foc.get('aerobic_high', {}).get('target_max', 0)} birim (%{load_foc.get('aerobic_high', {}).get('pct_of_target', 91.5)})
+  - Anaerobik (Zone 5 / Sprint): {load_foc.get('anaerobic', {}).get('actual', 0.0):.1f} / {load_foc.get('anaerobic', {}).get('target_max', 0)} birim (%{load_foc.get('anaerobic', {}).get('pct_of_target', 61.9)})
 • ÖNCELİKLİ ODAK KURALI: {focus_rec}
 
 =================== SAĞLIK YAŞI, MORFOLOJİ VE ZONE 2 GERİ SAYIM ===================
-• VO2 Max: {vo2_val} mL/kg/dk | Dinlenik Nabız (RHR): {metrics.get('resting_hr', 53.6)} bpm | Ort. Stres: {stress_val}/100 | Sağlık Yaşı: {fit_age.get('fitness_age', 19.5)} yaş
-• Zone 2 Hedefi: Mevcut {z2_tr.get('current_pace', '6:40 /km')} -> Hedef {z2_tr.get('target_pace', '5:00 /km')} ({z2_tr.get('remaining_days', 148)} gün, {z2_tr.get('target_date', '15 Nisan 2027')})
+• VO2 Max: {vo2_val} mL/kg/dk | Dinlenik Nabız (RHR): {metrics.get('resting_hr') or self.engine.get_physiology()['rhr']} bpm | Ort. Stres: {stress_val}/100 | Sağlık Yaşı: {fit_age.get('fitness_age', 19.5)} yaş
+• Zone 2 Hedefi: Mevcut {z2_tr.get('current_pace', '--')} -> Hedef {z2_tr.get('target_pace', '--')} ({z2_tr.get('remaining_days', 0)} gün, {z2_tr.get('target_date', '--')})
 • Morfoloji Durumu: {(morph.get('current') or {}).get('status_title', '')} — {(morph.get('current') or {}).get('morphology', '')}
 
 =================== PROGRAM POLİTİKASI & ÇAPRAZ BRANŞLAR ===================
@@ -281,11 +316,13 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
         Eğer custom_profile verilmişse (başka bir sporcu için), yanıtı o sporcunun tercihlerine göre uyarlar.
         """
         selected_model = model or self.default_model
-        system_context = self.build_system_context()
+        # Motor verisi yalnızca bağlam kurulurken kilitlenir; LLM çağrıları kilit dışında yapılır.
+        with self._engine_scope():
+            system_context = self.build_system_context()
 
         # Başka bir sporcu için soruluyorsa sistem bağlamına sporcu profilini ekle
         profile_instruction = ""
-        if custom_profile and not custom_profile.get("is_current_athlete", False) and not custom_profile.get("is_sarp", False):
+        if custom_profile and not custom_profile.get("is_current_athlete", False):
             c_name = custom_profile.get("athlete_name") or custom_profile.get("name") or "Misafir Sporcu"
             metrics = custom_profile.get("metrics", {})
             c_age = metrics.get("age") or custom_profile.get("age", 25)
@@ -305,7 +342,7 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
             )
             profile_instruction = (
                 f"\n=================== DİKKAT: AKTİF SPORCU PROFİLİ ({c_name}) ===================\n"
-                f"Kullanıcı şu an Sarp için DEĞİL, kendi belirlediği tercihlere sahip {c_name} isimli bir sporcu için soru sormaktadır:\n"
+                f"Kullanıcı şu an Garmin hesabının sahibi olan ana sporcu için DEĞİL, kendi belirlediği tercihlere sahip {c_name} isimli bir sporcu için soru sormaktadır:\n"
                 f"• Biyometri: {c_age} yaş, {c_w} kg (Hedef: {c_tw} kg)\n"
                 f"• Haftalık Esnek Antrenman Kotası: {c_r} Koşu + {c_g} Kuvvet (Sabit gün dayatması yok!)\n"
                 f"• Planlanan Kota Seansları:\n{c_rem_txt}\n"
@@ -392,7 +429,8 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
 
         # 4. YÖNTEM: Eğer hiçbir AI servisi yanıt vermezse acil durum akıllı spor bilimi motoru
         if not reply_text:
-            reply_text = self._fallback_response(user_question, custom_profile=custom_profile)
+            with self._engine_scope():
+                reply_text = self._fallback_response(user_question, custom_profile=custom_profile)
             provider_used = "Kişiselleştirilmiş Garmin Kural Motoru (Fallback)"
 
         elapsed = time.time() - start_time
@@ -422,7 +460,6 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
         is_custom = bool(
             custom_profile
             and not custom_profile.get("is_current_athlete", False)
-            and not custom_profile.get("is_sarp", False)
         )
         if is_custom:
             quota = custom_profile.get("quota_summary") or custom_profile.get("weekly_quota") or {}
@@ -430,21 +467,21 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
             metrics = custom_profile.get("metrics") or {}
             kcal_txt = f"{metrics.get('target_calories_kcal', 2400)} kcal"
             prot_txt = f"{metrics.get('protein_g', 160)}g protein"
-            z2_cur = "6:35-6:50 /km"
-            z2_tgt = "5:00 /km"
+            z2_cur = "--"
+            z2_tgt = "--"
             z2_date = "Hedef Tarih"
             gym_prog = {}
         else:
             quota = self._get_weekly_quota_snapshot()
-            athlete_label = "Sarp"
+            athlete_label = self.engine.profile.get("name") or "Sporcu"
             latest_m = self.engine.get_latest_metrics() if hasattr(self.engine, "get_latest_metrics") else {}
-            cur_w = float(latest_m.get("weight", 87.0))
+            cur_w = float(latest_m.get("weight") or self.engine.get_current_weight())
             kcal_txt = f"{round(cur_w * 28)} kcal (~500 kcal açık)"
             prot_txt = f"~{round(cur_w * 2.0)}g protein"
             z2_tr = self.engine.get_z2_pace_5min_tracker() if hasattr(self.engine, "get_z2_pace_5min_tracker") else {}
-            z2_cur = z2_tr.get("current_pace", "6:40 /km")
-            z2_tgt = z2_tr.get("target_pace", "5:00 /km")
-            z2_date = z2_tr.get("target_date", "15 Nisan 2027")
+            z2_cur = z2_tr.get("current_pace", "--")
+            z2_tgt = z2_tr.get("target_pace", "--")
+            z2_date = z2_tr.get("target_date", "--")
             gym_hist = self.engine.get_gym_exercise_history() if hasattr(self.engine, "get_gym_exercise_history") else {}
             gym_prog = gym_hist.get("progression", {}) if isinstance(gym_hist, dict) else {}
 
@@ -459,7 +496,7 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
 
         tl = self.engine.get_training_load_analytics() if hasattr(self.engine, "get_training_load_analytics") else {}
         cur_status = tl.get("current_status", {}) if isinstance(tl, dict) else {}
-        acute_load = cur_status.get("acute_load", 279)
+        acute_load = cur_status.get("acute_load", 0)
         acwr_ratio = cur_status.get("acwr", 1.00)
 
         rem_runs_txt = (
@@ -474,8 +511,8 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
         if "z2" in q or "zone 2" in q or "pace" in q:
             return (
                 "🎯 **Zone 2 Temposu & Esnek Haftalık Koşu Kotası:**\n"
-                f"Şu anki 145 bpm Zone 2 temponuz {z2_cur}'dir. 81 kg hedef kilonuza inerken "
-                f"80/20 polarize modelle ({z2_date} hedefinde) 145 bpm nabızda {z2_tgt} temposuna ilerliyorsunuz.\n"
+                f"Şu anki {self.engine.get_training_zones()['[[Z2_HR_MID]]']} bpm Zone 2 temponuz {z2_cur}'dir. {self.engine.get_target_weight():.0f} kg hedef kilonuza inerken "
+                f"80/20 polarize modelle ({z2_date} hedefinde) {self.engine.get_training_zones()['[[Z2_HR_MID]]']} bpm nabızda {z2_tgt} temposuna ilerliyorsunuz.\n"
                 f"• **Bu Haftaki Koşu Kotası ({week_range}):** {r_done}/{r_target} koşu tamamlandı, geriye {r_rem} koşu kaldı.\n"
                 f"• **Kalan Koşu Türü:** {rem_runs_txt}\n"
                 "• **Esnek Planlama:** Sabit bir güne bağlı kalmadan bacaklarınız taze olduğunda haftanın herhangi bir uygun gününde uygulayabilirsiniz."
@@ -486,9 +523,9 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
             rw = gym_prog.get("row", {})
             return (
                 "🏋️ **Kuvvet Progresyonu & Esnek Haftalık Gym Kotası:**\n"
-                f"Son kayıtta Squat {sq.get('max_kg', 65)} kg ({sq.get('next_target', '67.5 kg')}), "
-                f"Bench Press {bp.get('max_kg', 50)} kg ({bp.get('next_target', '52.5 kg')}) ve "
-                f"Barbell Row {rw.get('max_kg', 60)} kg ({rw.get('next_target', '62.5 kg')}) takip edilmektedir.\n"
+                f"Son kayıtta Squat {sq.get('max_kg', 0.0)} kg ({sq.get('next_target', '--')}), "
+                f"Bench Press {bp.get('max_kg', 0.0)} kg ({bp.get('next_target', '--')}) ve "
+                f"Barbell Row {rw.get('max_kg', 0.0)} kg ({rw.get('next_target', '--')}) takip edilmektedir.\n"
                 f"• **Bu Haftaki Kuvvet Kotası ({week_range}):** {g_done}/{g_target} kuvvet seansı tamamlandı, geriye {g_rem} seans kaldı.\n"
                 f"• **Kalan Kuvvet Seansı:** {rem_gyms_txt}\n"
                 "• **Esnek Planlama:** Sabit gün zorunluluğu yoktur; merkezi sinir sistemi ve bacaklarınız toparlandığında haftanın uygun bir gününe yerleştirebilirsiniz."

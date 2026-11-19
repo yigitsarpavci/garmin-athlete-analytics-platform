@@ -1,0 +1,8 @@
+[tool.ruff]
+line-length = 200
+target-version = "py310"
+extend-exclude = ["app/static", "data", "sample_data"]
+
+[tool.ruff.lint]
+# F: pyflakes (kullanılmayan içe aktarma/değişken, tanımsız ad), E9: sözdizimi/çalışma zamanı hataları
+select = ["F", "E9"]

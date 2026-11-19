@@ -140,7 +140,7 @@ function renderDebriefSwitchButtons(activeIdx) {
 
   bar.innerHTML = tabs.map(t => {
     const cls = t.idx === activeIdx ? 'subtab-btn subtab-btn-active whitespace-nowrap' : 'subtab-btn whitespace-nowrap';
-    return `<button type="button" onclick="openDebriefModal(${t.idx})" class="${cls}">${escapeHtml(t.label)}</button>`;
+    return `<button type="button" data-calls="[[&quot;openDebriefModal&quot;, ${Number(t.idx)}]]" class="${cls}">${escapeHtml(t.label)}</button>`;
   }).join('');
 }
 
@@ -172,7 +172,6 @@ function renderDebriefModalContent(d, idx) {
   const bio = d.daily_biometrics_24h || {};
   const hrComp = d.hr_comparison_with_prev_same_sport || {};
   const gym = d.gym_volume_progression || {};
-  const coach = d.executive_coaching_verdict || {};
 
   const iconEl = document.getElementById('debriefIcon');
   if (iconEl) {
@@ -232,7 +231,7 @@ function renderDebriefModalContent(d, idx) {
         const setDetails = (ex.sets || []).map(s => `${s.reps}x${s.weight_kg}kg`).join(', ');
         return `
           <div class="surface-card p-3 space-y-1">
-            <strong class="text-xs font-semibold block truncate">${ex.name}</strong>
+            <strong class="text-xs font-semibold block truncate">${escapeHtml(ex.name)}</strong>
             <p class="font-mono text-[11px] accent-text font-medium">${ex.sets ? ex.sets.length : 0} Set: <span class="text-[var(--text-secondary)]">${setDetails}</span></p>
           </div>
         `;
@@ -242,29 +241,25 @@ function renderDebriefModalContent(d, idx) {
     if (gymSec) gymSec.classList.add('hidden');
   }
 
-  if (coach) {
-    document.getElementById('debriefVerdict').textContent = coach.verdict || '';
-    document.getElementById('debriefNutritionAction').textContent = coach.nutrition_action || '';
-    if (coach.next_session) {
-      document.getElementById('debriefNextAction').textContent = `${coach.next_session.day}: ${coach.next_session.title} (${coach.next_session.target_hr}). ${coach.next_session.purpose}`;
-    }
-  }
-
   refreshIcons();
 }
 
+let _coachOpener = null;
 function toggleAICoach() {
   const flyout = document.getElementById('aiCoachFlyout');
   const launcher = document.getElementById('aiCoachLauncherBtn');
-  if (flyout) {
-    flyout.classList.toggle('hidden');
-    if (launcher) {
-      if (flyout.classList.contains('hidden')) {
-        launcher.classList.remove('hidden');
-      } else {
-        launcher.classList.add('hidden');
-      }
-    }
+  if (!flyout) return;
+  flyout.classList.toggle('hidden');
+  const open = !flyout.classList.contains('hidden');
+  if (launcher) launcher.classList.toggle('hidden', open);
+  document.querySelectorAll('#aiCoachHeaderBtn, #aiCoachLauncherBtn').forEach(b => b.setAttribute('aria-expanded', open ? 'true' : 'false'));
+  if (open) {
+    _coachOpener = document.activeElement;
+    const input = document.getElementById('chatInputBox');
+    if (input) input.focus();   // odak panelin içine taşınır
+  } else if (_coachOpener && typeof _coachOpener.focus === 'function') {
+    _coachOpener.focus();        // kapanınca odak tetikleyiciye döner
+    _coachOpener = null;
   }
 }
 
@@ -290,7 +285,7 @@ async function sendCoachMessage() {
         question: text,
         model: selectedModel,
         history: chatHistory,
-        custom_profile: (!currentActiveProfile.is_sarp) ? currentActiveProfile : null
+        custom_profile: (!currentActiveProfile.is_current_athlete) ? currentActiveProfile : null
       })
     });
     const data = await res.json();
@@ -402,7 +397,7 @@ function appendMessageUI(sender, text, meta = null) {
       const badgeClass = isReal ? 'stamp-tag stamp-moss' : 'stamp-tag';
       const iconName = isReal ? 'zap' : 'cpu';
       metaHtml = `
-<div class="pt-2 mt-2 border-t border-[var(--border-subtle)] flex items-center justify-between font-mono text-[10px] text-[var(--text-muted)]">
+<div class="pt-2 mt-2 border-t border-[var(--border-subtle)] flex items-center justify-between font-mono text-[11px] text-[var(--text-muted)]">
   <span class="${badgeClass}">
     ${lucideSvg(iconName, 'w-3 h-3')} ${escapeHtml(meta.provider || 'Gerçek AI')}
   </span>

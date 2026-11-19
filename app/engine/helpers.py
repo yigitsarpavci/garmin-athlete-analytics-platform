@@ -7,29 +7,12 @@ bütünleşik bir analitik yapıda işler; forma girme projeksiyonları, korelas
 aynı gün sıra analizleri ve branş gelişim stratejilerini üretir.
 """
 
-import json
+import copy
+import functools
 import os
 import sys
-import math
-from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Optional, Any, Tuple, Union
+from typing import Dict, Optional, Any
 import numpy as np
-import pandas as pd
-
-try:
-    from athlete_principles import (
-        ATHLETE_PROFILE, NUTRITION_PRINCIPLES, STRENGTH_PRINCIPLES,
-        RUNNING_PRINCIPLES, SAME_DAY_SEQUENCE_LAW, CROSS_SPORTS_PROTOCOLS,
-        RECOVERY_AND_WATCH_SETTINGS, PRESENTATION_RULES,
-        ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
-    )
-except ImportError:
-    from app.athlete_principles import (
-        ATHLETE_PROFILE, NUTRITION_PRINCIPLES, STRENGTH_PRINCIPLES,
-        RUNNING_PRINCIPLES, SAME_DAY_SEQUENCE_LAW, CROSS_SPORTS_PROTOCOLS,
-        RECOVERY_AND_WATCH_SETTINGS, PRESENTATION_RULES,
-        ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
-    )
 
 ENGINE_DIR = os.path.dirname(os.path.abspath(__file__))
 APP_DIR = os.path.dirname(ENGINE_DIR)
@@ -86,23 +69,6 @@ SPORT_TR_MAP: Dict[str, str] = {
     "hiit": "HIIT",
 }
 
-SPORT_ICON_MAP: Dict[str, str] = {
-    "running": "footprints",
-    "strength": "dumbbell",
-    "sailing": "compass",
-    "basketball": "trophy",
-    "skiing": "snowflake",
-    "snow": "snowflake",
-    "winter": "snowflake",
-    "hiking": "mountain",
-    "cycling": "bike",
-    "biking": "bike",
-    "swimming": "waves",
-    "rowing": "waves",
-    "walking": "footprints",
-}
-
-
 def format_sport_tr(sport_key: Optional[str], fallback_name: str = "") -> str:
     """Herhangi bir Garmin typeKey spor kodunu Türkçe etikete dönüştürür."""
     raw = (sport_key or "").strip().lower()
@@ -125,15 +91,6 @@ def classify_sport_bucket(sport_key: Optional[str]) -> str:
     if "strength" in raw or "fitness_equipment" in raw:
         return "strength"
     return "spontaneous"
-
-
-def get_sport_icon(sport_key: Optional[str]) -> str:
-    """Bilinmeyen branşlar dahil tüm Garmin sporları için uygun Lucide ikonu döner."""
-    raw = (sport_key or "").strip().lower()
-    for token, icon in SPORT_ICON_MAP.items():
-        if token in raw:
-            return icon
-    return "activity"
 
 
 def classify_run_workout(act: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -161,10 +118,8 @@ def classify_run_workout(act: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if any(a.get(f"hrTimeInZone_{i}") is not None for i in range(1, 6)):
         zs = [float(a.get(f"hrTimeInZone_{i}") or 0.0) for i in range(1, 6)]
         tot_z = sum(zs) or 1.0
-        z1_pct, z2_pct, z3_pct, z4_pct, z5_pct = [z / tot_z * 100.0 for z in zs]
+        _z1, _z2, z3_pct, z4_pct, z5_pct = [z / tot_z * 100.0 for z in zs]
     else:
-        z1_pct = float(a.get("z1_pct") or 0.0)
-        z2_pct = float(a.get("z2_pct") or 0.0)
         z3_pct = float(a.get("z3_pct") or 0.0)
         z4_pct = float(a.get("z4_pct") or 0.0)
         z5_pct = float(a.get("z5_pct") or 0.0)
@@ -271,3 +226,33 @@ def fmt_clock(hr_val: Optional[float]) -> str:
         mm = 0
     return f"{hh:02d}:{mm:02d}"
 
+
+
+def zone_text(fn):
+    """Metodun sonucundaki [[Z2_HR]] gibi şablon belirteçlerini sporcunun kendi nabız/tempo bölgeleriyle doldurur."""
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        return self.fill_zone_tokens(fn(self, *args, **kwargs))
+    return wrapper
+
+
+def request_cached(fn):
+    """
+    Motor metodunu aktif istek kapsamı (engine.request_scope) boyunca önbelleğe alır.
+    Kapsam dışında (testler, betikler) her çağrı doğrudan hesaplanır. Önbellekten dönen
+    değer derin kopyalanır; çağıranın sonucu değiştirmesi önbelleği bozmaz.
+    """
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        cache = getattr(self, "_req_cache", None)
+        if cache is None:
+            return fn(self, *args, **kwargs)
+        key = (fn.__name__, args, tuple(sorted(kwargs.items())))
+        try:
+            hash(key)
+        except TypeError:
+            return fn(self, *args, **kwargs)
+        if key not in cache:
+            cache[key] = fn(self, *args, **kwargs)
+        return copy.deepcopy(cache[key])
+    return wrapper

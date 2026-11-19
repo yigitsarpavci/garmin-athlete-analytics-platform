@@ -4,8 +4,9 @@
 Hazır Sporcu Şablonları ve Kişiselleştirilmiş Esnek Kota Planlayıcı Mixin'i.
 """
 
+import logging
 from datetime import datetime
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Optional, Tuple
 
 try:
     from engine.helpers import format_sport_tr
@@ -13,25 +14,30 @@ except ImportError:
     from app.engine.helpers import format_sport_tr
 
 
+logger = logging.getLogger(__name__)
+
+
 class CustomPlanMixin:
     """Özel profil sihirbazı, preset şablonlar ve dinamik esnek döngü üreticisi."""
 
     def get_profile_presets(self) -> List[Dict[str, Any]]:
         """Hazır antrenman profili şablonlarını canlı metriklerle döner."""
-        cur_w = round(float(self.get_current_weight() if hasattr(self, "get_current_weight") else 87.0), 1)
+        cur_w = round(float(self.get_current_weight()), 1)
+        me = self.profile.get("name") or "Sporcu"
+        tw = self.get_target_weight()
         prog = self.get_gym_exercise_history().get("progression", {}) if hasattr(self, "get_gym_exercise_history") else {}
-        sq = prog.get("squat", {}).get("max_kg", 65.0)
-        bp = prog.get("bench", {}).get("max_kg", 50.0)
+        sq = prog.get("squat", {}).get("max_kg", 0.0)
+        bp = prog.get("bench", {}).get("max_kg", 0.0)
         return [
             {
-                "id": "sarp_default",
-                "name": "Sarp (Özel Sensör Profili - 2 Koşu + 2 Gym)",
-                "description": f"Gerçek Garmin sensör verileri, Squat {sq:.0f}kg / Bench {bp:.0f}kg PR, {cur_w} kg -> 81.0 kg ve polarize koşu.",
+                "id": "athlete_default",
+                "name": f"{me} (Özel Sensör Profili - 2 Koşu + 2 Gym)",
+                "description": f"Gerçek Garmin sensör verileri, Squat {sq:.0f}kg / Bench {bp:.0f}kg PR, {cur_w} kg -> {tw} kg ve polarize koşu.",
                 "is_current_athlete": True,
                 "badge": "Orijinal Telemetri",
                 "prefs": {
-                    "name": "Sarp", "age": 22, "gender": "male", "height_cm": 186.0,
-                    "current_weight_kg": cur_w, "target_weight_kg": 81.0,
+                    "name": me, "age": self.age, "gender": self.profile.get("gender", "male"), "height_cm": self.height_cm,
+                    "current_weight_kg": cur_w, "target_weight_kg": tw,
                     "weekly_weight_loss_rate": 0.55, "running_days": 2, "running_style": "polarize",
                     "gym_days": 2, "gym_routine": "ab_5x5", "secondary_sports": ["sailing", "basketball"],
                     "primary_goal": "fat_loss_and_speed",
@@ -103,7 +109,7 @@ class CustomPlanMixin:
                     out.setdefault("gym_target", (out.get("strength") or {}).get("target", 2))
                     return out
             except Exception:
-                pass
+                logger.warning("_safe_get_weekly_quota: yedek davranış uygulandı", exc_info=True)
         return {
             "is_custom": False,
             "week_range": "Esnek Haftalık Döngü",
@@ -118,8 +124,27 @@ class CustomPlanMixin:
             "spontaneous": {"count": 0, "items": [], "labels": [], "status_text": "Spontane branşlar yapıldıkça takip edilir"},
         }
 
-    def _get_custom_session_pools(self, r_style: str, g_routine: str) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
-        """Özel sporcu tercihi için koşu ve kuvvet seans şablon havuzlarını döner."""
+    # Şablonlardaki nabız bantları nominal 200 bpm maksimum için tasarlanmıştır; her sporcunun kendi
+    # (220 - yaş) tahmini maksimum nabzına göre ölçeklenir. Böylece hiçbir şablon belirli bir kişiye bağlı değildir.
+    TEMPLATE_REFERENCE_MAX_HR = 200
+
+    def _scale_hr_text(self, text: str, max_hr: int) -> str:
+        """'135-148 bpm' gibi nabız aralıklarını sporcunun maksimum nabzına göre ölçekler."""
+        import re
+        k = max_hr / float(self.TEMPLATE_REFERENCE_MAX_HR)
+        return re.sub(r"(\d{2,3})-(\d{2,3}) bpm", lambda m: f"{round(int(m.group(1)) * k)}-{round(int(m.group(2)) * k)} bpm", text)
+
+    def _get_custom_session_pools(self, r_style: str, g_routine: str, age: Optional[int] = None) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
+        """Özel sporcu tercihi için koşu ve kuvvet seans şablon havuzlarını (nabız bantları yaşa göre ölçeklenmiş) döner."""
+        runs, gyms = self._raw_session_pools(r_style, g_routine)
+        max_hr = 220 - int(age if age is not None else self.age)
+        for item in runs + gyms:
+            if "target" in item:
+                item["target"] = self._scale_hr_text(item["target"], max_hr)
+        return runs, gyms
+
+    def _raw_session_pools(self, r_style: str, g_routine: str) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
+        """Şablon havuzları (nominal 200 bpm maksimum nabız referansıyla)."""
         if r_style == "pure_z2":
             runs = [
                 {"slot_kind": "zone2", "type": "Zone 2 Taban", "badge": "Zone 2", "title_suffix": "Zone 2 Taban Koşusu (40-45 dk)", "secondary": "Düşük nabız, burundan nefes, mitokondri inşası", "target": "135-148 bpm (Zone 2)", "target_pace": "Konuşma temposu", "duration": "40-45 dk"},
@@ -162,9 +187,9 @@ class CustomPlanMixin:
             ]
         return runs, gyms
 
-    def _build_custom_quota_summary(self, name: str, r_days: int, r_style: str, g_days: int, g_routine: str, sec_sports: List[str]) -> Dict[str, Any]:
+    def _build_custom_quota_summary(self, name: str, r_days: int, r_style: str, g_days: int, g_routine: str, sec_sports: List[str], age: Optional[int] = None) -> Dict[str, Any]:
         """Özel sporcu profili için esnek haftalık kota özetini üretir."""
-        run_pool, gym_pool = self._get_custom_session_pools(r_style, g_routine)
+        run_pool, gym_pool = self._get_custom_session_pools(r_style, g_routine, age)
         run_items = [
             {
                 "category": "running", "slot_kind": run_pool[idx % len(run_pool)]["slot_kind"],
@@ -210,36 +235,39 @@ class CustomPlanMixin:
         }
 
     def generate_custom_plan(self, prefs: dict) -> dict:
-        """Sarp veya özel sporcu profili için dinamik mikro-döngü, kota özeti ve makro planı üretir."""
-        if prefs.get("id") == "sarp_default" or prefs.get("is_current_athlete") or prefs.get("name", "").strip().lower() == "sarp":
-            sarp_quota = self._safe_get_weekly_quota()
-            cur_w = float(self.get_current_weight() if hasattr(self, "get_current_weight") else 87.0)
+        """Ana sporcu (Garmin hesabı sahibi) veya özel sporcu profili için dinamik mikro-döngü, kota özeti ve makro planı üretir."""
+        my_name = str(self.profile.get("name") or "").strip().lower()
+        if prefs.get("id") == "athlete_default" or prefs.get("is_current_athlete") or (my_name and prefs.get("name", "").strip().lower() == my_name):
+            my_quota = self._safe_get_weekly_quota()
+            cur_w = float(self.get_current_weight())
+            tw = self.get_target_weight()
             cur_bmi = round(cur_w / self.height_m2, 2)
-            tar_bmi = round(81.0 / self.height_m2, 2)
+            tar_bmi = round(tw / self.height_m2, 2)
             bmr = round(10 * cur_w + 6.25 * self.height_cm - 5 * self.age + 5)
             tdee = round(bmr * 1.50)
             target_kcal = max(1800, tdee - 450)
             prot_g = round(cur_w * 2.0)
             fat_g = round(cur_w * 0.88)
             carbs_g = max(90, round((target_kcal - prot_g * 4 - fat_g * 9) / 4))
-            proj = self.calculate_custom_projection(target_kg=81.0, weekly_pace_kg=0.55)
+            proj = self.calculate_custom_projection(target_kg=tw, weekly_pace_kg=0.55)
+            me = self.profile.get("name") or "Sporcu"
             return {
-                "is_sarp": True,
-                "athlete_name": "Sarp",
-                "profile_badge": "Sarp (Özel Telemetri - 2 Koşu + 2 Gym)",
-                "description": f"Gerçek Garmin sensör verileri, {cur_w:.1f} kg -> 81.0 kg ve esnek 2+2 kota aktif.",
+                "is_current_athlete": True,
+                "athlete_name": me,
+                "profile_badge": f"{me} (Özel Telemetri - 2 Koşu + 2 Gym)",
+                "description": f"Gerçek Garmin sensör verileri, {cur_w:.1f} kg -> {tw:.1f} kg ve esnek 2+2 kota aktif.",
                 "metrics": {
-                    "age": self.age, "gender": "Erkek", "height_cm": self.height_cm,
-                    "current_weight_kg": cur_w, "target_weight_kg": 81.0,
+                    "age": self.age, "gender": "Kadın" if self.profile.get("gender") == "female" else "Erkek", "height_cm": self.height_cm,
+                    "current_weight_kg": cur_w, "target_weight_kg": tw,
                     "current_bmi": cur_bmi, "target_bmi": tar_bmi,
                     "bmr_kcal": bmr, "tdee_kcal": tdee, "target_calories_kcal": target_kcal,
                     "protein_g": prot_g, "carbs_g": carbs_g, "fat_g": fat_g,
-                    "days_to_goal": proj.get("days_needed", 76), "target_date": proj.get("target_date", "1 Şubat 2027"),
+                    "days_to_goal": proj.get("days_needed", 0), "target_date": proj.get("target_date", "--"),
                     "weekly_running_days": 2, "weekly_gym_days": 2, "weekly_weight_loss_rate": 0.55,
                 },
                 "schedule": self.get_weekly_schedule(),
-                "weekly_quota": sarp_quota,
-                "quota_summary": sarp_quota,
+                "weekly_quota": my_quota,
+                "quota_summary": my_quota,
                 "coaching_tips": [
                     "Aynı Gün Sıralama Kanunu: Asla ağırlıktan hemen sonra koşma; önce koşu, sonra ağırlık yap (veya araya ≥6 saat koy).",
                     "Esnek Pazartesi Kotası: Pazartesi 0/2 açılır; geçen haftadan eksik kalan tür ilk sıraya önceliklendirilir.",
@@ -292,8 +320,8 @@ class CustomPlanMixin:
         cur_bmi = round(weight / (h_m * h_m), 2)
         tar_bmi = round(target_weight / (h_m * h_m), 2)
 
-        schedule = self._build_dynamic_schedule(name, weight, r_days, r_style, g_days, g_routine, target_kcal, protein_g, carbs_g, fat_g, tdee, sec_sports)
-        quota_summary = self._build_custom_quota_summary(name, r_days, r_style, g_days, g_routine, sec_sports)
+        schedule = self._build_dynamic_schedule(name, weight, r_days, r_style, g_days, g_routine, target_kcal, protein_g, carbs_g, fat_g, tdee, sec_sports, age)
+        quota_summary = self._build_custom_quota_summary(name, r_days, r_style, g_days, g_routine, sec_sports, age)
 
         tot_days = r_days + g_days
         if tot_days <= 3:
@@ -310,7 +338,7 @@ class CustomPlanMixin:
             progression_next = "Blok periyodizasyonu ve yarış zirveleme haftaları uygulanır."
 
         return {
-            "is_sarp": False,
+            "is_current_athlete": False,
             "athlete_name": name,
             "athlete_tier": athlete_tier,
             "profile_badge": f"{name} ({r_days} Koşu + {g_days} Gym • {athlete_tier.split(' ')[0]})",
@@ -337,7 +365,7 @@ class CustomPlanMixin:
 
     def _build_dynamic_schedule(
         self, name: str, weight: float, r_days: int, r_style: str, g_days: int, g_routine: str,
-        target_kcal: int, protein_g: int, carbs_g: int, fat_g: int, tdee: int, sec_sports: List[str]
+        target_kcal: int, protein_g: int, carbs_g: int, fat_g: int, tdee: int, sec_sports: List[str], age: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """7 esnek kota slotu döner (sabit takvim günü/tarihi dayatmaz)."""
         slots = ["rest"] * 7
@@ -361,7 +389,7 @@ class CustomPlanMixin:
             if slots[5] == "rest" and (r_days + g_days) < 7:
                 slots[5] = "active_recovery"
 
-        run_pool, gym_pool = self._get_custom_session_pools(r_style, g_routine)
+        run_pool, gym_pool = self._get_custom_session_pools(r_style, g_routine, age)
         run_idx, gym_idx, sched_rows = 0, 0, []
         for i in range(7):
             slot = slots[i]

@@ -156,7 +156,7 @@ class TestUiJsContract(unittest.TestCase):
         html = _read(os.path.join(self.STATIC, "index.html"))
         self.assertEqual(re.findall(r"<script(?![^>]*\ssrc=)[^>]*>", html), [])
 
-    def test_mobile_nav_and_trends_markup_present(self):
+    def test_mobile_nav_and_status_markup_present(self):
         html = _read(os.path.join(self.STATIC, "index.html"))
         for needle in ('class="mobile-title"', 'id="statusBanner"', 'role="dialog"'):
             self.assertIn(needle, html)

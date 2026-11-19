@@ -4,9 +4,9 @@
 Uyku Mimarisi, Korelasyonlar, Ayni Gun Siralama Kesfi, Makro Donemler ve Garmin Saat Ayarlari Mixin'i.
 """
 
+import logging
 import math
-from typing import Dict, List, Any
-import numpy as np
+from typing import Dict, List, Any, Tuple
 import pandas as pd
 
 try:
@@ -15,43 +15,130 @@ except ImportError:
     from app.engine.helpers import fmt_pace_sec, fmt_clock, format_sport_tr, TR_MONTHS
 
 
+logger = logging.getLogger(__name__)
+
+
 class SleepAnalyticsMixin:
     """Uyku analitigi, istatistiksel korelasyonlar, dinamik donem ozetleri ve saat yapilandirma denetimi."""
 
+    # (sütun1, sütun2, etiket1, etiket2, negatif ilişki yorumu, pozitif ilişki yorumu)
+    _CORR_PAIRS = [
+        ("hrv_night", "rhr", "Gece HRV", "Dinlenik Nabız (RHR)",
+         "Gece HRV yükseldikçe dinlenik nabız düşüyor (beklenen toparlanma ilişkisi).",
+         "Gece HRV ile dinlenik nabız birlikte artıyor (beklenenin tersi; ölçüm veya hastalık etkisi olabilir)."),
+        ("avg_stress", "bb_charged", "Günlük Stres", "Body Battery Şarj",
+         "Stresli günlerde uyku sırasındaki enerji toparlanması azalıyor.",
+         "Stres arttıkça Body Battery şarjı da artıyor (beklenenin tersi)."),
+        ("sleep_h", "sleep_score", "Uyku Süresi", "Garmin Uyku Puanı",
+         "Uyku süresi arttıkça Garmin uyku puanı düşüyor (beklenenin tersi).",
+         "Uyku süresi arttıkça Garmin uyku puanı yükseliyor."),
+        ("hrv_night", "avg_stress", "Gece HRV", "Günlük Stres",
+         "Düşük HRV ile uyanılan günlerde gün içi stres skoru yüksek.",
+         "HRV yükseldikçe gün içi stres de yükseliyor (beklenenin tersi)."),
+        ("hrv_night", "readiness_score", "Gece HRV", "Antrenman Hazırlığı",
+         "Gece HRV yükseldikçe hazırlık puanı düşüyor (beklenenin tersi).",
+         "Gece HRV yükseldikçe sabah antrenman hazırlığı da yükseliyor."),
+        ("rhr", "avg_stress", "Dinlenik Nabız", "Günlük Stres",
+         "Dinlenik nabız arttıkça gün içi stres azalıyor (beklenenin tersi).",
+         "Dinlenik nabız taban üstüne çıktığında gün içi sempatik stres artıyor."),
+        ("sleep_start_hr", "sleep_h", "Yatış Saati", "Toplam Uyku",
+         "Yatış saati geciktikçe toplam uyku süresi kısalıyor.",
+         "Yatış saati geciktikçe toplam uyku süresi uzuyor (beklenenin tersi)."),
+        ("sleep_start_hr", "rem_h", "Yatış Saati", "REM Uykusu",
+         "Yatış saati geciktikçe REM uykusu azalıyor.",
+         "Yatış saati geciktikçe REM uykusu artıyor (beklenenin tersi)."),
+        ("acute_load", "readiness_score", "Haftalık Akut Yük", "Hazırlık Puanı",
+         "Akut yük arttıkça hazırlık puanı düşüyor (toparlanma ihtiyacı artıyor).",
+         "Akut yük arttıkça hazırlık puanı da yükseliyor (beklenenin tersi)."),
+    ]
+
+    @staticmethod
+    def _student_t_p_two_sided(t_val: float, dof: int) -> float:
+        """Student t dağılımı için çift yönlü p-değeri (düzenlenmiş eksik beta fonksiyonu ile; ek bağımlılık yok)."""
+        if dof <= 0:
+            return 1.0
+        x = dof / (dof + t_val * t_val)
+
+        def _betacf(a: float, b: float, xx: float) -> float:
+            tiny, qab, qap, qam = 1e-30, a + b, a + 1.0, a - 1.0
+            c, d = 1.0, 1.0 - qab * xx / qap
+            d = 1.0 / (d if abs(d) > tiny else tiny)
+            h = d
+            for m in range(1, 200):
+                m2 = 2 * m
+                aa = m * (b - m) * xx / ((qam + m2) * (a + m2))
+                d = 1.0 + aa * d
+                d = 1.0 / (d if abs(d) > tiny else tiny)
+                c = 1.0 + aa / c
+                c = c if abs(c) > tiny else tiny
+                h *= d * c
+                aa = -(a + m) * (qab + m) * xx / ((a + m2) * (qap + m2))
+                d = 1.0 + aa * d
+                d = 1.0 / (d if abs(d) > tiny else tiny)
+                c = 1.0 + aa / c
+                c = c if abs(c) > tiny else tiny
+                delta = d * c
+                h *= delta
+                if abs(delta - 1.0) < 3e-12:
+                    break
+            return h
+
+        a, b = dof / 2.0, 0.5
+        ln_beta = math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b) + a * math.log(x) + b * math.log(1.0 - x) if 0 < x < 1 else 0.0
+        if x <= 0.0:
+            return 0.0
+        if x >= 1.0:
+            return 1.0
+        bt = math.exp(ln_beta)
+        if x < (a + 1.0) / (a + b + 2.0):
+            ib = bt * _betacf(a, b, x) / a
+        else:
+            ib = 1.0 - bt * _betacf(b, a, 1.0 - x) / b
+        return max(0.0, min(1.0, ib))
+
+    @staticmethod
+    def _corr_strength(r: float) -> str:
+        a = abs(r)
+        return "çok zayıf" if a < 0.2 else "zayıf" if a < 0.4 else "orta" if a < 0.6 else "güçlü" if a < 0.8 else "çok güçlü"
+
     def get_correlations(self) -> List[Dict[str, Any]]:
-        """93 gunluk fizyolojik zaman serisi uzerinde cift degiskenli Pearson korelasyon analizi yurutur."""
-        corr_pairs = [
-            ("hrv_night", "rhr", "Gece HRV", "Dinlenik Nabız (RHR)", "Gece HRV yükseldikçe dinlenik nabız belirgin şekilde düşmektedir."),
-            ("avg_stress", "bb_charged", "Günlük Stres", "Body Battery Şarj", "Stresli günlerde uyku sırasındaki enerji toparlanması azalmaktadır."),
-            ("sleep_h", "sleep_score", "Uyku Süresi", "Garmin Uyku Puanı", "7,5 saat ve üzeri uykularda uyku puanı düzenli olarak 85 üstüne çıkmaktadır."),
-            ("hrv_night", "avg_stress", "Gece HRV", "Günlük Stres", "Düşük HRV ile uyanılan günlerde gün içi stres skoru yükselmektedir."),
-            ("hrv_night", "readiness_score", "Gece HRV", "Antrenman Hazırlığı", "Sabah antrenmana hazır uyanmayı belirleyen en güçlü göstergelerden biri gece HRV'sidir."),
-            ("rhr", "avg_stress", "Dinlenik Nabız", "Günlük Stres", "Dinlenik nabzın taban üstüne çıktığı günlerde gün içi sempatik stres artmaktadır."),
-            ("sleep_start_hr", "sleep_h", "Yatış Saati", "Toplam Uyku", "Yatış saati geciktikçe toplam uyku süresi kısalmaktadır."),
-            ("sleep_start_hr", "rem_h", "Yatış Saati", "REM Uykusu", "Geç yatışlarda geç saat REM uyku pencereleri daralmaktadır."),
-            ("acute_load", "readiness_score", "Haftalık Akut Yük", "Hazırlık Puanı", "Akut yük arttığında vücudun toparlanma ihtiyacı artarak hazırlık puanını etkilemektedir.")
-        ]
+        """
+        Günlük fizyolojik zaman serilerinde çift değişkenli Pearson korelasyonu: r, t, gerçek Student-t p-değeri, güç ve yön.
+        Yorum metni hesaplanan r'ın işaretinden ve gücünden üretilir (hazır cümle değildir). Ardışık günler tam bağımsız
+        olmadığı için p-değerleri iyimser kabul edilmelidir; bu yüzden anlamlılık için p < 0,01 ve |r| ≥ 0,3 aranır.
+        """
         results: List[Dict[str, Any]] = []
-        for c1, c2, l1, l2, desc in corr_pairs:
+        for c1, c2, l1, l2, neg_txt, pos_txt in self._CORR_PAIRS:
             if c1 not in self.df.columns or c2 not in self.df.columns:
                 continue
-            sub = self.df[[c1, c2]].dropna()
-            if len(sub) > 5 and sub[c1].std() > 0 and sub[c2].std() > 0:
-                r_val = float(sub[c1].corr(sub[c2]))
-                if math.isnan(r_val):
-                    continue
-                n_c = len(sub)
-                t_val = r_val * math.sqrt((n_c - 2) / max(1e-9, 1.0 - r_val**2))
-                abs_t = abs(t_val)
-                p_str = "< 0,0001" if abs_t > 4.08 else ("< 0,001" if abs_t > 3.40 else ("< 0,01" if abs_t > 2.63 else ("< 0,05" if abs_t > 2.0 else "> 0,05")))
-                results.append({
-                    "pair": f"{l1} ↔ {l2}",
-                    "r": round(r_val, 3),
-                    "t": round(t_val, 2),
-                    "p": p_str,
-                    "n": n_c,
-                    "insight": desc,
-                })
+            sub = self.df[[c1, c2]].apply(pd.to_numeric, errors="coerce").dropna()
+            if len(sub) <= 5 or sub[c1].std() <= 0 or sub[c2].std() <= 0:
+                continue
+            r_val = float(sub[c1].corr(sub[c2]))
+            if math.isnan(r_val):
+                continue
+            n_c = len(sub)
+            t_val = r_val * math.sqrt((n_c - 2) / max(1e-9, 1.0 - r_val ** 2))
+            p_val = self._student_t_p_two_sided(t_val, n_c - 2)
+            significant = p_val < 0.01 and abs(r_val) >= 0.3
+            strength = self._corr_strength(r_val)
+            p_str = "< 0,0001" if p_val < 0.0001 else f"{p_val:.4f}".replace(".", ",")
+            if significant:
+                insight = f"{neg_txt if r_val < 0 else pos_txt} (r = {r_val:.2f}, {strength}, n = {n_c})"
+            else:
+                insight = f"Anlamlı bir ilişki saptanmadı (r = {r_val:.2f}, {strength}, n = {n_c})."
+            results.append({
+                "pair": f"{l1} ↔ {l2}",
+                "r": round(r_val, 3),
+                "t": round(t_val, 2),
+                "p": p_str,
+                "p_value": round(p_val, 6),
+                "n": n_c,
+                "strength": strength,
+                "direction": "negatif" if r_val < 0 else "pozitif",
+                "significant": significant,
+                "insight": insight,
+            })
         return results
 
     def get_same_day_sequence(self) -> List[Dict[str, Any]]:
@@ -148,47 +235,11 @@ class SleepAnalyticsMixin:
         return out
 
     def get_sleep_analysis(self) -> Dict[str, Any]:
-        """Yatis saatine gore 3 uyku grubunu ve en iyi/en dusuk 6 geceyi canli veriden hesaplar."""
+        """En iyi/en dusuk 6 uyku gecesini canli veriden hesaplar."""
         if self.df.empty:
-            return {"bedtime_groups": [], "top_nights": [], "worst_nights": []}
+            return {"top_nights": [], "worst_nights": []}
 
-        def _bed_bucket(hr):
-            if hr is None or (isinstance(hr, float) and np.isnan(hr)):
-                return "No Data"
-            if hr <= 0.5:
-                return "early"
-            if hr <= 1.75:
-                return "mid"
-            return "late"
-
-        df_work = self.df.copy()
-        df_work["bed_group"] = df_work["sleep_start_hr"].apply(_bed_bucket)
-        valid_total = max(1, int(df_work["sleep_start_hr"].notna().sum()))
-        groups: List[Dict[str, Any]] = []
-
-        for bg, title in [
-            ("early", "Erken Yatış (00:30 Öncesi"),
-            ("mid", "Orta Yatış (00:30 - 01:45"),
-            ("late", "Geç Yatış (01:45 Sonrası"),
-        ]:
-            sub = df_work[df_work["bed_group"] == bg]
-            if not sub.empty:
-                avg_bed = fmt_clock(float(sub["sleep_start_hr"].mean()))
-                groups.append({
-                    "group": f"{title}, Ort: {avg_bed})",
-                    "count": len(sub),
-                    "pct": round(len(sub) / valid_total * 100.0, 1),
-                    "sleep_h": round(float(sub["sleep_h"].mean()), 2) if sub["sleep_h"].notna().any() else 0.0,
-                    "deep_h": round(float(sub["deep_h"].mean()), 2) if sub["deep_h"].notna().any() else 0.0,
-                    "rem_h": round(float(sub["rem_h"].mean()), 2) if sub["rem_h"].notna().any() else 0.0,
-                    "score": round(float(sub["sleep_score"].mean()), 1) if sub["sleep_score"].notna().any() else 0.0,
-                    "hrv": round(float(sub["hrv_night"].mean()), 1) if sub["hrv_night"].notna().any() else 0.0,
-                    "rhr": round(float(sub["rhr"].mean()), 1) if sub["rhr"].notna().any() else 0.0,
-                    "bb_wake": round(float(sub["bb_wake"].mean()), 1) if sub["bb_wake"].notna().any() else 0.0,
-                    "readiness": round(float(sub["readiness_score"].mean()), 1) if sub["readiness_score"].notna().any() else 0.0,
-                })
-
-        valid_sleep = df_work.dropna(subset=["sleep_score"]).sort_values("sleep_score", ascending=False)
+        valid_sleep = self.df.dropna(subset=["sleep_score"]).sort_values("sleep_score", ascending=False)
 
         def _format_nights(subset: pd.DataFrame) -> List[Dict[str, Any]]:
             rows = []
@@ -208,7 +259,6 @@ class SleepAnalyticsMixin:
             return rows
 
         return {
-            "bedtime_groups": groups,
             "top_nights": _format_nights(valid_sleep.head(6)),
             "worst_nights": _format_nights(valid_sleep.tail(6)),
         }
@@ -218,12 +268,13 @@ class SleepAnalyticsMixin:
         if self.df.empty:
             return {"periods": [], "weeks": []}
 
-        latest_dt = str(self.df["date"].max())
-        try:
-            d_obj = pd.to_datetime(latest_dt)
-            p4_end_lbl = f"{d_obj.day:02d} {TR_MONTHS.get(d_obj.month, '')}"
-        except Exception:
-            p4_end_lbl = latest_dt[5:]
+        def _date_lbl(d: str) -> str:
+            try:
+                d_obj = pd.to_datetime(d)
+                return f"{d_obj.day:02d} {TR_MONTHS[d_obj.month - 1]}"
+            except (ValueError, TypeError):
+                logger.debug("get_periods_and_weeks: tarih etiketi üretilemedi", exc_info=True)
+                return d[5:]
 
         def _period_stats(start_d: str, end_d: str) -> Dict[str, Any]:
             sub_df = self.df[(self.df["date"] >= start_d) & (self.df["date"] <= end_d)]
@@ -232,69 +283,72 @@ class SleepAnalyticsMixin:
             avg_load = int(round(float(sub_df["acute_load"].mean()))) if not sub_df.empty and sub_df["acute_load"].notna().any() else 0
             avg_hrv = round(float(sub_df["hrv_night"].mean()), 1) if not sub_df.empty and sub_df["hrv_night"].notna().any() else 0.0
             avg_slp = f"{sub_df['sleep_h'].mean():.2f} sa".replace(".", ",") if not sub_df.empty and sub_df["sleep_h"].notna().any() else "--"
-            return {"avg_load": avg_load, "avg_hrv": avg_hrv, "avg_sleep": avg_slp, "sub_df": sub_df, "sub_acts": sub_acts}
+            return {"start": start_d, "end": end_d, "avg_load": avg_load, "avg_hrv": avg_hrv, "avg_sleep": avg_slp,
+                    "sub_df": sub_df, "sub_acts": sub_acts}
 
-        if latest_dt < "2026-08-01" and len(self.dates) >= 4:
-            dates_sorted = sorted(self.dates)
-            n = len(dates_sorted)
-            i1 = max(1, min(14, n // 6))
-            i2 = max(i1 + 1, min(42, n // 2))
-            i3 = max(i2 + 1, min(77, (n * 4) // 5))
-            p1 = _period_stats(dates_sorted[0], dates_sorted[i1 - 1])
-            p2 = _period_stats(dates_sorted[i1], dates_sorted[i2 - 1])
-            p3 = _period_stats(dates_sorted[i2], dates_sorted[i3 - 1])
-            p4 = _period_stats(dates_sorted[i3], latest_dt)
-        else:
-            p1 = _period_stats("2026-08-17", "2026-08-30")
-            p2 = _period_stats("2026-08-31", "2026-09-27")
-            p3 = _period_stats("2026-09-28", "2026-11-01")
-            p4 = _period_stats("2026-11-02", latest_dt)
-
-        p4_acts = p4["sub_acts"]
-        p4_st_cnt = int((p4_acts["sport"] == "strength_training").sum()) if not p4_acts.empty else 0
-        p4_runs = p4_acts[p4_acts["sport"] == "running"] if not p4_acts.empty else pd.DataFrame()
-        p4_best_pace = fmt_pace_sec(float(p4_runs["pace_s"].min())) if not p4_runs.empty and p4_runs["pace_s"].notna().any() else "--"
-        extra_sp = [format_sport_tr(s) for s in p4_acts["sport"].unique() if s not in ("running", "strength_training")] if not p4_acts.empty else []
-        extra_txt = f" Ek branş: {', '.join(extra_sp)}." if extra_sp else ""
-
-        periods = [
-            {
-                "period": "1. Dönem: Su Sporları & Hacim Zirvesi",
-                "dates": "17 - 30 Ağustos",
-                "summary": f"Su sporları, doğa yürüyüşü ve yüksek hacimli dış saha yüklemesi ({len(p1['sub_acts'])} aktivite).",
-                "avg_load": p1["avg_load"] or 154,
-                "avg_hrv": p1["avg_hrv"] or 43.2,
-                "avg_sleep": p1["avg_sleep"],
-            },
-            {
-                "period": "2. Dönem: Dinlenme & Seyahat",
-                "dates": "31 Ağustos - 27 Eylül",
-                "summary": "Antrenman sıklığı düşerek otonom sistem dinlenmeye çekildi; yüksek adım ve toparlanma dönemi.",
-                "avg_load": p2["avg_load"],
-                "avg_hrv": p2["avg_hrv"],
-                "avg_sleep": p2["avg_sleep"],
-            },
-            {
-                "period": "3. Dönem: İnterval Koşu, Basketbol & Yelken",
-                "dates": "28 Eylül - 01 Kasım",
-                "summary": f"Düzenli koşu, takım sporları ve yelken temposu ({len(p3['sub_acts'])} seans).",
-                "avg_load": p3["avg_load"],
-                "avg_hrv": p3["avg_hrv"],
-                "avg_sleep": p3["avg_sleep"],
-            },
-            {
-                "period": "4. Dönem: Kuvvet & Hızlı Tempo Koşuları",
-                "dates": f"02 Kasım - {p4_end_lbl} (Mevcut Dönem)",
-                "summary": (
-                    f"{p4_st_cnt} kuvvet antrenmanı tamamlandı; en iyi koşu temposu {p4_best_pace} /km. "
-                    f"Ort. uyku {p4['avg_sleep']} ve gece HRV {str(p4['avg_hrv']).replace('.', ',')} ms.{extra_txt}"
-                ),
-                "avg_load": p4["avg_load"],
-                "avg_hrv": p4["avg_hrv"],
-                "avg_sleep": p4["avg_sleep"],
-            },
+        # 4 ardışık makro dönem sporcunun KENDİ veri aralığından kurulur (gün sayısına göre 14 / 28 / 35 / kalan düzeni)
+        dates_sorted = sorted(self.dates)
+        latest_dt = dates_sorted[-1]
+        n = len(dates_sorted)
+        if n < 4:
+            return {"periods": [], "weeks": self._build_weekly_rows()}
+        i1 = max(1, min(14, n // 6))
+        i2 = max(i1 + 1, min(42, n // 2))
+        i3 = max(i2 + 1, min(77, n - 16))
+        stats = [
+            _period_stats(dates_sorted[0], dates_sorted[i1 - 1]),
+            _period_stats(dates_sorted[i1], dates_sorted[i2 - 1]),
+            _period_stats(dates_sorted[i2], dates_sorted[i3 - 1]),
+            _period_stats(dates_sorted[i3], latest_dt),
         ]
+        loads = [st["avg_load"] for st in stats]
+        mean_load = (sum(loads) / len(loads)) if any(loads) else 0.0
+        counts = [len(st["sub_acts"]) for st in stats]
+        mean_cnt = sum(counts) / len(counts)
 
+        def _describe(idx: int, st: Dict[str, Any]) -> Tuple[str, str]:
+            """Dönemin adını ve özetini sporcunun kendi aktivite/yük verisinden üretir."""
+            acts = st["sub_acts"]
+            cnt = len(acts)
+            top = []
+            if not acts.empty:
+                top = [format_sport_tr(sp) for sp in acts["sport"].value_counts().head(2).index]
+            sports_txt = " & ".join(top) if top else "Aktivite Yok"
+            if mean_cnt and cnt <= 0.5 * mean_cnt:
+                flag = "Dinlenme & Toparlanma"
+            elif mean_load and st["avg_load"] >= 1.15 * mean_load:
+                flag = "Yüksek Yük"
+            else:
+                flag = "Dengeli Yük"
+            title = f"{idx + 1}. Dönem: {flag}" + (f" ({sports_txt})" if top else "")
+            summary = (
+                f"{cnt} aktivite ({sports_txt}); ort. yük {st['avg_load']}, gece HRV "
+                f"{str(st['avg_hrv']).replace('.', ',')} ms, uyku {st['avg_sleep']}."
+            )
+            if idx == 3 and not acts.empty:
+                st_cnt = int(acts["bucket"].eq("strength").sum())
+                runs = acts[acts["bucket"] == "running"]
+                best = fmt_pace_sec(float(runs["pace_s"].min())) if not runs.empty and runs["pace_s"].notna().any() else "--"
+                summary += f" {st_cnt} kuvvet antrenmanı; en iyi koşu temposu {best} /km."
+            return title, summary
+
+        periods = []
+        for idx, st in enumerate(stats):
+            title, summary = _describe(idx, st)
+            end_lbl = _date_lbl(st["end"]) + (" (Mevcut Dönem)" if idx == 3 else "")
+            periods.append({
+                "period": title,
+                "dates": f"{_date_lbl(st['start'])} - {end_lbl}",
+                "summary": summary,
+                "avg_load": st["avg_load"],
+                "avg_hrv": st["avg_hrv"],
+                "avg_sleep": st["avg_sleep"],
+            })
+
+        return {"periods": periods, "weeks": self._build_weekly_rows()}
+
+    def _build_weekly_rows(self) -> List[Dict[str, Any]]:
+        """Veri aralığındaki tüm ISO haftalarının özet satırlarını üretir."""
         df_wk = self.df.copy()
         df_wk["dt"] = pd.to_datetime(df_wk["date"])
         df_wk["week_start"] = df_wk["dt"].apply(lambda d: (d - pd.Timedelta(days=d.weekday())).strftime("%Y-%m-%d"))
@@ -327,39 +381,43 @@ class SleepAnalyticsMixin:
                 "max_load": int(grp["acute_load"].max()) if grp["acute_load"].notna().any() else 0,
             })
 
-        return {"periods": periods, "weeks": weeks}
+        return weeks
 
     def get_garmin_settings_to_fix(self) -> List[Dict[str, Any]]:
-        """Canli RHR ve kiloya gore uyarlanmis Garmin saat ayar onerilerini döner."""
-        mean_rhr = round(float(self.df["rhr"].mean()), 1) if not self.df.empty and self.df["rhr"].notna().any() else 53.6
+        """Canlı RHR, kilo, tahmini eşik gücü ve uyku düzenine göre kişiselleştirilmiş Garmin saat ayar önerilerini döner."""
+        phys = self.get_physiology()
+        mean_rhr = phys["rhr"]
         cur_w = self.get_current_weight()
-        rec_ftp = int(round(342.0 * (cur_w / 87.0)))
+        ftp = phys["ftp_w"]
         w_str = f"{cur_w:.1f}".replace(".", ",")
         rhr_str = f"{mean_rhr:.1f}".replace(".", ",")
+        ftp_rec = f"{ftp - 3} - {ftp + 3} W (koşu verilerinden tahmin, {w_str} kg ile)" if ftp else "Koşu gücü verisi yok (güç sensörlü koşu kaydedin)"
 
+        sleep_win = "Gerçek uyku düzeninizi kaydedin"
+        if not self.df.empty and self.df["sleep_start_hr"].notna().any() and self.df["sleep_end_hr"].notna().any():
+            sleep_win = f"{fmt_clock(float(self.df['sleep_start_hr'].mean()))} - {fmt_clock(float(self.df['sleep_end_hr'].mean()))} (ortalama gerçek uykunuz)"
+
+        check = "Saatinizdeki mevcut değeri kontrol edin"
         return [
-            {"num": 1, "name": "Dinlenik Nabız (RHR)", "current": "65 bpm (Sabit kalmış)", "recommended": f"Otomatik Ortalama (~{int(round(mean_rhr))} bpm)", "reason": f"Gerçek ortalamanız {rhr_str} bpm; yüksek sabit değer VO2 Max ve rezerv nabzı aşağı çeker."},
-            {"num": 2, "name": "Koşu Eşik Gücü (FTP)", "current": "374 W (95 kg'dan kalma)", "recommended": f"{rec_ftp - 3} - {rec_ftp + 3} W ({w_str} kg uyumlu)", "reason": f"{w_str} kg vücut ağırlığınıza güncellenmediğinde güncel koşu gücünüz saatte düşük görünüyor."},
-            {"num": 3, "name": "Koşu Nabız Profili", "current": "Sadece Genel (DEFAULT)", "recommended": "Koşu (RUNNING) Profili Ekle", "reason": "Koşu, yelken, kayak ve ağırlık farklı fizyolojik nabız bölgeleri gerektirir."},
-            {"num": 4, "name": "Yoğunluk Dakikası", "current": "Sadece Zone 3 ve 4", "recommended": "Otomatik (AUTO) Modu", "reason": "Ağırlık ve teknik seanslar nabız Z3 altıysa saatte '0 dk' görünebiliyor."},
-            {"num": 5, "name": "Uyku Saatleri", "current": "00:00 - 08:00 sabit", "recommended": "00:30 - 08:30", "reason": "Gerçek uyku başlangıcınıza göre REM uykusu kesintiye uğramadan ölçülmeli."},
-            {"num": 6, "name": "İrtifa / Eğim Düzeltmesi", "current": "Kapalı (false)", "recommended": "İrtifa Düzeltmesi: Açık", "reason": "Koşu ve açık alan eğimlerinde yükseklik kazancı ve yokuş gücü hesaplanır."},
-            {"num": 7, "name": "Kilo Girişi", "current": "Seyrek / manuel", "recommended": "Haftada 2 sabah tartımı", "reason": f"Güncel tartım ({w_str} kg) girilmezse VO2 Max (mL/kg/dk) eski ağır kilonuza bölünür."},
-            {"num": 8, "name": "Hava / Konum İzni", "current": "Kapalı (null)", "recommended": "Konum İzni: 'Her Zaman'", "reason": "Isı aklimatizasyonu ve rüzgar direnci hesabı için konum verisi gerekir."},
+            {"num": 1, "name": "Dinlenik Nabız (RHR)", "current": check, "recommended": f"Otomatik Ortalama (~{int(round(mean_rhr))} bpm)", "reason": f"Gerçek ortalamanız {rhr_str} bpm; yüksek sabit değer VO2 Max ve rezerv nabzı aşağı çeker."},
+            {"num": 2, "name": "Koşu Eşik Gücü (FTP)", "current": check, "recommended": ftp_rec, "reason": f"{w_str} kg vücut ağırlığınıza güncellenmediğinde güncel koşu gücünüz saatte düşük görünebilir."},
+            {"num": 3, "name": "Koşu Nabız Profili", "current": check, "recommended": "Koşu (RUNNING) Profili Ekle", "reason": "Koşu, yelken, kayak ve ağırlık farklı fizyolojik nabız bölgeleri gerektirir."},
+            {"num": 4, "name": "Yoğunluk Dakikası", "current": check, "recommended": "Otomatik (AUTO) Modu", "reason": "Ağırlık ve teknik seanslar nabız Z3 altıysa saatte '0 dk' görünebiliyor."},
+            {"num": 5, "name": "Uyku Saatleri", "current": check, "recommended": sleep_win, "reason": "Gerçek uyku başlangıcınıza göre REM uykusu kesintiye uğramadan ölçülmeli."},
+            {"num": 6, "name": "İrtifa / Eğim Düzeltmesi", "current": check, "recommended": "İrtifa Düzeltmesi: Açık", "reason": "Koşu ve açık alan eğimlerinde yükseklik kazancı ve yokuş gücü hesaplanır."},
+            {"num": 7, "name": "Kilo Girişi", "current": check, "recommended": "Haftada 2 sabah tartımı", "reason": f"Güncel tartım ({w_str} kg) girilmezse VO2 Max (mL/kg/dk) eski kilonuza bölünür."},
+            {"num": 8, "name": "Hava / Konum İzni", "current": check, "recommended": "Konum İzni: 'Her Zaman'", "reason": "Isı aklimatizasyonu ve rüzgar direnci hesabı için konum verisi gerekir."},
         ]
 
     def get_hr_power_zones(self) -> List[Dict[str, Any]]:
         """Canlı vücut ağırlığına göre ölçeklenen HR/LTHR/HRR/Güç zonlarını ve gerçekleşen Z1–Z5 süre dağılımını döner."""
-        cur_w = self.get_current_weight()
-        scale = cur_w / 87.0
-
-        def _w(val: int) -> int:
-            return int(round(val * scale))
+        phys = self.get_physiology()
+        max_hr, lthr, rhr, ftp = phys["max_hr"], phys["lthr"], phys["rhr"], phys["ftp_w"]
 
         run_secs = [0.0] * 5
         all_secs = [0.0] * 5
         acts = getattr(self, "activities_all", []) or []
-        min_act_cutoff = min("2026-08-01", self.dates[0]) if getattr(self, "dates", None) else "2026-01-01"
+        min_act_cutoff = self._activity_cutoff()
         for a in acts:
             if not isinstance(a, dict):
                 continue
@@ -383,12 +441,45 @@ class SleepAnalyticsMixin:
             "var(--ochre)",
             "var(--crimson)",
         ]
+        names = [
+            ("Z1", "Zone 1 (Isınma / Toparlanma)"),
+            ("Z2", "Zone 2 (Aerobik Taban / Yağ Yakımı)"),
+            ("Z3", "Zone 3 (Aerobik Tempo)"),
+            ("Z4", "Zone 4 (Laktat Eşiği)"),
+            ("Z5", "Zone 5 (Anaerobik / Maks)"),
+        ]
+        # Yüzde bantları (alt, üst); son bandın üstü maksimum nabızdır. bpm değerleri sporcunun kendi eşiklerinden hesaplanır.
+        lthr_now = [(65, 79), (80, 88), (88, 93), (94, 98), (99, None)]
+        lthr_rec = [(65, 78), (78, 87), (87, 93), (94, 100), (100, None)]
+        hrr_bands = [(50, 60), (60, 70), (70, 80), (80, 90), (90, 100)]
+        pwr_bands = [(65, 80), (80, 90), (90, 100), (100, 115), (115, None)]
+
+        def _bpm_range(bands, idx, base, offset=0, ref_max=None):
+            lo, hi = bands[idx]
+            lo_bpm = int(round(offset + base * lo / 100.0))
+            hi_bpm = max_hr if hi is None else int(round(offset + base * hi / 100.0))
+            label = f"%{lo}-{hi}" if hi is not None else (f"≥%{lo}" if ref_max == "ge" else f">%{lo}")
+            return f"{lo_bpm} - {hi_bpm} bpm ({label})"
+
+        def _power(idx):
+            if not ftp:
+                return "Güç verisi yok"
+            lo, hi = pwr_bands[idx]
+            lo_w = int(round(ftp * lo / 100.0))
+            if hi is None:
+                return f"> {lo_w} W (>%{lo})"
+            return f"{lo_w} - {int(round(ftp * hi / 100.0))} W (%{lo}-{hi})"
+
+        hrr = max_hr - rhr
         defs = [
-            ("Z1", "Zone 1 (Isınma / Toparlanma)", "116 - 141 bpm (%65-79)", "116 - 139 bpm (%65-78)", "128 - 143 bpm (%50-60)", f"{_w(222)} - {_w(273)} W (%65-80)"),
-            ("Z2", "Zone 2 (Aerobik Taban / Yağ Yakımı)", "142 - 157 bpm (%80-88)", "140 - 155 bpm (%78-87)", "143 - 158 bpm (%60-70)", f"{_w(274)} - {_w(308)} W (%80-90)"),
-            ("Z3", "Zone 3 (Aerobik Tempo)", "158 - 167 bpm (%88-93)", "156 - 167 bpm (%87-93)", "158 - 173 bpm (%70-80)", f"{_w(309)} - {_w(342)} W (%90-100)"),
-            ("Z4", "Zone 4 (Laktat Eşiği)", "168 - 176 bpm (%94-98)", "168 - 179 bpm (%94-100)", "173 - 188 bpm (%80-90)", f"{_w(343)} - {_w(393)} W (%100-115)"),
-            ("Z5", "Zone 5 (Anaerobik / Maks)", "177 - 203 bpm (≥%99)", "180 - 203 bpm (>%100)", "188 - 203 bpm (%90-100)", f"> {_w(393)} W (>%115)"),
+            (
+                names[i][0], names[i][1],
+                _bpm_range(lthr_now, i, lthr, ref_max="ge"),
+                _bpm_range(lthr_rec, i, lthr),
+                _bpm_range(hrr_bands, i, hrr, offset=rhr),
+                _power(i),
+            )
+            for i in range(5)
         ]
 
         out: List[Dict[str, Any]] = []

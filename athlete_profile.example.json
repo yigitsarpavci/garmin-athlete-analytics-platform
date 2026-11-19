@@ -1,0 +1,13 @@
+{
+  "_comment": "Bu dosyayı data/athlete_profile.json olarak kopyalayıp kendi değerlerinle doldur. Garmin'den gelen alanlar (boy, yaş, cinsiyet) zaten otomatik okunur; yalnızca eksik/yanlış olanları yaz. data/ klasörü git'e girmez. max_hr ve lactate_threshold_hr isteğe bağlıdır; verilmezse Garmin verisinden / yaştan türetilir. goal_5k_time, z2_goal_pace ve z2_goal_date isteğe bağlıdır; verilmezse verinden türetilir.",
+  "name": "Ad (isteğe bağlı)",
+  "birth_date": "1996-01-31",
+  "gender": "male",
+  "height_cm": 180,
+  "target_weight_kg": 76.0,
+  "max_hr": 195,
+  "lactate_threshold_hr": 172,
+  "goal_5k_time": "24:30",
+  "z2_goal_pace": "5:30",
+  "z2_goal_date": "2027-06-01"
+}

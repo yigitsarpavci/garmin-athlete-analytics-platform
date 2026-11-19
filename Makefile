@@ -1,4 +1,4 @@
-.PHONY: run test fetch clean
+.PHONY: run test fetch clean css lint
 
 PORT ?= 8085
 
@@ -14,3 +14,9 @@ fetch:
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+
+css:
+	./tools/build_css.sh
+
+lint:
+	python3 -m ruff check app tests

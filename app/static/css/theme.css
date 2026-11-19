@@ -20,7 +20,7 @@
 
   --text-primary-dark: #E6ECE8;
   --text-secondary-dark: #93A89B;
-  --text-muted-dark: #63786B;
+  --text-muted-dark: #7A9082; /* 5,2:1 (WCAG AA) */
 
   --accent-dark: #4A7C63;
   --accent-hover-dark: #5E9479;
@@ -207,7 +207,7 @@ button.garmin-card:hover {
 
 /* Semantic Status Tokens & Hairline Index Tags */
 .accent-text {
-  color: var(--accent);
+  color: #5D9677; /* metin olarak 5,2:1 (WCAG AA); --accent dolgu/çizgi içindir */
 }
 .accent-bg {
   background-color: var(--accent);
@@ -235,7 +235,7 @@ button.garmin-card:hover {
   flex-shrink: 0;
   gap: 0.35rem;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -499,7 +499,7 @@ html.macos-app .site-header > div {
   gap: 0.325rem;
   padding: 0.32rem 0.65rem;
   border-radius: 2px;
-  font-size: 0.7rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   white-space: nowrap;
   color: var(--text-secondary);
@@ -577,7 +577,7 @@ main table thead th {
   background-color: var(--bg-surface-elevated);
   border-bottom: 1px solid var(--border-medium);
   font-family: var(--font-mono);
-  font-size: 0.675rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -805,7 +805,7 @@ html.dark .text-emerald-300 {
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 0.6875rem;
   line-height: 1.1;
   color: var(--text-muted);
 }
@@ -819,6 +819,9 @@ html.dark .text-emerald-300 {
   display: flex;
   gap: 1px;
 }
+/* Dolgu çubuğunun ucunda beyaz nokta (pin) göstermek için taşmaya izin verir; dolgu kendi köşelerini yuvarlar */
+.garmin-fill-track--pin { overflow: visible; }
+.garmin-fill-track--pin > [class*="seg-"] { border-radius: 2px; }
 .garmin-focus-mini {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -867,7 +870,7 @@ html.dark .text-emerald-300 {
 }
 .hrv-7d-lbl {
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 0.6875rem;
   line-height: 1;
   color: var(--text-muted);
 }
@@ -889,3 +892,48 @@ html.dark .text-emerald-300 {
     border-block-end: 3px solid Highlight !important;
   }
 }
+
+
+/* ============================================================================
+   MOBİL (<640px): gezinme alt sekme çubuğuna taşınır; üst çubukta yalnızca başlık ve eylemler kalır
+   ============================================================================ */
+.mobile-title { display: none; }
+.nav-short { display: none; }
+@media (max-width: 639px) {
+  /* backdrop-filter, içindeki position:fixed öğeler için yeni bir kapsayıcı blok oluşturur; mobilde kapatılır */
+  .site-header { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: var(--bg-base); }
+  .mobile-title {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+  }
+  .site-header nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 55;
+    background-color: var(--bg-surface);
+    border-top: 1px solid var(--border-medium);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    flex: none;
+  }
+  .site-header .nav-tablist { width: 100%; gap: 0; justify-content: space-between; }
+  .site-header .nav-tablist > .nav-tab,
+  .site-header .nav-dropdown { flex: 1 1 0; min-width: 0; }
+  .site-header .nav-dropdown > .nav-tab { width: 100%; }
+  .site-header .nav-tab { justify-content: center; padding: 0.8rem 0.15rem; font-size: 0.75rem; }
+  .nav-full { display: none; }
+  .nav-short { display: inline; }
+  .nav-tab-active::after, .nav-tab[aria-current="page"]::after { inset: 0 0.5rem auto; border-block-end: 0; border-block-start: 2px solid var(--accent); }
+  .nav-dropdown-menu { top: auto; bottom: 100%; left: 0; min-width: 12rem; }
+  .nav-dropdown:last-child .nav-dropdown-menu { left: auto; right: 0; }
+  .nav-dropdown:hover .nav-dropdown-menu { display: none; }
+  .nav-dropdown.is-open .nav-dropdown-menu, .nav-dropdown:focus-within .nav-dropdown-menu { display: flex; }
+  .single-screen-main { padding-bottom: 3.75rem; }
+  #aiCoachFlyout { bottom: 4.25rem !important; right: 0.5rem !important; }
+  #aiCoachLauncherBtn { bottom: 4.25rem !important; }
+}
+

@@ -17,7 +17,7 @@ Uç Noktalar (Endpoints):
 - GET  /api/sports              : Branş bazında (Koşu, Gym, Yelken, Basketbol) telemetri ve rehberlik.
 - GET  /api/gym-history         : Salon setleri, tekrarlar, ağırlıklar (raw_gym_exercise_sets.json).
 - GET  /api/activities          : Kayıtlı tüm Garmin antrenmanları (spor filtresi destekli).
-- GET  /api/sleep-analysis      : 88 gecelik uyku evreleri, sirkadiyen ritim ve yatış saati etkisi.
+- GET  /api/sleep-analysis      : En iyi / en düşük uyku geceleri (evreler, HRV, hazırlık).
 - GET  /api/correlations        : Parametrik Pearson korelasyon matrisi ve p anlamlılık değerleri.
 - GET  /api/periods-weeks       : 4 Makro dönem ve 14 ISO haftası analizi.
 - GET  /api/same-day-sequence   : Aynı gün kuvvet + koşu sıralamasının nabız ve zon etkisi.
@@ -28,7 +28,7 @@ Uç Noktalar (Endpoints):
 - GET  /api/physique-tracker    : Fiziksel değişim, yağ oranı projeksiyonu ve estetik morfoloji.
 - GET  /api/z2-tracker          : Zone 2 5:00 /km temposuna kalan seans/gün dinamik sayacı.
 - GET  /api/garmin-expansion    : Garmin veri derinliğini artırma mimarisi ve rehberi.
-- GET  /api/custom-profile/presets: Sarp ve diğer sporcu seviyeleri için hazır profil şablonları.
+- GET  /api/custom-profile/presets: Ana sporcu ve diğer sporcu seviyeleri için hazır profil şablonları.
 - GET  /api/progression         : Dogmatik olmayan seviye atlama, gün artırma ve deload analizi.
 - GET  /api/daily-protocols     : 7 günlük derin egzersiz, set, tekrar, ağırlık ve beslenme reçetesi.
 - GET  /api/charts              : Web arayüzü grafikleri için 93 günlük zaman serisi verileri.
@@ -46,12 +46,16 @@ import sys
 import json
 import math
 import time
+import logging
 import threading
 import subprocess
 from datetime import datetime
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import urllib.parse
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
+
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(APP_DIR, "static")
@@ -65,14 +69,19 @@ try:
 except ImportError:
     from app.engine.helpers import IS_DEMO_MODE
 
+logger = logging.getLogger("garmin.server")
+
 engine = GarminAthleteEngine()
 coach = AthleteAICoach(engine)
+
+# Otomatik eşitleme aralığı (sn). Varsayılan 60 dk; artımlı çekme sayesinde her eşitleme birkaç istektir.
+AUTO_SYNC_INTERVAL_SEC = max(300, int(os.environ.get("GARMIN_SYNC_INTERVAL_SEC", "3600")))
 
 SYNC_STATE: Dict[str, Any] = {
     "last_sync_at": None,
     "session_valid": True,
     "last_error": None,
-    "auto_sync_interval_sec": 900,
+    "auto_sync_interval_sec": AUTO_SYNC_INTERVAL_SEC,
     "keepalive_active": True,
     "keepalive_interval_sec": 240,
     "last_keepalive_at": None,
@@ -84,12 +93,17 @@ _SESSION_FILE_PATH = os.path.join(os.path.expanduser("~"), ".garmin-connect-mcp"
 
 
 def _inspect_session_jwt() -> Dict[str, Any]:
-    """~/.garmin-connect-mcp/session.json içindeki JWT_WEB veya yuvarlanan oturum süresini çözer."""
+    """
+    ~/.garmin-connect-mcp/session.json içindeki JWT_WEB çerezinin gerçek bitiş zamanını çözer.
+    Süre bilinmiyorsa uydurulmaz: jwt_expires_at / jwt_remaining_sec None döner.
+    Not: Garmin JWT_WEB kısa ömürlüdür; oturumun gerçek geçerliliği son sync/keep-alive
+    sonucundan (SYNC_STATE["session_valid"]) okunmalıdır.
+    """
     now_ts = int(time.time())
     info: Dict[str, Any] = {
         "session_file_exists": os.path.exists(_SESSION_FILE_PATH),
-        "jwt_expires_at": now_ts + 86400,
-        "jwt_remaining_sec": 86400,
+        "jwt_expires_at": None,
+        "jwt_remaining_sec": None,
         "last_keepalive_at": SYNC_STATE.get("last_keepalive_at"),
     }
     if not info["session_file_exists"]:
@@ -99,35 +113,50 @@ def _inspect_session_jwt() -> Dict[str, Any]:
             sess = json.load(f) or {}
         if sess.get("last_keepalive_at"):
             info["last_keepalive_at"] = sess.get("last_keepalive_at")
-        lease_exp = sess.get("jwt_expires_at")
-        cookie_exp = None
         for c in sess.get("cookies") or []:
             if isinstance(c, dict) and c.get("name") == "JWT_WEB":
-                val = c.get("value") or ""
-                parts = val.split(".")
+                parts = (c.get("value") or "").split(".")
                 if len(parts) == 3:
                     b64 = parts[1] + "=" * (-len(parts[1]) % 4)
                     payload = json.loads(base64.urlsafe_b64decode(b64).decode("utf-8"))
                     if isinstance(payload.get("exp"), (int, float)):
-                        cookie_exp = int(payload["exp"])
+                        info["jwt_expires_at"] = int(payload["exp"])
+                        info["jwt_remaining_sec"] = max(0, int(payload["exp"]) - now_ts)
                 break
-        effective_exp = now_ts + 86400
-        if isinstance(cookie_exp, (int, float)) and cookie_exp > now_ts:
-            effective_exp = int(cookie_exp)
-        elif isinstance(lease_exp, (int, float)) and lease_exp > now_ts:
-            effective_exp = int(lease_exp)
-        info["jwt_expires_at"] = effective_exp
-        info["jwt_remaining_sec"] = max(1, int(effective_exp - now_ts))
-    except Exception:
-        pass
+    except (OSError, ValueError, TypeError):
+        logger.debug("_inspect_session_jwt: yedek davranış uygulandı", exc_info=True)
     return info
+
+
+# Keep-alive, son başarılı Garmin temasından bu yana bu süre geçmeden Playwright başlatmaz.
+# Otomatik sync oturum çerezlerini zaten tazelediği için keep-alive yalnızca sync aksarsa devreye girer.
+KEEPALIVE_MIN_GAP_SEC = max(840, AUTO_SYNC_INTERVAL_SEC - 600)
+_LAST_GARMIN_CONTACT_TS: Optional[float] = None
+
+
+def _mark_garmin_contact() -> None:
+    """Başarılı sync/keep-alive anını kaydeder (gereksiz keep-alive süreçlerini önlemek için)."""
+    global _LAST_GARMIN_CONTACT_TS
+    _LAST_GARMIN_CONTACT_TS = time.time()
+
+
+def _reload_engine() -> None:
+    """Yeni telemetriyi kilit altında yükler ve plato kaynaklı program geçişini kalıcılaştırır."""
+    with engine.lock:
+        engine.load_data()
+        if not IS_DEMO_MODE:
+            try:
+                engine.persist_program_state()
+            except Exception as exc:
+                sys.stderr.write(f"Program durumu kaydedilemedi: {exc}\n")
 
 
 def sync_garmin_live() -> Dict[str, Any]:
     """Garmin Connect verilerini canlı çeker ve motoru tazeler; 401 durumunda yerel telemetri ve oturum kirasını korur."""
     fetch_script = os.path.join(BASE_DIR, "scripts", "fetch_garmin_data.mjs")
-    if not os.path.exists(fetch_script):
-        engine.load_data()
+    # Demo modunda gerçek Garmin hesabına bağlanılmaz ve data/ klasörüne yazılmaz
+    if IS_DEMO_MODE or not os.path.exists(fetch_script):
+        _reload_engine()
         SYNC_STATE["last_sync_at"] = datetime.now().isoformat(timespec="seconds")
         SYNC_STATE["session_valid"] = True
         SYNC_STATE["last_error"] = None
@@ -142,7 +171,7 @@ def sync_garmin_live() -> Dict[str, Any]:
         try:
             res = subprocess.run(["node", fetch_script], capture_output=True, text=True, timeout=180)
             output = (res.stdout or "") + "\n" + (res.stderr or "")
-            engine.load_data()
+            _reload_engine()
             now_iso = datetime.now().isoformat(timespec="seconds")
             jwt_info = _inspect_session_jwt()
             SYNC_STATE["last_keepalive_at"] = jwt_info.get("last_keepalive_at") or now_iso
@@ -152,8 +181,6 @@ def sync_garmin_live() -> Dict[str, Any]:
                 res.returncode == 2
                 or '"session_expired":true' in output
                 or '"remote_401":true' in output
-                or "remote_401_soft_fallback" in output
-                or "401" in output
             )
             if is_expired:
                 SYNC_STATE["session_valid"] = False
@@ -174,6 +201,7 @@ def sync_garmin_live() -> Dict[str, Any]:
                     "message": f"Garmin senkronizasyonu başarısız: {SYNC_STATE['last_error']}",
                 }
             SYNC_STATE["last_sync_at"] = now_iso
+            _mark_garmin_contact()
             SYNC_STATE["session_valid"] = True
             SYNC_STATE["last_error"] = None
             return {
@@ -183,7 +211,7 @@ def sync_garmin_live() -> Dict[str, Any]:
                 "message": "Garmin verileri başarıyla senkronize edildi ve güncellendi!",
             }
         except Exception as exc:
-            engine.load_data()
+            _reload_engine()
             SYNC_STATE["last_error"] = str(exc)
             return {
                 "success": False,
@@ -196,7 +224,7 @@ def sync_garmin_live() -> Dict[str, Any]:
 def keepalive_garmin_session() -> Dict[str, Any]:
     """Garmin Connect oturumunu hafif --keepalive nabız atışı ile canlı tutar ve yeni çerezleri kaydeder."""
     jwt_info = _inspect_session_jwt()
-    if not jwt_info["session_file_exists"]:
+    if IS_DEMO_MODE or not jwt_info["session_file_exists"]:
         SYNC_STATE["session_valid"] = True
         SYNC_STATE["last_error"] = None
         SYNC_STATE["jwt_expires_at"] = jwt_info.get("jwt_expires_at")
@@ -239,7 +267,6 @@ def keepalive_garmin_session() -> Dict[str, Any]:
                 proc.returncode == 2
                 or '"session_expired":true' in output
                 or '"remote_401":true' in output
-                or "remote_401_soft_fallback" in output
             )
             if is_expired:
                 SYNC_STATE["session_valid"] = False
@@ -254,6 +281,7 @@ def keepalive_garmin_session() -> Dict[str, Any]:
                 }
             SYNC_STATE["session_valid"] = True
             SYNC_STATE["last_error"] = None
+            _mark_garmin_contact()
             return {
                 "success": True,
                 "session_expired": False,
@@ -282,6 +310,8 @@ def keepalive_garmin_session() -> Dict[str, Any]:
 
 def _session_keepalive_loop(base_interval_sec: int = 240) -> None:
     """Uygulama çalıştığı sürece Garmin Connect oturumunu adaptif aralıklarla yeniler."""
+    if IS_DEMO_MODE:
+        return  # Demo modu gerçek Garmin hesabına dokunmaz
     while True:
         info = _inspect_session_jwt()
         SYNC_STATE["jwt_expires_at"] = info.get("jwt_expires_at")
@@ -289,11 +319,15 @@ def _session_keepalive_loop(base_interval_sec: int = 240) -> None:
         if info.get("last_keepalive_at"):
             SYNC_STATE["last_keepalive_at"] = info.get("last_keepalive_at")
 
-        if info.get("session_file_exists"):
+        recently_contacted = (
+            _LAST_GARMIN_CONTACT_TS is not None
+            and (time.time() - _LAST_GARMIN_CONTACT_TS) < KEEPALIVE_MIN_GAP_SEC
+        )
+        if info.get("session_file_exists") and not recently_contacted:
             res = keepalive_garmin_session()
             rem = res.get("jwt_remaining_sec")
         else:
-            rem = None
+            rem = info.get("jwt_remaining_sec") if info.get("session_file_exists") else None
 
         if isinstance(rem, int) and 0 < rem < 600:
             sleep_sec = max(60, min(base_interval_sec, rem // 2))
@@ -302,7 +336,7 @@ def _session_keepalive_loop(base_interval_sec: int = 240) -> None:
         time.sleep(sleep_sec)
 
 
-def _auto_sync_loop(interval_sec: int = 900) -> None:
+def _auto_sync_loop(interval_sec: int = 3600) -> None:
     """Sunucu çalışırken belirli aralıklarla Garmin telemetrisini otomatik yeniler."""
     if IS_DEMO_MODE:
         return
@@ -312,7 +346,7 @@ def _auto_sync_loop(interval_sec: int = 900) -> None:
         if age_sec > interval_sec:
             sync_garmin_live()
     except Exception:
-        pass
+        logger.warning("_auto_sync_loop: yedek davranış uygulandı", exc_info=True)
     while True:
         time.sleep(interval_sec)
         sync_garmin_live()
@@ -324,7 +358,67 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
         """Statik dosya dizinini bağlayarak işleyiciyi ilklendirir."""
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
 
+    # Motoru kullanmayan veya uzun süren ağ çağrısı yapan uç noktalar kilit dışında çalışır.
+    # /api/chat: motor bağlamı AI koçun içinde kısa süreliğine kilitlenir; LLM çağrısı (35 sn'ye kadar) kilit dışındadır.
+    _UNSCOPED_PATHS = {"/api/status", "/api/session/keepalive", "/api/sync", "/api/ai-models", "/api/chat"}
+    # Yalnızca yerel istemciler: DNS rebinding ve başka sitelerden gelen istekleri engeller.
+    _ALLOWED_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
+    MAX_BODY_BYTES = 1_000_000
+    CSP = (
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    )
+
+    def _reject(self, code: int, message: str) -> bool:
+        """Yasaklı isteği JSON hata gövdesiyle reddeder (CORS başlığı eklenmez)."""
+        self.send_json(code, {"error": message})
+        return False
+
+    def _guard(self) -> bool:
+        """
+        Host, Origin ve Sec-Fetch-Site başlıklarını doğrular.
+        - Host yalnızca localhost / 127.0.0.1 / ::1 olabilir (DNS rebinding savunması).
+        - Origin varsa Host ile aynı olmalı (başka bir web sitesi API'yi çağıramaz).
+        - Sec-Fetch-Site 'cross-site' / 'same-site' ise reddedilir (<img>, <form> gibi Origin'siz çağrılar dahil).
+        """
+        host = self.headers.get("Host") or ""
+        try:
+            hostname = urllib.parse.urlsplit("//" + host).hostname
+        except ValueError:
+            hostname = None
+        if hostname not in self._ALLOWED_HOSTNAMES:
+            return self._reject(403, "Geçersiz Host başlığı")
+        origin = self.headers.get("Origin")
+        if origin is not None and urllib.parse.urlsplit(origin).netloc != host:
+            return self._reject(403, "Farklı kaynaktan (cross-origin) istek reddedildi")
+        if (self.headers.get("Sec-Fetch-Site") or "same-origin") not in ("same-origin", "none"):
+            return self._reject(403, "Farklı kaynaktan (cross-site) istek reddedildi")
+        return True
+
+    def _in_engine_scope(self, path: str) -> bool:
+        return path.startswith("/api/") and path not in self._UNSCOPED_PATHS
+
     def do_GET(self) -> None:
+        """GET isteklerini motor istek kapsamında (kilit + tek seferlik hesaplama) yönlendirir."""
+        if not self._guard():
+            return
+        path = urllib.parse.urlparse(self.path).path
+        if self._in_engine_scope(path):
+            with engine.request_scope():
+                return self._route_get()
+        return self._route_get()
+
+    def do_POST(self) -> None:
+        """POST isteklerini motor istek kapsamında yönlendirir (sync/keep-alive hariç)."""
+        if not self._guard():
+            return
+        path = urllib.parse.urlparse(self.path).path
+        if self._in_engine_scope(path):
+            with engine.request_scope():
+                return self._route_post()
+        return self._route_post()
+
+    def _route_get(self) -> None:
         """Tüm analitik GET isteklerini yönlendirir veya statik HTML dosyalarını sunar."""
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
@@ -341,6 +435,12 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             self.send_json(200, {
                 **engine.get_latest_metrics(),
                 "is_demo": IS_DEMO_MODE,
+                "athlete": {
+                    "name": engine.profile.get("name"),
+                    "profile_complete": engine.profile.get("is_complete"),
+                    "profile_missing": engine.profile.get("missing"),
+                    "target_weight_kg": engine.get_target_weight(),
+                },
                 "schedule": engine.get_weekly_schedule(),
                 "weekly_quota": engine.get_weekly_quota_summary(),
                 "settings": engine.get_garmin_settings_to_fix(),
@@ -399,7 +499,7 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
         # 8.6. Garmin Veri Derinliğini Artırma Rehberi
         elif path == "/api/garmin-expansion":
             self.send_json(200, engine.get_garmin_data_expansion_guide())
-        # 8.7. Başkaları ve Sarp İçin Hazır Profil Şablonları (Presets)
+        # 8.7. Ana sporcu ve başkaları için hazır profil şablonları (Presets)
         elif path == "/api/custom-profile/presets":
             self.send_json(200, engine.get_profile_presets())
         # 8.8. Dogmatik Olmayan Gelişim & Seviye Atlama / Gün Artırma Analizi
@@ -420,16 +520,7 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
                         idx = 0
             self.send_json(200, engine.get_post_workout_debrief(activity_idx=idx))
         elif path == "/api/ai-models":
-            self.send_json(200, {
-                "active_provider": "Antigravity Google DeepMind Gemini Runtime",
-                "default_model": "gemini-3.8-flash-low",
-                "is_real_ai_available": True,
-                "available_models": [
-                    {"id": "gemini-3.8-flash-low", "name": "Gemini 3.8 Flash (Hızlı & Keskin - Önerilen)", "recommended": True},
-                    {"id": "gemini-4-hydrogen-high", "name": "Gemini 4 Hydrogen (Derin Analiz & Muhakeme)", "recommended": False},
-                    {"id": "claude-sonnet-5-5-medium", "name": "Claude Sonnet 5.5 (Alternatif Model)", "recommended": False}
-                ]
-            })
+            self.send_json(200, coach.describe_providers())
         # 9. Zaman Serisi Grafikleri
         elif path == "/api/charts":
             self.send_json(200, engine.get_chart_data())
@@ -437,29 +528,37 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             sess_info = {**SYNC_STATE, **_inspect_session_jwt()}
             self.send_json(200, {
                 "status": "ok",
-                "profile_id": null,
+                "profile_id": None,  # Kişisel Garmin profil kimliği repoya gömülmez
                 "version": "2.0.0",
                 "is_demo": IS_DEMO_MODE,
                 "session": sess_info,
             })
         elif path == "/api/session/keepalive":
-            self.send_json(200, keepalive_garmin_session())
+            # GET yan etkisizdir (Garmin'e bağlanmaz); yenileme yalnızca POST ile tetiklenir.
+            self.send_json(200, {**_inspect_session_jwt(), "session_valid": SYNC_STATE.get("session_valid")})
         elif path == "/" or path == "":
             self.path = "/index.html"
             return super().do_GET()
         else:
             return super().do_GET()
 
-    def do_POST(self) -> None:
+    def _route_post(self) -> None:
         """Hesaplayıcı, özel profil, veri eşitleme ve interaktif AI koçu POST isteklerini işler."""
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
-        length = int(self.headers.get("Content-Length", 0))
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except ValueError:
+            return self.send_json(400, {"error": "Geçersiz Content-Length"})
+        if length < 0 or length > self.MAX_BODY_BYTES:
+            return self.send_json(413, {"error": "İstek gövdesi çok büyük"})
         raw_body = self.rfile.read(length) if length > 0 else b"{}"
 
         try:
             body = json.loads(raw_body.decode("utf-8")) if raw_body else {}
-        except Exception:
+        except (UnicodeDecodeError, ValueError):
+            body = {}
+        if not isinstance(body, dict):
             body = {}
 
         # 1. AI Koç Sohbeti
@@ -476,7 +575,7 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             self.send_json(200, res)
         # 2. Özel Forma Girme Hesaplayıcısı
         elif path == "/api/calculator":
-            target_kg = float(body.get("target_kg", 81.0))
+            target_kg = float(body.get("target_kg") or engine.get_target_weight())
             weekly_pace_kg = float(body.get("weekly_pace_kg", 0.55))
             res = engine.calculate_custom_projection(target_kg, weekly_pace_kg)
             self.send_json(200, res)
@@ -487,18 +586,6 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             self.send_json(status_code, res)
         elif path == "/api/session/keepalive":
             self.send_json(200, keepalive_garmin_session())
-        # 4. Kuvvet Seansı Tamamlama / Kısmi Başarı Kaydı ve Dinamik Yeniden Planlama
-        elif path == "/api/gym/log-session":
-            res = engine.log_gym_session_result(body)
-            res["sports"] = engine.get_sports_guidance()
-            res["daily_protocols"] = engine.get_detailed_daily_workout_protocols()
-            self.send_json(200, res)
-        elif path == "/api/gym/reset-logs":
-            mode = body.get("mode", "last")
-            res = engine.reset_manual_gym_logs(mode=mode)
-            res["sports"] = engine.get_sports_guidance()
-            res["daily_protocols"] = engine.get_detailed_daily_workout_protocols()
-            self.send_json(200, res)
         else:
             self.send_json(404, {"error": "Not found"})
 
@@ -535,15 +622,22 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(payload)
 
     def end_headers(self) -> None:
-        """Tarayıcının eski HTML/JS/CSS önbelleğini sunmasını engellemek için önbelleksiz başlıkları ekler."""
-        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-        self.send_header("Pragma", "no-cache")
-        self.send_header("Expires", "0")
+        """Uygulama dosyaları önbelleksiz; sürümü adında sabitlenmiş /vendor/ dosyaları uzun süre önbellekli sunulur."""
+        # Sıkı güvenlik başlıkları: yalnızca kendi kaynaklarından script/font/veri; satır içi script yok (olaylar data-* ile)
+        self.send_header("Content-Security-Policy", self.CSP)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Frame-Options", "DENY")
+        if self.path.startswith("/vendor/"):
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+        else:
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
         super().end_headers()
 
     def log_message(self, format: str, *args: Any) -> None:
@@ -553,25 +647,30 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
 def run(port: int = 8085) -> None:
     """
     Yerel HTTP sunucusunu belirtilen port üzerinden başlatır, arka plan otomatik
-    Garmin senkronizasyonunu (15 dk aralıkla) ve oturum keep-alive nabzını (4 dk)
+    Garmin senkronizasyonunu (varsayılan 60 dk aralıkla, artımlı) ve oturum keep-alive nabzını (4 dk)
     devreye alır ve istekleri dinler.
 
     Args:
         port (int): Sunucunun bağlanacağı TCP portu (varsayılan: 8085).
     """
+    logging.basicConfig(
+        level=os.environ.get("GARMIN_LOG_LEVEL", "INFO").upper(),
+        format="[%(asctime)s] %(levelname)s %(name)s: %(message)s",
+        stream=sys.stderr,
+    )
     threading.Thread(target=_session_keepalive_loop, args=(240,), daemon=True).start()
-    threading.Thread(target=_auto_sync_loop, args=(900,), daemon=True).start()
+    threading.Thread(target=_auto_sync_loop, args=(AUTO_SYNC_INTERVAL_SEC,), daemon=True).start()
     server_address = ('127.0.0.1', port)
-    httpd = HTTPServer(server_address, AthleteAppHandler)
-    print(f"\n=======================================================")
-    print(f"🚀 Garmin Sporcu Asistanı & Gösterge Paneli Başlatıldı")
+    httpd = ThreadingHTTPServer(server_address, AthleteAppHandler)
+    print("\n=======================================================")
+    print("🚀 Garmin Sporcu Asistanı & Gösterge Paneli Başlatıldı")
     if IS_DEMO_MODE:
-        print(f"🧪 Mod: DEMO / MOCK VERİ (sample_data) — Canlı senkronizasyon devre dışı")
+        print("🧪 Mod: DEMO / MOCK VERİ (sample_data) — Canlı senkronizasyon devre dışı")
     else:
-        print(f"🔄 Otomatik Garmin Canlı Senkronizasyon: Aktif (15 dk)")
-    print(f"🔐 Garmin Oturum Keep-Alive: Aktif (4 dk adaptif)")
+        print(f"🔄 Otomatik Garmin Canlı Senkronizasyon: Aktif ({AUTO_SYNC_INTERVAL_SEC // 60} dk, artımlı)")
+    print("🔐 Garmin Oturum Keep-Alive: Aktif (4 dk adaptif)")
     print(f"👉 Tarayıcıda açın: http://localhost:{port}")
-    print(f"=======================================================\n")
+    print("=======================================================\n")
     try:
         signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
         httpd.serve_forever()

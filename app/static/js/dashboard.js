@@ -183,7 +183,10 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const stepGoal = Math.max(1, Number(data.step_goal ?? 10000));
   const stepPct = Math.max(0, Math.min(100, (stepCur / stepGoal) * 100));
   setText('fs-steps-val', formatTrInt(data.steps));
-  setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})`);
+  const asOfTxt = data.data_as_of ? ` · Saat ${String(data.data_as_of).slice(11, 16)} eşitlemesi${data.data_is_stale ? ' (güncel değil)' : ''}` : '';
+  setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})${asOfTxt}`);
+  const stepsSubEl = document.getElementById('fs-steps-sub');
+  if (stepsSubEl) stepsSubEl.style.color = data.data_is_stale ? 'var(--ochre)' : '';
   const stepBarEl = document.getElementById('fs-steps-bar');
   if (stepBarEl) {
     const pinLeft = Math.max(2, Math.min(98, stepPct));
@@ -218,23 +221,27 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const highPct = Number(lf.high_aerobic_pct ?? (lf.aerobic_high && lf.aerobic_high.pct_of_target) ?? 0);
   const anPct = Number(lf.anaerobic_pct ?? (lf.anaerobic && lf.anaerobic.pct_of_target) ?? 0);
   setText('fs-loadfocus-val', lf.recommended_focus_label || 'Anaerobik & Laktat İntervali');
-  setText('fs-loadfocus-sub', `Düşük %${fmtDec(lowPct, 0)} · Yüksek %${fmtDec(highPct, 0)} · Anaer %${fmtDec(anPct, 0)}`);
+  const lfBasis = lf.targets_available === false ? ' · hedef bandı yok, toplam yük payı' : '';
+  setText('fs-loadfocus-sub', `Düşük %${fmtDec(lowPct, 0)} · Yüksek %${fmtDec(highPct, 0)} · Anaer %${fmtDec(anPct, 0)}${lfBasis}`);
   const lfBarEl = document.getElementById('fs-loadfocus-bar');
   if (lfBarEl) {
+    const bar = (cls, label, pct) => {
+      const w = Math.min(100, Math.max(6, pct));
+      const pin = Math.max(3, Math.min(97, w));
+      return `
+        <div>
+          <div class="garmin-fill-track garmin-fill-track--pin">
+            <div class="${cls} h-full" style="width:${w}%"></div>
+            <span class="garmin-gauge-pin" style="left:${pin}%"></span>
+          </div>
+          <div class="garmin-gauge-scale mt-0.5"><span>${label}</span><span>%${Math.round(pct)}</span></div>
+        </div>`;
+    };
     lfBarEl.innerHTML = `
       <div class="garmin-focus-mini">
-        <div>
-          <div class="garmin-fill-track"><div class="seg-blue h-full" style="width:${Math.min(100, Math.max(6, lowPct))}%"></div></div>
-          <div class="garmin-gauge-scale mt-0.5"><span>Düşük</span><span>%${Math.round(lowPct)}</span></div>
-        </div>
-        <div>
-          <div class="garmin-fill-track"><div class="seg-amber h-full" style="width:${Math.min(100, Math.max(6, highPct))}%"></div></div>
-          <div class="garmin-gauge-scale mt-0.5"><span>Yüksek</span><span>%${Math.round(highPct)}</span></div>
-        </div>
-        <div>
-          <div class="garmin-fill-track"><div class="seg-purple h-full" style="width:${Math.min(100, Math.max(6, anPct))}%"></div></div>
-          <div class="garmin-gauge-scale mt-0.5"><span>Anaer</span><span>%${Math.round(anPct)}</span></div>
-        </div>
+        ${bar('seg-blue', 'Düşük', lowPct)}
+        ${bar('seg-amber', 'Yüksek', highPct)}
+        ${bar('seg-purple', 'Anaer', anPct)}
       </div>
     `;
   }
@@ -301,7 +308,7 @@ function _renderBranchSummaryInto(containerId, sp, iconName, opts = {}) {
     ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         ${extraKpis.map(k => `
           <div class="tint-panel p-2.5">
-            <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] block">${escapeHtml(k.label)}</span>
+            <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] block">${escapeHtml(k.label)}</span>
             <span class="text-xs font-semibold text-[var(--text-primary)] break-words">${escapeHtml(String(k.val))}</span>
           </div>
         `).join('')}
@@ -310,7 +317,7 @@ function _renderBranchSummaryInto(containerId, sp, iconName, opts = {}) {
 
   const tipsHtml = ((sp.how_to_improve || []).length && !opts.hideInfoCards)
     ? `<div class="text-[11px] text-[var(--text-secondary)] space-y-1 tint-panel p-2.5 leading-snug">
-        <p class="font-mono text-[9.5px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-0.5">Öneriler</p>
+        <p class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-0.5">Öneriler</p>
         ${(sp.how_to_improve || []).map(item => `<p class="flex items-start gap-1.5"><span class="accent-text">·</span><span>${escapeHtml(item)}</span></p>`).join('')}
       </div>`
     : '';
@@ -332,15 +339,15 @@ function _renderBranchSummaryInto(containerId, sp, iconName, opts = {}) {
             <span class="font-semibold">${escapeHtml(sess.day || '')}</span>
             <span class="stamp-tag stamp-accent">${escapeHtml(sess.type || 'Seans')}</span>
           </div>
-          <p class="font-medium text-xs">${escapeHtml(sess.title || '')} <span class="font-mono text-[10.5px] text-[var(--text-muted)]">(${escapeHtml(sess.duration || '')})</span></p>
-          ${(sess.target_hr || sess.target_pace) ? `<p class="font-mono text-[10px] accent-text">${[sess.target_hr, sess.target_pace].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
-          <p class="text-[10.5px] text-[var(--text-secondary)] leading-snug">${escapeHtml(sess.details || '')}</p>
+          <p class="font-medium text-xs">${escapeHtml(sess.title || '')} <span class="font-mono text-[12px] text-[var(--text-muted)]">(${escapeHtml(sess.duration || '')})</span></p>
+          ${(sess.target_hr || sess.target_pace) ? `<p class="font-mono text-[11px] accent-text">${[sess.target_hr, sess.target_pace].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
+          <p class="text-[12px] text-[var(--text-secondary)] leading-snug">${escapeHtml(sess.details || '')}</p>
         </div>
       `).join('')
     : (sp.next_workout ? `
         <div class="text-[11px] tint-panel p-2.5">
           <p class="font-semibold">${escapeHtml(sp.next_workout.day)}: ${escapeHtml(sp.next_workout.title)} <span class="font-mono text-[var(--text-muted)]">(${escapeHtml(sp.next_workout.duration || '')})</span></p>
-          <p class="text-[10.5px] text-[var(--text-secondary)] mt-0.5">${escapeHtml(sp.next_workout.details || (sp.next_workout.exercises ? sp.next_workout.exercises.join(', ') : ''))}</p>
+          <p class="text-[12px] text-[var(--text-secondary)] mt-0.5">${escapeHtml(sp.next_workout.details || (sp.next_workout.exercises ? sp.next_workout.exercises.join(', ') : ''))}</p>
         </div>
       ` : '');
 
@@ -354,14 +361,14 @@ function _renderBranchSummaryInto(containerId, sp, iconName, opts = {}) {
           </div>
           <span class="stamp-tag stamp-accent">${escapeHtml(sp.schedule_status || 'Aktif')}</span>
         </div>
-        <p class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug">${escapeHtml(sp.stats_summary || '')}</p>
+        <p class="font-mono text-[12px] text-[var(--text-secondary)] leading-snug">${escapeHtml(sp.stats_summary || '')}</p>
       </div>
       ${extraGridHtml}
       ${tipsHtml}
       ${lastHtml}
     </div>
     <div class="space-y-2 min-w-0 lg:border-l lg:border-[var(--border-subtle)] lg:pl-4">
-      <p class="font-mono text-[10px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
+      <p class="font-mono text-[11px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
         ${lucideSvg('calendar', 'w-3.5 h-3.5 accent-text')}
         <span>Bu Hafta Kalan / Sıradaki Seçenekler</span>
       </p>
@@ -423,7 +430,7 @@ function renderGymHistory(gym) {
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="space-y-0.5">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-mono text-[10px] uppercase tracking-wider font-semibold accent-text">Aktif Program: ${escapeHtml(splitInfo.name || splitInfo.short_name || '')}</span>
+            <span class="font-mono text-[11px] uppercase tracking-wider font-semibold accent-text">Aktif Program: ${escapeHtml(splitInfo.name || splitInfo.short_name || '')}</span>
             <span class="stamp-tag stamp-accent">Otomatik Seçildi</span>
             <span class="stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'}">Plato Skoru: ${pScore}/100</span>
           </div>
@@ -433,7 +440,7 @@ function renderGymHistory(gym) {
       <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
         <div class="${barColor} h-1.5" style="width: ${Math.max(4, Math.min(100, pScore))}%;"></div>
       </div>
-      <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+      <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] font-mono text-[var(--text-muted)]">
         ${(pa.signals || []).map(sig => `<span>• ${escapeHtml(sig)}</span>`).join('')}
       </div>
     `;
@@ -462,16 +469,16 @@ function renderGymHistory(gym) {
     <span class="font-semibold text-xs">${escapeHtml(item.name)}${item.is_core === false ? ' <span class="stamp-tag stamp-sky">YENİ</span>' : ''}</span>
     ${_decisionStamp(item.decision)}
   </div>
-  <div class="flex flex-wrap items-center justify-between gap-1 font-mono text-[10px] text-[var(--text-secondary)]">
+  <div class="flex flex-wrap items-center justify-between gap-1 font-mono text-[11px] text-[var(--text-secondary)]">
     <span>e1RM: <strong class="text-[var(--text-primary)]">${item.e1rm_kg ?? '--'} kg</strong> (${item.bw_ratio ?? '--'}x BW)</span>
     <span>${escapeHtml(item.delta)}</span>
   </div>
-  <p class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug" title="${escapeHtml(hist.join(' → '))}">${escapeHtml(hist.slice(-2).join(' → '))}</p>
-  ${item.decision_reason ? `<p class="text-[10px] text-[var(--text-muted)] leading-snug">${escapeHtml(item.decision_reason)}</p>` : ''}
+  <p class="font-mono text-[12px] text-[var(--text-secondary)] leading-snug" title="${escapeHtml(hist.join(' → '))}">${escapeHtml(hist.slice(-2).join(' → '))}</p>
+  ${item.decision_reason ? `<p class="text-[11px] text-[var(--text-muted)] leading-snug">${escapeHtml(item.decision_reason)}</p>` : ''}
 </div>
 <div class="pt-1.5 border-t border-[var(--border-subtle)] space-y-0.5">
   <p class="font-mono text-[11px] font-medium moss-text flex items-center gap-1">${lucideSvg('target', 'w-3 h-3 shrink-0')}<span>Hedef: ${escapeHtml(item.next_target)}</span></p>
-  ${projList ? `<p class="font-mono text-[10px] accent-text">Projeksiyon: ${escapeHtml(projList)} kg</p>` : ''}
+  ${projList ? `<p class="font-mono text-[11px] accent-text">Projeksiyon: ${escapeHtml(projList)} kg</p>` : ''}
 </div>
       `;
       progGrid.appendChild(div);
@@ -484,13 +491,13 @@ function renderGymHistory(gym) {
     gym.sessions.forEach(sess => {
       const tr = document.createElement('tr');
       tr.className = "hover:bg-[var(--bg-subtle)] transition";
-      const exSummary = `<div class="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[10.5px] leading-tight">` + (sess.exercises || []).map(ex => {
+      const exSummary = `<div class="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[12px] leading-tight">` + (sess.exercises || []).map(ex => {
         const setStr = (ex.sets || []).map(s => `${s.reps}x${s.weight_kg}kg`).join(', ');
         return `<span><strong class="font-semibold">${escapeHtml(ex.name)}</strong>: <span class="font-mono accent-text">${escapeHtml(setStr)}</span></span>`;
       }).join('') + `</div>`;
 
       tr.innerHTML = `
-<td class="py-1 px-2 text-[11px] font-mono font-medium whitespace-nowrap">${escapeHtml(sess.date)} <span class="text-[var(--text-muted)] text-[10px]">${escapeHtml(sess.time || '')}</span></td>
+<td class="py-1 px-2 text-[11px] font-mono font-medium whitespace-nowrap">${escapeHtml(sess.date)} <span class="text-[var(--text-muted)] text-[11px]">${escapeHtml(sess.time || '')}</span></td>
 <td class="py-1 px-2 text-[11px] font-semibold whitespace-nowrap ${sess.workout_type === 'Workout A' ? 'accent-text' : ''}">${escapeHtml(sess.workout_type)}</td>
 <td class="py-1 px-2 text-[11px] font-mono text-[var(--text-secondary)] whitespace-nowrap">${sess.duration_min} dk · ${sess.calories} kcal</td>
 <td class="py-1 px-2 text-[11px] font-mono font-semibold whitespace-nowrap">${(sess.total_volume_kg / 1000.0).toFixed(2)} Ton</td>
@@ -601,13 +608,13 @@ function renderActivityFilters(allActs) {
 
   const sortedSports = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
   const buttons = [
-    `<button type="button" onclick="filterActivities('all')" id="af-all" class="${currentSportFilter === 'all' ? 'btn-primary' : 'btn-secondary'} text-xs px-3 py-1.5">Tümü (${allActs.length})</button>`
+    `<button type="button" data-calls="[[&quot;filterActivities&quot;, &quot;all&quot;]]" id="af-all" class="${currentSportFilter === 'all' ? 'btn-primary' : 'btn-secondary'} text-xs px-3 py-1.5">Tümü (${allActs.length})</button>`
   ];
   sortedSports.forEach(sp => {
     const sample = allActs.find(a => a.sport === sp) || {};
     const label = getDynamicSportLabel(sp, sample.sport_tr);
     const cls = currentSportFilter === sp ? 'btn-primary' : 'btn-secondary';
-    buttons.push(`<button type="button" onclick="filterActivities('${escapeHtml(sp)}')" id="af-${escapeHtml(sp)}" class="${cls} text-xs px-3 py-1.5">${escapeHtml(label)} (${counts[sp]})</button>`);
+    buttons.push(`<button type="button" data-calls="${escapeHtml(JSON.stringify([['filterActivities', sp]]))}" id="af-${escapeHtml(sp)}" class="${cls} text-xs px-3 py-1.5">${escapeHtml(label)} (${counts[sp]})</button>`);
   });
   bar.innerHTML = buttons.join('');
 }
@@ -692,10 +699,10 @@ function renderActivities(acts, rebuildFilters = true, resetPage = true) {
   aBody.innerHTML = '';
   pageItems.forEach((a) => {
     const tr = document.createElement('tr');
-    tr.className = "hover:bg-[var(--bg-subtle)] transition cursor-pointer group text-[11.5px]";
+    tr.className = "hover:bg-[var(--bg-subtle)] transition cursor-pointer group text-[12px]";
     tr.title = "Aktivite detaylarını ve sensör telemetrisini açmak için tıklayın";
     tr.onclick = () => openActivityModal(a);
-    const teDisplay = a.aTE ? `<span class="font-mono text-[10.5px] font-semibold moss-text">A:${Number(a.aTE).toFixed(1)}</span>/<span class="font-mono text-[10.5px] font-semibold crimson-text">An:${Number(a.anTE || 0).toFixed(1)}</span>` : '--';
+    const teDisplay = a.aTE ? `<span class="font-mono text-[12px] font-semibold moss-text">A:${Number(a.aTE).toFixed(1)}</span>/<span class="font-mono text-[12px] font-semibold crimson-text">An:${Number(a.anTE || 0).toFixed(1)}</span>` : '--';
     const durStr = a.dur_m !== null && a.dur_m !== undefined ? `${Number(a.dur_m).toFixed(0)} dk` : '--';
     const hrStr = `${a.avg_hr ?? '--'}/${a.max_hr ?? '--'}`;
     const spLower = String(a.sport || '').toLowerCase();

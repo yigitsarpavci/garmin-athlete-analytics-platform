@@ -31,3 +31,9 @@ node_modules/
 *.app/
 *.icns
 macos/build/
+
+# Kişisel profil / ajan talimatları (sağlık ve antrenman verisi içerir; repoya girmez)
+AGENTS.md
+
+# Linter önbelleği
+.ruff_cache/
