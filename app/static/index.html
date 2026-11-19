@@ -80,7 +80,7 @@
           <button type="button" onclick="setSubTab('overview', 'kpi12')" data-subtab-group="overview"
             data-subtab="kpi12" class="subtab-btn subtab-btn-active">12 Temel Gösterge</button>
           <button type="button" onclick="setSubTab('overview', 'quota_brief')" data-subtab-group="overview"
-            data-subtab="quota_brief" class="subtab-btn">Günlük Durum &amp; Kota</button>
+            data-subtab="quota_brief" class="subtab-btn">Günlük Durum</button>
           <button type="button" onclick="setSubTab('overview', 'ledger')" data-subtab-group="overview"
             data-subtab="ledger" class="subtab-btn">Performans &amp; Trend</button>
         </div>
@@ -261,28 +261,11 @@
         </section>
       </div>
 
-      <!-- OVERVIEW SUBPANE 2: GÜNLÜK DURUM & HAFTALIK KOTA -->
+      <!-- OVERVIEW SUBPANE 2: GÜNLÜK DURUM -->
       <div data-subpane-group="overview" data-subpane="quota_brief" class="single-screen-pane hidden">
-        <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-
-          <!-- LEFT 7 COLS: Weekly Flexible Quota Panel -->
-          <div class="lg:col-span-7 flex flex-col min-h-0">
-            <!-- HAFTALIK KOTA & KALAN SEANSLAR LEDGER PANELİ -->
-            <section id="weeklyQuotaPanel" aria-label="Haftalık Kota ve Kalan Seanslar"
-              class="field-dossier p-3.5 space-y-2.5 overflow-hidden">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <span
-                  class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık
-                  Kota &amp; Kalan Seanslar</span>
-                <span class="stamp-tag stamp-accent">Yükleniyor...</span>
-              </div>
-              <p class="text-xs text-[var(--text-secondary)]">Bu hafta tamamlanan koşu, kuvvet ve spontane seanslar
-                hesaplanıyor...</p>
-            </section>
-          </div>
-
-          <!-- RIGHT 5 COLS: FIELD DISPATCH DOSSIER (Readiness + Weekly Streak + Daily Decision) -->
-          <aside class="lg:col-span-5 field-dossier p-4 space-y-3 flex flex-col min-h-0">
+        <section class="flex flex-col">
+          <!-- FIELD DISPATCH DOSSIER (Weekly Streak + Latest Activity) -->
+          <aside class="field-dossier p-4 space-y-3 flex flex-col min-h-0">
             <div class="flex items-center justify-between gap-2 pb-2 border-b border-[var(--border-subtle)]">
               <span
                 class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Günlük
