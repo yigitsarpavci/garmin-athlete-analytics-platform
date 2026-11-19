@@ -397,6 +397,7 @@ function renderWeeklyStreak(activities) {
       const sp = (a.sport || '').toLowerCase();
       dayMap[d].push({
         isRun: sp.includes('run') || sp.includes('koş'),
+        isGym: sp.includes('strength') || sp.includes('kuvvet') || sp.includes('gym'),
         icon: getSportLucideIcon(a.sport || a.sport_tr || a.name),
         title: `${a.name || a.sport_tr || a.sport || 'Antrenman'}${a.dur_m ? ` (${Math.round(a.dur_m)} dk)` : ''}`
       });
@@ -417,14 +418,17 @@ function renderWeeklyStreak(activities) {
     const lbl = dayNames[order[idx]];
     if (items.length > 1) {
       const tip = items.map(i => i.title).join(' · ').replace(/"/g, '&quot;');
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><span title="${tip}" class="w-7 h-7 rounded-[2px] accent-bg border border-[var(--accent)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[#AB86D4] font-medium mb-1.5">${lbl}</span><span title="${tip}" class="w-7 h-7 rounded-[2px] bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
     }
     if (items.length === 1) {
       const info = items[0];
-      const cls = info.isRun
+      const lblCls = info.isRun ? 'moss-text' : (info.isGym ? 'ochre-text' : 'text-[#AB86D4]');
+      const boxCls = info.isRun
         ? 'accent-bg border border-[var(--accent)]'
-        : 'bg-[var(--text-primary)] text-[var(--bg-surface)] border border-[var(--text-primary)]';
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${cls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
+        : (info.isGym
+          ? 'bg-[rgba(201,154,73,0.16)] text-[#C99A49] border border-[rgba(201,154,73,0.45)]'
+          : 'bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)]');
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] ${lblCls} font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
     }
     if (iso < todayIso) {
       return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[#6BA7D6] font-medium mb-1.5">${lbl}</span><span title="Dinlenme Günü" class="w-7 h-7 rounded-[2px] bg-[rgba(75,142,194,0.14)] text-[#6BA7D6] border border-[rgba(75,142,194,0.35)] flex items-center justify-center">${lucideSvg('bed', 'w-3.5 h-3.5')}</span></div>`;
