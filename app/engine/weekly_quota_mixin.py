@@ -380,12 +380,34 @@ class WeeklyQuotaMixin:
         prev_had_tempo = "tempo" in prev_run_kinds
 
         prev_gym_types = [gym_type_by_date.get((g.get("startTimeLocal") or "")[:10], "Kuvvet") for g in prev_gyms_sorted]
-        prev_had_a = any("Workout A" in wt or "Push" in wt or "Upper" in wt for wt in prev_gym_types)
-        prev_had_b = any("Workout B" in wt or "Pull" in wt or "Lower" in wt for wt in prev_gym_types)
+        prev_had_a = any("Workout A" in wt for wt in prev_gym_types)
+        prev_had_b = any("Workout B" in wt for wt in prev_gym_types)
+
+        # Pazartesi öncesi en son yapılan kuvvet antrenmanını bul (geçen hafta veya daha önceki haftalar)
+        monday_str = monday_anchor.strftime("%Y-%m-%d")
+        last_prior_gym_type = None
+        for wt in reversed(prev_gym_types):
+            if "Workout A" in wt or "Workout B" in wt:
+                last_prior_gym_type = wt
+                break
+        if last_prior_gym_type is None:
+            prior_gyms = []
+            for act in self.activities_all:
+                d_str = (act.get("startTimeLocal") or "")[:10]
+                if not d_str or d_str >= monday_str:
+                    continue
+                sp_key = act.get("sport") or (act.get("activityType") or {}).get("typeKey") or ""
+                if classify_sport_bucket(sp_key) == "strength":
+                    wt = gym_type_by_date.get(d_str, "")
+                    if "Workout A" in wt or "Workout B" in wt:
+                        prior_gyms.append((d_str, wt))
+            if prior_gyms:
+                prior_gyms.sort(key=lambda x: x[0])
+                last_prior_gym_type = prior_gyms[-1][1]
 
         missed_sessions: List[str] = []
         run_order = list(dyn["run_sequence"])
-        gym_order = list(dyn["gym_sequence"])
+        gym_order = ["gym_b", "gym_a"] if (last_prior_gym_type and "Workout A" in last_prior_gym_type) else ["gym_a", "gym_b"]
         run_priority_reason: Optional[str] = None
         gym_priority_reason: Optional[str] = None
 
@@ -430,16 +452,17 @@ class WeeklyQuotaMixin:
         if len(prev_gyms_sorted) == 1:
             if prev_had_a and not prev_had_b:
                 missed_sessions.append("Workout B")
-                gym_order = ["gym_b", "gym_a"]
-                gym_priority_reason = "Geçen hafta yalnızca Workout A yapıldığı için eksik kalan Workout B bu hafta ilk kuvvet önceliğine alındı."
+                gym_priority_reason = "Geçen hafta yalnızca Workout A yapıldığı için bu hafta Workout B → Workout A sırasıyla devam edilir."
             elif prev_had_b and not prev_had_a:
                 missed_sessions.append("Workout A")
-                gym_order = ["gym_a", "gym_b"]
-                gym_priority_reason = "Geçen hafta yalnızca Workout B yapıldığı için eksik kalan Workout A bu hafta ilk kuvvet önceliğine alındı."
+                gym_priority_reason = "Geçen hafta yalnızca Workout B yapıldığı için bu hafta Workout A → Workout B sırasıyla devam edilir."
             else:
                 missed_sessions.append("2. Kuvvet seansı")
         elif len(prev_gyms_sorted) == 0 and any(True for _ in prev_runs_sorted):
             missed_sessions.extend(["Workout A", "Workout B"])
+
+        if gym_priority_reason is None and gym_order[0] == "gym_b":
+            gym_priority_reason = "En son Workout A yapıldığı için bu hafta Workout B → Workout A sırasıyla devam edilir."
 
         # Sıradaki 4-6 koşuyu son gerçek koşuların EPOC/TE katkılarıyla kapalı çevrim simüle et
         run_prediction = dyn.get("run_prediction")

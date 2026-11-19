@@ -588,6 +588,35 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         self.assertEqual(dyn_dropped["run_target"], 2)
         self.assertEqual(dyn_dropped["gym_target"], 2)
 
+    def test_gym_alternates_from_last_session_across_missed_and_extra_weeks(self):
+        from datetime import timedelta
+        stub, now = self._make_stub(runs_28d=0, gyms_28d=0)
+        monday = now - timedelta(days=now.weekday())
+        prev_mon = monday - timedelta(days=7)
+
+        cases = [
+            ([(0, "Workout A")], ["gym_b", "gym_a"]),
+            ([(0, "Workout B")], ["gym_a", "gym_b"]),
+            ([(0, "Workout A"), (2, "Workout B"), (4, "Workout A")], ["gym_b", "gym_a"]),
+            ([(0, "Workout B"), (2, "Workout A"), (4, "Workout B")], ["gym_a", "gym_b"]),
+            ([(0, "Workout B"), (3, "Workout A")], ["gym_b", "gym_a"]),
+            ([(-5, "Workout A")], ["gym_b", "gym_a"]),
+        ]
+        for day_types, expected_order in cases:
+            stub.activities_all = []
+            gym_type_by_date = {}
+            for offset, wtype in day_types:
+                d_str = (prev_mon + timedelta(days=offset)).strftime("%Y-%m-%d")
+                gym_type_by_date[d_str] = wtype
+                stub.activities_all.append({
+                    "sport": "strength_training",
+                    "startTimeLocal": f"{d_str} 18:00:00",
+                    "duration": 3300,
+                    "averageHR": 120,
+                })
+            carry = stub._analyze_previous_week_carryover(monday, gym_type_by_date)
+            self.assertEqual(carry["gym_order"], expected_order, msg=f"Failed for {day_types}")
+
 
 if __name__ == "__main__":
     unittest.main()
