@@ -967,13 +967,9 @@ class WeeklyQuotaMixin:
         st.run_cls_by_id[id(act)] = r_cls
 
         dist_km = round(dist_m / 1000.0, 2) if dist_m > 0 else 0.0
-        dist_txt = f"{dist_km:.2f} km · " if dist_km > 0 else ""
+        item_label = day_short
 
         if actual_kind == "tempo":
-            item_label = (
-                f"{day_short} · {r_cls['label_tr']} [Haftalık Koşu Kotasına Sayıldı] "
-                f"({dist_txt}{dur_m} dk{hr_txt} · TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']})"
-            )
             dev = {
                 "date": d_str,
                 "day_label": day_short,
@@ -992,10 +988,6 @@ class WeeklyQuotaMixin:
             st.plan_deviations.append(dev)
             st.day_deviations.setdefault(d_str, []).append(dev)
         elif r_cls["is_deviation"]:
-            item_label = (
-                f"{day_short} · {r_cls['label_tr']} [Haftalık Koşu Kotasına Sayıldı] "
-                f"({dist_txt}{dur_m} dk{hr_txt})"
-            )
             dev = {
                 "date": d_str,
                 "day_label": day_short,
@@ -1012,8 +1004,6 @@ class WeeklyQuotaMixin:
             }
             st.plan_deviations.append(dev)
             st.day_deviations.setdefault(d_str, []).append(dev)
-        else:
-            item_label = f"{day_short} · {r_cls['label_tr']} ({dist_txt}{dur_m} dk{hr_txt})"
 
         st.runs_completed_items.append({
             "date": d_str,
