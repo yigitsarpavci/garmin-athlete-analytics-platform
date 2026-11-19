@@ -118,8 +118,6 @@ function setTab(tabId, persist = true) {
 
   if (tabId === 'activities') {
     setSubTab('training_load', 'activities', persist);
-  } else if (tabId === 'analytics') {
-    setSubTab('health', 'metrics', persist);
   }
 }
 
