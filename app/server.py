@@ -41,6 +41,7 @@ Uç Noktalar (Endpoints):
 
 import base64
 import os
+import signal
 import sys
 import json
 import math
@@ -560,8 +561,9 @@ def run(port: int = 8085) -> None:
     print(f"👉 Tarayıcıda açın: http://localhost:{port}")
     print(f"=======================================================\n")
     try:
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
         httpd.serve_forever()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, SystemExit):
         print("\nSunucu kapatıldı.")
         httpd.server_close()
 

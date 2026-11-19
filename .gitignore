@@ -26,3 +26,8 @@ report.pdf
 # Node & Build
 node_modules/
 .npm
+
+# macOS App Build Artifacts
+*.app/
+*.icns
+macos/build/
