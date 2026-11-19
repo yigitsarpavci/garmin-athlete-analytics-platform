@@ -118,18 +118,39 @@ function openActivityModal(act) {
 // POST-WORKOUT DEBRIEF MODAL
 let currentDebriefIdx = 0;
 
+function renderDebriefSwitchButtons(activeIdx) {
+  const bar = document.getElementById('debriefSwitchBar');
+  if (!bar) return;
+  const acts = Array.isArray(window.globalActivities) ? window.globalActivities : [];
+  const seen = new Set();
+  const tabs = [];
+
+  acts.forEach((a, i) => {
+    const spKey = String(a.sport || a.sport_tr || 'other').toLowerCase();
+    if (seen.has(spKey)) return;
+    seen.add(spKey);
+    const shortSport = spKey === 'strength_training'
+      ? 'Gym'
+      : (typeof getDynamicSportLabel === 'function' ? getDynamicSportLabel(a.sport, a.sport_tr) : (a.sport_tr || a.sport || 'Antrenman'));
+    tabs.push({ idx: i, label: `Son ${shortSport}` });
+  });
+
+  if (!tabs.length) {
+    tabs.push({ idx: 0, label: 'Son Seans' });
+  }
+
+  bar.innerHTML = tabs.slice(0, 4).map(t => {
+    const cls = t.idx === activeIdx ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
+    return `<button type="button" onclick="openDebriefModal(${t.idx})" class="${cls}">${escapeHtml(t.label)}</button>`;
+  }).join('');
+}
+
 async function openDebriefModal(idx = 0) {
   currentDebriefIdx = idx;
   const modal = document.getElementById('postWorkoutDebriefModal');
   if (!modal) return;
   openDialogNative(modal);
-
-  const btnGym = document.getElementById('debriefBtnGym');
-  const btnRun = document.getElementById('debriefBtnRun');
-  if (btnGym && btnRun) {
-    btnGym.className = idx === 0 ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
-    btnRun.className = idx === 0 ? 'subtab-btn' : 'subtab-btn subtab-btn-active';
-  }
+  renderDebriefSwitchButtons(idx);
 
   try {
     const res = await fetch('/api/post-workout-debrief?idx=' + idx);
