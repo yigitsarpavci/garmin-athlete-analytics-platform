@@ -446,47 +446,6 @@ function renderGymHistory(gym) {
 
 function renderTrainingLoad(tl) {
   if (!tl) return;
-  const foc = tl.load_focus;
-
-  if (foc) {
-    const low = foc.aerobic_low || {};
-    const high = foc.aerobic_high || {};
-    const ana = foc.anaerobic || {};
-
-    const balBadge = document.getElementById('tl-focus-balance-badge');
-    if (balBadge) balBadge.textContent = foc.balance_phrase || 'Dengeli';
-
-    const setFocusBar = (prefix, obj) => {
-      const valEl = document.getElementById(`tl-focus-${prefix}`);
-      const barEl = document.getElementById(`tl-focus-${prefix}-bar`);
-      const tgtEl = document.getElementById(`tl-focus-${prefix}-target`);
-      const stEl = document.getElementById(`tl-focus-${prefix}-status`);
-      if (valEl) valEl.textContent = `${obj.actual ?? 0} birim`;
-      const pct = obj.pct_of_target !== undefined ? obj.pct_of_target : (obj.target_max > 0 ? Math.round((obj.actual / obj.target_max) * 100) : 0);
-      if (barEl) barEl.style.width = `${Math.max(4, Math.min(100, pct))}%`;
-      if (tgtEl) tgtEl.textContent = `Hedef: ${obj.target_min ?? 0}–${obj.target_max ?? 0}`;
-      if (stEl) {
-        stEl.textContent = obj.status || 'Optimal';
-        const isDeficit = foc.primary_deficit && ((prefix === 'low' && foc.primary_deficit === 'aerobic_low') || (prefix === 'high' && foc.primary_deficit === 'aerobic_high') || (prefix === 'anaerobic' && foc.primary_deficit === 'anaerobic'));
-        stEl.className = isDeficit ? 'ochre-text font-semibold' : 'moss-text';
-      }
-    };
-
-    setFocusBar('low', low);
-    setFocusBar('high', high);
-    setFocusBar('anaerobic', ana);
-
-    const recBox = document.getElementById('tl-focus-recommendation');
-    if (recBox) {
-      recBox.innerHTML = `
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider accent-text">Öncelikli Enerji Odağı: ${escapeHtml(foc.recommended_focus_label || 'Dengeli İdman')}</span>
-          <span class="stamp-tag stamp-accent">Düşük ${low.pct_of_target ?? '--'}% · Yüksek ${high.pct_of_target ?? '--'}% · Anaerobik ${ana.pct_of_target ?? '--'}%</span>
-        </div>
-        <p class="text-[var(--text-primary)] leading-relaxed">${escapeHtml(foc.recommended_workout || foc.balance_note || '')}</p>
-      `;
-    }
-  }
 
   const wBody = document.getElementById('trainingLoadWeeklyBody');
   if (wBody && tl.weekly_progression) {
