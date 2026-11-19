@@ -54,21 +54,12 @@ function _build93dRowGauge(r) {
 function render93dBiometrics(rows) {
   const tbody = document.getElementById('healthMetrics93dBody');
   if (!tbody || !Array.isArray(rows) || !rows.length) return;
-  tbody.innerHTML = rows.map(r => {
-    const stLower = String(r.status || '').toLowerCase();
-    const stCls = (stLower.includes('iyi') || stLower.includes('optimal') || stLower.includes('normal') || stLower.includes('sağlıklı'))
-      ? 'moss-text font-medium'
-      : ((stLower.includes('artır') || stLower.includes('dikkat') || stLower.includes('orta') || stLower.includes('sınır'))
-        ? 'ochre-text font-medium'
-        : 'text-[var(--text-secondary)]');
-    return `
+  tbody.innerHTML = rows.map(r => `
       <tr class="hover:bg-[var(--bg-subtle)] transition">
         <td class="py-1 px-2 font-medium whitespace-nowrap">${escapeHtml(r.metric)}</td>
         <td class="py-1 px-2">${_build93dRowGauge(r)}</td>
-        <td class="py-1 px-2 ${stCls}">${escapeHtml(r.status)}</td>
       </tr>
-    `;
-  }).join('');
+    `).join('');
 }
 
 function renderCorrelations(corrs) {
