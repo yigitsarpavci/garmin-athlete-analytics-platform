@@ -399,10 +399,15 @@
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="gymHistoryTableBody"></tbody>
             </table>
-            <div id="gymHistoryFooter" class="flex items-center justify-between gap-2 px-2 py-2 font-mono text-[11px] text-[var(--text-secondary)]">
-              <span id="gymHistoryCount"></span>
-              <button type="button" id="gymHistoryMoreBtn" data-calls="[[&quot;loadMoreGymHistory&quot;]]"
-                class="stamp-tag stamp-accent hidden cursor-pointer">Daha eski seansları göster</button>
+          </div>
+          <div id="gymHistoryPaginationBar"
+            class="flex items-center justify-between gap-2 pt-0.5 font-mono text-[10.5px]">
+            <span id="gymHistoryPageInfo" class="text-[var(--text-secondary)]">Sayfa 1 / 1</span>
+            <div class="flex items-center gap-1">
+              <button type="button" data-calls="[[&quot;changeGymHistoryPage&quot;, -1]]" id="gymPrevBtn"
+                class="btn-secondary text-[10.5px] px-2 py-0.5" style="min-block-size:1.5rem">Önceki</button>
+              <button type="button" data-calls="[[&quot;changeGymHistoryPage&quot;, 1]]" id="gymNextBtn"
+                class="btn-secondary text-[10.5px] px-2 py-0.5" style="min-block-size:1.5rem">Sonraki</button>
             </div>
           </div>
         </section>

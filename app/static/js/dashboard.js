@@ -305,8 +305,9 @@ function _decisionStamp(dec) {
   return '<span class="stamp-tag stamp-moss">ARTIŞ (+kg)</span>';
 }
 
-/* Salon geçmişi tablosu: sunucu en yeni N seansı sayfa sayfa verir; "Daha eski seansları göster" ile eklenir (binlerce kayıtta DOM şişmez) */
-let _gymHistoryState = { loaded: 0, total: 0, limit: 50, busy: false };
+/* Salon geçmişi tablosu: sayfada yalnızca son 4 seans gösterilir; Önceki / Sonraki ile gezilir (gerekirse devamı sunucudan çekilir). */
+const GYM_PAGE_SIZE = 4;
+let _gymHistoryState = { sessions: [], page: 1, total: 0, limit: 50, busy: false };
 
 function _gymHistoryRow(sess) {
   const tr = document.createElement('tr');
@@ -325,38 +326,54 @@ function _gymHistoryRow(sess) {
   return tr;
 }
 
-function _appendGymHistoryRows(sessions) {
+function _renderGymHistoryPage() {
+  const st = _gymHistoryState;
   const tableBody = document.getElementById('gymHistoryTableBody');
   if (!tableBody) return;
+  const totalCount = Math.max(st.total, st.sessions.length);
+  const totalPages = Math.max(1, Math.ceil(totalCount / GYM_PAGE_SIZE));
+  st.page = Math.max(1, Math.min(totalPages, st.page));
+  const startIdx = (st.page - 1) * GYM_PAGE_SIZE;
+  const pageItems = st.sessions.slice(startIdx, startIdx + GYM_PAGE_SIZE);
+
+  tableBody.innerHTML = '';
   const frag = document.createDocumentFragment();
-  sessions.forEach(sess => frag.appendChild(_gymHistoryRow(sess)));
+  pageItems.forEach(sess => frag.appendChild(_gymHistoryRow(sess)));
   tableBody.appendChild(frag);
-  _gymHistoryState.loaded += sessions.length;
-  const countEl = document.getElementById('gymHistoryCount');
-  if (countEl) countEl.textContent = _gymHistoryState.total ? `${_gymHistoryState.loaded} / ${_gymHistoryState.total} seans` : 'Kayıtlı seans yok';
-  const btn = document.getElementById('gymHistoryMoreBtn');
-  if (btn) btn.classList.toggle('hidden', _gymHistoryState.loaded >= _gymHistoryState.total);
+
+  const pageInfo = document.getElementById('gymHistoryPageInfo');
+  const prevBtn = document.getElementById('gymPrevBtn');
+  const nextBtn = document.getElementById('gymNextBtn');
+  if (pageInfo) pageInfo.textContent = totalCount ? `Sayfa ${st.page} / ${totalPages} (${totalCount} seans)` : 'Kayıtlı seans yok';
+  if (prevBtn) prevBtn.disabled = st.page <= 1;
+  if (nextBtn) nextBtn.disabled = st.page >= totalPages;
 }
 
-async function loadMoreGymHistory() {
+async function changeGymHistoryPage(delta) {
   const st = _gymHistoryState;
-  if (st.busy || st.loaded >= st.total) return;
-  st.busy = true;
-  const btn = document.getElementById('gymHistoryMoreBtn');
-  if (btn) btn.textContent = 'Yükleniyor...';
-  try {
-    const res = await fetch(`/api/gym-history?limit=${st.limit}&offset=${st.loaded}`, { cache: 'no-store' });
-    if (res.ok) {
-      const data = await res.json();
-      st.total = Number(data.sessions_total ?? st.total);
-      _appendGymHistoryRows(data.sessions || []);
+  if (st.busy) return;
+  const totalCount = Math.max(st.total, st.sessions.length);
+  const totalPages = Math.max(1, Math.ceil(totalCount / GYM_PAGE_SIZE));
+  const nextPage = Math.max(1, Math.min(totalPages, st.page + delta));
+  const neededEnd = nextPage * GYM_PAGE_SIZE;
+
+  if (neededEnd > st.sessions.length && st.sessions.length < st.total) {
+    st.busy = true;
+    try {
+      const res = await fetch(`/api/gym-history?limit=${st.limit}&offset=${st.sessions.length}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        st.total = Number(data.sessions_total ?? st.total);
+        if (Array.isArray(data.sessions)) st.sessions.push(...data.sessions);
+      }
+    } catch (_) {
+      /* ağ hatası: mevcut verilerle kal */
+    } finally {
+      st.busy = false;
     }
-  } catch (_) {
-    /* ağ hatası: kullanıcı düğmeye tekrar basabilir */
-  } finally {
-    st.busy = false;
-    if (btn) btn.textContent = 'Daha eski seansları göster';
   }
+  st.page = nextPage;
+  _renderGymHistoryPage();
 }
 
 function renderGymHistory(gym) {
@@ -428,9 +445,14 @@ function renderGymHistory(gym) {
 
   const tableBody = document.getElementById('gymHistoryTableBody');
   if (tableBody && gym.sessions) {
-    tableBody.innerHTML = '';
-    _gymHistoryState = { loaded: 0, total: Number(gym.sessions_total ?? gym.sessions.length), limit: Number(gym.sessions_limit || gym.sessions.length || 50), busy: false };
-    _appendGymHistoryRows(gym.sessions);
+    _gymHistoryState = {
+      sessions: Array.isArray(gym.sessions) ? gym.sessions.slice() : [],
+      page: 1,
+      total: Number(gym.sessions_total ?? gym.sessions.length),
+      limit: Number(gym.sessions_limit || 50),
+      busy: false,
+    };
+    _renderGymHistoryPage();
   }
   if (typeof refreshIcons === 'function') refreshIcons();
 }
