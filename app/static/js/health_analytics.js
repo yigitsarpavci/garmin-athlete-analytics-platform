@@ -63,23 +63,37 @@ function render93dBiometrics(rows) {
 }
 
 function renderCorrelations(corrs) {
-  const cBody = document.getElementById('correlationsBody');
-  if (!cBody || !Array.isArray(corrs)) return;
-  cBody.innerHTML = '';
+  const list = document.getElementById('correlationsList');
+  if (!list || !Array.isArray(corrs)) return;
   if (!corrs.length) {
-    cBody.innerHTML = '<tr><td colspan="2" class="py-3 px-3 text-[var(--text-secondary)]">Korelasyon için yeterli günlük veri yok (en az 6 gün gerekir).</td></tr>';
+    list.innerHTML = '<p class="py-3 px-3 text-[11px] text-[var(--text-secondary)]">Korelasyon için yeterli günlük veri yok (en az 6 gün gerekir).</p>';
     return;
   }
-  corrs.forEach(c => {
-    const tr = document.createElement('tr');
-    tr.className = "hover:bg-[var(--bg-subtle)] transition";
-    const pairCls = c.significant ? (Number(c.r) < 0 ? 'ochre-text' : 'sky-text') : 'text-[var(--text-muted)]';
-    tr.innerHTML = `
-      <td class="py-1 px-2 font-semibold ${pairCls}">${escapeHtml(c.pair)}</td>
-      <td class="py-1 px-2 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
-    `;
-    cBody.appendChild(tr);
-  });
+  // Her satır eşit yükseklikte esner: liste, sağdaki 93G tablosunun yüksekliğini tam doldurur. Çubuk r değerini (−1…+1) merkezden gösterir.
+  list.innerHTML = corrs.map(c => {
+    const r = Number(c.r);
+    const neg = r < 0;
+    const pct = Math.min(100, Math.abs(r) * 100) / 2;
+    const col = c.significant ? (neg ? 'var(--ochre, #C99A49)' : 'var(--accent, #6BA7D6)') : 'var(--text-muted)';
+    const titleCls = c.significant ? (neg ? 'ochre-text' : 'sky-text') : 'text-[var(--text-muted)]';
+    const fill = neg ? `right:50%;width:${pct.toFixed(1)}%` : `left:50%;width:${pct.toFixed(1)}%`;
+    const rTxt = (Number.isFinite(r) ? r.toFixed(2) : '--').replace('.', ',');
+    return `
+      <div role="listitem" class="tint-panel px-2.5 py-1 grid grid-cols-[1fr_auto] gap-x-3 items-center" style="flex:1 1 0;min-height:0">
+        <div class="min-w-0">
+          <p class="text-[11px] font-semibold leading-tight ${titleCls}">${escapeHtml(c.pair)}</p>
+          <p class="text-[10.5px] text-[var(--text-secondary)] leading-snug">${escapeHtml(c.insight)}</p>
+        </div>
+        <div class="w-44 shrink-0 text-right" title="${escapeHtml(`${c.strength || ''} ${c.direction || ''} · n=${c.n ?? '--'} · p ${c.p || ''}`)}">
+          <div class="relative h-2 bg-[var(--bg-surface-elevated)] rounded-[1px]">
+            <span class="absolute top-[-2px] bottom-[-2px] w-px bg-[var(--border-medium)]" style="left:50%"></span>
+            <span class="absolute top-0 bottom-0 rounded-[1px]" style="${fill};background:${col}"></span>
+          </div>
+          <span class="font-mono text-[10px] tabular-nums" style="color:${col}">r ${rTxt}</span>
+          <span class="font-mono text-[10px] text-[var(--text-muted)]"> · ${escapeHtml(c.strength || '')}</span>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function renderProgressionAssessment(data) {
