@@ -241,7 +241,6 @@ function buildQuotaLedgerHtml(quota) {
           <span class="stamp-tag">${escapeHtml(weekRange)}</span>
           ${quota.is_custom && quota.athlete_name ? `<span class="stamp-tag stamp-accent">${escapeHtml(quota.athlete_name)}</span>` : ''}
         </div>
-        <h3 class="font-editorial text-sm sm:text-base font-medium leading-tight text-[var(--text-primary)]">${escapeHtml(quota.headline || '')}</h3>
       </div>
       <div class="flex items-center gap-2 shrink-0 self-start sm:self-center">
         <span class="stamp-tag ${totalBadgeCls} tabular-nums">${total.completed} / ${total.target} Tamamlandı</span>
