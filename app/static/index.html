@@ -42,18 +42,7 @@
           <button type="button" onclick="closeAllNavDropdowns(); setTab('overview')" id="nav-overview" aria-current="page"
             class="nav-tab nav-tab-active">Genel Bakış</button>
 
-          <div class="nav-dropdown" data-nav-dropdown="plan">
-            <button type="button" onclick="toggleNavDropdown('plan', event)" id="nav-plan" class="nav-tab">
-              <span>Antrenman Planı</span>
-              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
-            </button>
-            <div class="nav-dropdown-menu" role="menu">
-              <button type="button" onclick="selectNavSubTab('plan', 'quota', event)" data-subtab-group="plan"
-                data-subtab="quota" class="nav-dropdown-item nav-dropdown-item-active">Haftalık Kota Özeti</button>
-              <button type="button" onclick="selectNavSubTab('plan', 'protocols', event)" data-subtab-group="plan"
-                data-subtab="protocols" class="nav-dropdown-item">Antrenman İçerikleri</button>
-            </div>
-          </div>
+          <button type="button" onclick="setTab('plan')" id="nav-plan" class="nav-tab">Antrenman Planı</button>
 
           <div class="nav-dropdown" data-nav-dropdown="sports">
             <button type="button" onclick="toggleNavDropdown('sports', event)" id="nav-sports" class="nav-tab">
@@ -299,34 +288,30 @@
       </div>
     </div>
 
-    <!-- 2. ANTRENMAN PLANI (3 ALT SEKME: HAFTALIK KOTA ÖZETİ / 7 GÜNLÜK TAKVİM / ANTRENMAN İÇERİKLERİ) -->
-    <div id="section-plan" class="single-screen-section gap-2.5 hidden">
-      <div data-subpane-group="plan" data-subpane="quota" class="single-screen-pane">
-        <section id="planQuotaSummary" aria-label="Haftalık Kota ve Kalan Seans Özeti"
-          class="field-dossier p-4 sm:p-5 space-y-3 overflow-hidden">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span
-              class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık
-              Kota &amp; Kalan Seanslar</span>
-            <span class="stamp-tag stamp-accent">Yükleniyor...</span>
-          </div>
-          <p class="text-xs text-[var(--text-secondary)]">Haftalık kota özeti hazırlanıyor...</p>
-        </section>
-      </div>
+    <!-- 2. ANTRENMAN PLANI (BİRLEŞİK: HAFTALIK KOTA ÖZETİ + ANTRENMAN İÇERİKLERİ) -->
+    <div id="section-plan" class="single-screen-section gap-2.5 overflow-y-auto custom-scrollbar pr-0.5 hidden">
+      <section id="planQuotaSummary" aria-label="Haftalık Kota ve Kalan Seans Özeti"
+        class="field-dossier p-3.5 sm:p-4 space-y-2.5 shrink-0">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span
+            class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık
+            Kota &amp; Kalan Seanslar</span>
+          <span class="stamp-tag stamp-accent">Yükleniyor...</span>
+        </div>
+        <p class="text-xs text-[var(--text-secondary)]">Haftalık kota özeti hazırlanıyor...</p>
+      </section>
 
-      <div data-subpane-group="plan" data-subpane="protocols" class="single-screen-pane hidden">
-        <section class="surface-card p-3 sm:p-3.5 space-y-2 flex flex-col overflow-hidden" id="dailyProtocolsSection">
-          <div
-            class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-1.5 shrink-0">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="stamp-tag stamp-accent">ANTRENMAN İÇERİKLERİ</span>
-              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Seans Detayları</h3>
-            </div>
-            <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs"></div>
+      <section class="surface-card p-3 sm:p-3.5 space-y-2 flex flex-col shrink-0" id="dailyProtocolsSection">
+        <div
+          class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-1.5 shrink-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="stamp-tag stamp-accent">ANTRENMAN İÇERİKLERİ</span>
+            <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Seans Detayları</h3>
           </div>
-          <div class="flex-1 min-h-0 overflow-hidden" id="dailyProtocolsContainer"></div>
-        </section>
-      </div>
+          <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs"></div>
+        </div>
+        <div id="dailyProtocolsContainer"></div>
+      </section>
     </div>
 
     <!-- 3. BRANŞLAR (6 ALT SEKME: KOŞU ÖZETİ / KUVVET ÖZETİ / 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME / REFERANS TABLOSU) -->
