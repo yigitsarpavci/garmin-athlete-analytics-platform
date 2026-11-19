@@ -345,6 +345,44 @@ function renderLatestActivitySummary(activities) {
   refreshIcons();
 }
 
+function _classifyRunLogoKind(a) {
+  const te = String(a.te_label || '').toUpperCase();
+  const anTe = Number(a.anTE || 0);
+  const nm = String(a.name || '').toLowerCase();
+  if (anTe >= 1.5 || te.includes('ANAEROBIC') || te.includes('SPEED') || te.includes('VO2') || nm.includes('interval')) {
+    return 'interval';
+  }
+  if (te.includes('TEMPO') || te.includes('THRESHOLD') || nm.includes('tempo') || Number(a.avg_hr || 0) >= 156) {
+    return 'tempo';
+  }
+  return 'zone2';
+}
+
+function _getRunKindLogo(kind) {
+  if (kind === 'interval') {
+    return {
+      label: 'İnterval',
+      lblCls: 'text-[#B994E8]',
+      boxCls: 'bg-[rgba(140,98,184,0.2)] text-[#B994E8] border border-[rgba(140,98,184,0.5)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h2v-6H3v6zm5 0h2V6H8v12zm5 0h2v-8h-2v8zm5 0h2V4h-2v14z" fill="currentColor" stroke="none"/><path d="M13 2l-2 5h3l-2 5" stroke="currentColor" stroke-width="1.6"/></svg>`
+    };
+  }
+  if (kind === 'tempo') {
+    return {
+      label: 'Tempo',
+      lblCls: 'ochre-text',
+      boxCls: 'bg-[rgba(201,154,73,0.18)] text-[#E2B05B] border border-[rgba(201,154,73,0.5)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16c3 0 4-6 8-6h7"/><path d="M15 6l4 4-4 4"/><line x1="4" y1="20" x2="20" y2="20" stroke-opacity="0.55"/></svg>`
+    };
+  }
+  return {
+    label: 'Zone 2',
+    lblCls: 'moss-text',
+    boxCls: 'bg-[rgba(122,168,125,0.16)] text-[#8BC38E] border border-[rgba(122,168,125,0.48)]',
+    svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 13c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0 3.5-2.5 5 0"/><circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none"/></svg>`
+  };
+}
+
 function renderWeeklyStreak(activities) {
   const strip = document.getElementById('weeklyStreakStrip');
   const badge = document.getElementById('weeklyStreakBadge');
@@ -383,11 +421,15 @@ function renderWeeklyStreak(activities) {
     const d = (a.date || a.startTimeLocal || '').slice(0, 10);
     if (d in dayMap) {
       const sp = (a.sport || '').toLowerCase();
+      const isRun = sp.includes('run') || sp.includes('koş');
+      const runKind = isRun ? _classifyRunLogoKind(a) : null;
+      const runLogo = runKind ? _getRunKindLogo(runKind) : null;
       dayMap[d].push({
-        isRun: sp.includes('run') || sp.includes('koş'),
+        isRun,
+        runLogo,
         isGym: sp.includes('strength') || sp.includes('kuvvet') || sp.includes('gym'),
         icon: getSportLucideIcon(a.sport || a.sport_tr || a.name),
-        title: `${a.name || a.sport_tr || a.sport || 'Antrenman'}${a.dur_m ? ` (${Math.round(a.dur_m)} dk)` : ''}`
+        title: `${runLogo ? runLogo.label + ' · ' : ''}${a.name || a.sport_tr || a.sport || 'Antrenman'}${a.dur_m ? ` (${Math.round(a.dur_m)} dk)` : ''}`
       });
       thisSessionCount += 1;
     }
@@ -410,12 +452,13 @@ function renderWeeklyStreak(activities) {
     }
     if (items.length === 1) {
       const info = items[0];
-      const lblCls = info.isRun ? 'moss-text' : (info.isGym ? 'ochre-text' : 'text-[#AB86D4]');
-      const boxCls = info.isRun
-        ? 'accent-bg border border-[var(--accent)]'
-        : (info.isGym
-          ? 'bg-[rgba(201,154,73,0.16)] text-[#C99A49] border border-[rgba(201,154,73,0.45)]'
-          : 'bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)]');
+      if (info.isRun && info.runLogo) {
+        return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] ${info.runLogo.lblCls} font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${info.runLogo.boxCls} flex items-center justify-center">${info.runLogo.svg}</span></div>`;
+      }
+      const lblCls = info.isGym ? 'ochre-text' : 'text-[#AB86D4]';
+      const boxCls = info.isGym
+        ? 'bg-[rgba(201,154,73,0.16)] text-[#C99A49] border border-[rgba(201,154,73,0.45)]'
+        : 'bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)]';
       return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] ${lblCls} font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
     }
     if (iso < todayIso) {
