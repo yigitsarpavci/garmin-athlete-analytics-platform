@@ -123,6 +123,24 @@ class WeeklyQuotaMixin:
             item["target_pace"] = tpl["target_pace"]
         else:
             item["exercises_summary"] = gym_summaries.get(slot_kind, tpl["exercises_summary"])
+            if hasattr(self, "get_gym_exercise_history"):
+                try:
+                    gh = self.get_gym_exercise_history() or {}
+                    active_split = (gh.get("program_state") or {}).get("active_split", "5x5_linear")
+                    if active_split != "5x5_linear":
+                        from engine.strength_progression import PROGRAM_SPLIT_CATALOG, build_projected_gym_summary
+                        slots = PROGRAM_SPLIT_CATALOG.get(active_split, {}).get("slots", ["push", "pull"])
+                        mapped_slot = slots[0] if slot_kind == "gym_a" else slots[min(1, len(slots) - 1)]
+                        p_type, p_title, p_details = build_projected_gym_summary(
+                            mapped_slot, gh.get("progression", {}), step_idx=0, active_split=active_split
+                        )
+                        item["type"] = p_type
+                        item["short_label"] = p_type
+                        item["badge"] = p_type
+                        item["title"] = f"Kuvvet #{ordinal} · {p_type}"
+                        item["exercises_summary"] = p_details
+                except Exception:
+                    pass
         return item
 
     def _analyze_previous_week_carryover(

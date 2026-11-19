@@ -20,12 +20,14 @@ try:
     from engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
         build_projected_gym_summary,
+        build_split_protocol,
         compute_adaptive_progression,
         load_logged_gym_sessions,
         load_program_state,
         reset_logged_gym_sessions,
         save_logged_gym_session,
         save_program_state,
+        inject_split_derived_lifts,
         select_program_split,
     )
 except ImportError:
@@ -39,12 +41,14 @@ except ImportError:
     from app.engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
         build_projected_gym_summary,
+        build_split_protocol,
         compute_adaptive_progression,
         load_logged_gym_sessions,
         load_program_state,
         reset_logged_gym_sessions,
         save_logged_gym_session,
         save_program_state,
+        inject_split_derived_lifts,
         select_program_split,
     )
 
@@ -229,6 +233,8 @@ class WorkoutProtocolsMixin:
                 )
             except Exception:
                 program_state = {**program_state, "active_split": auto_split}
+
+        inject_split_derived_lifts(adaptive["progression"], auto_split)
 
         return {
             "sessions": sessions,
@@ -749,7 +755,9 @@ class WorkoutProtocolsMixin:
         cur_w = float(metrics.get("weight", 87.0))
         prot_g = round(cur_w * 2.0)
 
-        return [
+        gym_hist_full = self.get_gym_exercise_history()
+        active_split = (gym_hist_full.get("program_state") or {}).get("active_split", "5x5_linear")
+        protocols = [
             {
                 "day_code": "tuesday",
                 "slot_label": "Workout A",
@@ -1013,6 +1021,22 @@ class WorkoutProtocolsMixin:
                 },
             },
         ]
+        if active_split != "5x5_linear":
+            slots = PROGRAM_SPLIT_CATALOG.get(active_split, {}).get("slots", ["push", "pull"])
+            gym_idx = 0
+            for proto in protocols:
+                if proto.get("category") == "gym":
+                    slot_k = slots[min(gym_idx, len(slots) - 1)]
+                    sp_proto = build_split_protocol(slot_k, prog, active_split)
+                    if sp_proto:
+                        proto["slot_label"] = sp_proto["badge"]
+                        proto["badge"] = sp_proto["badge"]
+                        proto["day_title"] = sp_proto["day_title"]
+                        proto["objective"] = sp_proto["objective"]
+                        proto["warmup"] = sp_proto["warmup"]
+                        proto["exercises"] = sp_proto["exercises"]
+                    gym_idx += 1
+        return protocols
 
     def get_athlete_principles(self) -> Dict[str, Any]:
         """Kullanıcının belirlediği temel sporcu ilkelerini döner."""

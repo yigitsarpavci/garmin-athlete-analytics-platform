@@ -286,6 +286,9 @@ function selectProtocolDay(mode) {
 }
 
 function getProtocolTabLabel(p) {
+  if (p && p.category === 'gym' && p.slot_label && p.slot_label !== 'Workout A' && p.slot_label !== 'Workout B') {
+    return p.slot_label;
+  }
   const byCode = {
     tuesday: 'Gym A',
     wednesday: 'Dinlenme',

@@ -798,6 +798,149 @@ def _compute_plateau_score(
     }
 
 
+# Split bazlı seans şablonları: slot -> (rozet, başlık, hedef, ısınma, [(key, kısa_ad, uzun_ad, set, tekrar, dinlenme, RPE, türetme)])
+# türetme: (kaynak_key, katsayı) -> ağırlık kaynak hareketten türetilir (tahmini); None -> doğrudan progresyon.
+SPLIT_SESSION_TEMPLATES: Dict[str, Dict[str, Dict[str, Any]]] = {
+    "push_pull": {
+        "push": {
+            "type": "Push", "title": "Kuvvet · Push (İtme & Ön Bacak)",
+            "day_title": "Kuvvet Reçetesi · Push (İtme & Ön Bacak)",
+            "objective": "Squat, göğüs ve omuz itişlerinde ana güç; yan deltoid hacmi. Çekme günüyle dönüşümlü uygulanır.",
+            "warmup": "5 dk dinamik kalça & omuz mobilitesi + boş bar ile Squat ve Bench Press için 2x8 ısınma.",
+            "lifts": [
+                ("squat", "Squat", "Barbell Back Squat", 4, "6", "150 - 180 sn", "8.0", None),
+                ("bench", "Bench", "Barbell Bench Press", 4, "6-8", "120 - 150 sn", "8.5", None),
+                ("ohp", "OHP", "Barbell Overhead Press (OHP)", 3, "8", "120 sn", "8.0", None),
+                ("incline_db", "Incline DB", "Incline Dumbbell Press", 3, "10", "90 sn", "8.0", ("bench", 0.34)),
+                ("lateral_raise", "Lateral", "Dumbbell Lateral Raise (Yan Açış)", 4, "12", "60 - 75 sn", "8.0", None),
+            ],
+        },
+        "pull": {
+            "type": "Pull", "title": "Kuvvet · Pull (Çekme & Arka Zincir)",
+            "day_title": "Kuvvet Reçetesi · Pull (Çekme & Arka Zincir)",
+            "objective": "Deadlift, kürek ve lat çekişleriyle arka zincir gücü; trapez ve tutuş gelişimi.",
+            "warmup": "5 dk kalça menteşesi mobilitesi + boş bar ile Deadlift ve Row için 2x8 ısınma.",
+            "lifts": [
+                ("deadlift", "Deadlift", "Barbell Deadlift", 3, "5", "180 sn", "8.5", None),
+                ("row", "Row", "Barbell Bent-Over Row", 4, "6-8", "120 - 150 sn", "8.0", None),
+                ("lat_pulldown", "Lat Pulldown", "Lat Pulldown (Geniş Tutuş)", 4, "10", "90 sn", "8.0", None),
+                ("rdl", "RDL", "Romanian Deadlift (RDL)", 3, "8", "120 sn", "8.0", ("deadlift", 0.85)),
+                ("shrug", "Shrug", "Dumbbell / Barbell Shrug (Trapez)", 3, "12", "60 - 75 sn", "8.0", None),
+            ],
+        },
+    },
+    "upper_lower": {
+        "upper": {
+            "type": "Upper", "title": "Kuvvet · Upper Body (Üst Vücut)",
+            "day_title": "Kuvvet Reçetesi · Upper Body (Üst Vücut Güç)",
+            "objective": "İtme-çekme dengesini koruyan üst vücut güç ve hipertrofi günü (Top Set + Back-off).",
+            "warmup": "5 dk omuz/skapula mobilitesi + hafif Bench ve Row ısınma setleri.",
+            "lifts": [
+                ("bench", "Bench", "Barbell Bench Press", 4, "6", "120 - 150 sn", "8.5", None),
+                ("row", "Row", "Barbell Bent-Over Row", 4, "6", "120 - 150 sn", "8.0", None),
+                ("ohp", "OHP", "Barbell Overhead Press (OHP)", 3, "8", "120 sn", "8.0", None),
+                ("lat_pulldown", "Lat", "Lat Pulldown (Geniş Tutuş)", 3, "10", "90 sn", "8.0", None),
+                ("lateral_raise", "Lateral", "Dumbbell Lateral Raise (Yan Açış)", 3, "12", "60 - 75 sn", "8.0", None),
+            ],
+        },
+        "lower": {
+            "type": "Lower", "title": "Kuvvet · Lower Body (Alt Vücut)",
+            "day_title": "Kuvvet Reçetesi · Lower Body (Alt Vücut Güç)",
+            "objective": "Squat ve Deadlift ile alt vücut kuvvet hacmi; arka zincir ve trapez desteği.",
+            "warmup": "5 dk kalça & ayak bileği mobilitesi + boş bar Squat ısınma setleri.",
+            "lifts": [
+                ("squat", "Squat", "Barbell Back Squat", 4, "5-6", "150 - 180 sn", "8.5", None),
+                ("deadlift", "Deadlift", "Barbell Deadlift", 2, "5", "180 sn", "8.5", None),
+                ("rdl", "RDL", "Romanian Deadlift (RDL)", 3, "8", "120 sn", "8.0", ("deadlift", 0.80)),
+                ("shrug", "Shrug", "Dumbbell / Barbell Shrug (Trapez)", 3, "12", "60 - 75 sn", "8.0", None),
+            ],
+        },
+    },
+    "ppl": {
+        "push": {
+            "type": "Push", "title": "Kuvvet · PPL Push",
+            "day_title": "Kuvvet Reçetesi · PPL Push (Göğüs / Omuz / Triceps)",
+            "objective": "Göğüs, omuz ve triceps hacmi; yüksek tekrarlı yan deltoid.",
+            "warmup": "5 dk omuz mobilitesi + hafif Bench ısınma setleri.",
+            "lifts": [
+                ("bench", "Bench", "Barbell Bench Press", 4, "6-8", "120 - 150 sn", "8.5", None),
+                ("ohp", "OHP", "Barbell Overhead Press (OHP)", 3, "8-10", "120 sn", "8.0", None),
+                ("incline_db", "Incline DB", "Incline Dumbbell Press", 3, "10", "90 sn", "8.0", ("bench", 0.34)),
+                ("lateral_raise", "Lateral", "Dumbbell Lateral Raise (Yan Açış)", 4, "15", "60 sn", "8.0", None),
+            ],
+        },
+        "pull": {
+            "type": "Pull", "title": "Kuvvet · PPL Pull",
+            "day_title": "Kuvvet Reçetesi · PPL Pull (Sırt / Arka Omuz / Biceps)",
+            "objective": "Sırt kalınlığı ve genişliği; trapez ve tutuş gücü.",
+            "warmup": "5 dk skapula mobilitesi + hafif Row ısınma setleri.",
+            "lifts": [
+                ("deadlift", "Deadlift", "Barbell Deadlift", 2, "5", "180 sn", "8.5", None),
+                ("row", "Row", "Barbell Bent-Over Row", 4, "6-8", "120 - 150 sn", "8.0", None),
+                ("lat_pulldown", "Lat", "Lat Pulldown (Geniş Tutuş)", 4, "10", "90 sn", "8.0", None),
+                ("shrug", "Shrug", "Dumbbell / Barbell Shrug (Trapez)", 3, "12", "60 - 75 sn", "8.0", None),
+            ],
+        },
+        "legs": {
+            "type": "Legs", "title": "Kuvvet · PPL Legs",
+            "day_title": "Kuvvet Reçetesi · PPL Legs (Bacak & Core)",
+            "objective": "Bacak hacmi ve alt vücut gücü; toparlanma penceresi için ayrı gün.",
+            "warmup": "5 dk kalça & ayak bileği mobilitesi + boş bar Squat ısınma setleri.",
+            "lifts": [
+                ("squat", "Squat", "Barbell Back Squat", 4, "6", "150 - 180 sn", "8.5", None),
+                ("rdl", "RDL", "Romanian Deadlift (RDL)", 3, "8-10", "120 sn", "8.0", ("deadlift", 0.80)),
+                ("bulgarian", "Bulgar Squat / Calf", "Bulgarian Split Squat / Calf Raise", 3, "12", "75 sn", "8.0", "bodyweight"),
+            ],
+        },
+    },
+}
+
+
+def _template_weight(key: str, derived: Any, progression: Dict[str, Any], idx_of) -> Optional[float]:
+    """Şablondaki bir hareket için bir sonraki seans kilosunu verir (türetilmişse kaynak hareketten)."""
+    if derived == "bodyweight":
+        return None
+    if derived:
+        base_key, factor = derived
+        base = progression.get(base_key) or {}
+        pw = base.get("projected_weights") or []
+        i = idx_of(base_key)
+        base_kg = float(pw[i]) if i < len(pw) else float(base.get("next_kg") or LIFT_PROFILES[base_key]["fallback_next"])
+        return round_to_plate(base_kg * factor, 2.5)
+    p = progression.get(key) or {}
+    pw = p.get("projected_weights") or []
+    i = idx_of(key)
+    if i < len(pw):
+        return float(pw[i])
+    return float(p.get("next_kg") or LIFT_PROFILES[key]["fallback_next"])
+
+
+def build_split_protocol(slot_kind: str, progression: Dict[str, Any], active_split: str) -> Optional[Dict[str, Any]]:
+    """Push/Pull, Upper/Lower veya PPL için gerçek hareketler + hedef kilolarla günlük reçete döner."""
+    tpl = (SPLIT_SESSION_TEMPLATES.get(active_split) or {}).get(slot_kind)
+    if not tpl:
+        return None
+    exercises: List[Dict[str, Any]] = []
+    for i, (key, _short, long_name, sets, reps, rest, rpe, derived) in enumerate(tpl["lifts"], start=1):
+        kg = _template_weight(key, derived, progression, lambda _k: 0)
+        entry = progression.get(key) or {}
+        achieved = ""
+        if entry.get("max_kg"):
+            achieved = f"{float(entry['max_kg']):.1f} kg ({entry.get('last_date', 'Son')})"
+        target = f"{kg:.1f} kg x {reps} reps x {sets} set" if kg is not None else f"Vücut ağırlığı / hafif dambıl x {reps} reps x {sets} set"
+        if derived and derived != "bodyweight":
+            target += " (tahmini)"
+        exercises.append({
+            "num": i, "name": long_name, "sets": sets, "reps": reps,
+            "current_achieved": achieved, "target_weight": target,
+            "rest_sec": rest, "target_rpe": rpe, "coaching_cue": "",
+        })
+    return {
+        "day_title": tpl["day_title"], "badge": tpl["type"], "objective": tpl["objective"],
+        "warmup": tpl["warmup"], "exercises": exercises,
+    }
+
+
 def _build_core_summary(
     slot_kind: str,
     progression: Dict[str, Any],
@@ -819,65 +962,23 @@ def _build_core_summary(
             return float(pw[idx])
         return float(p.get("next_kg") or LIFT_PROFILES[key]["fallback_next"])
 
-    if active_split == "push_pull":
-        if slot_kind in ("push", "gym_a"):
-            sq, bp, ohp, lr = _w("squat"), _w("bench"), _w("ohp"), _w("lateral_raise")
-            inc_db = round_to_plate(bp * 0.34, 2.5)
-            return (
-                "Push",
-                "Kuvvet · Push (İtme & Ön Bacak)",
-                f"Squat {sq:.1f} kg (4x6) · Bench {bp:.1f} kg (4x6-8) · OHP {ohp:.1f} kg (3x8) · Incline DB {inc_db:.1f} kg (3x10) · Lateral {lr:.1f} kg (4x12)",
-            )
-        else:
-            dl, rw, lat, sh = _w("deadlift"), _w("row"), _w("lat_pulldown"), _w("shrug")
-            rdl = round_to_plate(dl * 0.85, 2.5)
-            return (
-                "Pull",
-                "Kuvvet · Pull (Çekme & Arka Zincir)",
-                f"Deadlift {dl:.1f} kg (3x5) · Row {rw:.1f} kg (4x6-8) · Lat Pulldown {lat:.1f} kg (4x10) · RDL {rdl:.1f} kg (3x8) · Shrug {sh:.1f} kg (3x12)",
-            )
-
-    if active_split == "upper_lower":
-        if slot_kind in ("upper", "gym_a"):
-            bp, rw, ohp, lat, lr = _w("bench"), _w("row"), _w("ohp"), _w("lat_pulldown"), _w("lateral_raise")
-            return (
-                "Upper",
-                "Kuvvet · Upper Body (Üst Vücut)",
-                f"Bench {bp:.1f} kg (4x6) · Row {rw:.1f} kg (4x6) · OHP {ohp:.1f} kg (3x8) · Lat {lat:.1f} kg (3x10) · Lateral {lr:.1f} kg (3x12)",
-            )
-        else:
-            sq, dl, sh = _w("squat"), _w("deadlift"), _w("shrug")
-            rdl = round_to_plate(dl * 0.80, 2.5)
-            return (
-                "Lower",
-                "Kuvvet · Lower Body (Alt Vücut)",
-                f"Squat {sq:.1f} kg (4x5-6) · Deadlift {dl:.1f} kg (2x5) · RDL {rdl:.1f} kg (3x8) · Shrug {sh:.1f} kg (3x12)",
-            )
-
-    if active_split == "ppl":
-        if slot_kind in ("push", "gym_a"):
-            bp, ohp, lr = _w("bench"), _w("ohp"), _w("lateral_raise")
-            inc_db = round_to_plate(bp * 0.34, 2.5)
-            return (
-                "Push",
-                "Kuvvet · PPL Push",
-                f"Bench {bp:.1f} kg (4x6-8) · OHP {ohp:.1f} kg (3x8-10) · Incline DB {inc_db:.1f} kg (3x10) · Lateral {lr:.1f} kg (4x15)",
-            )
-        elif slot_kind in ("pull", "gym_b"):
-            dl, rw, lat, sh = _w("deadlift"), _w("row"), _w("lat_pulldown"), _w("shrug")
-            return (
-                "Pull",
-                "Kuvvet · PPL Pull",
-                f"Deadlift {dl:.1f} kg (2x5) · Row {rw:.1f} kg (4x6-8) · Lat {lat:.1f} kg (4x10) · Shrug {sh:.1f} kg (3x12)",
-            )
-        else:
-            sq, dl = _w("squat"), _w("deadlift")
-            rdl = round_to_plate(dl * 0.80, 2.5)
-            return (
-                "Legs",
-                "Kuvvet · PPL Legs",
-                f"Squat {sq:.1f} kg (4x6) · RDL {rdl:.1f} kg (3x8-10) · Bulgar Squat / Calf (3x12)",
-            )
+    tpl_map = SPLIT_SESSION_TEMPLATES.get(active_split)
+    if tpl_map:
+        tpl = tpl_map.get(slot_kind)
+        if tpl is None:
+            ordered = list(tpl_map.keys())
+            tpl = tpl_map[ordered[0] if slot_kind == "gym_a" else ordered[min(1, len(ordered) - 1)]]
+        parts: List[str] = []
+        for key, short, _long, sets, reps, _rest, _rpe, derived in tpl["lifts"]:
+            if derived == "bodyweight":
+                parts.append(f"{short} ({sets}x{reps})")
+                continue
+            if derived:
+                kg = _template_weight(key, derived, progression, lambda k: ex_counts.get(k, 0) if ex_counts is not None else step_idx)
+            else:
+                kg = _w(key)
+            parts.append(f"{short} {kg:.1f} kg ({sets}x{reps})")
+        return (tpl["type"], tpl["title"], " · ".join(parts))
 
     # Varsayılan: 5x5_linear (Workout A: 5 egzersiz, Workout B: 6 egzersiz)
     if slot_kind == "gym_a":
@@ -924,7 +1025,7 @@ def build_projected_gym_summary(
     eff_slot = canonical.get(slot_kind, slot_kind)
     parts: List[str] = []
     for key, entry in progression.items():
-        if entry.get("is_core") or not entry.get("last_full_date"):
+        if entry.get("is_core") or entry.get("is_split_derived") or not entry.get("last_full_date"):
             continue
         try:
             gap = (datetime.strptime(newest[:10], "%Y-%m-%d") - datetime.strptime(entry["last_full_date"][:10], "%Y-%m-%d")).days
@@ -945,3 +1046,46 @@ def build_projected_gym_summary(
     if parts:
         details = details + " · " + " · ".join(parts)
     return p_type, p_title, details
+
+
+def inject_split_derived_lifts(progression: Dict[str, Any], active_split: str) -> None:
+    """Push/Pull, Upper/Lower veya PPL aktif olduğunda türetilmiş yeni hareketleri (Incline DB, RDL vb.) progresyon kartlarına ekler."""
+    tpl_map = SPLIT_SESSION_TEMPLATES.get(active_split)
+    if not tpl_map:
+        return
+    for slot_kind, tpl in tpl_map.items():
+        for key, _short, long_name, sets, reps, _rest, _rpe, derived in tpl["lifts"]:
+            if key in progression or not derived or derived == "bodyweight":
+                continue
+            base_key, factor = derived
+            base = progression.get(base_key) or {}
+            base_next = float(base.get("next_kg") or LIFT_PROFILES.get(base_key, {}).get("fallback_next", 50.0))
+            kg0 = round_to_plate(base_next * factor, 2.5)
+            kg1 = round_to_plate(kg0 + 2.5, 2.5)
+            kg2 = round_to_plate(kg1 + 2.5, 2.5)
+            progression[key] = {
+                "is_core": False,
+                "is_split_derived": True,
+                "is_pull": slot_kind == "pull",
+                "is_leg": slot_kind in ("lower", "legs"),
+                "short_rep": f"{sets}x{reps}",
+                "slot_hint": tpl["type"],
+                "last_full_date": base.get("last_full_date") or "2026-11-19",
+                "name": long_name,
+                "history": [f"Türetildi: {base.get('name', base_key)} ({base_next:.1f} kg)"],
+                "delta": f"{tpl['type']} Yeni Hareket",
+                "max_kg": kg0,
+                "effective_kg": kg0,
+                "e1rm_kg": compute_e1rm(kg0, 10),
+                "e1rm_slope": 0.0,
+                "bw_ratio": round(compute_e1rm(kg0, 10) / 87.0, 2),
+                "last_date": "Yeni",
+                "last_outcome": "DERIVED",
+                "consecutive_stalls": 0,
+                "deload_count": 0,
+                "decision": "PROGRESS",
+                "decision_reason": f"{base.get('name', base_key)} e1RM gücünden {tpl['type']} seansı için hesaplandı.",
+                "next_kg": kg0,
+                "next_target": f"{kg0:.1f} kg x {reps} reps x {sets} set",
+                "projected_weights": [kg0, kg1, kg2],
+            }
