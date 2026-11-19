@@ -217,6 +217,8 @@ function startGarminSessionKeepAlive() {
 async function syncGarminData() {
   const btn = document.getElementById('syncBtn');
   let syncedOk = false;
+  let sessionExpired = false;
+  let errMsg = '';
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 animate-spin accent-text')}<span class="hidden sm:inline">Eşitleniyor...</span>`;
@@ -228,8 +230,12 @@ async function syncGarminData() {
     await initApp();
     if (res.ok && resData.success !== false) {
       syncedOk = true;
+    } else {
+      sessionExpired = Boolean(resData.session_expired || res.status === 401);
+      errMsg = resData.message || (sessionExpired ? 'Garmin oturum süresi doldu.' : 'Senkronizasyon başarısız.');
     }
   } catch (e) {
+    errMsg = e?.message || 'Bağlantı hatası';
     console.warn('Senkronizasyon uyarısı:', e);
   } finally {
     if (btn) {
@@ -243,10 +249,19 @@ async function syncGarminData() {
             currentBtn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden sm:inline">Eşitle</span>`;
             refreshIcons();
           }
-        }, 2000);
+        }, 2500);
       } else {
-        btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden sm:inline">Eşitle</span>`;
+        const label = sessionExpired ? 'Oturum Doldu' : 'Eşitleme Hatası';
+        btn.title = errMsg;
+        btn.innerHTML = `${lucideSvg('alert-triangle', 'w-3.5 h-3.5 text-amber-400')}<span class="hidden sm:inline text-amber-400">${label}</span>`;
         refreshIcons();
+        setTimeout(() => {
+          const currentBtn = document.getElementById('syncBtn');
+          if (currentBtn) {
+            currentBtn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden sm:inline">Eşitle</span>`;
+            refreshIcons();
+          }
+        }, 4500);
       }
     }
   }

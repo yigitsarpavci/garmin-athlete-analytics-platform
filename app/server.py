@@ -139,41 +139,56 @@ def sync_garmin_live() -> Dict[str, Any]:
 
     with _SYNC_LOCK:
         try:
-            res = subprocess.run(["node", fetch_script], capture_output=True, text=True, timeout=90)
+            res = subprocess.run(["node", fetch_script], capture_output=True, text=True, timeout=180)
             output = (res.stdout or "") + "\n" + (res.stderr or "")
             engine.load_data()
             now_iso = datetime.now().isoformat(timespec="seconds")
             jwt_info = _inspect_session_jwt()
-            SYNC_STATE["last_sync_at"] = now_iso
             SYNC_STATE["last_keepalive_at"] = jwt_info.get("last_keepalive_at") or now_iso
             SYNC_STATE["jwt_expires_at"] = jwt_info.get("jwt_expires_at")
             SYNC_STATE["jwt_remaining_sec"] = jwt_info.get("jwt_remaining_sec")
-            SYNC_STATE["session_valid"] = True
-            SYNC_STATE["last_error"] = None
-            soft_fallback = res.returncode != 0 or "remote_401_soft_fallback" in output
-            return {
-                "success": True,
-                "session_expired": False,
-                "last_sync_at": SYNC_STATE["last_sync_at"],
-                "message": (
-                    "Yerel Garmin telemetrisi tazelendi ve oturum aktif tutuldu."
-                    if soft_fallback else "Garmin verileri başarıyla senkronize edildi ve güncellendi!"
-                ),
-            }
-        except Exception:
-            engine.load_data()
-            now_iso = datetime.now().isoformat(timespec="seconds")
-            jwt_info = _inspect_session_jwt()
+            is_expired = (
+                res.returncode == 2
+                or '"session_expired":true' in output
+                or '"remote_401":true' in output
+                or "remote_401_soft_fallback" in output
+                or "401" in output
+            )
+            if is_expired:
+                SYNC_STATE["session_valid"] = False
+                SYNC_STATE["last_error"] = "Garmin Connect oturum süresi doldu (401). Yeniden giriş gerekli."
+                return {
+                    "success": False,
+                    "session_expired": True,
+                    "last_sync_at": SYNC_STATE["last_sync_at"],
+                    "message": SYNC_STATE["last_error"],
+                }
+            if res.returncode != 0:
+                SYNC_STATE["session_valid"] = True
+                SYNC_STATE["last_error"] = (res.stderr or res.stdout or "Senkronizasyon hatası").strip()[:300]
+                return {
+                    "success": False,
+                    "session_expired": False,
+                    "last_sync_at": SYNC_STATE["last_sync_at"],
+                    "message": f"Garmin senkronizasyonu başarısız: {SYNC_STATE['last_error']}",
+                }
             SYNC_STATE["last_sync_at"] = now_iso
-            SYNC_STATE["jwt_expires_at"] = jwt_info.get("jwt_expires_at")
-            SYNC_STATE["jwt_remaining_sec"] = jwt_info.get("jwt_remaining_sec")
             SYNC_STATE["session_valid"] = True
             SYNC_STATE["last_error"] = None
             return {
                 "success": True,
                 "session_expired": False,
                 "last_sync_at": SYNC_STATE["last_sync_at"],
-                "message": "Yerel Garmin telemetrisi tazelendi ve oturum aktif tutuldu.",
+                "message": "Garmin verileri başarıyla senkronize edildi ve güncellendi!",
+            }
+        except Exception as exc:
+            engine.load_data()
+            SYNC_STATE["last_error"] = str(exc)
+            return {
+                "success": False,
+                "session_expired": False,
+                "last_sync_at": SYNC_STATE["last_sync_at"],
+                "message": f"Garmin senkronizasyon hatası: {exc}",
             }
 
 
@@ -207,17 +222,35 @@ def keepalive_garmin_session() -> Dict[str, Any]:
 
     with _SYNC_LOCK:
         try:
-            subprocess.run(
+            proc = subprocess.run(
                 ["node", fetch_script, "--keepalive"],
                 capture_output=True,
                 text=True,
                 timeout=45,
             )
+            output = (proc.stdout or "") + "\n" + (proc.stderr or "")
             updated_info = _inspect_session_jwt()
             now_iso = datetime.now().isoformat(timespec="seconds")
             SYNC_STATE["jwt_expires_at"] = updated_info.get("jwt_expires_at")
             SYNC_STATE["jwt_remaining_sec"] = updated_info.get("jwt_remaining_sec")
             SYNC_STATE["last_keepalive_at"] = updated_info.get("last_keepalive_at") or now_iso
+            is_expired = (
+                proc.returncode == 2
+                or '"session_expired":true' in output
+                or '"remote_401":true' in output
+                or "remote_401_soft_fallback" in output
+            )
+            if is_expired:
+                SYNC_STATE["session_valid"] = False
+                SYNC_STATE["last_error"] = "Garmin Connect oturum süresi doldu (401)."
+                return {
+                    "success": False,
+                    "session_expired": True,
+                    "session_valid": False,
+                    "last_keepalive_at": SYNC_STATE["last_keepalive_at"],
+                    "message": SYNC_STATE["last_error"],
+                    **updated_info,
+                }
             SYNC_STATE["session_valid"] = True
             SYNC_STATE["last_error"] = None
             return {
@@ -228,20 +261,20 @@ def keepalive_garmin_session() -> Dict[str, Any]:
                 "message": "Garmin oturumu canlı tutuldu ve tazelendi.",
                 **updated_info,
             }
-        except Exception:
+        except Exception as exc:
             updated_info = _inspect_session_jwt()
             now_iso = datetime.now().isoformat(timespec="seconds")
             SYNC_STATE["jwt_expires_at"] = updated_info.get("jwt_expires_at")
             SYNC_STATE["jwt_remaining_sec"] = updated_info.get("jwt_remaining_sec")
             SYNC_STATE["last_keepalive_at"] = updated_info.get("last_keepalive_at") or now_iso
-            SYNC_STATE["session_valid"] = True
-            SYNC_STATE["last_error"] = None
+            SYNC_STATE["session_valid"] = False
+            SYNC_STATE["last_error"] = str(exc)
             return {
-                "success": True,
+                "success": False,
                 "session_expired": False,
-                "session_valid": True,
+                "session_valid": False,
                 "last_keepalive_at": SYNC_STATE["last_keepalive_at"],
-                "message": "Garmin oturumu yuvarlanan kira ile aktif tutuldu.",
+                "message": f"Garmin keepalive hatası: {exc}",
                 **updated_info,
             }
 

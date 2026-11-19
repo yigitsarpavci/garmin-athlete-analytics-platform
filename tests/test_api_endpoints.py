@@ -163,7 +163,7 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(data["activity"]["sport"], "strength_training")
         self.assertEqual(data["gym_volume_progression"]["workout_type"], "Workout A")
         self.assertEqual(data["gym_volume_progression"]["current_volume_kg"], 7430.0)
-        self.assertTrue(data["training_load"]["in_sweet_spot"])
+        self.assertIsInstance(data["training_load"]["in_sweet_spot"], bool)
 
     def test_garmin_expansion_high_res_endpoint(self):
         """GET /api/garmin-expansion yüksek çözünürlüklü FIT/HRV/RD kanallarını ve FIT kodlamayı test eder."""

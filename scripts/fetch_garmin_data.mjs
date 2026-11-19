@@ -100,7 +100,10 @@ function findGarminClientPath() {
 }
 
 function formatDate(d) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function decodeJwtExp(token) {
@@ -257,8 +260,11 @@ async function main() {
     }
 
     const endDate = new Date();
+    const yesterdayDate = new Date(endDate);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = formatDate(yesterdayDate);
     const startDate = new Date(endDate);
-    startDate.setUTCDate(startDate.getUTCDate() - 92); // 93 days inclusive
+    startDate.setDate(startDate.getDate() - 92); // 93 days inclusive
 
     console.log(`[1/9] Son 100 aktivite çekiliyor...`);
     const acts = await client.get(
@@ -478,7 +484,7 @@ async function main() {
       const hrvDays = readJsonSafe(hrvPath, {});
       const recentDates14 = dates.slice(-14);
       for (const dt of recentDates14) {
-        if (hrvDays[dt]?.hrvReadings?.length) continue;
+        if (dt < yesterdayStr && hrvDays[dt]?.hrvReadings?.length) continue;
         try {
           const hrvRes = await client.get(`hrv-service/hrv/${dt}`);
           if (hrvRes && !hrvRes.noData) {
@@ -499,7 +505,7 @@ async function main() {
       const respDays = readJsonSafe(respPath, {});
       const recentDates14 = dates.slice(-14);
       for (const dt of recentDates14) {
-        if (respDays[dt]?.respirationValuesArray?.length) continue;
+        if (dt < yesterdayStr && respDays[dt]?.respirationValuesArray?.length) continue;
         try {
           const respRes = await client.get(`wellness-service/wellness/daily/respiration/${dt}`);
           if (respRes && !respRes.noData) {
@@ -519,13 +525,14 @@ async function main() {
   } catch (err) {
     const msg = String(err?.message || "");
     if (msg.includes("401") || msg.includes("Session invalid") || msg.toLowerCase().includes("expired")) {
-      const lease = renewSessionLeaseOnDisk();
       console.log(JSON.stringify({
-        ...(isKeepaliveOnly ? { keepalive: true } : { synced: true }),
-        remote_401_soft_fallback: true,
-        ...(lease || {}),
+        ...(isKeepaliveOnly ? { keepalive: false } : { synced: false }),
+        session_expired: true,
+        remote_401: true,
+        error: msg,
         at: new Date().toISOString(),
       }));
+      process.exitCode = 2;
       return;
     }
     throw err;
