@@ -109,10 +109,11 @@ class MorphologyHealthMixin:
         """Canlı metrikler, HRV, uyku, kilo projeksiyonu ve salon PR'larıyla dinamik klinik tarama üretir."""
         metrics = self.get_latest_metrics()
         prog = self.get_gym_exercise_history().get("progression", {}) if hasattr(self, "get_gym_exercise_history") else {}
-        rhr = float(metrics.get("resting_hr") or metrics.get("rhr") or 53.6)
+        rhr = float(metrics.get("rhr") or metrics.get("resting_hr") or 53.6)
         vo2 = float(metrics.get("vo2max") or 45.4)
         stress = float(metrics.get("stress") or 28.4)
-        sleep_dur = float(metrics.get("sleep_hours") or metrics.get("sleep_duration_hours") or 7.0)
+        sleep_dur = float(metrics.get("sleep_duration_hours") or metrics.get("sleep_hours") or 7.0)
+        days_count = len(self.df) if getattr(self, "df", None) is not None and not self.df.empty else 93
         resp = float(metrics.get("resp_sleep") or 13.8)
         deep_pct = float(metrics.get("deep_sleep_pct") or 18.4)
         cur_w = float(metrics.get("weight") or 87.0)
@@ -143,7 +144,7 @@ class MorphologyHealthMixin:
             "doctor_verdict": "Kalp ve Kondisyon Verileri İyi Durumda" if rhr <= 56 else "Aktif Sporcu Profili",
             "overall_status": "Normal" if stress < 42 else "Stres / Yük Takibi",
             "summary": (
-                f"Son 93 günde dinlenik nabız {rhr:.1f} bpm, ortalama uyku {sleep_dur:.2f} saat, "
+                f"Son {days_count} günde dinlenik nabız {rhr:.1f} bpm, ortalama uyku {sleep_dur:.2f} saat, "
                 f"VO2 Max {vo2:.1f} ve güncel kilo {cur_w:.1f} kg (-{lost_kg:.1f} kg). Temel göstergeler normal aralıkta."
             ),
             "pillars": [
