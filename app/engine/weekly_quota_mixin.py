@@ -265,18 +265,35 @@ class WeeklyQuotaMixin:
         elif len(prev_gyms_sorted) == 0 and any(True for _ in prev_runs_sorted):
             missed_sessions.extend(["Workout A", "Workout B"])
 
-        # Firstbeat Anaerobik eksiği daha büyükse (ve geçen hafta Z2 eksik kalmadıysa) İnterval'i öne çek
+        # Firstbeat yük odağına göre sıradaki koşu sırasını (ve gerekirse çift aynı tür koşuyu) belirle
         if not run_priority_reason and hasattr(self, "get_training_load_analytics"):
             try:
                 tl = self.get_training_load_analytics() or {}
                 foc = tl.get("load_focus", {})
+                targets_ok = foc.get("targets_available", True)
                 low_pct = foc.get("aerobic_low", {}).get("pct_of_target", 90)
                 an_pct = foc.get("anaerobic", {}).get("pct_of_target", 90)
-                if len(prev_runs_sorted) >= 2 and an_pct + 15 < low_pct:
-                    run_order = ["interval", "zone2"]
-                    run_priority_reason = (
-                        f"Anaerobik yük (%{round(an_pct)}) Düşük Aerobik barından (%{round(low_pct)}) daha düşük olduğu için hız intervali ilk sıraya önerildi."
-                    )
+                if targets_ok:
+                    if low_pct < 45 and low_pct + 25 <= an_pct:
+                        run_order = ["zone2", "zone2"]
+                        run_priority_reason = (
+                            f"Düşük Aerobik yükü çok düşük (%{round(low_pct)} vs Anaerobik %{round(an_pct)}) olduğu için bu hafta 2 koşu da Zone 2 taban olarak önerildi."
+                        )
+                    elif an_pct < 45 and an_pct + 25 <= low_pct:
+                        run_order = ["interval", "interval"]
+                        run_priority_reason = (
+                            f"Anaerobik yük çok düşük (%{round(an_pct)} vs Düşük Aerobik %{round(low_pct)}) olduğu için bu hafta 2 koşu da hız intervali olarak önerildi."
+                        )
+                    elif low_pct < an_pct:
+                        run_order = ["zone2", "interval"]
+                        run_priority_reason = (
+                            f"Düşük Aerobik yükü (%{round(low_pct)}) Anaerobik barından (%{round(an_pct)}) daha düşük olduğu için Zone 2 ilk sıraya önerildi."
+                        )
+                    elif an_pct < low_pct:
+                        run_order = ["interval", "zone2"]
+                        run_priority_reason = (
+                            f"Anaerobik yük (%{round(an_pct)}) Düşük Aerobik barından (%{round(low_pct)}) daha düşük olduğu için hız intervali ilk sıraya önerildi."
+                        )
             except Exception:
                 logger.warning("_analyze_previous_week_carryover: yedek davranış uygulandı", exc_info=True)
 
@@ -439,7 +456,13 @@ class WeeklyQuotaMixin:
         if rem_runs == 2:
             needed_runs = [(st.planned_run_order[0], 1), (st.planned_run_order[1], 2)]
         elif rem_runs == 1:
-            if "interval" in st.completed_run_kinds and "zone2" not in st.completed_run_kinds:
+            if "tempo" in st.completed_run_kinds:
+                post_tempo_adapted = True
+                next_kind = "interval" if st.planned_run_order[0] == "interval" else "zone2"
+                needed_runs = [(next_kind, runs_done + 1)]
+            elif len(st.planned_run_order) >= 2 and st.planned_run_order[0] == st.planned_run_order[1]:
+                needed_runs = [(st.planned_run_order[1], runs_done + 1)]
+            elif "interval" in st.completed_run_kinds and "zone2" not in st.completed_run_kinds:
                 needed_runs = [("zone2", runs_done + 1)]
             elif "zone2" in st.completed_run_kinds and "interval" not in st.completed_run_kinds:
                 needed_runs = [("interval", runs_done + 1)]

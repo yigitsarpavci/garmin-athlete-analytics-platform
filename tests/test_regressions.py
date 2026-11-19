@@ -331,5 +331,55 @@ class TestGymExerciseSetsFormat(unittest.TestCase):
             self.assertEqual(hist["sessions"][0]["exercises"][0]["sets"][0]["weight_kg"], 70.0)
 
 
+class TestLoadFocusRunSelection(unittest.TestCase):
+    def test_low_aerobic_deficit_and_double_same_run_recommendation(self):
+        """Low Aerobic düşükse Zone 2 öne çekilmeli; çok düşükse 2 koşu da aynı tür önerilmeli; High Aerobic ayrı tempo önermemeli."""
+        from datetime import datetime
+        from unittest.mock import patch
+        eng = GarminAthleteEngine(os.path.join(BASE_DIR, "sample_data"))
+        mon = datetime(2026, 11, 16)
+
+        # 1. High Aerobic en düşük (30%) olsa bile ayrı tempo önerilmez; Low (50) < Anaerobic (80) => aerobic_low / Zone 2
+        prio, rec = eng._pick_load_focus(120, 150, 80.0, 30.0, 50.0, "aerobic_low")
+        self.assertIn("Zone 2", prio)
+        self.assertNotIn("tempo", rec.lower())
+
+        # 2. Low Aerobic çok düşük (40%) ve Anaerobik yüksek (85%) => 2 koşu da Zone 2
+        with patch.object(eng, "get_training_load_analytics", return_value={
+            "load_focus": {
+                "targets_available": True,
+                "aerobic_low": {"pct_of_target": 40.0},
+                "aerobic_high": {"pct_of_target": 80.0},
+                "anaerobic": {"pct_of_target": 85.0},
+            }
+        }):
+            res = eng._analyze_previous_week_carryover(mon, {})
+            self.assertEqual(res["run_order"], ["zone2", "zone2"])
+
+        # 3. Anaerobik çok düşük (35%) ve Low Aerobic yüksek (90%) => 2 koşu da İnterval
+        with patch.object(eng, "get_training_load_analytics", return_value={
+            "load_focus": {
+                "targets_available": True,
+                "aerobic_low": {"pct_of_target": 90.0},
+                "aerobic_high": {"pct_of_target": 80.0},
+                "anaerobic": {"pct_of_target": 35.0},
+            }
+        }):
+            res = eng._analyze_previous_week_carryover(mon, {})
+            self.assertEqual(res["run_order"], ["interval", "interval"])
+
+        # 4. Low Aerobic hafifçe düşük (70% vs 85%) => ["zone2", "interval"]
+        with patch.object(eng, "get_training_load_analytics", return_value={
+            "load_focus": {
+                "targets_available": True,
+                "aerobic_low": {"pct_of_target": 70.0},
+                "aerobic_high": {"pct_of_target": 60.0},
+                "anaerobic": {"pct_of_target": 85.0},
+            }
+        }):
+            res = eng._analyze_previous_week_carryover(mon, {})
+            self.assertEqual(res["run_order"], ["zone2", "interval"])
+
+
 if __name__ == "__main__":
     unittest.main()
