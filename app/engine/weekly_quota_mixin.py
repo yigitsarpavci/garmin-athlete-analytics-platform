@@ -13,8 +13,10 @@ from typing import Dict, List, Optional, Any, Tuple
 
 try:
     from engine.helpers import request_cached, zone_text, TR_DAYS, TR_MONTHS, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from engine.run_load_predictor import predict_next_n_runs
 except ImportError:
     from app.engine.helpers import request_cached, zone_text, TR_DAYS, TR_MONTHS, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from app.engine.run_load_predictor import predict_next_n_runs
 
 
 _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
@@ -265,35 +267,17 @@ class WeeklyQuotaMixin:
         elif len(prev_gyms_sorted) == 0 and any(True for _ in prev_runs_sorted):
             missed_sessions.extend(["Workout A", "Workout B"])
 
-        # Firstbeat yük odağına göre sıradaki koşu sırasını (ve gerekirse çift aynı tür koşuyu) belirle
-        if not run_priority_reason and hasattr(self, "get_training_load_analytics"):
+        # Sıradaki 4 koşuyu son gerçek koşuların EPOC/TE katkılarıyla kapalı çevrim simüle et
+        run_prediction = None
+        if hasattr(self, "get_training_load_analytics"):
             try:
                 tl = self.get_training_load_analytics() or {}
                 foc = tl.get("load_focus", {})
-                targets_ok = foc.get("targets_available", True)
-                low_pct = foc.get("aerobic_low", {}).get("pct_of_target", 90)
-                an_pct = foc.get("anaerobic", {}).get("pct_of_target", 90)
-                if targets_ok:
-                    if low_pct < 45 and low_pct + 25 <= an_pct:
-                        run_order = ["zone2", "zone2"]
-                        run_priority_reason = (
-                            f"Düşük Aerobik yükü çok düşük (%{round(low_pct)} vs Anaerobik %{round(an_pct)}) olduğu için bu hafta 2 koşu da Zone 2 taban olarak önerildi."
-                        )
-                    elif an_pct < 45 and an_pct + 25 <= low_pct:
-                        run_order = ["interval", "interval"]
-                        run_priority_reason = (
-                            f"Anaerobik yük çok düşük (%{round(an_pct)} vs Düşük Aerobik %{round(low_pct)}) olduğu için bu hafta 2 koşu da hız intervali olarak önerildi."
-                        )
-                    elif low_pct < an_pct:
-                        run_order = ["zone2", "interval"]
-                        run_priority_reason = (
-                            f"Düşük Aerobik yükü (%{round(low_pct)}) Anaerobik barından (%{round(an_pct)}) daha düşük olduğu için Zone 2 ilk sıraya önerildi."
-                        )
-                    elif an_pct < low_pct:
-                        run_order = ["interval", "zone2"]
-                        run_priority_reason = (
-                            f"Anaerobik yük (%{round(an_pct)}) Düşük Aerobik barından (%{round(low_pct)}) daha düşük olduğu için hız intervali ilk sıraya önerildi."
-                        )
+                run_prediction = predict_next_n_runs(foc, self.activities_all, n=4)
+                if not run_priority_reason and len(run_prediction.get("sequence", [])) >= 2:
+                    run_order = run_prediction["sequence"][:2]
+                    s1 = run_prediction["steps"][0]
+                    run_priority_reason = s1["reason"]
             except Exception:
                 logger.warning("_analyze_previous_week_carryover: yedek davranış uygulandı", exc_info=True)
 
@@ -321,6 +305,7 @@ class WeeklyQuotaMixin:
             "run_priority_reason": run_priority_reason,
             "gym_priority_reason": gym_priority_reason,
             "adaptation_note": adaptation_note,
+            "next_4_runs_prediction": run_prediction,
         }
 
     @request_cached
@@ -923,6 +908,7 @@ class WeeklyQuotaMixin:
                 "adaptation_note": carry["adaptation_note"],
                 "monday_reset_enforced": True,
             },
+            "next_4_runs_prediction": carry.get("next_4_runs_prediction"),
             "total": {
                 "target": 4,
                 "completed": total_done,

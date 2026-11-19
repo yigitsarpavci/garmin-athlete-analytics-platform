@@ -344,37 +344,38 @@ class TestLoadFocusRunSelection(unittest.TestCase):
         self.assertIn("Zone 2", prio)
         self.assertNotIn("tempo", rec.lower())
 
-        # 2. Low Aerobic çok düşük (40%) ve Anaerobik yüksek (85%) => 2 koşu da Zone 2
+        # 2. Low Aerobic çok düşük (160/400 = 40%) ve Anaerobik yüksek (220/260 = 84.6%) => 2 koşu da Zone 2
         with patch.object(eng, "get_training_load_analytics", return_value={
             "load_focus": {
                 "targets_available": True,
-                "aerobic_low": {"pct_of_target": 40.0},
-                "aerobic_high": {"pct_of_target": 80.0},
-                "anaerobic": {"pct_of_target": 85.0},
+                "aerobic_low": {"actual": 160.0, "target_max": 400.0, "pct_of_target": 40.0},
+                "aerobic_high": {"actual": 400.0, "target_max": 500.0, "pct_of_target": 80.0},
+                "anaerobic": {"actual": 220.0, "target_max": 260.0, "pct_of_target": 84.6},
             }
         }):
             res = eng._analyze_previous_week_carryover(mon, {})
             self.assertEqual(res["run_order"], ["zone2", "zone2"])
+            self.assertEqual(len(res["next_4_runs_prediction"]["steps"]), 4)
 
-        # 3. Anaerobik çok düşük (35%) ve Low Aerobic yüksek (90%) => 2 koşu da İnterval
+        # 3. Anaerobik çok düşük (70/260 = 26.9%) ve Low Aerobic yüksek (380/400 = 95%) => 2 koşu da İnterval
         with patch.object(eng, "get_training_load_analytics", return_value={
             "load_focus": {
                 "targets_available": True,
-                "aerobic_low": {"pct_of_target": 90.0},
-                "aerobic_high": {"pct_of_target": 80.0},
-                "anaerobic": {"pct_of_target": 35.0},
+                "aerobic_low": {"actual": 380.0, "target_max": 400.0, "pct_of_target": 95.0},
+                "aerobic_high": {"actual": 400.0, "target_max": 500.0, "pct_of_target": 80.0},
+                "anaerobic": {"actual": 70.0, "target_max": 260.0, "pct_of_target": 26.9},
             }
         }):
             res = eng._analyze_previous_week_carryover(mon, {})
             self.assertEqual(res["run_order"], ["interval", "interval"])
 
-        # 4. Low Aerobic hafifçe düşük (70% vs 85%) => ["zone2", "interval"]
+        # 4. Low Aerobic hafifçe düşük (320/400 = 80% vs 225/260 = 86.5%) => ["zone2", "interval"]
         with patch.object(eng, "get_training_load_analytics", return_value={
             "load_focus": {
                 "targets_available": True,
-                "aerobic_low": {"pct_of_target": 70.0},
-                "aerobic_high": {"pct_of_target": 60.0},
-                "anaerobic": {"pct_of_target": 85.0},
+                "aerobic_low": {"actual": 320.0, "target_max": 400.0, "pct_of_target": 80.0},
+                "aerobic_high": {"actual": 300.0, "target_max": 500.0, "pct_of_target": 60.0},
+                "anaerobic": {"actual": 225.0, "target_max": 260.0, "pct_of_target": 86.5},
             }
         }):
             res = eng._analyze_previous_week_carryover(mon, {})
