@@ -89,17 +89,6 @@ _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
         "protocol_day_code": "saturday",
         "coaching_note": "Arka zincir ve omuz gelişimi için bacakların toparlandığı uygun bir günde uygula.",
     },
-    "gym_c": {
-        "category": "strength",
-        "type": "Legs",
-        "short_label": "Legs",
-        "title_prefix": "Legs (Alt Vücut & Kalça)",
-        "exercises_summary": "Back Squat (4x6-8) · RDL (3x8-10) · Bulgarian Split Squat (3x10) · Calf Raise (4x15)",
-        "duration": "55 dk",
-        "badge": "Legs",
-        "protocol_day_code": "saturday",
-        "coaching_note": "Alt vücut kuvvet ve hipertrofi seansı; ertesi gün sert interval koşusu koymamaya özen göster.",
-    },
 }
 
 
@@ -166,7 +155,6 @@ class WeeklyQuotaMixin:
             return {
                 "gym_a": _BASE_QUOTA_TEMPLATES["gym_a"]["exercises_summary"],
                 "gym_b": _BASE_QUOTA_TEMPLATES["gym_b"]["exercises_summary"],
-                "gym_c": _BASE_QUOTA_TEMPLATES["gym_c"]["exercises_summary"],
             }
 
         sq = prog.get("squat", {}).get("next_target", "--").split(" x ")[0]
@@ -181,7 +169,6 @@ class WeeklyQuotaMixin:
         return {
             "gym_a": f"Squat {sq} (5x5) · Bench {bp} (5x5) · Row {rw} (5x5) · Lateral {lr} (3x12) · Shrug {sh} (3x12)",
             "gym_b": f"Squat {sq} (5x5) · OHP {ohp} (5x5) · Deadlift {dl} (1x5) · Lat {lat} (4x12) · Lateral {lr} (3x12) · Shrug {sh} (3x12)",
-            "gym_c": f"Squat {sq} (4x6-8) · RDL/Deadlift {dl} (3x8) · Split Squat · Calf Raise (4x15)",
         }
 
     def _build_quota_remaining_item(self, slot_kind: str, ordinal: int, prioritized_reason: Optional[str] = None) -> Dict[str, Any]:
@@ -211,28 +198,6 @@ class WeeklyQuotaMixin:
             item["target_pace"] = tpl["target_pace"]
         else:
             item["exercises_summary"] = gym_summaries.get(slot_kind, tpl["exercises_summary"])
-            if hasattr(self, "get_gym_exercise_history"):
-                try:
-                    gh = self.get_gym_exercise_history() or {}
-                    active_split = (gh.get("program_state") or {}).get("active_split", "5x5_linear")
-                    if active_split != "5x5_linear":
-                        try:
-                            from engine.strength_progression import PROGRAM_SPLIT_CATALOG, build_projected_gym_summary
-                        except ImportError:
-                            from app.engine.strength_progression import PROGRAM_SPLIT_CATALOG, build_projected_gym_summary
-                        slots = PROGRAM_SPLIT_CATALOG.get(active_split, {}).get("slots", ["push", "pull"])
-                        slot_idx = {"gym_a": 0, "gym_b": 1, "gym_c": 2}.get(slot_kind, 0)
-                        mapped_slot = slots[slot_idx % len(slots)]
-                        p_type, p_title, p_details = build_projected_gym_summary(
-                            mapped_slot, gh.get("progression", {}), step_idx=0, active_split=active_split
-                        )
-                        item["type"] = p_type
-                        item["short_label"] = p_type
-                        item["badge"] = p_type
-                        item["title"] = f"Kuvvet #{ordinal} · {p_type}"
-                        item["exercises_summary"] = p_details
-                except Exception:
-                    logger.warning("_build_quota_remaining_item: yedek davranış uygulandı", exc_info=True)
         return item
 
     def compute_dynamic_weekly_targets(self, now: Optional[datetime] = None) -> Dict[str, Any]:
@@ -296,22 +261,9 @@ class WeeklyQuotaMixin:
         runs_per_wk = runs_28d / 4.0
         gyms_per_wk = gyms_28d / 4.0
 
-        # 1) Kuvvet programına ve gelişmişlik düzeyine göre gym gün sayısı (2-slot -> çift sayı, 3-slot -> 3'ün katı)
-        split_meta = PROGRAM_SPLIT_CATALOG.get(active_split, PROGRAM_SPLIT_CATALOG["5x5_linear"])
-        slots = split_meta.get("slots", ["gym_a", "gym_b"])
-        num_slots = max(2, len(slots))
-        slot_keys = ["gym_a", "gym_b", "gym_c"][:num_slots]
-
-        if num_slots == 2:
-            if active_split in ("push_pull", "upper_lower") and chronic_load >= 420 and plateau_score >= 55:
-                gym_target = 4
-            else:
-                gym_target = 2
-            gym_sequence = slot_keys * (gym_target // 2)
-        else:
-            cycles = 2 if (chronic_load >= 600 and plateau_score >= 85) else 1
-            gym_target = num_slots * cycles
-            gym_sequence = slot_keys * cycles
+        # 1) Kuvvet kotası daima 2 günlük Workout A / Workout B
+        gym_target = 2
+        gym_sequence = ["gym_a", "gym_b"]
 
         # 2) Koşu fitliğine göre temel gün sayısı (1, 2, 3 veya 4) — fazla/az yapmaya göre değil fitlik skoruna göre belirlenir
         if chronic_load >= 460 and vo2max >= 50:
@@ -347,23 +299,15 @@ class WeeklyQuotaMixin:
             suffix = " (%85+ koruma)" if run_target < base_run_target else ""
             run_plan_summary = f"Bu hafta {run_target} Koşu · En eksiği Quick Workout'tan yap{suffix}"
 
-        # Kuvvet program özeti
-        split_short = split_meta.get("short_name", active_split)
-        if num_slots == 2:
-            per_slot = gym_target // 2
-            s0, s1 = slots[0].capitalize(), slots[1].capitalize()
-            if active_split == "5x5_linear":
-                s0, s1 = "A", "B"
-            gym_dist = f"{per_slot}x {s0} + {per_slot}x {s1}"
-        else:
-            per_slot = gym_target // num_slots
-            gym_dist = " + ".join(f"{per_slot}x {s.capitalize()}" for s in slots)
-        gym_plan_summary = f"Bu hafta {gym_target} Kuvvet ({gym_dist}) · {split_short}"
+        # Kuvvet program özeti (her zaman 2 günlük A/B)
+        split_meta = PROGRAM_SPLIT_CATALOG.get("5x5_linear", {})
+        split_short = split_meta.get("short_name", "5x5 Doğrusal (A/B)")
+        gym_plan_summary = f"Bu hafta 2 Kuvvet (1x A + 1x B) · {split_short}"
 
         rec_meta = PROGRAM_SPLIT_CATALOG.get(recommended_split, split_meta)
         athlete_level = (
-            "İleri" if (run_target >= 4 or gym_target >= 4 or active_split == "ppl")
-            else ("Orta" if (run_target >= 3 or active_split in ("push_pull", "upper_lower") or plateau_score >= 45)
+            "İleri" if run_target >= 4
+            else ("Orta" if (run_target >= 3 or plateau_score >= 45)
                   else "Temel / Gelişim")
         )
 
@@ -378,7 +322,7 @@ class WeeklyQuotaMixin:
             "run_prediction": run_prediction,
             "run_plan_summary": run_plan_summary,
             "gym_plan_summary": gym_plan_summary,
-            "active_split": active_split,
+            "active_split": "5x5_linear",
             "active_split_name": split_short,
             "recommended_split": recommended_split,
             "recommended_split_name": rec_meta.get("short_name", recommended_split),
@@ -475,37 +419,19 @@ class WeeklyQuotaMixin:
         elif len(prev_runs_sorted) == 0 and any(True for _ in prev_gyms_sorted):
             missed_sessions.extend(["Zone 2 Koşu", "5K Hız İntervali"])
 
-        if len(prev_gyms_sorted) == 1 and gym_target % 2 == 0:
+        if len(prev_gyms_sorted) == 1:
             if prev_had_a and not prev_had_b:
                 missed_sessions.append("Workout B")
-                gym_order = ["gym_b", "gym_a"] * (gym_target // 2)
+                gym_order = ["gym_b", "gym_a"]
                 gym_priority_reason = "Geçen hafta yalnızca Workout A yapıldığı için eksik kalan Workout B bu hafta ilk kuvvet önceliğine alındı."
             elif prev_had_b and not prev_had_a:
                 missed_sessions.append("Workout A")
-                gym_order = ["gym_a", "gym_b"] * (gym_target // 2)
+                gym_order = ["gym_a", "gym_b"]
                 gym_priority_reason = "Geçen hafta yalnızca Workout B yapıldığı için eksik kalan Workout A bu hafta ilk kuvvet önceliğine alındı."
             else:
                 missed_sessions.append("2. Kuvvet seansı")
-        elif "gym_c" in gym_order and 0 < len(prev_gyms_sorted) < gym_target:
-            prev_had_c = any("Leg" in wt or "Bacak" in wt for wt in prev_gym_types)
-            base_slots = ["gym_a", "gym_b", "gym_c"]
-            done_set = set()
-            if prev_had_a:
-                done_set.add("gym_a")
-            if prev_had_b:
-                done_set.add("gym_b")
-            if prev_had_c:
-                done_set.add("gym_c")
-            missing_slots = [s for s in base_slots if s not in done_set]
-            if missing_slots and done_set:
-                name_map = {"gym_a": "Push", "gym_b": "Pull", "gym_c": "Legs"}
-                missed_labels = [name_map[s] for s in missing_slots]
-                missed_sessions.extend(missed_labels)
-                rotated = missing_slots + [s for s in base_slots if s in done_set]
-                gym_order = rotated * max(1, gym_target // 3)
-                gym_priority_reason = f"Geçen hafta eksik kalan {', '.join(missed_labels)} bu hafta ilk kuvvet önceliğine alındı."
         elif len(prev_gyms_sorted) == 0 and any(True for _ in prev_runs_sorted):
-            missed_sessions.extend(["Push", "Pull", "Legs"] if "gym_c" in gym_order else ["Workout A", "Workout B"])
+            missed_sessions.extend(["Workout A", "Workout B"])
 
         # Sıradaki 4-6 koşuyu son gerçek koşuların EPOC/TE katkılarıyla kapalı çevrim simüle et
         run_prediction = dyn.get("run_prediction")
@@ -1082,14 +1008,7 @@ class WeeklyQuotaMixin:
         st.gyms_done_list.append(act)
         w_type = st.gym_type_by_date.get(d_str) or "Kuvvet"
         st.last_gym_type = w_type if w_type != "Kuvvet" else st.last_gym_type
-        if any(k in w_type for k in ("Workout A", "Push", "Upper")):
-            g_kind = "gym_a"
-        elif any(k in w_type for k in ("Workout B", "Pull", "Lower")):
-            g_kind = "gym_b"
-        elif "Leg" in w_type or "Bacak" in w_type:
-            g_kind = "gym_c"
-        else:
-            g_kind = st.planned_gym_order[min(idx_g, len(st.planned_gym_order) - 1)]
+        g_kind = "gym_a" if "Workout A" in w_type else ("gym_b" if "Workout B" in w_type else st.planned_gym_order[min(idx_g, len(st.planned_gym_order) - 1)])
         st.completed_gym_kinds.append(g_kind)
         expected_g = st.planned_gym_order[idx_g] if idx_g < len(st.planned_gym_order) else st.planned_gym_order[-1]
         if g_kind != expected_g and w_type != "Kuvvet":
