@@ -407,11 +407,6 @@ function renderDailyProtocols(protocols) {
         <span class="font-mono text-[12px] text-[var(--text-secondary)]">${escapeHtml(p.status_note)}</span>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-1.5 text-[12px] shrink-0">
-        <p class="text-[var(--text-secondary)] tint-panel px-2 py-1.5 leading-tight"><strong class="text-[var(--text-primary)] font-semibold">Seans Hedefi:</strong> ${escapeHtml(p.objective)}</p>
-        <p class="text-[var(--text-secondary)] tint-panel px-2 py-1.5 leading-tight"><strong class="text-[var(--text-primary)] font-semibold">Isınma &amp; Mobilite:</strong> ${escapeHtml(p.warmup)}</p>
-      </div>
-
       ${exerciseHtml}
     </div>
   `;
