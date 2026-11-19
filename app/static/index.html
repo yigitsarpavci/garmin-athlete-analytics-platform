@@ -872,18 +872,6 @@
           </div>
         </div>
       </div>
-
-      <div class="field-dossier p-4 flex items-center justify-between gap-4">
-        <div class="text-xs space-y-0.5">
-          <p class="font-semibold">Seansı Fizyolojik Açıdan İncele</p>
-          <p class="text-[var(--text-secondary)]">Firstbeat EPOC toparlanması ve sonraki antrenmana etkisi için AI Koç'a
-            sorun.</p>
-        </div>
-        <button type="button" id="btnAskAiAboutAct" class="btn-primary shrink-0">
-          <i data-lucide="bot" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
-          <span>AI Koçla İncele</span>
-        </button>
-      </div>
     </div>
   </dialog>
 
@@ -1032,20 +1020,13 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs" id="debriefExerciseGrid"></div>
       </div>
 
-      <div class="field-dossier p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="field-dossier p-5">
         <div class="space-y-1 text-xs">
           <p class="font-mono text-[10px] font-semibold uppercase tracking-wider moss-text" id="debriefVerdict">
             Antrenman Kaydedildi</p>
           <p class="text-[var(--text-secondary)]" id="debriefNutritionAction"></p>
           <p class="font-mono accent-text text-[11px]" id="debriefNextAction"></p>
         </div>
-        <button type="button"
-          onclick="askCoachPrompt('Bugün tamamladığım antrenmanın debrief raporunu detaylı açıklar mısın?')"
-          class="btn-primary shrink-0">
-          <i data-lucide="bot" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
-          <span>AI Koçla Sohbet Et</span>
-          <i data-lucide="arrow-right" class="w-3.5 h-3.5" stroke-width="1.5" aria-hidden="true"></i>
-        </button>
       </div>
     </div>
   </dialog>

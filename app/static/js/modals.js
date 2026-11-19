@@ -111,23 +111,6 @@ function openActivityModal(act) {
     }
   }
 
-  const btnAi = document.getElementById('btnAskAiAboutAct');
-  if (btnAi) {
-    btnAi.onclick = () => {
-      closeActivityModal();
-      const flyout = document.getElementById('aiCoachFlyout');
-      const launcher = document.getElementById('aiCoachLauncherBtn');
-      if (flyout) flyout.classList.remove('hidden');
-      if (launcher) launcher.classList.add('hidden');
-
-      const input = document.getElementById('chatInputBox');
-      if (input) {
-        input.value = `${act.date} tarihindeki ${spNames[act.sport] || act.sport} antrenmanımı (${act.dur_m ? act.dur_m.toFixed(0) : 0} dk, ortalama ${act.avg_hr || 0} bpm nabız, ${act.load ? act.load.toFixed(1) : 0} yük) fizyolojik ve toparlanma açısından analiz eder misin?`;
-        sendCoachMessage();
-      }
-    };
-  }
-
   refreshIcons();
   openDialogNative(modal);
 }
