@@ -45,7 +45,7 @@ _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
         "type": "Workout A",
         "short_label": "Workout A",
         "title_prefix": "Workout A (5x5)",
-        "exercises_summary": "Squat 67.5 kg (5x5) · Bench Press 52.5 kg (5x5 PR) · Barbell Row 62.5 kg (5x5) · Lateral Raise 25 kg · Shrug 45 kg",
+        "exercises_summary": "Squat 67.5 kg (5x5) · Bench Press 52.5 kg (5x5 PR) · Barbell Row 62.5 kg (5x5) · Lateral Raise 25 kg (3x12) · Shrug 45 kg (3x12)",
         "duration": "55 dk",
         "badge": "Workout A",
         "protocol_day_code": "tuesday",
@@ -56,7 +56,7 @@ _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
         "type": "Workout B",
         "short_label": "Workout B",
         "title_prefix": "Workout B (5x5)",
-        "exercises_summary": "Squat 67.5 kg (5x5) · OHP 40.0 kg (5x5) · Deadlift 65.0 kg (1x5) · Lat Pulldown 45.0 kg (4x12) · Lateral Raise 25 kg · Shrug 45 kg",
+        "exercises_summary": "Squat 67.5 kg (5x5) · OHP 40.0 kg (5x5) · Deadlift 65.0 kg (1x5) · Lat Pulldown 45.0 kg (4x12) · Lateral Raise 25 kg (3x12) · Shrug 45 kg (3x12)",
         "duration": "55 dk",
         "badge": "Workout B",
         "protocol_day_code": "saturday",
@@ -92,8 +92,8 @@ class WeeklyQuotaMixin:
         sh = prog.get("shrug", {}).get("next_target", "45.0 kg").split(" x ")[0]
 
         return {
-            "gym_a": f"Squat {sq} (5x5) · Bench {bp} (5x5) · Row {rw} (5x5) · Lateral {lr} · Shrug {sh}",
-            "gym_b": f"Squat {sq} (5x5) · OHP {ohp} (5x5) · Deadlift {dl} (1x5) · Lat {lat} (4x12) · Lateral {lr}",
+            "gym_a": f"Squat {sq} (5x5) · Bench {bp} (5x5) · Row {rw} (5x5) · Lateral {lr} (3x12) · Shrug {sh} (3x12)",
+            "gym_b": f"Squat {sq} (5x5) · OHP {ohp} (5x5) · Deadlift {dl} (1x5) · Lat {lat} (4x12) · Lateral {lr} (3x12) · Shrug {sh} (3x12)",
         }
 
     def _build_quota_remaining_item(self, slot_kind: str, ordinal: int, prioritized_reason: Optional[str] = None) -> Dict[str, Any]:

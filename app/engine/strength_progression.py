@@ -803,11 +803,11 @@ def build_projected_gym_summary(
         return (
             "Workout A",
             "Kuvvet #1 · Workout A (5x5)",
-            f"Squat {sq:.1f} kg (5x5) · Bench {bp:.1f} kg (5x5) · Row {rw:.1f} kg (5x5) · Lateral {lr:.1f} kg · Shrug {sh:.1f} kg",
+            f"Squat {sq:.1f} kg (5x5) · Bench {bp:.1f} kg (5x5) · Row {rw:.1f} kg (5x5) · Lateral {lr:.1f} kg (3x12) · Shrug {sh:.1f} kg (3x12)",
         )
     sq, ohp, dl, lat, lr, sh = _w("squat"), _w("ohp"), _w("deadlift"), _w("lat_pulldown"), _w("lateral_raise"), _w("shrug")
     return (
         "Workout B",
         "Kuvvet #2 · Workout B (5x5)",
-        f"Squat {sq:.1f} kg (5x5) · OHP {ohp:.1f} kg (5x5) · Deadlift {dl:.1f} kg (1x5) · Lat {lat:.1f} kg (4x12) · Lateral {lr:.1f} kg · Shrug {sh:.1f} kg",
+        f"Squat {sq:.1f} kg (5x5) · OHP {ohp:.1f} kg (5x5) · Deadlift {dl:.1f} kg (1x5) · Lat {lat:.1f} kg (4x12) · Lateral {lr:.1f} kg (3x12) · Shrug {sh:.1f} kg (3x12)",
     )
