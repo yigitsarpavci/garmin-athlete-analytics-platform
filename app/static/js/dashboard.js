@@ -718,8 +718,6 @@ function renderActivities(acts, rebuildFilters = true, resetPage = true) {
       <td class="py-1.5 px-2 text-[11px] font-mono font-semibold accent-text tabular-nums whitespace-nowrap">${a.dist_km > 0 ? Number(a.dist_km).toFixed(2) + ' km' : '--'}</td>
       <td class="py-1.5 px-2 text-[11px] font-mono font-semibold tabular-nums whitespace-nowrap">${escapeHtml(a.pace_str || '--')}</td>
       <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${hrStr}</td>
-      <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.norm_pwr ? a.norm_pwr + ' W' : '--'}</td>
-      <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cadence ? Number(a.cadence).toFixed(0) : '--'}</td>
       <td class="py-1.5 px-2 text-[11px] font-mono font-semibold tabular-nums whitespace-nowrap">${a.load ? Number(a.load).toFixed(1) : '0'}</td>
       <td class="py-1.5 px-2 whitespace-nowrap">${teDisplay}</td>
       <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${a.cal ?? 0} kcal</td>
