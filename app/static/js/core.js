@@ -122,8 +122,6 @@ function setTab(tabId, persist = true) {
 
   if (tabId === 'activities') {
     setSubTab('training_load', 'activities', persist);
-  } else if (tabId === 'settings') {
-    setSubTab('training_load', 'hr_zones', persist);
   } else if (tabId === 'analytics') {
     setSubTab('health', 'metrics', persist);
   }
@@ -205,7 +203,6 @@ async function initApp() {
       activities,
       sleepData,
       corrData,
-      setData,
       progData,
       protocolsData
     ] = await Promise.all([
@@ -216,7 +213,6 @@ async function initApp() {
       safeFetchJson('/api/activities'),
       safeFetchJson('/api/sleep-analysis'),
       safeFetchJson('/api/correlations'),
-      safeFetchJson('/api/garmin-settings'),
       safeFetchJson('/api/progression'),
       safeFetchJson('/api/daily-protocols')
     ]);
@@ -240,7 +236,6 @@ async function initApp() {
     }
     if (sleepData) renderSleepAnalysis(sleepData);
     if (corrData) renderCorrelations(corrData);
-    if (setData) renderSettingsAndZones(setData);
     if (progData) renderProgressionAssessment(progData);
     if (protocolsData) renderDailyProtocols(protocolsData);
 

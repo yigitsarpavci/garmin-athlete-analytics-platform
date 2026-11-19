@@ -88,8 +88,6 @@
                 data-subtab="load" class="nav-dropdown-item nav-dropdown-item-active">Yük &amp; ACWR Odağı</button>
               <button type="button" onclick="selectNavSubTab('training_load', 'activities', event)" data-subtab-group="training_load"
                 data-subtab="activities" class="nav-dropdown-item">Aktivite Geçmişi</button>
-              <button type="button" onclick="selectNavSubTab('training_load', 'hr_zones', event)" data-subtab-group="training_load"
-                data-subtab="hr_zones" class="nav-dropdown-item">Nabız Bölgeleri</button>
             </div>
           </div>
 
@@ -685,46 +683,6 @@
             </div>
           </div>
         </section>
-      </div>
-
-      <div data-subpane-group="training_load" data-subpane="hr_zones" class="single-screen-pane hidden">
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
-          <section class="xl:col-span-6 surface-card p-4 space-y-3 flex flex-col justify-between overflow-hidden">
-            <div
-              class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2 shrink-0">
-              <div>
-                <h3 class="font-editorial text-base font-medium tracking-tight">Nabız Bölgelerine Göre Zone Grafiği (Z1–Z5)</h3>
-                <p class="text-[11px] text-[var(--text-secondary)]">Gerçekleşen koşu &amp; toplam antrenman süre dağılımı ve LTHR pencereleri</p>
-              </div>
-              <span class="stamp-tag stamp-accent">LTHR 179 bpm</span>
-            </div>
-            <div id="hrZonesVisualChart" class="space-y-2.5 flex-1 min-h-0 overflow-hidden">
-              <p class="text-xs text-[var(--text-secondary)]">Nabız bölge grafiği yükleniyor...</p>
-            </div>
-          </section>
-
-          <section class="xl:col-span-6 surface-card p-4 space-y-3 flex flex-col overflow-hidden">
-            <div class="border-b border-[var(--border-subtle)] pb-2 shrink-0">
-              <h3 class="font-editorial text-base font-medium tracking-tight">Doğru Koşu Nabız ve Güç Bölgeleri</h3>
-              <p class="text-[11px] text-[var(--text-secondary)]">Mevcut (RHR=65), LTHR (179 bpm), Karvonen %HRR ve Koşu Gücü (FTP) referans tablosu:</p>
-            </div>
-            <div tabindex="0" role="region" aria-label="Koşu nabız ve güç zonları"
-              class="table-scroll-region max-h-[calc(100vh-16rem)] overflow-y-auto">
-              <table class="w-full text-left text-[11px]">
-                <thead>
-                  <tr>
-                    <th class="py-1.5 px-2">Bölge</th>
-                    <th class="py-1.5 px-2">Mevcut HR</th>
-                    <th class="py-1.5 px-2">Önerilen LTHR</th>
-                    <th class="py-1.5 px-2">Karvonen %HRR</th>
-                    <th class="py-1.5 px-2">Güç (FTP)</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--border-subtle)]" id="zonesTableBody"></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
       </div>
     </div>
 
