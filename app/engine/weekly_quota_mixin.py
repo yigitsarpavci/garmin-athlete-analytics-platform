@@ -13,10 +13,10 @@ from typing import Dict, List, Optional, Any, Tuple
 
 try:
     from engine.helpers import request_cached, zone_text, TR_DAYS, TR_MONTHS, format_sport_tr, classify_sport_bucket, classify_run_workout
-    from engine.run_load_predictor import predict_next_n_runs
+    from engine.run_load_predictor import predict_next_n_runs, compute_maintenance_runs_for_85
 except ImportError:
     from app.engine.helpers import request_cached, zone_text, TR_DAYS, TR_MONTHS, format_sport_tr, classify_sport_bucket, classify_run_workout
-    from app.engine.run_load_predictor import predict_next_n_runs
+    from app.engine.run_load_predictor import predict_next_n_runs, compute_maintenance_runs_for_85
 
 
 _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
@@ -316,15 +316,19 @@ class WeeklyQuotaMixin:
             gym_target = num_slots * cycles
             gym_sequence = slot_keys * cycles
 
-        # 2) Koşu gün sayısı (2, 3 veya 4) — kapasite (kronik yük / VO2max) yetmiyorsa fazla koşu yapılsa bile artış olmaz
+        # 2) Koşu fitliğine göre temel gün sayısı (2, 3 veya 4) + tüm barlar >= %85 ise koruma sayısına düşürme
         if runs_per_wk >= 3.25 and chronic_load >= 450 and vo2max >= 50:
-            run_target = 4
+            base_run_target = 4
         elif (chronic_load >= 360 and runs_per_wk >= 2.2) or (vo2max >= 50 and chronic_load >= 320 and runs_per_wk >= 2.0):
-            run_target = 3
+            base_run_target = 3
         else:
-            run_target = 2
+            base_run_target = 2
 
-        proj_n = max(4, min(6, run_target + 2))
+        run_target = compute_maintenance_runs_for_85(
+            load_focus, getattr(self, "activities_all", []) or [], base_run_target, ref_dt=ref_dt
+        )
+
+        proj_n = max(4, min(6, max(2, run_target) + 2))
         run_prediction = None
         if load_focus or getattr(self, "activities_all", None):
             try:
@@ -334,16 +338,20 @@ class WeeklyQuotaMixin:
 
         pred_seq = list((run_prediction or {}).get("sequence") or [])
         fallback_runs = ["interval", "zone2"] * 3
-        run_sequence = pred_seq[:run_target]
+        run_sequence = pred_seq[:run_target] if run_target > 0 else []
         while len(run_sequence) < run_target:
             run_sequence.append(fallback_runs[len(run_sequence)])
 
         # Bu haftaki koşu dağılım özeti ("Bu hafta 2 İnterval + 1 Zone 2")
-        run_counts: Dict[str, int] = {}
-        for rk in run_sequence:
-            run_counts[rk] = run_counts.get(rk, 0) + 1
-        run_dist_parts = [f"{cnt} {_RUN_SHORT_LABELS.get(rk, rk)}" for rk, cnt in run_counts.items()]
-        run_plan_summary = f"Bu hafta {run_target} Koşu: " + " + ".join(run_dist_parts)
+        if run_target == 0:
+            run_plan_summary = "Bu hafta 0 Koşu (Tüm yük barları %85+ korunuyor)"
+        else:
+            run_counts: Dict[str, int] = {}
+            for rk in run_sequence:
+                run_counts[rk] = run_counts.get(rk, 0) + 1
+            run_dist_parts = [f"{cnt} {_RUN_SHORT_LABELS.get(rk, rk)}" for rk, cnt in run_counts.items()]
+            suffix = " (%85+ koruma)" if run_target < base_run_target else ""
+            run_plan_summary = f"Bu hafta {run_target} Koşu: " + " + ".join(run_dist_parts) + suffix
 
         # Kuvvet program özeti
         split_short = split_meta.get("short_name", active_split)
@@ -435,7 +443,7 @@ class WeeklyQuotaMixin:
         run_priority_reason: Optional[str] = None
         gym_priority_reason: Optional[str] = None
 
-        if len(prev_runs_sorted) == 1:
+        if len(prev_runs_sorted) == 1 and run_target > 0:
             if prev_had_tempo and not prev_had_interval and not prev_had_zone2:
                 missed_sessions.append("5K Hız İntervali (Geçen hafta Tempo koşuldu, AnTE 0.0)")
                 if "interval" in run_order:

@@ -280,3 +280,70 @@ def predict_next_n_runs(
         "steps": steps,
         "sequence": [s["kind"] for s in steps],
     }
+
+
+def compute_maintenance_runs_for_85(
+    load_focus: Dict[str, Any],
+    activities_all: List[Dict[str, Any]],
+    base_run_target: int,
+    ref_dt: Optional[datetime] = None,
+    threshold: float = OVERFLOW_THRESHOLD_PCT,
+) -> int:
+    """
+    Tüm 3 Firstbeat yük barı >= %85 doluysa ve önümüzdeki 7 günde 28 günlük pencereden
+    düşecek yüklerle birlikte barları >= %85 tutmak için daha az koşu yetiyorsa,
+    haftalık koşu kotasını minimum koruma sayısına (0..base_run_target) düşürür.
+    """
+    if base_run_target <= 0 or not load_focus:
+        return base_run_target
+    al = load_focus.get("aerobic_low") or {}
+    ah = load_focus.get("aerobic_high") or {}
+    an = load_focus.get("anaerobic") or {}
+
+    low_act = float(al.get("actual") or 0.0)
+    high_act = float(ah.get("actual") or 0.0)
+    an_act = float(an.get("actual") or 0.0)
+    low_max = float(al.get("target_max") or 0.0)
+    high_max = float(ah.get("target_max") or 0.0)
+    an_max = float(an.get("target_max") or 0.0)
+    targets_available = bool(load_focus.get("targets_available", True) and low_max > 0 and an_max > 0)
+    if not targets_available:
+        return base_run_target
+
+    cur_pcts = _compute_bar_pcts(low_act, high_act, an_act, low_max, high_max, an_max, True)
+    if min(cur_pcts) < threshold:
+        return base_run_target
+
+    ref_day = (ref_dt or datetime.now()).date()
+    win_start = ref_day - timedelta(days=28)
+    win_end = ref_day - timedelta(days=21)
+    exp_low = exp_high = exp_an = 0.0
+    for act in activities_all or []:
+        d_str = (act.get("startTimeLocal") or "")[:10]
+        if not d_str:
+            continue
+        try:
+            d_obj = datetime.strptime(d_str, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if win_start <= d_obj < win_end:
+            c = estimate_activity_load_contribution(act)
+            exp_low += c["low_aerobic"]
+            exp_high += c["high_aerobic"]
+            exp_an += c["anaerobic"]
+
+    sim_low = max(0.0, low_act - exp_low)
+    sim_high = max(0.0, high_act - exp_high)
+    sim_an = max(0.0, an_act - exp_an)
+    if min(_compute_bar_pcts(sim_low, sim_high, sim_an, low_max, high_max, an_max, True)) >= threshold:
+        return 0
+
+    pred = predict_next_n_runs(load_focus, activities_all, n=base_run_target, ref_dt=ref_dt)
+    for k, step in enumerate(pred.get("steps") or [], start=1):
+        added = step.get("added_load") or {}
+        sim_low += float(added.get("low_aerobic") or 0.0)
+        sim_high += float(added.get("high_aerobic") or 0.0)
+        sim_an += float(added.get("anaerobic") or 0.0)
+        if min(_compute_bar_pcts(sim_low, sim_high, sim_an, low_max, high_max, an_max, True)) >= threshold:
+            return min(k, base_run_target)
+    return base_run_target
