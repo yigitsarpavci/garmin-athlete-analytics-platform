@@ -174,6 +174,22 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertIn("progression", data)
         self.assertIn("sessions", data)
 
+    def test_gym_history_is_paginated_but_progression_uses_all_sessions(self):
+        """Seans listesi sayfalanır (en yeni önce); toplam sayı ve progresyon tüm kayıtlardan gelir."""
+        full = self.get_json("/api/gym-history?limit=500")
+        total = full["sessions_total"]
+        self.assertGreaterEqual(total, 2)
+        page1 = self.get_json("/api/gym-history?limit=1&offset=0")
+        page2 = self.get_json("/api/gym-history?limit=1&offset=1")
+        self.assertEqual(len(page1["sessions"]), 1)
+        self.assertEqual(page1["sessions_total"], total)
+        self.assertEqual(page1["sessions"][0], full["sessions"][0])
+        self.assertEqual(page2["sessions"][0], full["sessions"][1])
+        self.assertEqual(page1["progression"], full["progression"])
+        self.assertEqual(self.get_json(f"/api/gym-history?limit=5&offset={total + 10}")["sessions"], [])
+        # bozuk parametreler sunucuyu çökertmez; varsayılan sayfa döner
+        self.assertGreaterEqual(len(self.get_json("/api/gym-history?limit=abc&offset=-3")["sessions"]), 1)
+
     def test_progression_assessment_endpoint(self):
         """GET /api/progression dogmatik olmayan seviye analizi endpointini test eder."""
         data = self.get_json("/api/progression")

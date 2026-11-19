@@ -14,7 +14,7 @@ Uç Noktalar (Endpoints) — yalnızca arayüzün kullandıkları:
 -----------------------------------------------------------
 - GET  /api/overview            : Güncel metrikler, ACWR, haftalık kota ve yük özeti.
 - GET  /api/training-load       : Firstbeat ATL, CTL, ACWR ve yük dağılımı (Düşük/Yüksek/Anaerobik).
-- GET  /api/gym-history         : Salon setleri, tekrarlar, ağırlıklar ve 5x5 progresyonu.
+- GET  /api/gym-history         : Salon setleri (sayfalı: ?limit=&offset=), ağırlıklar ve 5x5 progresyonu.
 - GET  /api/activities          : Kayıtlı tüm Garmin antrenmanları (spor filtresi destekli).
 - GET  /api/correlations        : Pearson korelasyon matrisi ve p anlamlılık değerleri.
 - GET  /api/progression         : Haftalık gün modeli (2 kuvvet + 2-3 koşu), seviye ve deload analizi.
@@ -498,7 +498,21 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             self.send_json(200, engine.get_training_load_analytics())
         # 3.1. Kuvvet & Spor Salonu Hareket/Set/Ağırlık Geçmişi
         elif path == "/api/gym-history":
-            self.send_json(200, engine.get_gym_exercise_history())
+            # Progresyon/plato TÜM seanslardan hesaplanır; yalnızca tablo için seans listesi sayfalanır (varsayılan en yeni 50)
+            gh = engine.get_gym_exercise_history()
+            all_sessions = gh.get("sessions") or []
+            try:
+                limit = max(1, min(500, int(query.get("limit", ["50"])[0])))
+                offset = max(0, int(query.get("offset", ["0"])[0]))
+            except (ValueError, TypeError):
+                limit, offset = 50, 0
+            self.send_json(200, {
+                **gh,
+                "sessions": all_sessions[offset:offset + limit],
+                "sessions_total": len(all_sessions),
+                "sessions_offset": offset,
+                "sessions_limit": limit,
+            })
         # 3. Tüm Aktiviteler (Filtreli)
         elif path == "/api/activities":
             acts = engine.get_all_activities()

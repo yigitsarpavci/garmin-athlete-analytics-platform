@@ -653,3 +653,19 @@ class TestFixedTwoDayStrengthPolicy(unittest.TestCase):
         self.assertEqual(dyn["gym_target"], 2)
         self.assertIn(dyn["base_run_target"], (2, 3))
         self.assertEqual(eng.get_gym_exercise_history()["program_state"]["active_split"], "5x5_linear")
+
+
+class TestGymRawCache(unittest.TestCase):
+    def test_raw_gym_file_is_parsed_once_until_it_changes(self):
+        import json as _json
+        from app.engine.workout_protocols_mixin import _read_gym_raw
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "raw_gym_exercise_sets.json")
+            with open(path, "w") as fh:
+                _json.dump({"1": {"meta": {}}}, fh)
+            first = _read_gym_raw(path)
+            self.assertIs(_read_gym_raw(path), first)  # önbellekten
+            with open(path, "w") as fh:
+                _json.dump({"1": {"meta": {}}, "2": {"meta": {}}}, fh)
+            self.assertEqual(len(_read_gym_raw(path)), 2)  # değişince yeniden okunur
+            self.assertEqual(_read_gym_raw(os.path.join(tmp, "yok.json")), {})

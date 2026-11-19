@@ -41,6 +41,34 @@ _EXERCISE_NAME_MAP = {
     "SHRUG": "Dumbbell Shrug",
 }
 
+_GYM_RAW_CACHE: Dict[str, Any] = {}
+
+
+def _read_gym_raw(path: str) -> Dict[str, Any]:
+    """
+    raw_gym_exercise_sets.json'ı okur; dosya değişmediği sürece (mtime+boyut) tekrar ayrıştırmaz.
+    Yıllar içinde binlerce seans birikse bile her istekte MB'larca JSON yeniden çözülmez. Dönen sözlük salt okunurdur.
+    """
+    try:
+        st = os.stat(path)
+    except OSError:
+        return {}
+    key = (st.st_mtime_ns, st.st_size)
+    hit = _GYM_RAW_CACHE.get(path)
+    if hit and hit[0] == key:
+        return hit[1]
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        logger.warning("_read_gym_raw: yedek davranış uygulandı", exc_info=True)
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    _GYM_RAW_CACHE[path] = (key, data)
+    return data
+
+
 class WorkoutProtocolsMixin:
     """Salon ağırlık geçmişi, branş rehberliği, bilinmeyen spor desteği ve seans reçeteleri."""
 
@@ -49,14 +77,7 @@ class WorkoutProtocolsMixin:
         """Garmin kuvvet seanslarının tüm set, tekrar ve dinamik progression hedeflerini döner."""
         data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
         gym_file = os.path.join(data_dir, "raw_gym_exercise_sets.json")
-        raw_data: Dict[str, Any] = {}
-        if os.path.exists(gym_file):
-            try:
-                with open(gym_file, "r", encoding="utf-8") as f:
-                    raw_data = json.load(f)
-            except (OSError, ValueError):
-                logger.warning("get_gym_exercise_history: yedek davranış uygulandı", exc_info=True)
-                raw_data = {}
+        raw_data = _read_gym_raw(gym_file)
 
         if not raw_data:
             baseline = compute_adaptive_progression([], bodyweight_kg=self.get_current_weight())

@@ -305,6 +305,60 @@ function _decisionStamp(dec) {
   return '<span class="stamp-tag stamp-moss">ARTIŞ (+kg)</span>';
 }
 
+/* Salon geçmişi tablosu: sunucu en yeni N seansı sayfa sayfa verir; "Daha eski seansları göster" ile eklenir (binlerce kayıtta DOM şişmez) */
+let _gymHistoryState = { loaded: 0, total: 0, limit: 50, busy: false };
+
+function _gymHistoryRow(sess) {
+  const tr = document.createElement('tr');
+  tr.className = "hover:bg-[var(--bg-subtle)] transition";
+  const exSummary = `<div class="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[12px] leading-tight">` + (sess.exercises || []).map(ex => {
+    const setStr = (ex.sets || []).map(s => `${s.reps}x${s.weight_kg}kg`).join(', ');
+    return `<span><strong class="font-semibold">${escapeHtml(ex.name)}</strong>: <span class="font-mono accent-text">${escapeHtml(setStr)}</span></span>`;
+  }).join('') + `</div>`;
+  tr.innerHTML = `
+<td class="py-1 px-2 text-[11px] font-mono font-medium whitespace-nowrap">${escapeHtml(sess.date)} <span class="text-[var(--text-muted)] text-[11px]">${escapeHtml(sess.time || '')}</span></td>
+<td class="py-1 px-2 text-[11px] font-semibold whitespace-nowrap ${sess.workout_type === 'Workout A' ? 'accent-text' : ''}">${escapeHtml(sess.workout_type)}</td>
+<td class="py-1 px-2 text-[11px] font-mono text-[var(--text-secondary)] whitespace-nowrap">${sess.duration_min} dk · ${sess.calories} kcal</td>
+<td class="py-1 px-2 text-[11px] font-mono font-semibold whitespace-nowrap">${(sess.total_volume_kg / 1000.0).toFixed(2)} Ton</td>
+<td class="py-1 px-2">${exSummary}</td>
+  `;
+  return tr;
+}
+
+function _appendGymHistoryRows(sessions) {
+  const tableBody = document.getElementById('gymHistoryTableBody');
+  if (!tableBody) return;
+  const frag = document.createDocumentFragment();
+  sessions.forEach(sess => frag.appendChild(_gymHistoryRow(sess)));
+  tableBody.appendChild(frag);
+  _gymHistoryState.loaded += sessions.length;
+  const countEl = document.getElementById('gymHistoryCount');
+  if (countEl) countEl.textContent = _gymHistoryState.total ? `${_gymHistoryState.loaded} / ${_gymHistoryState.total} seans` : 'Kayıtlı seans yok';
+  const btn = document.getElementById('gymHistoryMoreBtn');
+  if (btn) btn.classList.toggle('hidden', _gymHistoryState.loaded >= _gymHistoryState.total);
+}
+
+async function loadMoreGymHistory() {
+  const st = _gymHistoryState;
+  if (st.busy || st.loaded >= st.total) return;
+  st.busy = true;
+  const btn = document.getElementById('gymHistoryMoreBtn');
+  if (btn) btn.textContent = 'Yükleniyor...';
+  try {
+    const res = await fetch(`/api/gym-history?limit=${st.limit}&offset=${st.loaded}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      st.total = Number(data.sessions_total ?? st.total);
+      _appendGymHistoryRows(data.sessions || []);
+    }
+  } catch (_) {
+    /* ağ hatası: kullanıcı düğmeye tekrar basabilir */
+  } finally {
+    st.busy = false;
+    if (btn) btn.textContent = 'Daha eski seansları göster';
+  }
+}
+
 function renderGymHistory(gym) {
   if (!gym) return;
 
@@ -395,23 +449,8 @@ function renderGymHistory(gym) {
   const tableBody = document.getElementById('gymHistoryTableBody');
   if (tableBody && gym.sessions) {
     tableBody.innerHTML = '';
-    gym.sessions.forEach(sess => {
-      const tr = document.createElement('tr');
-      tr.className = "hover:bg-[var(--bg-subtle)] transition";
-      const exSummary = `<div class="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[12px] leading-tight">` + (sess.exercises || []).map(ex => {
-        const setStr = (ex.sets || []).map(s => `${s.reps}x${s.weight_kg}kg`).join(', ');
-        return `<span><strong class="font-semibold">${escapeHtml(ex.name)}</strong>: <span class="font-mono accent-text">${escapeHtml(setStr)}</span></span>`;
-      }).join('') + `</div>`;
-
-      tr.innerHTML = `
-<td class="py-1 px-2 text-[11px] font-mono font-medium whitespace-nowrap">${escapeHtml(sess.date)} <span class="text-[var(--text-muted)] text-[11px]">${escapeHtml(sess.time || '')}</span></td>
-<td class="py-1 px-2 text-[11px] font-semibold whitespace-nowrap ${sess.workout_type === 'Workout A' ? 'accent-text' : ''}">${escapeHtml(sess.workout_type)}</td>
-<td class="py-1 px-2 text-[11px] font-mono text-[var(--text-secondary)] whitespace-nowrap">${sess.duration_min} dk · ${sess.calories} kcal</td>
-<td class="py-1 px-2 text-[11px] font-mono font-semibold whitespace-nowrap">${(sess.total_volume_kg / 1000.0).toFixed(2)} Ton</td>
-<td class="py-1 px-2">${exSummary}</td>
-      `;
-      tableBody.appendChild(tr);
-    });
+    _gymHistoryState = { loaded: 0, total: Number(gym.sessions_total ?? gym.sessions.length), limit: Number(gym.sessions_limit || gym.sessions.length || 50), busy: false };
+    _appendGymHistoryRows(gym.sessions);
   }
   if (typeof refreshIcons === 'function') refreshIcons();
 }
