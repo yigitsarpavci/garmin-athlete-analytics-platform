@@ -237,6 +237,8 @@ class TelemetryMixin:
             "rhr": rhr_mean,
             "overnight_hrv": hrv_night,
             "hrv_7d": hrv_7d,
+            "hrv_baseline_low": 37.0,
+            "hrv_baseline_high": 58.0,
             "hrv_status": hrv_status,
             "hrv_7d_series": hrv_7d_series,
             "sleep_score": sleep_score,
