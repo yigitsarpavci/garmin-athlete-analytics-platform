@@ -230,7 +230,8 @@ function buildQuotaLedgerHtml(quota) {
       ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[#4B8EC2]', runProjectionHtml)}
       ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
     </div>
-    <div class="flex items-center justify-end gap-4 pt-1.5 font-mono text-[11px] text-[var(--text-secondary)]">
+    <div class="flex flex-wrap items-center justify-end gap-4 pt-1.5 font-mono text-[11px] text-[var(--text-secondary)]">
+      <span class="inline-flex items-center gap-1">${lucideSvg('watch', 'w-3 h-3 accent-text shrink-0')}Koşarken <strong class="text-[var(--text-primary)]">Quick Workout</strong>'lara bak</span>
       <span class="inline-flex items-center gap-1" title="${escapeHtml(spontTip)}">${lucideSvg('compass', 'w-3 h-3 violet-text shrink-0')}Spontane branş: <strong class="text-[var(--text-primary)] tabular-nums">${spontDays} gün</strong></span>
       <span class="inline-flex items-center gap-1">${lucideSvg('moon', 'w-3 h-3 sky-text shrink-0')}Dinlenme: <strong class="text-[var(--text-primary)] tabular-nums">${restCount} gün</strong></span>
     </div>
