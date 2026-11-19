@@ -139,7 +139,7 @@ function renderDebriefSwitchButtons(activeIdx) {
   if (!tabs.length) tabs.push({ idx: 0, label: 'Son Gym' });
 
   bar.innerHTML = tabs.map(t => {
-    const cls = t.idx === activeIdx ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
+    const cls = t.idx === activeIdx ? 'subtab-btn subtab-btn-active whitespace-nowrap' : 'subtab-btn whitespace-nowrap';
     return `<button type="button" onclick="openDebriefModal(${t.idx})" class="${cls}">${escapeHtml(t.label)}</button>`;
   }).join('');
 }

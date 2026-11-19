@@ -796,21 +796,21 @@
     class="field-dialog field-dialog-wide">
     <div
       class="px-6 py-4 bg-[var(--bg-surface-elevated)] border-b border-[var(--border-subtle)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 min-w-0 flex-1">
         <div id="debriefIcon" class="icon-box w-10 h-10 shrink-0"><i data-lucide="dumbbell" class="w-5 h-5"
             stroke-width="1.5" aria-hidden="true"></i></div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 id="debriefTitle" class="font-editorial text-lg font-medium tracking-tight">Antrenman Özeti</h3>
-            <span id="debriefBadge" class="stamp-tag stamp-moss">Kuvvet #1</span>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 id="debriefTitle" class="font-editorial text-lg font-medium tracking-tight truncate">Antrenman Özeti</h3>
+            <span id="debriefBadge" class="stamp-tag stamp-moss shrink-0">Kuvvet #1</span>
           </div>
-          <p id="debriefSub" class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5">17 Kasım 2026 · 10:35 ·
+          <p id="debriefSub" class="font-mono text-[11px] text-[var(--text-secondary)] mt-0.5 truncate">17 Kasım 2026 · 10:35 ·
             53 dk</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2 self-end sm:self-center">
-        <div id="debriefSwitchBar" class="subtab-bar text-xs"></div>
+      <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+        <div id="debriefSwitchBar" class="subtab-bar text-xs flex-nowrap whitespace-nowrap"></div>
         <button type="button" onclick="closeDebriefModal()" autofocus class="btn-secondary p-1.5" aria-label="Kapat">
           <i data-lucide="x" class="w-4 h-4" stroke-width="1.5" aria-hidden="true"></i>
         </button>
