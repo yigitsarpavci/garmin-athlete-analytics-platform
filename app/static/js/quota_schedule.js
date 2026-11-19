@@ -294,7 +294,7 @@ function renderDailyProtocols(protocols) {
   if (!container || !protocols || !Array.isArray(protocols) || !protocols.length) return;
   cachedDailyProtocols = protocols;
 
-  const orderMap = { tuesday: 0, saturday: 1, thursday: 2, tempo: 3, monday: 4 };
+  const orderMap = { tuesday: 0, saturday: 1 };
   const sortedIndices = protocols
     .map((_, idx) => idx)
     .filter(idx => Object.prototype.hasOwnProperty.call(orderMap, protocols[idx]?.day_code))
