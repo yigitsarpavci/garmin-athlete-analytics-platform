@@ -28,7 +28,7 @@ function _build93dRowGauge(r) {
   const avgTxt = String(r.avg_median || '');
   const avgMatch = avgTxt.match(/^([^\(]+)\(([^\)]+)\)(.*)$/);
   const avgDisplay = avgMatch
-    ? `Ort: ${avgMatch[1].trim()}${avgMatch[3] || ''} · Med: ${avgMatch[2].trim()}${avgMatch[3] || ''}`
+    ? `Ort: ${avgMatch[1].trim()}${avgMatch[3] || ''}`
     : `Ort: ${avgTxt}`;
 
   return `
