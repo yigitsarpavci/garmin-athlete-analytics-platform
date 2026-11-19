@@ -265,13 +265,9 @@ class WeeklyQuotaMixin:
         gym_target = 2
         gym_sequence = ["gym_a", "gym_b"]
 
-        # 2) Koşu fitliğine göre temel gün sayısı (1, 2, 3 veya 4) — fazla/az yapmaya göre değil fitlik skoruna göre belirlenir
-        if chronic_load >= 460 and vo2max >= 50:
-            base_run_target = 4
-        elif chronic_load >= 360 or (vo2max >= 50 and chronic_load >= 320):
+        # 2) Koşu fitliğine göre temel gün sayısı (yalnızca 2 veya 3 gün; maks 3)
+        if chronic_load >= 360 or (vo2max >= 50 and chronic_load >= 320):
             base_run_target = 3
-        elif 0 < chronic_load < 120 and (vo2max == 0 or vo2max < 42):
-            base_run_target = 1
         else:
             base_run_target = 2
 

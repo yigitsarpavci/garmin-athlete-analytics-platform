@@ -521,16 +521,16 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         }
         dyn1 = stub.compute_dynamic_weekly_targets(now=now)
         self.assertGreaterEqual(dyn1["run_target"], 1)
-        self.assertLess(dyn1["run_target"], 4)
+        self.assertLess(dyn1["run_target"], 3)
         self.assertIn("%85+ koruma", dyn1["run_plan_summary"])
 
     def test_advanced_runner_scales_run_target_and_projection_horizon(self):
         stub, now = self._make_stub(split="push_pull", plateau=58, chronic=480.0, vo2max=53.0, runs_28d=15, gyms_28d=10)
         dyn = stub.compute_dynamic_weekly_targets(now=now)
-        self.assertEqual(dyn["run_target"], 4)
+        self.assertEqual(dyn["run_target"], 3)
         self.assertIn(dyn["projection_horizon"], (4, 5, 6))
         self.assertEqual(len(dyn["run_prediction"]["steps"]), dyn["projection_horizon"])
-        self.assertIn("Bu hafta 4 Koşu", dyn["run_plan_summary"])
+        self.assertIn("Bu hafta 3 Koşu", dyn["run_plan_summary"])
 
 
 if __name__ == "__main__":
