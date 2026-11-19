@@ -14,7 +14,7 @@ import sys
 import shutil
 import subprocess
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 try:
     from google import genai
@@ -308,7 +308,72 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
 • Aynı Gün Sıralama Kanunu: ÖNCE KOŞU, SONRA KUVVET (veya ≥6 saat ara).
 • Preset dışı sporlar (ör. Kayak, Yüzme, Bisiklet) Garmin'den yüklendiğinde otomatik olarak spontane branşlar + ACWR yüküne işlenir.
 • İLETİŞİM: Net, pratik, Türkçe yanıt ver; asla sabit takvim günü emri verme."""
+        extra_analytics = self._build_sport_stress_summary()
+        if extra_analytics:
+            context = f"{context}\n\n{extra_analytics}"
         return context
+
+    def _build_sport_stress_summary(self) -> str:
+        """Spor branşlarına göre aynı gün günlük stres / gece HRV ortalamalarını ve en güçlü veri korelasyonlarını özetler."""
+        lines: List[str] = []
+        df = getattr(self.engine, "df", None)
+        acts = getattr(self.engine, "activities_all", None) or []
+        if df is not None and not getattr(df, "empty", True) and "date" in df.columns:
+            try:
+                from engine.helpers import format_sport_tr
+            except ImportError:
+                from app.engine.helpers import format_sport_tr
+            by_date: Dict[str, Dict[str, Any]] = {}
+            for _, row in df.iterrows():
+                d_str = str(row.get("date") or "")[:10]
+                if not d_str:
+                    continue
+                st_val = row.get("avg_stress")
+                hrv_val = row.get("hrv_night")
+                by_date[d_str] = {
+                    "stress": float(st_val) if st_val is not None and st_val == st_val else None,
+                    "hrv": float(hrv_val) if hrv_val is not None and hrv_val == hrv_val else None,
+                }
+
+            sport_dates: Dict[str, set] = {}
+            active_dates: set = set()
+            for a in acts:
+                d_str = (a.get("startTimeLocal") or "")[:10]
+                if d_str not in by_date:
+                    continue
+                active_dates.add(d_str)
+                sp_key = a.get("sport") or (a.get("activityType") or {}).get("typeKey") or "other"
+                sp_tr = format_sport_tr(sp_key, a.get("activityName") or "")
+                sport_dates.setdefault(sp_tr, set()).add(d_str)
+
+            rest_dates = set(by_date.keys()) - active_dates
+            groups: List[Tuple[str, set]] = [("Dinlenme Günü (Aktivite Yok)", rest_dates)] + sorted(
+                sport_dates.items(), key=lambda kv: len(kv[1]), reverse=True
+            )
+            sport_lines: List[str] = []
+            for label, d_set in groups[:10]:
+                st_vals = [by_date[d]["stress"] for d in d_set if by_date[d]["stress"] is not None]
+                hrv_vals = [by_date[d]["hrv"] for d in d_set if by_date[d]["hrv"] is not None]
+                if not st_vals and not hrv_vals:
+                    continue
+                st_txt = f"Ort. Stres {sum(st_vals) / len(st_vals):.1f}" if st_vals else "Stres --"
+                hrv_txt = f"Gece HRV {sum(hrv_vals) / len(hrv_vals):.1f} ms" if hrv_vals else "HRV --"
+                sport_lines.append(f"  - {label} ({len(d_set)} gün): {st_txt}, {hrv_txt}")
+            if sport_lines:
+                lines.append("=================== BRANŞ × AYNI GÜN STRES & HRV İLİŞKİSİ (93G) ===================")
+                lines.extend(sport_lines)
+
+        if hasattr(self.engine, "get_correlations"):
+            try:
+                corrs = self.engine.get_correlations() or []
+                if corrs:
+                    lines.append("=================== EN GÜÇLÜ VERİ KORELASYONLARI ===================")
+                    for c in corrs[:6]:
+                        lines.append(f"  - {c.get('pair', '')}: r={c.get('r', '')} ({c.get('desc', '')})")
+            except Exception:
+                logger.warning("_build_sport_stress_summary correlations fallback", exc_info=True)
+
+        return "\n".join(lines)
 
     def answer_query(self, user_question: str, model: Optional[str] = None, history: Optional[List[Dict[str, str]]] = None, custom_profile: Optional[dict] = None) -> dict:
         """
@@ -408,24 +473,30 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
                 sys.stderr.write(f"OpenAI SDK hatası: {e}\n")
 
         # 3. YÖNTEM: Antigravity / Gemini CLI Runtime (Kullanıcının lokal DeepMind Gemini motoru - API Keysiz & Doğrudan)
-        if not reply_text and os.path.exists(self.agy_path):
-            try:
-                cli_model = selected_model if selected_model in ["gemini-3.8-flash-low", "gemini-3.8-flash-medium", "gemini-4-hydrogen-high", "claude-sonnet-5-5-medium"] else "gemini-3.8-flash-low"
-                cmd = [
-                    self.agy_path,
-                    "--model", cli_model,
-                    "-p", full_prompt
-                ]
-                res = subprocess.run(cmd, capture_output=True, text=True, timeout=35)
-                if res.returncode == 0 and res.stdout.strip():
-                    reply_text = res.stdout.strip()
-                    provider_used = f"Antigravity DeepMind Gemini Runtime ({cli_model})"
-                else:
-                    sys.stderr.write(f"AGY CLI stdout: {res.stdout}, stderr: {res.stderr}\n")
-            except subprocess.TimeoutExpired:
-                sys.stderr.write("AGY CLI zaman aşımına uğradı (35s).\n")
-            except Exception as e:
-                sys.stderr.write(f"AGY CLI çalıştırma hatası: {e}\n")
+        if not reply_text and self.agy_path and os.path.exists(self.agy_path):
+            cli_model = selected_model if selected_model in ["gemini-3.8-flash-low", "gemini-3.8-flash-medium", "gemini-4-hydrogen-high", "claude-sonnet-5-5-medium"] else "gemini-3.8-flash-low"
+            attempts = [(cli_model, 110 if cli_model in ("gemini-4-hydrogen-high", "claude-sonnet-5-5-medium") else 60)]
+            if cli_model != "gemini-3.8-flash-low":
+                attempts.append(("gemini-3.8-flash-low", 45))
+            for idx, (m_id, t_sec) in enumerate(attempts):
+                try:
+                    cmd = [
+                        self.agy_path,
+                        "--model", m_id,
+                        "-p", full_prompt
+                    ]
+                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=t_sec)
+                    if res.returncode == 0 and res.stdout.strip():
+                        reply_text = res.stdout.strip()
+                        suffix = " · hızlı yedek" if idx > 0 else ""
+                        provider_used = f"Antigravity DeepMind Gemini Runtime ({m_id}{suffix})"
+                        break
+                    else:
+                        sys.stderr.write(f"AGY CLI ({m_id}) stdout: {res.stdout}, stderr: {res.stderr}\n")
+                except subprocess.TimeoutExpired:
+                    sys.stderr.write(f"AGY CLI ({m_id}) zaman aşımına uğradı ({t_sec}s).\n")
+                except Exception as e:
+                    sys.stderr.write(f"AGY CLI ({m_id}) çalıştırma hatası: {e}\n")
 
         # 4. YÖNTEM: Eğer hiçbir AI servisi yanıt vermezse acil durum akıllı spor bilimi motoru
         if not reply_text:
