@@ -369,17 +369,45 @@ class TestLoadFocusRunSelection(unittest.TestCase):
             res = eng._analyze_previous_week_carryover(mon, {})
             self.assertEqual(res["run_order"], ["interval", "interval"])
 
-        # 4. Low Aerobic hafifçe düşük (320/400 = 80% vs 225/260 = 86.5%) => ["zone2", "interval"]
+        # 4. Low Aerobic en düşük (280/400 = 70% < 75% < 90%) => 1. adım zone2, sonra interval
         with patch.object(eng, "get_training_load_analytics", return_value={
             "load_focus": {
                 "targets_available": True,
-                "aerobic_low": {"actual": 320.0, "target_max": 400.0, "pct_of_target": 80.0},
-                "aerobic_high": {"actual": 300.0, "target_max": 500.0, "pct_of_target": 60.0},
-                "anaerobic": {"actual": 225.0, "target_max": 260.0, "pct_of_target": 86.5},
+                "aerobic_low": {"actual": 280.0, "target_max": 400.0, "pct_of_target": 70.0},
+                "aerobic_high": {"actual": 450.0, "target_max": 500.0, "pct_of_target": 90.0},
+                "anaerobic": {"actual": 195.0, "target_max": 260.0, "pct_of_target": 75.0},
             }
         }):
             res = eng._analyze_previous_week_carryover(mon, {})
             self.assertEqual(res["run_order"], ["zone2", "interval"])
+
+        # 5. High Aerobic en düşük (250/500 = 50%) ise doğrudan Tempo önerilir
+        from app.engine.run_load_predictor import predict_next_n_runs
+        pred_high = predict_next_n_runs({
+            "targets_available": True,
+            "aerobic_low": {"actual": 350.0, "target_max": 400.0},
+            "aerobic_high": {"actual": 250.0, "target_max": 500.0},
+            "anaerobic": {"actual": 220.0, "target_max": 260.0},
+        }, [], n=4, ref_dt=mon)
+        self.assertEqual(pred_high["steps"][0]["kind"], "tempo")
+
+        # 6. Üç bar da >= %85 doluysa dinamik Gym önerir; bar düştüğünde sonraki güncellemede geri koşuya döner
+        pred_full = predict_next_n_runs({
+            "targets_available": True,
+            "aerobic_low": {"actual": 360.0, "target_max": 400.0},
+            "aerobic_high": {"actual": 450.0, "target_max": 500.0},
+            "anaerobic": {"actual": 230.0, "target_max": 260.0},
+        }, [], n=4, ref_dt=mon)
+        self.assertEqual(pred_full["steps"][0]["kind"], "gym_overflow")
+
+        # Sonraki güncellemede 28G pencereden düşüşle Anaerobik %70'e indiyse tekrar İnterval'e döner
+        pred_dropped = predict_next_n_runs({
+            "targets_available": True,
+            "aerobic_low": {"actual": 360.0, "target_max": 400.0},
+            "aerobic_high": {"actual": 450.0, "target_max": 500.0},
+            "anaerobic": {"actual": 182.0, "target_max": 260.0},
+        }, [], n=4, ref_dt=mon)
+        self.assertEqual(pred_dropped["steps"][0]["kind"], "interval")
 
 
 class TestDebriefLoadTunnelInterpretation(unittest.TestCase):

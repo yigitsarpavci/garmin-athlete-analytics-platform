@@ -44,6 +44,29 @@ _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
         "protocol_day_code": "monday",
         "coaching_note": "10 dk ısınma + 4x1.000m @ [[INT_PACE]] (aralarda 3 dk yürüyüş/jog) + 8 dk soğuma; bacakların taze olduğu bir günde uygula.",
     },
+    "tempo": {
+        "category": "running",
+        "type": "Tempo Koşusu",
+        "short_label": "Tempo Koşusu",
+        "title_prefix": "Yüksek Aerobik Tempo (30-35 dk)",
+        "target_hr": "[[Z3_HR]]",
+        "target_pace": "[[TEMPO_PACE]]",
+        "duration": "35 dk",
+        "badge": "Yüksek Aerobik",
+        "protocol_day_code": "monday",
+        "coaching_note": "10 dk ısınma + 20 dk sabit eşik/tempo + 5 dk soğuma; Yüksek Aerobik barını doldurmak için uygula.",
+    },
+    "gym_overflow": {
+        "category": "strength",
+        "type": "Ekstra Kuvvet",
+        "short_label": "Ekstra Kuvvet",
+        "title_prefix": "Ekstra Kuvvet (Yük Taşmasını Önle)",
+        "exercises_summary": "3 yük barı da %85+ dolu olduğu için koşu yerine düşük kardiyo yüklü kuvvet seansı önerildi.",
+        "duration": "55 dk",
+        "badge": "Dinamik Kuvvet",
+        "protocol_day_code": "tuesday",
+        "coaching_note": "Tüm koşu yük barları %85 üstünde olduğu için geçici olarak kuvvet eklendi; barlar düşünce otomatik koşuya döner.",
+    },
     "gym_a": {
         "category": "strength",
         "type": "Workout A",
@@ -443,8 +466,10 @@ class WeeklyQuotaMixin:
         elif rem_runs == 1:
             if "tempo" in st.completed_run_kinds:
                 post_tempo_adapted = True
-                next_kind = "interval" if st.planned_run_order[0] == "interval" else "zone2"
+                next_kind = st.planned_run_order[0] if st.planned_run_order[0] in ("zone2", "interval", "tempo") else "interval"
                 needed_runs = [(next_kind, runs_done + 1)]
+            elif st.planned_run_order[0] == "gym_overflow":
+                needed_runs = [("gym_overflow", runs_done + 1)]
             elif len(st.planned_run_order) >= 2 and st.planned_run_order[0] == st.planned_run_order[1]:
                 needed_runs = [(st.planned_run_order[1], runs_done + 1)]
             elif "interval" in st.completed_run_kinds and "zone2" not in st.completed_run_kinds:
@@ -453,7 +478,7 @@ class WeeklyQuotaMixin:
                 needed_runs = [("interval", runs_done + 1)]
             else:
                 post_tempo_adapted = True
-                next_kind = "interval" if st.planned_run_order[0] == "interval" else "zone2"
+                next_kind = st.planned_run_order[0] if st.planned_run_order[0] in ("zone2", "interval", "tempo") else "zone2"
                 needed_runs = [(next_kind, runs_done + 1)]
 
         needed_gyms: List[Tuple[str, int]] = []
@@ -612,6 +637,24 @@ class WeeklyQuotaMixin:
                     "target": "115-130 bpm (Zone 1)",
                     "calories": "~2.900 kcal",
                     "macro": "2.500 kcal (180g P / 270g K / 80g Y)",
+                }
+            if slot_kind == "gym_overflow":
+                alt_gym = "gym_a" if st.last_gym_type and "Workout B" in st.last_gym_type else "gym_b"
+                return {
+                    "primary": f"Kuvvet (Dinamik Ek) · Koşu Yükü Dolu · {gym_summaries[alt_gym].split(' · Lateral')[0]}",
+                    "secondary": f"3 Firstbeat yük barı da %85+ dolu olduğu için bu koşu yerine ekstra kuvvet önerildi (bar düşünce otomatik koşuya döner) • {gym_summaries[alt_gym]}",
+                    "target": "115-130 bpm (Zone 1)",
+                    "calories": "~2.850 kcal",
+                    "macro": "2.450 kcal (175g P / 250g K / 80g Y)",
+                }
+            if slot_kind == "tempo":
+                quota_lbl = "2/2 Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
+                return {
+                    "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Yüksek Aerobik Tempo (30-35 dk)",
+                    "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), Yüksek Aerobik barını doldurmak için uygula • 10 dk ısınma + 20 dk tempo",
+                    "target": "Zone 3-4 Eşik/Tempo",
+                    "calories": "~2.950 kcal",
+                    "macro": "2.550 kcal (175g P / 275g K / 80g Y)",
                 }
             if slot_kind == "zone2":
                 quota_lbl = "2/2 Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
