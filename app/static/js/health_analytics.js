@@ -25,21 +25,26 @@ function _build93dRowGauge(r) {
   const minMaxParts = String(r.min_max || '').split('–').map(s => s.trim());
   const minLbl = minMaxParts[0] || String(r.min_val);
   const maxLbl = minMaxParts[1] || String(r.max_val);
+  const avgTxt = String(r.avg_median || '');
+  const avgMatch = avgTxt.match(/^([^\(]+)\(([^\)]+)\)(.*)$/);
+  const avgDisplay = avgMatch
+    ? `Ort: ${avgMatch[1].trim()}${avgMatch[3] || ''} · Med: ${avgMatch[2].trim()}${avgMatch[3] || ''}`
+    : `Ort: ${avgTxt}`;
 
   return `
-    <div class="space-y-0.5 min-w-[165px]">
-      <div class="flex items-baseline justify-between gap-2 font-mono text-[10.5px]">
-        <span class="font-semibold sky-text">${escapeHtml(r.avg_median)}</span>
-        <span class="violet-text text-[10px]">İdeal: ${escapeHtml(r.ideal_ref)}</span>
+    <div class="space-y-0.5 min-w-[185px]">
+      <div class="flex items-baseline justify-between gap-2 font-mono text-[10px]">
+        <span class="font-semibold sky-text">${escapeHtml(avgDisplay)}</span>
+        <span class="violet-text shrink-0">İdeal: ${escapeHtml(r.ideal_ref)}</span>
       </div>
       <div class="garmin-gauge">
         <div class="garmin-gauge-track">
           ${segs.map((s, idx) => `<div class="garmin-seg ${s.cls} ${idx === activeIdx ? 'active' : ''}" style="flex:${s.flex}"></div>`).join('')}
-          <span class="garmin-gauge-pin" style="left:${clamped.toFixed(1)}%"></span>
+          <span class="garmin-gauge-pin" style="left:${clamped.toFixed(1)}%" title="${escapeHtml(avgDisplay)}"></span>
         </div>
         <div class="garmin-gauge-scale">
-          <span>${escapeHtml(minLbl)}</span>
-          <span>${escapeHtml(maxLbl)}</span>
+          <span>Min: ${escapeHtml(minLbl)}</span>
+          <span>Maks: ${escapeHtml(maxLbl)}</span>
         </div>
       </div>
     </div>
