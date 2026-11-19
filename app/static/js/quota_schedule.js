@@ -126,7 +126,7 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass, extraHtml 
           </span>
           <span class="stamp-tag ${isDone ? 'stamp-moss' : 'stamp-accent'} tabular-nums">${completed} / ${target}</span>
         </div>
-        <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5 overflow-hidden rounded-[1px]">
+        <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5 overflow-hidden rounded-full">
           <div class="${isDone ? 'bg-[var(--moss)]' : barColorClass} h-1.5 transition-all duration-500" style="width: ${pct}%"></div>
         </div>
         ${planSummary ? `<p class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-tight">${escapeHtml(planSummary)}</p>` : ''}

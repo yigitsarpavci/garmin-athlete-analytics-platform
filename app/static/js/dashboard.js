@@ -185,7 +185,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     stepBarEl.innerHTML = `
       <div class="garmin-gauge">
         <div class="garmin-fill-track" style="overflow:visible">
-          <div class="seg-green h-full rounded-[2px]" style="width:${stepPct.toFixed(1)}%"></div>
+          <div class="seg-green h-full rounded-full" style="width:${stepPct.toFixed(1)}%"></div>
           <span class="garmin-gauge-pin" style="left:${pinLeft.toFixed(1)}%" title="Bugün: ${formatTrInt(stepCur)} adım (%${Math.round(stepPct)})"></span>
         </div>
         <div class="garmin-gauge-scale">

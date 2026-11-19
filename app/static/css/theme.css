@@ -177,12 +177,12 @@ h1, h2, h3, th {
   -webkit-backdrop-filter: blur(10px);
 }
 
-/* Architectural Ruled Surfaces (Intentional Sharp Instrument Corners) */
+/* Softened Instrument Surfaces */
 .surface-card,
 .garmin-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: 12px;
   transition: border-color 160ms ease, background-color 160ms ease;
 }
 
@@ -195,14 +195,14 @@ button.garmin-card:hover {
 .surface-ledger {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 .field-dossier {
   background: linear-gradient(165deg, rgba(27, 67, 50, 0.34) 0%, rgba(17, 32, 25, 0.96) 100%);
   border: 1px solid var(--border-subtle);
   border-inline-start: 3px solid var(--accent);
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 /* Semantic Status Tokens & Hairline Index Tags */
@@ -240,7 +240,7 @@ button.garmin-card:hover {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 0.22rem 0.5rem;
-  border-radius: 2px;
+  border-radius: 6px;
   border: 1px solid var(--border-medium);
   background-color: var(--bg-surface-elevated);
   color: var(--text-primary);
@@ -291,7 +291,7 @@ button.garmin-card:hover {
   align-items: center;
   justify-content: center;
   flex: none;
-  border-radius: 3px;
+  border-radius: 7px;
   background-color: var(--accent-soft);
   border: 1px solid var(--accent-border);
   color: var(--accent);
@@ -302,7 +302,7 @@ button.garmin-card:hover {
   align-items: center;
   justify-content: center;
   flex: none;
-  border-radius: 3px;
+  border-radius: 7px;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
@@ -320,7 +320,7 @@ svg.lucide {
   gap: 0.45rem;
   min-block-size: 2.35rem;
   padding: 0.52rem 1.05rem;
-  border-radius: 3px;
+  border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 600;
   white-space: nowrap;
@@ -345,7 +345,7 @@ svg.lucide {
   gap: 0.4rem;
   min-block-size: 2.15rem;
   padding: 0.44rem 0.82rem;
-  border-radius: 3px;
+  border-radius: 8px;
   font-size: 0.75rem;
   font-weight: 500;
   white-space: nowrap;
@@ -408,7 +408,7 @@ select:focus-visible,
   padding: 0.3rem;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-medium);
-  border-radius: 4px;
+  border-radius: 10px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
   z-index: 60;
   flex-direction: column;
@@ -433,7 +433,7 @@ html.macos-app .site-header > div {
   width: 100%;
   text-align: left;
   padding: 0.42rem 0.65rem;
-  border-radius: 3px;
+  border-radius: 7px;
   font-size: 0.74rem;
   font-weight: 500;
   white-space: nowrap;
@@ -489,7 +489,7 @@ html.macos-app .site-header > div {
   flex-wrap: wrap;
   gap: 0.2rem;
   padding: 0.2rem;
-  border-radius: 3px;
+  border-radius: 8px;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
 }
@@ -498,7 +498,7 @@ html.macos-app .site-header > div {
   align-items: center;
   gap: 0.325rem;
   padding: 0.32rem 0.65rem;
-  border-radius: 2px;
+  border-radius: 6px;
   font-size: 0.6875rem;
   font-weight: 500;
   white-space: nowrap;
@@ -563,7 +563,7 @@ html.macos-app .site-header > div {
   overflow-y: hidden;
   max-inline-size: 100%;
   border: 1px solid var(--border-subtle);
-  border-radius: 3px;
+  border-radius: 9px;
   background-color: var(--bg-surface);
 }
 main table {
@@ -593,7 +593,7 @@ dialog.field-dialog {
   margin: auto;
   padding: 0;
   border: 1px solid var(--border-medium);
-  border-radius: 4px;
+  border-radius: 14px;
   background-color: var(--bg-surface);
   color: var(--text-primary);
   inline-size: min(44rem, calc(100dvw - 1.5rem));
@@ -623,22 +623,22 @@ dialog.field-dialog::backdrop {
 .tint-panel {
   background-color: var(--bg-subtle);
   border: 1px solid var(--border-subtle);
-  border-radius: 3px;
+  border-radius: 9px;
 }
 .tint-moss-panel {
   background-color: var(--moss-soft);
   border: 1px solid var(--moss-border);
-  border-radius: 3px;
+  border-radius: 9px;
 }
 .tint-accent-panel {
   background-color: var(--accent-soft);
   border: 1px solid var(--accent-border);
-  border-radius: 3px;
+  border-radius: 9px;
 }
 .tint-ochre-panel {
   background-color: var(--ochre-soft);
   border: 1px solid var(--ochre-border);
-  border-radius: 3px;
+  border-radius: 9px;
 }
 
 /* Unify Tailwind Utility Shades Across Field Paper & Carbon Themes */
@@ -775,7 +775,7 @@ html.dark .text-emerald-300 {
 }
 .garmin-seg {
   height: 100%;
-  border-radius: 2px;
+  border-radius: 9999px;
   opacity: 0.28;
   transition: opacity 220ms ease;
 }
@@ -834,14 +834,14 @@ html.dark .text-emerald-300 {
   height: 6px;
   width: 100%;
   background-color: var(--bg-surface-elevated);
-  border-radius: 2px;
+  border-radius: 9999px;
   overflow: hidden;
   display: flex;
   gap: 1px;
 }
 /* Dolgu çubuğunun ucunda beyaz nokta (pin) göstermek için taşmaya izin verir; dolgu kendi köşelerini yuvarlar */
 .garmin-fill-track--pin { overflow: visible; }
-.garmin-fill-track--pin > [class*="seg-"] { border-radius: 2px; }
+.garmin-fill-track--pin > [class*="seg-"] { border-radius: 9999px; }
 .garmin-focus-mini {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -885,7 +885,7 @@ html.dark .text-emerald-300 {
 .hrv-7d-bar {
   width: 100%;
   min-height: 3px;
-  border-radius: 2px 2px 1px 1px;
+  border-radius: 4px 4px 2px 2px;
   transition: height 180ms ease;
 }
 .hrv-7d-lbl {

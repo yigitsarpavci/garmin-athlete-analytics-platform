@@ -383,7 +383,7 @@ function appendMessageUI(sender, text, meta = null) {
   const c = document.getElementById('chatMessagesContainer');
   const div = document.createElement('div');
   if (sender === 'user') {
-    div.className = "accent-bg chat-message-bubble p-3 rounded-[3px] self-end ml-6";
+    div.className = "accent-bg chat-message-bubble p-3 rounded-lg self-end ml-6";
     div.textContent = text;
   } else {
     div.className = "surface-card chat-message-bubble p-3.5 mr-2 space-y-2";

@@ -471,26 +471,26 @@ function _renderStreakDayCell(lbl, items, iso, todayIso, showLabel = true) {
     : '';
   if (items.length > 1) {
     const tip = items.map(i => i.title).join(' · ').replace(/"/g, '&quot;');
-    return `<div class="flex flex-col items-center">${mkLbl('text-[#C9D3CC]')}<span title="${tip}" class="w-7 h-7 rounded-[2px] bg-[rgba(201,211,204,0.12)] text-[#E3EAE5] border border-[rgba(201,211,204,0.4)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
+    return `<div class="flex flex-col items-center">${mkLbl('text-[#C9D3CC]')}<span title="${tip}" class="w-7 h-7 rounded-md bg-[rgba(201,211,204,0.12)] text-[#E3EAE5] border border-[rgba(201,211,204,0.4)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
   }
   if (items.length === 1) {
     const info = items[0];
     if (info.isRun && info.runLogo) {
-      return `<div class="flex flex-col items-center">${mkLbl(info.runLogo.lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${info.runLogo.boxCls} flex items-center justify-center">${info.runLogo.svg}</span></div>`;
+      return `<div class="flex flex-col items-center">${mkLbl(info.runLogo.lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-md ${info.runLogo.boxCls} flex items-center justify-center">${info.runLogo.svg}</span></div>`;
     }
     if (info.isGym && info.gymLogo) {
-      return `<div class="flex flex-col items-center">${mkLbl(info.gymLogo.lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${info.gymLogo.boxCls} flex items-center justify-center">${info.gymLogo.svg}</span></div>`;
+      return `<div class="flex flex-col items-center">${mkLbl(info.gymLogo.lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-md ${info.gymLogo.boxCls} flex items-center justify-center">${info.gymLogo.svg}</span></div>`;
     }
     const lblCls = info.isGym ? 'text-[#D98FB5]' : 'text-[#C9D3CC]';
     const boxCls = info.isGym
       ? 'bg-[rgba(217,143,181,0.16)] text-[#D98FB5] border border-[rgba(217,143,181,0.45)]'
       : 'bg-[rgba(201,211,204,0.12)] text-[#E3EAE5] border border-[rgba(201,211,204,0.4)]';
-    return `<div class="flex flex-col items-center">${mkLbl(lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
+    return `<div class="flex flex-col items-center">${mkLbl(lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-md ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
   }
   if (iso < todayIso) {
-    return `<div class="flex flex-col items-center">${mkLbl('text-[#6BA7D6]')}<span title="Dinlenme Günü" class="w-7 h-7 rounded-[2px] bg-[rgba(75,142,194,0.14)] text-[#6BA7D6] border border-[rgba(75,142,194,0.35)] flex items-center justify-center">${lucideSvg('bed', 'w-3.5 h-3.5')}</span></div>`;
+    return `<div class="flex flex-col items-center">${mkLbl('text-[#6BA7D6]')}<span title="Dinlenme Günü" class="w-7 h-7 rounded-md bg-[rgba(75,142,194,0.14)] text-[#6BA7D6] border border-[rgba(75,142,194,0.35)] flex items-center justify-center">${lucideSvg('bed', 'w-3.5 h-3.5')}</span></div>`;
   }
-  return `<div class="flex flex-col items-center">${mkLbl('text-[var(--text-muted)]')}<span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
+  return `<div class="flex flex-col items-center">${mkLbl('text-[var(--text-muted)]')}<span class="w-7 h-7 rounded-md bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
 }
 
 function renderWeeklyStreak(activities) {

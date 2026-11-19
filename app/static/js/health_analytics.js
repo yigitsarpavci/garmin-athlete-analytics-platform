@@ -85,9 +85,9 @@ function renderCorrelations(corrs) {
           <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(c.insight)}</p>
         </div>
         <div class="w-48 shrink-0 text-right" title="${escapeHtml(`${c.strength || ''} ${c.direction || ''} · n=${c.n ?? '--'} · p ${c.p || ''}`)}">
-          <div class="relative h-2 bg-[var(--bg-surface-elevated)] rounded-[1px]">
+          <div class="relative h-2 bg-[var(--bg-surface-elevated)] rounded-full">
             <span class="absolute top-[-2px] bottom-[-2px] w-px bg-[var(--border-medium)]" style="left:50%"></span>
-            <span class="absolute top-0 bottom-0 rounded-[1px]" style="${fill};background:${col}"></span>
+            <span class="absolute top-0 bottom-0 rounded-full" style="${fill};background:${col}"></span>
           </div>
           <span class="font-mono text-[11px] tabular-nums" style="color:${col}">r ${rTxt}</span>
           <span class="font-mono text-[11px] text-[var(--text-muted)]"> · ${escapeHtml(c.strength || '')}</span>
