@@ -24,7 +24,6 @@ try:
         save_logged_gym_session,
         save_program_state,
         inject_split_derived_lifts,
-        select_program_split,
     )
 except ImportError:
     from app.athlete_principles import build_athlete_principles
@@ -39,7 +38,6 @@ except ImportError:
         save_logged_gym_session,
         save_program_state,
         inject_split_derived_lifts,
-        select_program_split,
     )
 
 
@@ -185,9 +183,9 @@ class WorkoutProtocolsMixin:
             reference_date=ref_date,
         )
 
-        # Program, plato analizine göre otomatik seçilir (kullanıcı seçimi yok).
-        # Okuma yolu diske yazmaz; kalıcı kayıt yalnızca veri değiştiğinde persist_program_state() ile yapılır.
-        auto_split = select_program_split(int((adaptive["plateau_analysis"] or {}).get("plateau_score", 0)))
+        # Kuvvet programı sabit: haftada 2 gün Workout A / Workout B (5x5 doğrusal). Plato analizi yalnızca ÖNERİ üretir
+        # (plateau_analysis.recommended_split); programı kendiliğinden Push/Pull, Upper/Lower veya PPL'e çevirmez.
+        auto_split = "5x5_linear"
         program_state = {
             **program_state,
             "active_split": auto_split,
