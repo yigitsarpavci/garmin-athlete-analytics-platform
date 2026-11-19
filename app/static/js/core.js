@@ -195,7 +195,6 @@ function setSubTab(group, paneKey, persist = true) {
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
   if (persist) saveActiveSubTab(group, paneKey);
-  if (group === 'health' && paneKey === 'trends' && typeof renderCharts === 'function') renderCharts();
 }
 
 /* Boş / hatalı durumlar için kullanıcıya ne yapacağını söyleyen şerit */
