@@ -210,7 +210,6 @@ function getProtocolTabLabel(p) {
 
 function renderDailyProtocols(protocols) {
   const container = document.getElementById('dailyProtocolsContainer');
-  const tabsEl = document.getElementById('protocolDayTabs');
   if (!container || !protocols || !Array.isArray(protocols) || !protocols.length) return;
   cachedDailyProtocols = protocols;
 
@@ -234,27 +233,30 @@ function renderDailyProtocols(protocols) {
   if (!sortedIndices.includes(activeIdx)) activeIdx = sortedIndices[0] ?? 0;
   selectedProtocolMode = activeIdx;
 
-  if (tabsEl) {
-    const activeCls = 'subtab-btn subtab-btn-active';
-    const idleCls = 'subtab-btn';
-    tabsEl.innerHTML = `<div class="subtab-bar">${sortedIndices.map((idx) => {
-      const p = protocols[idx];
-      return `<button type="button" data-calls="[[&quot;selectProtocolDay&quot;, ${idx}]]" class="${activeIdx === idx ? activeCls : idleCls}">${escapeHtml(getProtocolTabLabel(p))}</button>`;
-    }).join('')}</div>`;
-  }
+  const activeCls = 'subtab-btn subtab-btn-active';
+  const idleCls = 'subtab-btn';
+  const tabsHtml = `<div class="subtab-bar normal-case tracking-normal">${sortedIndices.map((idx) => {
+    const item = protocols[idx];
+    return `<button type="button" data-calls="[[&quot;selectProtocolDay&quot;, ${idx}]]" class="${activeIdx === idx ? activeCls : idleCls}">${escapeHtml(getProtocolTabLabel(item))}</button>`;
+  }).join('')}</div>`;
 
   const p = protocols[activeIdx];
   let exerciseHtml = '';
   if (p.category === 'gym') {
     exerciseHtml = `
-<div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region mt-1">
+<div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region">
   <table class="w-full text-left text-[11px]">
     <thead>
       <tr>
         <th class="py-1 px-1.5">#</th>
         <th class="py-1 px-1.5">Egzersiz</th>
         <th class="py-1 px-1.5">Set x Tekrar</th>
-        <th class="py-1 px-1.5">Mevcut &amp; Hedef Ağırlık</th>
+        <th class="py-1 px-1.5">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span>Mevcut &amp; Hedef Ağırlık</span>
+            ${tabsHtml}
+          </div>
+        </th>
       </tr>
     </thead>
     <tbody class="divide-y divide-[var(--border-subtle)]">
