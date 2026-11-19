@@ -630,3 +630,20 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestHrvBaselineFromGarmin(unittest.TestCase):
+    """HRV dengeli aralığı sabit değil: Garmin'in hrvSummary.baseline değerinden, yoksa kişisel çeyreklikten gelir."""
+
+    def test_garmin_baseline_preferred_and_none_without_data(self):
+        eng = GarminAthleteEngine.__new__(GarminAthleteEngine)
+        eng.hrv_5min_raw = {
+            "2026-01-01": {"hrvSummary": {"baseline": {"balancedLow": 40, "balancedUpper": 70}}},
+            "2026-01-02": {"hrvSummary": {}},
+        }
+        eng.get_personal_baseline = lambda col, **k: {"reliable": False}
+        self.assertEqual(eng.get_hrv_baseline(), {"low": 40.0, "high": 70.0, "source": "garmin"})
+        eng.hrv_5min_raw = {}
+        self.assertIsNone(eng.get_hrv_baseline())
+        eng.get_personal_baseline = lambda col, **k: {"reliable": True, "p25": 31.0, "p75": 49.0}
+        self.assertEqual(eng.get_hrv_baseline(), {"low": 31.0, "high": 49.0, "source": "personal"})

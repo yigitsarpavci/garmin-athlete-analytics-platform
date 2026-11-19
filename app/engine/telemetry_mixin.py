@@ -57,12 +57,15 @@ class TelemetryMixin:
         def _fmt(v, dec=1, suffix=""):
             return f"{v:.{dec}f}{suffix}".replace(".", ",") if v is not None and not np.isnan(v) else "--"
 
+        hrv_bl = self.get_hrv_baseline()
+        hrv_id_lo, hrv_id_hi = (hrv_bl["low"], hrv_bl["high"]) if hrv_bl else (None, None)
+        hrv_ref_txt = f"{hrv_id_lo:.0f} – {hrv_id_hi:.0f} ms" if hrv_bl else "--"
         specs = [
             ("Günlük Adım Sayısı", "steps", 0, "", "8.000 – 12.000", "Günlük fiziksel hareket hacmi", 8000.0, 12000.0, "higher_better"),
             ("Günlük Mesafe", "dist_km", 2, " km", "7,0 – 12,0 km", "Koşu, yürüyüş ve diğer branş toplamı", 7.0, 12.0, "higher_better"),
             ("Günlük Harcama", "total_kcal", 0, " kcal", "2.800 – 3.200", "Bazal + aktif toplam enerji tüketimi", 2800.0, 3200.0, "range"),
             ("Dinlenik Nabız (RHR)", "rhr", 1, " bpm", "48 – 56 bpm", "Düşük RHR güçlü kardiyak rezervi gösterir", 48.0, 56.0, "lower_better"),
-            ("Gece HRV", "hrv_night", 1, " ms", "37 – 58 ms", "Parasempatik otonom denge göstergesi", 37.0, 58.0, "higher_better"),
+            ("Gece HRV", "hrv_night", 1, " ms", hrv_ref_txt, "Parasempatik otonom denge göstergesi", hrv_id_lo, hrv_id_hi, "higher_better"),
             ("Günlük Ort. Stres", "avg_stress", 1, "", "25 – 35", "Gün içi sempatik yük puanı", 25.0, 35.0, "lower_better"),
             ("Sabah Body Battery", "bb_wake", 1, "", "75 – 100", "Gece uykusundan sonraki başlangıç rezervi", 75.0, 100.0, "higher_better"),
             ("Akşam Dip Enerji", "bb_low", 1, "", "15 – 30", "Gün sonu rezerv dibi", 15.0, 30.0, "range"),
@@ -93,6 +96,9 @@ class TelemetryMixin:
             min_v = float(ser.min())
             max_v = float(ser.max())
             extra_note = note
+            if id_lo is None or id_hi is None:  # Garmin baseline'ı yok: sporcunun kendi çeyrekleri
+                id_lo, id_hi = float(ser.quantile(0.25)), float(ser.quantile(0.75))
+                ref_rng = f"{id_lo:.0f} – {id_hi:.0f}{sfx}"
             if col == "steps" and "step_goal" in self.df.columns:
                 goals = pd.to_numeric(self.df["step_goal"], errors="coerce").fillna(10000)
                 steps_num = pd.to_numeric(self.df["steps"], errors="coerce").fillna(0)
@@ -249,8 +255,9 @@ class TelemetryMixin:
             "rhr": rhr_mean,
             "overnight_hrv": hrv_night,
             "hrv_7d": hrv_7d,
-            "hrv_baseline_low": 37.0,
-            "hrv_baseline_high": 58.0,
+            "hrv_baseline_low": (self.get_hrv_baseline() or {}).get("low"),
+            "hrv_baseline_high": (self.get_hrv_baseline() or {}).get("high"),
+            "hrv_baseline_source": (self.get_hrv_baseline() or {}).get("source"),
             "hrv_status": hrv_status,
             "hrv_7d_series": hrv_7d_series,
             "sleep_score": sleep_score,

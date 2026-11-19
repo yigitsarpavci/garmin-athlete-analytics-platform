@@ -452,7 +452,7 @@ class WeeklyQuotaMixin:
             )
         else:
             adaptation_note = (
-                f"Geçen hafta ({prev_range}) 2 Koşu + 2 Kuvvet tam tamamlandı; bu hafta dengeli rota ile devam ediyor."
+                f"Geçen hafta ({prev_range}) {run_target} Koşu + {gym_target} Kuvvet tam tamamlandı; bu hafta dengeli rota ile devam ediyor."
             )
 
         return {

@@ -95,11 +95,12 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   };
   setText('firstScreenDateBadge', `Son Güncelleme: ${formatTrDateShort(data.date)}${data.is_partial_day ? ' · Bugün' : ''}`);
 
-  // 01. HRV (Kişisel Baseline 37-58 ms'ye Göre Son Gün Gauge Barı)
+  // 01. HRV (Garmin kişisel baseline aralığına göre son gün gauge barı)
   const hrvVal = Number(data.overnight_hrv ?? 43);
   const hrvBase = Number(data.hrv_7d ?? 46) || 46;
-  const hrvLow = Number(data.hrv_baseline_low ?? 37);
-  const hrvHigh = Number(data.hrv_baseline_high ?? 58);
+  const hrvHasBase = data.hrv_baseline_low != null && data.hrv_baseline_high != null;
+  const hrvLow = hrvHasBase ? Number(data.hrv_baseline_low) : Math.round(hrvBase * 0.8);
+  const hrvHigh = hrvHasBase ? Number(data.hrv_baseline_high) : Math.round(hrvBase * 1.25);
   const hrvStLower = String(data.hrv_status || '').toLowerCase();
   const hrvAvgColor = (hrvStLower.includes('zayıf') || hrvStLower.includes('poor') || hrvBase < hrvLow - 6)
     ? '#C96A5B'
@@ -107,7 +108,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   setText('fs-hrv-val', `${data.overnight_hrv !== undefined ? Math.round(data.overnight_hrv) : '--'} ms`);
   const hrvSubEl = document.getElementById('fs-hrv-sub');
   if (hrvSubEl) {
-    hrvSubEl.innerHTML = `<span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:${hrvAvgColor};display:inline-block" aria-hidden="true"></span><span>7G Ort: <strong style="color:${hrvAvgColor}">${escapeHtml(String(data.hrv_7d ?? '--'))} ms</strong></span></span> · Baz: ${hrvLow}–${hrvHigh} · RHR: ${escapeHtml(String(data.resting_hr ?? '--'))}`;
+    hrvSubEl.innerHTML = `<span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:${hrvAvgColor};display:inline-block" aria-hidden="true"></span><span>7G Ort: <strong style="color:${hrvAvgColor}">${escapeHtml(String(data.hrv_7d ?? '--'))} ms</strong></span></span> ${hrvHasBase ? ` · Baz: ${hrvLow}–${hrvHigh}` : ''} · RHR: ${escapeHtml(String(data.resting_hr ?? '--'))}`;
   }
   const hrvSegs = [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }];
   const hrvThresholds = [Math.max(15, hrvLow - 16), Math.max(20, hrvLow - 7), hrvLow, hrvHigh, hrvHigh + 10];

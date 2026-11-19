@@ -243,6 +243,22 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
             "n": n, "reliable": n >= min_points,
         }
 
+    def get_hrv_baseline(self) -> Optional[Dict[str, Any]]:
+        """
+        Gece HRV "dengeli" aralığı. Öncelik Garmin'in kendi hesabı (hrv-service baseline.balancedLow/balancedUpper, en yeni gün);
+        yoksa sporcunun kendi 28 günlük çeyreklikleri (p25–p75). Hiçbiri yoksa None (sabit değer döndürülmez).
+        """
+        raw = getattr(self, "hrv_5min_raw", None) or {}
+        for day in sorted(raw, reverse=True):
+            base = ((raw.get(day) or {}).get("hrvSummary") or {}).get("baseline") or {}
+            lo, hi = base.get("balancedLow"), base.get("balancedUpper")
+            if lo is not None and hi is not None and float(hi) > float(lo) > 0:
+                return {"low": float(lo), "high": float(hi), "source": "garmin"}
+        pb = self.get_personal_baseline("hrv_night")
+        if pb.get("reliable") and pb["p75"] > pb["p25"]:
+            return {"low": round(pb["p25"], 1), "high": round(pb["p75"], 1), "source": "personal"}
+        return None
+
     def get_physiology(self) -> Dict[str, Any]:
         """
         Sporcunun fizyolojik eşiklerini Garmin verisinden türetir (kişisel sabit yok):
