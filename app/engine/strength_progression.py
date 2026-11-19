@@ -9,7 +9,7 @@ Plato Tabanlı Program Evrimi (5x5 -> Push/Pull -> Upper/Lower -> PPL) Motoru.
 from __future__ import annotations
 
 import json
-import math
+import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 # Egzersiz biyomekanik ve standart profilleri
 # (key, display_label, match_name, target_sets, target_reps, step_kg, rep_suffix,
-#  fallback_max_kg, fallback_next_kg, bw_standards: (novice, intermediate, advanced))
+#  bw_standards: (novice, intermediate, advanced) vücut ağırlığı oranları; başlangıç yükü bundan türetilir)
 LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
     "squat": {
         "label": "Back Squat",
@@ -28,8 +28,6 @@ LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
         "step_kg": 2.5,
         "rep_suffix": "x 5 reps x 5 set",
         "short_rep": "5x5",
-        "fallback_max": 65.0,
-        "fallback_next": 67.5,
         "bw_standards": (1.00, 1.35, 1.75),
         "is_compound": True,
     },
@@ -42,8 +40,6 @@ LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
         "step_kg": 2.5,
         "rep_suffix": "x 5 reps x 5 set",
         "short_rep": "5x5",
-        "fallback_max": 50.0,
-        "fallback_next": 52.5,
         "bw_standards": (0.75, 1.05, 1.40),
         "is_compound": True,
     },
@@ -56,8 +52,6 @@ LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
         "step_kg": 2.5,
         "rep_suffix": "x 5 reps x 5 set",
         "short_rep": "5x5",
-        "fallback_max": 60.0,
-        "fallback_next": 62.5,
         "bw_standards": (0.70, 0.95, 1.25),
         "is_compound": True,
     },
@@ -70,8 +64,6 @@ LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
         "step_kg": 2.5,
         "rep_suffix": "x 5 reps x 5 set",
         "short_rep": "5x5",
-        "fallback_max": 40.0,
-        "fallback_next": 40.0,
         "bw_standards": (0.45, 0.65, 0.90),
         "is_compound": True,
     },
@@ -84,8 +76,6 @@ LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
         "step_kg": 5.0,
         "rep_suffix": "x 5 reps (1 ana set)",
         "short_rep": "1x5",
-        "fallback_max": 60.0,
-        "fallback_next": 65.0,
         "bw_standards": (1.25, 1.65, 2.15),
         "is_compound": True,
     },
@@ -98,8 +88,6 @@ LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
         "step_kg": 2.5,
         "rep_suffix": "x 12 reps x 4 set",
         "short_rep": "4x12",
-        "fallback_max": 45.0,
-        "fallback_next": 45.0,
         "bw_standards": (0.55, 0.80, 1.05),
         "is_compound": False,
     },
@@ -112,8 +100,6 @@ LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
         "step_kg": 2.5,
         "rep_suffix": "x 12 reps x 3 set",
         "short_rep": "3x12",
-        "fallback_max": 25.0,
-        "fallback_next": 25.0,
         "bw_standards": (0.20, 0.30, 0.40),
         "is_compound": False,
     },
@@ -126,12 +112,18 @@ LIFT_PROFILES: Dict[str, Dict[str, Any]] = {
         "step_kg": 2.5,
         "rep_suffix": "x 12 reps x 3 set",
         "short_rep": "3x12",
-        "fallback_max": 45.0,
-        "fallback_next": 47.5,
         "bw_standards": (0.50, 0.70, 0.95),
         "is_compound": False,
     },
 }
+
+# Dambıl izolasyonunda +2.5 kg büyük bir göreli artış: 2 temiz seans sonrası yükselt (çift progresyon)
+logger = logging.getLogger(__name__)
+
+
+DOUBLE_PROGRESSION_LIFTS = {"lateral_raise"}
+# Deadlift e1RM / vücut ağırlığı bu oranı geçince artış +5 kg'dan +2.5 kg'a iner
+DEADLIFT_SMALL_JUMP_BW_RATIO = 1.30
 
 PROGRAM_SPLIT_CATALOG: Dict[str, Dict[str, Any]] = {
     "5x5_linear": {
@@ -178,6 +170,19 @@ def round_to_plate(weight_kg: float, step: float = 2.5) -> float:
     if weight_kg <= 0:
         return 0.0
     return round(round(weight_kg / step) * step, 1)
+
+
+def default_start_kg(spec: Dict[str, Any], bodyweight_kg: float = 75.0) -> Tuple[float, float]:
+    """
+    Henüz kayıtlı seti olmayan bir hareket için başlangıç (mevcut, sonraki) yükünü sporcunun vücut ağırlığından türetir:
+    'başlangıç' standart oranının yarısı kadar (ör. Squat 0.5x VA). Kişisel sabit kilo içermez.
+    Garmin'den gelen dinamik hareketler kendi fallback değerlerini taşır.
+    """
+    if spec.get("is_dynamic"):
+        return float(spec["fallback_max"]), float(spec["fallback_next"])
+    step = float(spec["step_kg"])
+    cur = max(step, round_to_plate(spec["bw_standards"][0] * 0.5 * bodyweight_kg, 2.5))
+    return cur, round_to_plate(cur + step, 2.5)
 
 
 def compute_e1rm(weight_kg: float, reps: int) -> float:
@@ -293,6 +298,14 @@ def evaluate_session_lift(
     }
 
 
+def _write_json_atomic(path: str, payload: Any) -> None:
+    """JSON'u geçici dosyaya yazıp os.replace ile atomik olarak yerine koyar."""
+    tmp_path = f"{path}.{os.getpid()}.tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, path)
+
+
 def load_logged_gym_sessions(data_dir: str) -> List[Dict[str, Any]]:
     """Kullanıcının uygulama üzerinden girdiği tamamlanmış/başarısız kuvvet seanslarını yükler."""
     path = os.path.join(data_dir, "logged_gym_sessions.json")
@@ -302,7 +315,8 @@ def load_logged_gym_sessions(data_dir: str) -> List[Dict[str, Any]]:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, list) else []
-    except Exception:
+    except (OSError, ValueError):
+        logger.warning("load_logged_gym_sessions: yedek davranış uygulandı", exc_info=True)
         return []
 
 
@@ -311,9 +325,7 @@ def save_logged_gym_session(data_dir: str, entry: Dict[str, Any]) -> List[Dict[s
     sessions = load_logged_gym_sessions(data_dir)
     sessions.append(entry)
     os.makedirs(data_dir, exist_ok=True)
-    path = os.path.join(data_dir, "logged_gym_sessions.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(sessions, f, ensure_ascii=False, indent=2)
+    _write_json_atomic(os.path.join(data_dir, "logged_gym_sessions.json"), sessions)
     return sessions
 
 
@@ -326,8 +338,7 @@ def reset_logged_gym_sessions(data_dir: str, mode: str = "last") -> List[Dict[st
     elif sessions:
         sessions.pop()
     os.makedirs(data_dir, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(sessions, f, ensure_ascii=False, indent=2)
+    _write_json_atomic(path, sessions)
     return sessions
 
 
@@ -347,8 +358,8 @@ def load_program_state(data_dir: str) -> Dict[str, Any]:
             data = json.load(f)
         if isinstance(data, dict) and data.get("active_split") in PROGRAM_SPLIT_CATALOG:
             return {**default, **data}
-    except Exception:
-        pass
+    except (OSError, ValueError):
+        logger.warning("load_program_state: yedek davranış uygulandı", exc_info=True)
     return default
 
 
@@ -372,9 +383,7 @@ def save_program_state(data_dir: str, new_split: str, reason: str = "", source: 
     state["active_split"] = new_split
     state["updated_at"] = now_iso
     os.makedirs(data_dir, exist_ok=True)
-    path = os.path.join(data_dir, "training_program_state.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    _write_json_atomic(os.path.join(data_dir, "training_program_state.json"), state)
     return state
 
 
@@ -445,7 +454,7 @@ def select_program_split(plateau_score: int) -> str:
 
 def compute_adaptive_progression(
     chrono_sessions: List[Dict[str, Any]],
-    bodyweight_kg: float = 87.0,
+    bodyweight_kg: float = 75.0,
     readiness_ctx: Optional[Dict[str, Any]] = None,
     reference_date: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -469,7 +478,8 @@ def compute_adaptive_progression(
     if reference_date:
         try:
             ref_dt = datetime.strptime(reference_date[:10], "%Y-%m-%d")
-        except Exception:
+        except (ValueError, TypeError):
+            logger.debug("compute_adaptive_progression: yedek davranış uygulandı", exc_info=True)
             ref_dt = None
 
     progression: Dict[str, Any] = {}
@@ -482,78 +492,73 @@ def compute_adaptive_progression(
     profiles: Dict[str, Dict[str, Any]] = dict(LIFT_PROFILES)
     profiles.update(build_dynamic_profiles(chrono_sessions))
 
+    total_deloads, total_stalls = _evaluate_all_lifts(bodyweight_kg, chrono_sessions, compound_e1rm_slopes, compound_ratios, profiles, progression, readiness_note, readiness_penalty, ref_dt, stall_summary, total_deloads, total_stalls)
+
+    # Plato & Program Evrimi Skoru (0 - 100)
+    plateau_score = _compute_plateau_score(
+        progression=progression,
+        total_deloads=total_deloads,
+        total_stalls=total_stalls,
+        compound_e1rm_slopes=compound_e1rm_slopes,
+        compound_ratios=compound_ratios,
+        acwr=acwr,
+        hrv_ratio=hrv_ratio,
+        profiles=profiles,
+    )
+
+    return {
+        "progression": progression,
+        "plateau_analysis": plateau_score,
+        "readiness_note": readiness_note,
+        "stall_summary": stall_summary,
+    }
+
+def _evaluate_all_lifts(bodyweight_kg, chrono_sessions, compound_e1rm_slopes, compound_ratios, profiles, progression, readiness_note, readiness_penalty, ref_dt, stall_summary, total_deloads, total_stalls):
+    """Tüm hareketleri (çekirdek + dinamik) değerlendirip progresyon kartlarını, takılma/deload sayaçlarını ve bileşik e1RM istatistiklerini üretir."""
     for key, spec in profiles.items():
         match_name = spec["match_name"]
         step_kg = spec["step_kg"]
         rep_suffix = spec["rep_suffix"]
-        lift_records: List[Dict[str, Any]] = []
-
-        for sess in chrono_sessions:
-            for ex in sess.get("exercises", []):
-                if ex.get("name") == match_name:
-                    eval_res = evaluate_session_lift(key, ex.get("sets", []), spec)
-                    if eval_res.get("has_data"):
-                        lift_records.append({
-                            "date": sess.get("date", ""),
-                            "workout_type": sess.get("workout_type", ""),
-                            **eval_res,
-                        })
+        lift_records = _collect_lift_records(chrono_sessions, key, match_name, spec)
 
         if not lift_records:
+            fb_max, fb_next = default_start_kg(spec, bodyweight_kg)
             progression[key] = {
                 "is_core": key in LIFT_PROFILES,
                 "name": spec["label"],
                 "history": [],
                 "delta": "Veri Bekleniyor",
-                "max_kg": spec["fallback_max"],
-                "effective_kg": spec["fallback_max"],
-                "e1rm_kg": compute_e1rm(spec["fallback_max"], spec["target_reps"]),
+                "max_kg": fb_max,
+                "effective_kg": fb_max,
+                "e1rm_kg": compute_e1rm(fb_max, spec["target_reps"]),
                 "e1rm_slope": 0.0,
-                "bw_ratio": round(compute_e1rm(spec["fallback_max"], spec["target_reps"]) / max(40.0, bodyweight_kg), 2),
+                "bw_ratio": round(compute_e1rm(fb_max, spec["target_reps"]) / max(40.0, bodyweight_kg), 2),
                 "last_date": "-",
                 "last_outcome": "UNKNOWN",
                 "consecutive_stalls": 0,
                 "deload_count": 0,
                 "decision": "BASELINE",
                 "decision_reason": "Henüz kayıtlı set yok; başlangıç hedefi atandı.",
-                "next_kg": spec["fallback_next"],
-                "next_target": f"{spec['fallback_next']:.1f} kg {rep_suffix}",
+                "next_kg": fb_next,
+                "next_target": f"{fb_next:.1f} kg {rep_suffix}",
                 "projected_weights": [
-                    spec["fallback_next"],
-                    round_to_plate(spec["fallback_next"] + step_kg, step_kg),
-                    round_to_plate(spec["fallback_next"] + 2 * step_kg, step_kg),
+                    fb_next,
+                    round_to_plate(fb_next + step_kg, step_kg),
+                    round_to_plate(fb_next + 2 * step_kg, step_kg),
                 ],
             }
             continue
 
-        # Kronolojik ilerleyişten takılma & deload sayacı çıkar
-        consec_stalls = 0
-        deloads = 0
-        prev_top = 0.0
-        prev_eff = 0.0
-        for rec in lift_records:
-            oc = rec["outcome"]
-            tw = rec["top_weight_kg"]
-            ew = rec["effective_weight_kg"]
-            if oc in ("PARTIAL_STALL", "FAILED"):
-                # Eğer bir önceki seansa göre hem pik hem efektif ağırlık arttıysa bu yeni ağırlıkta ilk denemedir (takılma sıfırlanır -> 1)
-                if prev_top > 0 and (tw > prev_top + 0.5 or ew > prev_eff + 0.5):
-                    consec_stalls = 1
-                elif tw >= prev_top - 0.5:
-                    consec_stalls += 1
-                else:
-                    consec_stalls = 1
-                if consec_stalls >= 2 and spec["is_compound"]:
-                    deloads += 1
-            else:
-                consec_stalls = 0
-            if prev_top > 0 and tw < prev_top * 0.90:
-                deloads += 1
-            prev_top = tw
-            prev_eff = ew
+        consec_stalls, deloads = _count_stalls_and_deloads(lift_records, spec)
 
         latest = lift_records[-1]
         first = lift_records[0]
+        clean_streak = 0
+        for rec in reversed(lift_records):
+            if rec["outcome"].startswith("PASSED") and abs(rec["top_weight_kg"] - latest["top_weight_kg"]) <= 0.1:
+                clean_streak += 1
+            else:
+                break
         last_w = latest["top_weight_kg"]
         eff_w = latest["effective_weight_kg"]
         last_outcome = latest["outcome"]
@@ -568,70 +573,13 @@ def compute_adaptive_progression(
             try:
                 l_dt = datetime.strptime(latest["date"][:10], "%Y-%m-%d")
                 days_gap = max(0, (ref_dt - l_dt).days)
-            except Exception:
+            except (ValueError, TypeError):
+                logger.debug("compute_adaptive_progression: yedek davranış uygulandı", exc_info=True)
                 days_gap = 0
 
-        # Bir sonraki seans ağırlık kararı
-        decision = "PROGRESS"
-        if days_gap >= 21:
-            next_kg = round_to_plate(last_w * 0.90, step_kg)
-            decision = "DETRAINING_RESET"
-            reason = f"Son seanstan {days_gap} gün geçti; güvenli adaptasyon için %10 hafifletildi."
-        elif last_outcome in ("PARTIAL_STALL", "FAILED"):
-            if consec_stalls >= 2 and (spec["is_compound"] or last_outcome == "FAILED"):
-                next_kg = round_to_plate(last_w * 0.90, step_kg)
-                decision = "DELOAD_10PCT"
-                reason = (
-                    f"{consec_stalls}. ardışık takılma ({last_w:.1f} kg · {latest['reps_pattern']}): "
-                    f"%10 Deload ({next_kg:.1f} kg) ile yorgunluk boşaltılıp yeni ivme kurulacak."
-                )
-            else:
-                next_kg = last_w
-                decision = "CONSOLIDATE"
-                if latest["weight_drop_kg"] > 0.5:
-                    reason = (
-                        f"Son seansta {last_w:.1f} kg ile başlanıp {eff_w:.1f} kg ortalamaya düşüldü; "
-                        f"tüm setler {last_w:.1f} kg'da sabitlenene kadar artış bekletildi."
-                    )
-                else:
-                    reason = (
-                        f"Son seansta tekrar hedefi tam dolmadı ({latest['reps_pattern']}); "
-                        f"{last_w:.1f} kg tekrar denenerek pekiştirilecek."
-                    )
-        elif readiness_penalty and bw_ratio >= spec["bw_standards"][0]:
-            next_kg = last_w
-            decision = "READINESS_HOLD"
-            reason = f"{readiness_note}; mevcut {last_w:.1f} kg korunuyor."
-        else:
-            # Başarılı tamamlama: artış miktarı belirle
-            jump = step_kg
-            # Deadlift < 1.25x BW iken +5 kg; sonrasında +2.5 kg'a geç
-            if key == "deadlift" and bw_ratio >= 1.30:
-                jump = 2.5
-            # Eğer AMRAP / ekstra tekrar varsa ve başlangıç seviyesindeyse büyük artış kontrolü
-            elif last_outcome == "PASSED_AMRAP" and spec["is_compound"] and bw_ratio < spec["bw_standards"][0]:
-                jump = step_kg
-            next_kg = round_to_plate(last_w + jump, 2.5)
-            decision = "PROGRESS"
-            reason = (
-                f"Son seansta {last_w:.1f} kg ({latest['reps_pattern']}) temiz tamamlandı "
-                f"(e1RM {latest_e1rm:.1f} kg); +{jump:.1f} kg progresyon uygulandı."
-            )
+        decision, next_kg, reason = _decide_next_weight(bw_ratio, clean_streak, consec_stalls, days_gap, eff_w, key, last_outcome, last_w, latest, latest_e1rm, readiness_note, readiness_penalty, spec, step_kg)
 
-        # Çok adımlı gelecek seans projeksiyonları [step0, step1, step2, step3]
-        proj_weights = [next_kg]
-        sim_w = next_kg
-        for step_idx in range(1, 5):
-            if key == "lateral_raise":
-                # Lateral raise izolasyon olduğu için 2 seans konsolidasyon sonrası +2.5 kg artar
-                if step_idx % 2 == 0:
-                    sim_w = round_to_plate(sim_w + step_kg, 2.5)
-            elif key == "deadlift":
-                sim_step = 2.5 if (sim_w / max(40.0, bodyweight_kg)) >= 1.15 else 5.0
-                sim_w = round_to_plate(sim_w + sim_step, 2.5)
-            else:
-                sim_w = round_to_plate(sim_w + step_kg, 2.5)
-            proj_weights.append(sim_w)
+        proj_weights = _project_weights(bodyweight_kg, clean_streak, key, last_outcome, last_w, next_kg, spec, step_kg)
 
         diff = round(last_w - first["top_weight_kg"], 1)
         history_strs = [f"{r['top_weight_kg']:.1f} kg ({r['date'][5:]})" for r in lift_records[-5:]]
@@ -641,12 +589,11 @@ def compute_adaptive_progression(
             else f"Stabil {last_w:.1f} kg ({len(lift_records)} seans)"
         )
 
-        if consec_stalls > 0:
-            total_stalls += 1
-            stall_summary.append(f"{spec['label']} ({decision})")
-        total_deloads += deloads
-
         if spec["is_compound"]:
+            if consec_stalls > 0:
+                total_stalls += 1
+                stall_summary.append(f"{spec['label']} ({decision})")
+            total_deloads += deloads
             compound_e1rm_slopes.append(slope)
             compound_ratios[key] = bw_ratio
 
@@ -676,25 +623,138 @@ def compute_adaptive_progression(
             "next_target": f"{next_kg:.1f} kg {rep_suffix}",
             "projected_weights": proj_weights,
         }
+    return total_deloads, total_stalls
 
-    # Plato & Program Evrimi Skoru (0 - 100)
-    plateau_score = _compute_plateau_score(
-        progression=progression,
-        total_deloads=total_deloads,
-        total_stalls=total_stalls,
-        compound_e1rm_slopes=compound_e1rm_slopes,
-        compound_ratios=compound_ratios,
-        acwr=acwr,
-        hrv_ratio=hrv_ratio,
-        profiles=profiles,
-    )
 
-    return {
-        "progression": progression,
-        "plateau_analysis": plateau_score,
-        "readiness_note": readiness_note,
-        "stall_summary": stall_summary,
-    }
+def _collect_lift_records(chrono_sessions, key, match_name, spec):
+    """Bir hareketin tüm seanslardaki değerlendirilmiş kayıtlarını kronolojik toplar."""
+    lift_records: List[Dict[str, Any]] = []
+
+    for sess in chrono_sessions:
+        for ex in sess.get("exercises", []):
+            if ex.get("name") == match_name:
+                eval_res = evaluate_session_lift(key, ex.get("sets", []), spec)
+                if eval_res.get("has_data"):
+                    lift_records.append({
+                        "date": sess.get("date", ""),
+                        "workout_type": sess.get("workout_type", ""),
+                        **eval_res,
+                    })
+    return lift_records
+
+
+def _count_stalls_and_deloads(lift_records, spec):
+    """Kronolojik kayıtlardan ardışık takılma sayısını ve deload sayısını çıkarır."""
+    # Kronolojik ilerleyişten takılma & deload sayacı çıkar
+    consec_stalls = 0
+    deloads = 0
+    deload_prescribed = False  # 2. takılmada reçete edilen deload, ardından gelen ağırlık düşüşüyle tekrar sayılmaz
+    prev_top = 0.0
+    prev_eff = 0.0
+    for rec in lift_records:
+        oc = rec["outcome"]
+        tw = rec["top_weight_kg"]
+        ew = rec["effective_weight_kg"]
+        if oc in ("PARTIAL_STALL", "FAILED"):
+            # Eğer bir önceki seansa göre hem pik hem efektif ağırlık arttıysa bu yeni ağırlıkta ilk denemedir (takılma sıfırlanır -> 1)
+            if prev_top > 0 and (tw > prev_top + 0.5 or ew > prev_eff + 0.5):
+                consec_stalls = 1
+            elif tw >= prev_top - 0.5:
+                consec_stalls += 1
+            else:
+                consec_stalls = 1
+            if consec_stalls == 2 and spec["is_compound"]:
+                deloads += 1
+                deload_prescribed = True
+        else:
+            consec_stalls = 0
+        if prev_top > 0 and tw < prev_top * 0.90:
+            if deload_prescribed:
+                deload_prescribed = False
+            else:
+                deloads += 1
+        prev_top = tw
+        prev_eff = ew
+    return consec_stalls, deloads
+
+
+def _decide_next_weight(bw_ratio, clean_streak, consec_stalls, days_gap, eff_w, key, last_outcome, last_w, latest, latest_e1rm, readiness_note, readiness_penalty, spec, step_kg):
+    """Son seans sonucuna göre bir sonraki seansın ağırlık kararını (artış, pekiştirme, deload, hazırlık beklemesi) verir."""
+    # Bir sonraki seans ağırlık kararı
+    decision = "PROGRESS"
+    if days_gap >= 21:
+        next_kg = round_to_plate(last_w * 0.90, step_kg)
+        decision = "DETRAINING_RESET"
+        reason = f"Son seanstan {days_gap} gün geçti; güvenli adaptasyon için %10 hafifletildi."
+    elif last_outcome in ("PARTIAL_STALL", "FAILED"):
+        if consec_stalls >= 2 and (spec["is_compound"] or last_outcome == "FAILED"):
+            next_kg = round_to_plate(last_w * 0.90, step_kg)
+            decision = "DELOAD_10PCT"
+            reason = (
+                f"{consec_stalls}. ardışık takılma ({last_w:.1f} kg · {latest['reps_pattern']}): "
+                f"%10 Deload ({next_kg:.1f} kg) ile yorgunluk boşaltılıp yeni ivme kurulacak."
+            )
+        else:
+            next_kg = last_w
+            decision = "CONSOLIDATE"
+            if latest["weight_drop_kg"] > 0.5:
+                reason = (
+                    f"Son seansta en yüksek {last_w:.1f} kg çalışıldı (set ortalaması {eff_w:.1f} kg); "
+                    f"tüm setler {last_w:.1f} kg'da sabitlenene kadar artış bekletildi."
+                )
+            else:
+                reason = (
+                    f"Son seansta tekrar hedefi tam dolmadı ({latest['reps_pattern']}); "
+                    f"{last_w:.1f} kg tekrar denenerek pekiştirilecek."
+                )
+    elif readiness_penalty and bw_ratio >= spec["bw_standards"][0]:
+        next_kg = last_w
+        decision = "READINESS_HOLD"
+        reason = f"{readiness_note}; mevcut {last_w:.1f} kg korunuyor."
+    elif key in DOUBLE_PROGRESSION_LIFTS and clean_streak < 2:
+        next_kg = last_w
+        decision = "CONSOLIDATE"
+        reason = (
+            f"{last_w:.1f} kg temiz tamamlandı ({latest['reps_pattern']}); dambıl izolasyonunda +2.5 kg büyük bir sıçrama "
+            f"olduğu için aynı kiloda 2. temiz seans bekleniyor."
+        )
+    else:
+        # Başarılı tamamlama: artış miktarı belirle
+        jump = step_kg
+        # Deadlift: e1RM < 1.30x vücut ağırlığı iken +5 kg; sonrasında +2.5 kg
+        if key == "deadlift" and bw_ratio >= DEADLIFT_SMALL_JUMP_BW_RATIO:
+            jump = 2.5
+        next_kg = round_to_plate(last_w + jump, 2.5)
+        decision = "PROGRESS"
+        reason = (
+            f"Son seansta {last_w:.1f} kg ({latest['reps_pattern']}) temiz tamamlandı "
+            f"(e1RM {latest_e1rm:.1f} kg); +{jump:.1f} kg progresyon uygulandı."
+        )
+    return decision, next_kg, reason
+
+
+def _project_weights(bodyweight_kg, clean_streak, key, last_outcome, last_w, next_kg, spec, step_kg):
+    """Sonraki seanslar için ağırlık projeksiyonunu üretir (her seansın temiz tamamlandığı varsayılır; karar kurallarıyla aynı artış mantığı)."""
+    # Çok adımlı gelecek seans projeksiyonları [step0, step1, step2, step3]
+    # (Her projeksiyon seansının temiz tamamlandığı varsayılır; kararla aynı kurallar uygulanır.)
+    proj_weights = [next_kg]
+    sim_w = next_kg
+    sim_streak = clean_streak if (key in DOUBLE_PROGRESSION_LIFTS and next_kg == last_w and last_outcome.startswith("PASSED")) else 0
+    for step_idx in range(1, 5):
+        if key in DOUBLE_PROGRESSION_LIFTS:
+            sim_streak += 1
+            if sim_streak >= 2:
+                sim_w = round_to_plate(sim_w + step_kg, 2.5)
+                sim_streak = 0
+        elif key == "deadlift":
+            sim_ratio = compute_e1rm(sim_w, spec["target_reps"]) / max(40.0, bodyweight_kg)
+            sim_step = 2.5 if sim_ratio >= DEADLIFT_SMALL_JUMP_BW_RATIO else 5.0
+            sim_w = round_to_plate(sim_w + sim_step, 2.5)
+        else:
+            sim_w = round_to_plate(sim_w + step_kg, 2.5)
+        proj_weights.append(sim_w)
+    return proj_weights
+
 
 
 def _compute_plateau_score(
@@ -765,9 +825,10 @@ def _compute_plateau_score(
             "upper_lower": "İleri Orta Seviye (Upper / Lower Aktif)",
             "ppl": "İleri Seviye (Push / Pull / Legs Aktif)",
         }[recommended_split]
+        split_name = PROGRAM_SPLIT_CATALOG[recommended_split]["short_name"]
         recommendation = (
             "5x5 doğrusal yükleme sınırına yaklaşıldı. Her seans Squat yorgunluğunu azaltmak ve "
-            "üst/alt hacmini artırmak için Push / Pull programına geçiş önerilir."
+            f"üst/alt hacmini artırmak için {split_name} programına geçiş önerilir."
         )
     elif score >= 30:
         recommended_split = "5x5_linear"
@@ -905,14 +966,14 @@ def _template_weight(key: str, derived: Any, progression: Dict[str, Any], idx_of
         base = progression.get(base_key) or {}
         pw = base.get("projected_weights") or []
         i = idx_of(base_key)
-        base_kg = float(pw[i]) if i < len(pw) else float(base.get("next_kg") or LIFT_PROFILES[base_key]["fallback_next"])
+        base_kg = float(pw[i]) if i < len(pw) else float(base.get("next_kg") or default_start_kg(LIFT_PROFILES[base_key])[1])
         return round_to_plate(base_kg * factor, 2.5)
     p = progression.get(key) or {}
     pw = p.get("projected_weights") or []
     i = idx_of(key)
     if i < len(pw):
         return float(pw[i])
-    return float(p.get("next_kg") or LIFT_PROFILES[key]["fallback_next"])
+    return float(p.get("next_kg") or default_start_kg(LIFT_PROFILES[key])[1])
 
 
 def build_split_protocol(slot_kind: str, progression: Dict[str, Any], active_split: str) -> Optional[Dict[str, Any]]:
@@ -960,7 +1021,7 @@ def _build_core_summary(
         pw = p.get("projected_weights") or []
         if idx < len(pw):
             return float(pw[idx])
-        return float(p.get("next_kg") or LIFT_PROFILES[key]["fallback_next"])
+        return float(p.get("next_kg") or default_start_kg(LIFT_PROFILES[key])[1])
 
     tpl_map = SPLIT_SESSION_TEMPLATES.get(active_split)
     if tpl_map:
@@ -1029,7 +1090,8 @@ def build_projected_gym_summary(
             continue
         try:
             gap = (datetime.strptime(newest[:10], "%Y-%m-%d") - datetime.strptime(entry["last_full_date"][:10], "%Y-%m-%d")).days
-        except Exception:
+        except (ValueError, TypeError):
+            logger.debug("build_projected_gym_summary: yedek davranış uygulandı", exc_info=True)
             gap = 0
         if gap > 21:
             continue
@@ -1048,7 +1110,7 @@ def build_projected_gym_summary(
     return p_type, p_title, details
 
 
-def inject_split_derived_lifts(progression: Dict[str, Any], active_split: str) -> None:
+def inject_split_derived_lifts(progression: Dict[str, Any], active_split: str, bodyweight_kg: float = 75.0) -> None:
     """Push/Pull, Upper/Lower veya PPL aktif olduğunda türetilmiş yeni hareketleri (Incline DB, RDL vb.) progresyon kartlarına ekler."""
     tpl_map = SPLIT_SESSION_TEMPLATES.get(active_split)
     if not tpl_map:
@@ -1059,7 +1121,7 @@ def inject_split_derived_lifts(progression: Dict[str, Any], active_split: str) -
                 continue
             base_key, factor = derived
             base = progression.get(base_key) or {}
-            base_next = float(base.get("next_kg") or LIFT_PROFILES.get(base_key, {}).get("fallback_next", 50.0))
+            base_next = float(base.get("next_kg") or default_start_kg(LIFT_PROFILES[base_key])[1] if base_key in LIFT_PROFILES else 20.0)
             kg0 = round_to_plate(base_next * factor, 2.5)
             kg1 = round_to_plate(kg0 + 2.5, 2.5)
             kg2 = round_to_plate(kg1 + 2.5, 2.5)
@@ -1070,7 +1132,7 @@ def inject_split_derived_lifts(progression: Dict[str, Any], active_split: str) -
                 "is_leg": slot_kind in ("lower", "legs"),
                 "short_rep": f"{sets}x{reps}",
                 "slot_hint": tpl["type"],
-                "last_full_date": base.get("last_full_date") or "2026-11-19",
+                "last_full_date": base.get("last_full_date") or datetime.now().strftime("%Y-%m-%d"),
                 "name": long_name,
                 "history": [f"Türetildi: {base.get('name', base_key)} ({base_next:.1f} kg)"],
                 "delta": f"{tpl['type']} Yeni Hareket",
@@ -1078,7 +1140,7 @@ def inject_split_derived_lifts(progression: Dict[str, Any], active_split: str) -
                 "effective_kg": kg0,
                 "e1rm_kg": compute_e1rm(kg0, 10),
                 "e1rm_slope": 0.0,
-                "bw_ratio": round(compute_e1rm(kg0, 10) / 87.0, 2),
+                "bw_ratio": round(compute_e1rm(kg0, 10) / max(40.0, bodyweight_kg), 2),
                 "last_date": "Yeni",
                 "last_outcome": "DERIVED",
                 "consecutive_stalls": 0,
