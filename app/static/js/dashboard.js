@@ -286,7 +286,7 @@ function renderOverview(data) {
   if (data.weekly_quota) renderWeeklyQuotaPanels(data.weekly_quota);
 }
 
-function _renderBranchSummaryInto(containerId, sp, iconName) {
+function _renderBranchSummaryInto(containerId, sp, iconName, opts = {}) {
   const container = document.getElementById(containerId);
   if (!container || !sp) return;
 
@@ -297,7 +297,7 @@ function _renderBranchSummaryInto(containerId, sp, iconName) {
   if (sp.current_status) extraKpis.push({ label: 'Rutin Durumu', val: sp.current_status });
   if (sp.goal) extraKpis.push({ label: 'Branş Hedefi', val: sp.goal });
 
-  const extraGridHtml = extraKpis.length
+  const extraGridHtml = (extraKpis.length && !opts.hideInfoCards)
     ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         ${extraKpis.map(k => `
           <div class="tint-panel p-2.5">
@@ -308,7 +308,7 @@ function _renderBranchSummaryInto(containerId, sp, iconName) {
       </div>`
     : '';
 
-  const tipsHtml = (sp.how_to_improve || []).length
+  const tipsHtml = ((sp.how_to_improve || []).length && !opts.hideInfoCards)
     ? `<div class="text-[11px] text-[var(--text-secondary)] space-y-1 tint-panel p-2.5 leading-snug">
         <p class="font-mono text-[9.5px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-0.5">Öneriler</p>
         ${(sp.how_to_improve || []).map(item => `<p class="flex items-start gap-1.5"><span class="accent-text">·</span><span>${escapeHtml(item)}</span></p>`).join('')}
@@ -376,7 +376,7 @@ function renderSports(sports) {
     _renderBranchSummaryInto('runningBranchSummaryContainer', sports.running, 'footprints');
   }
   if (sports.strength) {
-    _renderBranchSummaryInto('gymBranchSummaryContainer', sports.strength, 'dumbbell');
+    _renderBranchSummaryInto('gymBranchSummaryContainer', sports.strength, 'dumbbell', { hideInfoCards: true });
   }
   if (typeof refreshIcons === 'function') refreshIcons();
 }
