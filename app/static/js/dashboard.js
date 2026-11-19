@@ -250,8 +250,6 @@ function renderOverview(data) {
   if (kw && data.weight !== undefined) kw.textContent = String(data.weight).replace('.', ',') + ' kg';
   const kwb = document.getElementById('kpi-weight-badge');
   if (kwb && data.total_loss_kg !== undefined) kwb.textContent = `-${String(data.total_loss_kg).replace('.', ',')} kg`;
-  const kwbmi = document.getElementById('kpi-weight-bmi');
-  if (kwbmi && data.bmi !== undefined) kwbmi.innerHTML = `VKİ: <strong class="text-[var(--text-primary)] font-semibold">${data.bmi}</strong>`;
   const kwbar = document.getElementById('kpi-weight-bar');
   if (kwbar && data.loss_pct !== undefined) {
     kwbar.style.width = `${Math.max(5, Math.min(100, Number(data.loss_pct)))}%`;
