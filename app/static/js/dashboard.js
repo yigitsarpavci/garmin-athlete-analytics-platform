@@ -108,7 +108,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
       const minV = vals.length ? Math.max(10, Math.min(...vals) - 6) : 25;
       const maxV = vals.length ? Math.max(...vals, hrvBase + 5) : 65;
       const span = Math.max(10, maxV - minV);
-      const avgBottomPx = Math.max(10, Math.min(22, 9 + ((hrvBase - minV) / span) * 13));
       const barsHtml = hrvSeries.map((d, idx) => {
         const v = Number(d.hrv) || 0;
         const hPct = v > 0 ? Math.max(18, Math.min(100, ((v - minV) / span) * 100)) : 12;
@@ -125,7 +124,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
           <span class="hrv-7d-lbl">${escapeHtml(dayLbl)}</span>
         </div>`;
       }).join('');
-      hrvBarEl.innerHTML = `<div class="hrv-7d-wrap"><div class="hrv-7d-bars">${barsHtml}<span class="hrv-7d-avg-line" style="bottom:${avgBottomPx.toFixed(0)}px;color:${hrvAvgColor}" title="7G Ort: ${escapeHtml(String(data.hrv_7d ?? '--'))} ms"></span></div></div>`;
+      hrvBarEl.innerHTML = `<div class="hrv-7d-wrap"><div class="hrv-7d-bars">${barsHtml}</div></div>`;
     } else {
       const hrvRatioPct = Math.max(8, Math.min(92, 50 + ((hrvVal - hrvBase) / Math.max(10, hrvBase * 0.4)) * 35));
       const hrvSt = String(data.hrv_status || '').toLowerCase();
