@@ -298,9 +298,9 @@
       <!-- OVERVIEW SUBPANE 3: PERFORMANS & TREND ÖZETİ -->
       <div data-subpane-group="overview" data-subpane="ledger" class="single-screen-pane hidden">
       <!-- RULED ARCHITECTURAL TELEMETRY LEDGER (Replaces Symmetrical Bubble-Card Grid) -->
-      <section aria-label="Temel Telemetri Göstergeleri" class="surface-ledger overflow-hidden h-full flex flex-col justify-between">
+      <section aria-label="Temel Telemetri Göstergeleri" class="surface-ledger overflow-hidden h-full grid grid-rows-2">
         <!-- Upper 12-Col Ledger Row: Sleep + Training Status + Quick Ratio -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border-subtle)] border-b border-[var(--border-subtle)]">
+        <div class="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border-subtle)] border-b border-[var(--border-subtle)] min-h-0">
           <!-- Sleep Architecture Cell (4 Cols) -->
           <div onclick="setTab('health')" class="lg:col-span-4 p-6 cursor-pointer hover:bg-[var(--bg-subtle)] transition flex flex-col justify-between space-y-4">
             <div class="flex items-center justify-between">
@@ -385,9 +385,9 @@
         </div>
 
         <!-- Lower 4-Column Ruled Metrics Ledger (Weight, 5K, EF, ACWR) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)] min-h-0">
           <!-- 1. Weight -->
-          <div onclick="setTab('health')" class="p-5 cursor-pointer group hover:bg-[var(--bg-subtle)] transition">
+          <div onclick="setTab('health')" class="p-6 cursor-pointer group hover:bg-[var(--bg-subtle)] transition flex flex-col justify-between">
             <div class="flex items-center justify-between">
               <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">Mevcut Kilo &amp; DSÖ</p>
               <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] transition" stroke-width="1.5" aria-hidden="true"></i>
@@ -406,7 +406,7 @@
           </div>
 
           <!-- 2. 5K Time -->
-          <div onclick="setTab('sports')" class="p-5 cursor-pointer group hover:bg-[var(--bg-subtle)] transition">
+          <div onclick="setTab('sports')" class="p-6 cursor-pointer group hover:bg-[var(--bg-subtle)] transition flex flex-col justify-between">
             <div class="flex items-center justify-between">
               <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">5K Derece &amp; Kadans</p>
               <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] transition" stroke-width="1.5" aria-hidden="true"></i>
@@ -425,7 +425,7 @@
           </div>
 
           <!-- 3. Cardiac Efficiency -->
-          <div onclick="setTab('health')" class="p-5 cursor-pointer group hover:bg-[var(--bg-subtle)] transition">
+          <div onclick="setTab('health')" class="p-6 cursor-pointer group hover:bg-[var(--bg-subtle)] transition flex flex-col justify-between">
             <div class="flex items-center justify-between">
               <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">Verimlilik &amp; HRV</p>
               <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] transition" stroke-width="1.5" aria-hidden="true"></i>
@@ -444,7 +444,7 @@
           </div>
 
           <!-- 4. Weekly Load & ACWR -->
-          <div onclick="setTab('training_load')" class="p-5 cursor-pointer group hover:bg-[var(--bg-subtle)] transition">
+          <div onclick="setTab('training_load')" class="p-6 cursor-pointer group hover:bg-[var(--bg-subtle)] transition flex flex-col justify-between">
             <div class="flex items-center justify-between">
               <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">Haftalık Yük &amp; ACWR</p>
               <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] transition" stroke-width="1.5" aria-hidden="true"></i>
