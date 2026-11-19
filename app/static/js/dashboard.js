@@ -391,34 +391,6 @@ function _decisionStamp(dec) {
   return '<span class="stamp-tag stamp-moss">ARTIŞ (+kg)</span>';
 }
 
-async function applyProgramTransition(askAi = false) {
-  const sel = document.getElementById('gymSplitSelect');
-  if (!sel) return;
-  const adviceEl = document.getElementById('gymProgramAiAdvice');
-  if (askAi && adviceEl) {
-    adviceEl.classList.remove('hidden');
-    adviceEl.innerHTML = '<span class="font-mono text-[10.5px] text-[var(--text-secondary)]">AI Koç plato verilerini analiz ediyor...</span>';
-  }
-  const resp = await fetch('/api/gym/program-transition', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ split: sel.value, ask_ai: askAi, source: askAi ? 'ai_coach' : 'manual' }),
-  });
-  const data = await resp.json();
-  if (data.gym_history) renderGymHistory(data.gym_history);
-  if (data.sports) {
-    globalSports = data.sports;
-    renderSports(globalSports);
-  }
-  if (data.daily_protocols && typeof renderDailyProtocols === 'function') {
-    renderDailyProtocols(data.daily_protocols);
-  }
-  if (data.ai_advice && adviceEl) {
-    adviceEl.classList.remove('hidden');
-    adviceEl.innerHTML = `<strong class="font-mono text-[10px] accent-text uppercase block mb-0.5">AI Koç Program Geçiş Analizi</strong><p class="text-[11px] leading-snug">${escapeHtml(data.ai_advice.answer || '')}</p>`;
-  }
-}
-
 function renderGymHistory(gym) {
   if (!gym) return;
 
@@ -427,8 +399,8 @@ function renderGymHistory(gym) {
     const p = gym.progression;
     const shortDelta = (d) => String(d || '').split('(')[0].trim();
     const sq = p.squat ? `Squat ${p.squat.max_kg} kg (${shortDelta(p.squat.delta)})` : 'Squat --';
-    const bn = p.bench ? `Bench ${p.bench.max_kg} kg 5x5` : 'Bench --';
-    const rw = p.row ? `Row ${p.row.max_kg} kg 5x5` : 'Row --';
+    const bn = p.bench ? `Bench ${p.bench.max_kg} kg` : 'Bench --';
+    const rw = p.row ? `Row ${p.row.max_kg} kg` : 'Row --';
     badgeRow.innerHTML = `
       <span class="stamp-tag stamp-moss">${escapeHtml(sq)}</span>
       <span class="stamp-tag stamp-accent">${escapeHtml(bn)}</span>
@@ -447,31 +419,23 @@ function renderGymHistory(gym) {
     const pa = gym.plateau_analysis || { plateau_score: 0, tier_label: 'Doğrusal İvme Aktif', recommendation: '', signals: [], recommended_split: '5x5_linear' };
     const pScore = pa.plateau_score || 0;
     const barColor = pScore >= 55 ? 'bg-[var(--ochre)]' : 'bg-[var(--moss)]';
-    const opts = Object.values(catalog).map(sp => `<option value="${escapeHtml(sp.id)}" ${sp.id === activeSplit ? 'selected' : ''}>${escapeHtml(sp.short_name)} (${escapeHtml(sp.target_tier)})</option>`).join('');
     evoBar.innerHTML = `
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="space-y-0.5">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-mono text-[10px] uppercase tracking-wider font-semibold accent-text">Program Evrimi &amp; Plato Skoru: ${pScore}/100</span>
-            <span class="stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'}">${escapeHtml(pa.tier_label || '')}</span>
+            <span class="font-mono text-[10px] uppercase tracking-wider font-semibold accent-text">Aktif Program: ${escapeHtml(splitInfo.name || splitInfo.short_name || '')}</span>
+            <span class="stamp-tag stamp-accent">Otomatik Seçildi</span>
+            <span class="stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'}">Plato Skoru: ${pScore}/100</span>
           </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(pa.recommendation || '')}</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-1.5">
-          <select id="gymSplitSelect" class="bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-2 py-1 text-[11px] font-mono">
-            ${opts}
-          </select>
-          <button type="button" onclick="applyProgramTransition(false)" class="px-2.5 py-1 text-[10.5px] font-mono font-semibold border border-[var(--border-medium)] rounded-[3px] hover:bg-[var(--bg-subtle)]">Programı Uygula</button>
-          <button type="button" onclick="applyProgramTransition(true)" class="px-2.5 py-1 text-[10.5px] font-mono font-semibold bg-[var(--accent)] text-black rounded-[3px] hover:opacity-90">AI Koç ile Geçiş</button>
+          <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(pa.tier_label || '')} · ${escapeHtml(pa.recommendation || '')}</p>
         </div>
       </div>
       <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
         <div class="${barColor} h-1.5" style="width: ${Math.max(4, Math.min(100, pScore))}%;"></div>
       </div>
       <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-[var(--text-muted)]">
-        ${(pa.signals || []).map(s => `<span>• ${escapeHtml(s)}</span>`).join('')}
+        ${(pa.signals || []).map(sig => `<span>• ${escapeHtml(sig)}</span>`).join('')}
       </div>
-      <div id="gymProgramAiAdvice" class="hidden p-2 bg-[var(--bg-base)] border-l-2 border-[var(--accent)]"></div>
     `;
   }
 
@@ -479,7 +443,13 @@ function renderGymHistory(gym) {
   if (progGrid && gym.progression) {
     progGrid.innerHTML = '';
     const coreKeys = ['squat', 'bench', 'row', 'ohp', 'deadlift', 'lat_pulldown', 'lateral_raise', 'shrug'];
-    coreKeys.forEach(k => {
+    const allKeys = Object.keys(gym.progression);
+    const newestDate = allKeys.map(k => gym.progression[k].last_full_date || '').sort().pop() || '';
+    const dayGap = (d) => (d && newestDate) ? Math.round((new Date(newestDate) - new Date(d)) / 86400000) : 0;
+    const extraKeys = allKeys
+      .filter(k => !coreKeys.includes(k) && dayGap(gym.progression[k].last_full_date) <= 56)
+      .sort((a, b) => (gym.progression[b].last_full_date || '').localeCompare(gym.progression[a].last_full_date || ''));
+    [...coreKeys, ...extraKeys].forEach(k => {
       const item = gym.progression[k];
       if (!item) return;
       const div = document.createElement('div');
@@ -489,7 +459,7 @@ function renderGymHistory(gym) {
       div.innerHTML = `
 <div class="space-y-1">
   <div class="flex flex-wrap items-center justify-between gap-1.5">
-    <span class="font-semibold text-xs">${escapeHtml(item.name)}</span>
+    <span class="font-semibold text-xs">${escapeHtml(item.name)}${item.is_core === false ? ' <span class="stamp-tag stamp-sky">YENİ</span>' : ''}</span>
     ${_decisionStamp(item.decision)}
   </div>
   <div class="flex flex-wrap items-center justify-between gap-1 font-mono text-[10px] text-[var(--text-secondary)]">

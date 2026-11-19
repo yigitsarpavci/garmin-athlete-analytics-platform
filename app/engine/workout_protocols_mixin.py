@@ -26,6 +26,7 @@ try:
         reset_logged_gym_sessions,
         save_logged_gym_session,
         save_program_state,
+        select_program_split,
     )
 except ImportError:
     from app.athlete_principles import (
@@ -44,6 +45,7 @@ except ImportError:
         reset_logged_gym_sessions,
         save_logged_gym_session,
         save_program_state,
+        select_program_split,
     )
 
 
@@ -215,6 +217,19 @@ class WorkoutProtocolsMixin:
             reference_date=ref_date,
         )
 
+        # Program, plato analizine göre otomatik seçilir (kullanıcı seçimi yok)
+        auto_split = select_program_split(int((adaptive["plateau_analysis"] or {}).get("plateau_score", 0)))
+        if program_state.get("active_split") != auto_split:
+            try:
+                program_state = save_program_state(
+                    data_dir,
+                    new_split=auto_split,
+                    reason=f"Plato skoru {adaptive['plateau_analysis'].get('plateau_score', 0)}/100 -> otomatik program seçimi",
+                    source="auto",
+                )
+            except Exception:
+                program_state = {**program_state, "active_split": auto_split}
+
         return {
             "sessions": sessions,
             "progression": adaptive["progression"],
@@ -277,15 +292,6 @@ class WorkoutProtocolsMixin:
         reset_logged_gym_sessions(data_dir, mode=mode)
         return {"status": "ok", "gym_history": self.get_gym_exercise_history()}
 
-    def switch_strength_program(self, new_split: str, reason: str = "", source: str = "manual") -> Dict[str, Any]:
-        """Kuvvet programını dinamik olarak günceller (örn. 5x5_linear -> push_pull)."""
-        data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
-        state = save_program_state(data_dir, new_split=new_split, reason=reason, source=source)
-        return {
-            "status": "ok",
-            "program_state": state,
-            "gym_history": self.get_gym_exercise_history(),
-        }
 
     def _build_dynamic_extra_sport_card(self, sport_key: str, rows_df) -> Dict[str, Any]:
         """Kayak, yüzme, bisiklet veya Garmin'den gelebilecek herhangi yeni spor için hazır rehber üretir."""

@@ -486,13 +486,32 @@ class TestEngineCalculations(unittest.TestCase):
                 self.assertEqual(sq2["next_kg"], 60.0)
                 self.assertGreater(res2["gym_history"]["plateau_analysis"]["plateau_score"], 0)
 
-                # 3. Dinamik program geçişi: 5x5 -> Push / Pull
-                sw = self.engine.switch_strength_program("push_pull", reason="Test plato geçişi")
-                self.assertEqual(sw["program_state"]["active_split"], "push_pull")
-                sp_pp = self.engine.get_sports_guidance()
-                pp_details = " ".join(s["type"] for s in sp_pp["strength"]["upcoming_sessions"])
-                self.assertIn("Push", pp_details)
-                self.assertIn("Pull", pp_details)
+                # 3. Yeni hareket (Garmin'den gelen) progresyon kartında ve seans özetinde görünmeli
+                res3 = self.engine.log_gym_session_result({
+                    "date": "2026-11-24",
+                    "workout_type": "Workout A",
+                    "exercises": [{
+                        "name": "Incline Dumbbell Press",
+                        "sets": [{"weight_kg": 20.0, "reps": 10}] * 3,
+                    }],
+                })
+                prog3 = res3["gym_history"]["progression"]
+                self.assertIn("incline_dumbbell_press", prog3)
+                self.assertFalse(prog3["incline_dumbbell_press"]["is_core"])
+                self.assertEqual(prog3["incline_dumbbell_press"]["next_kg"], 22.5)
+                sp3 = self.engine.get_sports_guidance()["strength"]["upcoming_sessions"]
+                self.assertTrue(any("Incline Dumbbell Press 22.5 kg" in s["details"] for s in sp3))
+
+        # 4. Program seçimi otomatik: plato skoruna göre belirlenir (kullanıcı seçimi yok)
+        from app.engine.strength_progression import select_program_split, build_projected_gym_summary
+        self.assertEqual(select_program_split(10), "5x5_linear")
+        self.assertEqual(select_program_split(60), "push_pull")
+        self.assertEqual(select_program_split(80), "upper_lower")
+        self.assertEqual(select_program_split(95), "ppl")
+        prog = self.engine.get_gym_exercise_history()["progression"]
+        p_type, _, details = build_projected_gym_summary("push", prog, step_idx=0, active_split="push_pull")
+        self.assertEqual(p_type, "Push")
+        self.assertIn("Bench", details)
 
 
 if __name__ == "__main__":

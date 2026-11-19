@@ -230,9 +230,10 @@ def _linear_slope(values: List[float]) -> float:
 def evaluate_session_lift(
     lift_key: str,
     raw_sets: List[Dict[str, Any]],
+    spec: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Tek bir seanstaki tek bir hareketin set/tekrar kalitesini, düşüş oranını ve e1RM'ini analiz eder."""
-    spec = LIFT_PROFILES[lift_key]
+    spec = spec or LIFT_PROFILES[lift_key]
     working = _filter_working_sets(raw_sets, spec["is_compound"])
     if not working:
         return {"has_data": False}
@@ -377,6 +378,71 @@ def save_program_state(data_dir: str, new_split: str, reason: str = "", source: 
     return state
 
 
+_COMPOUND_KEYWORDS = ("squat", "press", "deadlift", "row", "pull", "lunge", "dip", "bench", "clean", "thrust", "chin")
+_PULL_KEYWORDS = ("row", "pull", "curl", "lat", "deadlift", "shrug", "face", "rear", "chin")
+_LEG_KEYWORDS = ("squat", "lunge", "leg", "calf", "deadlift", "thrust", "rdl", "hamstring", "glute")
+
+
+def _slugify(name: str) -> str:
+    import re
+    slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+    return slug or "hareket"
+
+
+def build_dynamic_profiles(chrono_sessions: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    """Çekirdek 8 hareket dışında Garmin'den gelen her yeni hareket için otomatik profil üretir."""
+    known = {spec["match_name"] for spec in LIFT_PROFILES.values()}
+    profiles: Dict[str, Dict[str, Any]] = {}
+    for sess in chrono_sessions:
+        for ex in sess.get("exercises", []):
+            name = ex.get("name")
+            if not name or name in known:
+                continue
+            low = name.lower()
+            is_compound = any(k in low for k in _COMPOUND_KEYWORDS)
+            working = _filter_working_sets(ex.get("sets", []), is_compound)
+            if not working:
+                continue
+            reps = sorted(int(x["reps"]) for x in working)
+            t_reps = max(1, reps[len(reps) // 2])
+            t_sets = max(1, len(working))
+            top_w = max(float(x["weight_kg"]) for x in working)
+            key = _slugify(name)
+            profiles[key] = {
+                "label": name,
+                "match_name": name,
+                "category": "DYNAMIC",
+                "target_sets": t_sets,
+                "target_reps": t_reps,
+                "step_kg": 2.5,
+                "rep_suffix": f"x {t_reps} reps x {t_sets} set",
+                "short_rep": f"{t_sets}x{t_reps}",
+                "fallback_max": top_w,
+                "fallback_next": round_to_plate(top_w + 2.5, 2.5),
+                "bw_standards": (0.30, 0.50, 0.80) if is_compound else (0.15, 0.25, 0.40),
+                "is_compound": is_compound,
+                "is_dynamic": True,
+                "is_pull": any(k in low for k in _PULL_KEYWORDS),
+                "is_leg": any(k in low for k in _LEG_KEYWORDS),
+            }
+    return profiles
+
+
+PROGRAM_SPLIT_ORDER = ["5x5_linear", "push_pull", "upper_lower", "ppl"]
+
+
+def select_program_split(plateau_score: int) -> str:
+    """Plato skoruna göre en uygun programı otomatik seçer (kullanıcı seçimi yok)."""
+    if plateau_score >= 90:
+        return "ppl"
+    if plateau_score >= 75:
+        return "upper_lower"
+    if plateau_score >= 55:
+        return "push_pull"
+    return "5x5_linear"
+
+
+
 def compute_adaptive_progression(
     chrono_sessions: List[Dict[str, Any]],
     bodyweight_kg: float = 87.0,
@@ -413,7 +479,10 @@ def compute_adaptive_progression(
     compound_e1rm_slopes: List[float] = []
     compound_ratios: Dict[str, float] = {}
 
-    for key, spec in LIFT_PROFILES.items():
+    profiles: Dict[str, Dict[str, Any]] = dict(LIFT_PROFILES)
+    profiles.update(build_dynamic_profiles(chrono_sessions))
+
+    for key, spec in profiles.items():
         match_name = spec["match_name"]
         step_kg = spec["step_kg"]
         rep_suffix = spec["rep_suffix"]
@@ -422,7 +491,7 @@ def compute_adaptive_progression(
         for sess in chrono_sessions:
             for ex in sess.get("exercises", []):
                 if ex.get("name") == match_name:
-                    eval_res = evaluate_session_lift(key, ex.get("sets", []))
+                    eval_res = evaluate_session_lift(key, ex.get("sets", []), spec)
                     if eval_res.get("has_data"):
                         lift_records.append({
                             "date": sess.get("date", ""),
@@ -432,6 +501,7 @@ def compute_adaptive_progression(
 
         if not lift_records:
             progression[key] = {
+                "is_core": key in LIFT_PROFILES,
                 "name": spec["label"],
                 "history": [],
                 "delta": "Veri Bekleniyor",
@@ -581,6 +651,12 @@ def compute_adaptive_progression(
             compound_ratios[key] = bw_ratio
 
         progression[key] = {
+            "is_core": key in LIFT_PROFILES,
+            "is_pull": bool(spec.get("is_pull")),
+            "is_leg": bool(spec.get("is_leg")),
+            "short_rep": spec.get("short_rep", ""),
+            "slot_hint": latest.get("workout_type", ""),
+            "last_full_date": latest.get("date", ""),
             "name": spec["label"],
             "history": history_strs,
             "delta": delta_str,
@@ -610,6 +686,7 @@ def compute_adaptive_progression(
         compound_ratios=compound_ratios,
         acwr=acwr,
         hrv_ratio=hrv_ratio,
+        profiles=profiles,
     )
 
     return {
@@ -628,6 +705,7 @@ def _compute_plateau_score(
     compound_ratios: Dict[str, float],
     acwr: float,
     hrv_ratio: float,
+    profiles: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     5x5 Doğrusal Progresyon'dan Push/Pull veya Upper/Lower split'e geçiş ihtiyacını
@@ -655,7 +733,7 @@ def _compute_plateau_score(
     # 3. Kuvvet/Kilo Oranı Orta Seviye Eşikleri (max 25 puan)
     interm_hits = 0
     for lk, ratio in compound_ratios.items():
-        std_interm = LIFT_PROFILES[lk]["bw_standards"][1]
+        std_interm = (profiles or LIFT_PROFILES).get(lk, LIFT_PROFILES["squat"])["bw_standards"][1]
         if ratio >= std_interm:
             interm_hits += 1
     if interm_hits >= 2:
@@ -681,8 +759,12 @@ def _compute_plateau_score(
     score = min(100, max(0, score))
 
     if score >= 55:
-        recommended_split = "push_pull"
-        tier_label = "Orta Seviye Geçiş Eşiği (Push / Pull Önerilir)"
+        recommended_split = select_program_split(score)
+        tier_label = {
+            "push_pull": "Orta Seviye Geçiş Eşiği (Push / Pull Aktif)",
+            "upper_lower": "İleri Orta Seviye (Upper / Lower Aktif)",
+            "ppl": "İleri Seviye (Push / Pull / Legs Aktif)",
+        }[recommended_split]
         recommendation = (
             "5x5 doğrusal yükleme sınırına yaklaşıldı. Her seans Squat yorgunluğunu azaltmak ve "
             "üst/alt hacmini artırmak için Push / Pull programına geçiş önerilir."
@@ -716,7 +798,7 @@ def _compute_plateau_score(
     }
 
 
-def build_projected_gym_summary(
+def _build_core_summary(
     slot_kind: str,
     progression: Dict[str, Any],
     step_idx: int = 0,
@@ -811,3 +893,55 @@ def build_projected_gym_summary(
         "Kuvvet #2 · Workout B (5x5)",
         f"Squat {sq:.1f} kg (5x5) · OHP {ohp:.1f} kg (5x5) · Deadlift {dl:.1f} kg (1x5) · Lat {lat:.1f} kg (4x12) · Lateral {lr:.1f} kg (3x12) · Shrug {sh:.1f} kg (3x12)",
     )
+
+
+def _extra_slot_for(entry: Dict[str, Any], active_split: str) -> str:
+    """Çekirdek dışı yeni bir hareketin hangi seans slotuna ait olduğunu belirler."""
+    if active_split == "5x5_linear":
+        return "gym_a" if "Workout A" in str(entry.get("slot_hint", "")) else "gym_b"
+    if active_split == "upper_lower":
+        return "lower" if entry.get("is_leg") and not entry.get("is_pull") else "upper"
+    if active_split == "ppl":
+        if entry.get("is_leg") and not entry.get("is_pull"):
+            return "legs"
+        return "pull" if entry.get("is_pull") else "push"
+    return "pull" if entry.get("is_pull") else "push"
+
+
+def build_projected_gym_summary(
+    slot_kind: str,
+    progression: Dict[str, Any],
+    step_idx: int = 0,
+    active_split: str = "5x5_linear",
+    ex_counts: Optional[Dict[str, int]] = None,
+) -> Tuple[str, str, str]:
+    """Çekirdek hareketler + Garmin'den gelen yeni hareketleri (güncel kiloları ile) seans özetine ekler."""
+    p_type, p_title, details = _build_core_summary(slot_kind, progression, step_idx, active_split, ex_counts)
+
+    dated = [e.get("last_full_date", "") for e in progression.values() if e.get("last_full_date")]
+    newest = max(dated) if dated else ""
+    canonical = {"gym_a": "gym_a", "gym_b": "gym_b"}
+    eff_slot = canonical.get(slot_kind, slot_kind)
+    parts: List[str] = []
+    for key, entry in progression.items():
+        if entry.get("is_core") or not entry.get("last_full_date"):
+            continue
+        try:
+            gap = (datetime.strptime(newest[:10], "%Y-%m-%d") - datetime.strptime(entry["last_full_date"][:10], "%Y-%m-%d")).days
+        except Exception:
+            gap = 0
+        if gap > 21:
+            continue
+        slot_for = _extra_slot_for(entry, active_split)
+        if slot_for != eff_slot and not (active_split != "5x5_linear" and slot_kind == "gym_a" and slot_for == "push") \
+                and not (active_split != "5x5_linear" and slot_kind == "gym_b" and slot_for == "pull"):
+            continue
+        idx = ex_counts.get(key, 0) if ex_counts is not None else step_idx
+        if ex_counts is not None:
+            ex_counts[key] = idx + 1
+        pw = entry.get("projected_weights") or []
+        kg = float(pw[idx]) if idx < len(pw) else float(entry.get("next_kg") or 0)
+        parts.append(f"{entry.get('name')} {kg:.1f} kg ({entry.get('short_rep') or ''})".replace(" ()", ""))
+    if parts:
+        details = details + " · " + " · ".join(parts)
+    return p_type, p_title, details

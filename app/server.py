@@ -499,29 +499,6 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             res["sports"] = engine.get_sports_guidance()
             res["daily_protocols"] = engine.get_detailed_daily_workout_protocols()
             self.send_json(200, res)
-        elif path == "/api/gym/program-transition":
-            split_id = body.get("split", "5x5_linear")
-            reason = body.get("reason", "")
-            source = body.get("source", "manual")
-            try:
-                res = engine.switch_strength_program(split_id, reason=reason, source=source)
-                res["sports"] = engine.get_sports_guidance()
-                res["daily_protocols"] = engine.get_detailed_daily_workout_protocols()
-                if body.get("ask_ai"):
-                    gym_h = res["gym_history"]
-                    pa = gym_h.get("plateau_analysis") or {}
-                    prompt = (
-                        f"Sporcu şu an '{split_id}' kuvvet programına geçişi değerlendiriyor. "
-                        f"Plato skoru: {pa.get('plateau_score', 0)}/100 ({pa.get('tier_label', '')}). "
-                        f"Sinyaller: {'; '.join(pa.get('signals', []))}. "
-                        f"Bileşik e1RM/BW oranları: {pa.get('compound_ratios', {})}. "
-                        f"Mevcut hazırlık notu: {gym_h.get('readiness_note', '')}. "
-                        f"Bu geçişin neden doğru (veya erken) olduğunu ve yeni programda ilk 2 hafta hangi ağırlık/tekrar stratejisini izlemesi gerektiğini 3 kısa maddede açıkla."
-                    )
-                    res["ai_advice"] = coach.answer_query(prompt)
-                self.send_json(200, res)
-            except ValueError as ve:
-                self.send_json(400, {"error": str(ve)})
         else:
             self.send_json(404, {"error": "Not found"})
 
