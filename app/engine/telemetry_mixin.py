@@ -37,8 +37,8 @@ class TelemetryMixin:
             ("Sabah Body Battery", "bb_wake", 1, "", "75 – 100", "Gece uykusundan sonraki başlangıç rezervi"),
             ("Akşam Dip Enerji", "bb_low", 1, "", "15 – 30", "Gün sonu rezerv dibi"),
             ("Toplam Uyku Süresi", "sleep_h", 2, " sa", "7,5 – 8,5 sa", "Kas/sinir sistemi yenilenme süresi"),
-            ("Derin Uyku Süresi", "deep_h", 2, " sa", "%15 – %20", "Doku tamiri ve anabolik faz"),
-            ("REM Uyku Süresi", "rem_h", 2, " sa", "1,5 – 2,0 sa", "Bilişsel ve nörolojik toparlanma fazı"),
+            ("Derin Uyku Oranı", "deep_h", 1, "%", "%15 – %20", "Doku tamiri ve anabolik faz"),
+            ("REM Uyku Oranı", "rem_h", 1, "%", "%20 – %25", "Bilişsel ve nörolojik toparlanma fazı"),
             ("Garmin Uyku Puanı", "sleep_score", 1, "", "80 – 100", "Genel uyku mimarisi skoru"),
             ("Gece SpO2", "spo2_avg", 1, "%", "%95 – %98", "Gece kandaki oksijen doygunluğu"),
             ("Antrenman Hazırlığı", "readiness_score", 1, "", "65 – 100", "Günlük antrenman yüküne tolerans puanı"),
@@ -48,9 +48,16 @@ class TelemetryMixin:
         for label, col, dec, sfx, ref_rng, note in specs:
             if col not in self.df.columns:
                 continue
-            ser = pd.to_numeric(self.df[col], errors="coerce").dropna()
-            if ser.empty:
-                continue
+            if col in ("deep_h", "rem_h") and "sleep_h" in self.df.columns:
+                pair = self.df[[col, "sleep_h"]].apply(pd.to_numeric, errors="coerce").dropna()
+                pair = pair[pair["sleep_h"] > 0.5]
+                if pair.empty:
+                    continue
+                ser = (pair[col] / pair["sleep_h"]) * 100.0
+            else:
+                ser = pd.to_numeric(self.df[col], errors="coerce").dropna()
+                if ser.empty:
+                    continue
             mean_v = float(ser.mean())
             med_v = float(ser.median())
             min_v = float(ser.min())
