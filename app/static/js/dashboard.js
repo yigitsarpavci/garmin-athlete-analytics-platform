@@ -222,7 +222,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
         </div>`;
     };
     const driftFooter = drift
-      ? `<p class="font-mono text-[10.5px] text-[var(--text-secondary)] mt-1.5 leading-tight">Hafta sonu (düşüşle): Düşük %${Math.round(drift.low_aerobic?.week_end_pct ?? lowPct)} · Yüksek %${Math.round(drift.high_aerobic?.week_end_pct ?? highPct)} · Anaer %${Math.round(drift.anaerobic?.week_end_pct ?? anPct)}</p>`
+      ? `<p class="font-mono text-[10.5px] text-[var(--text-secondary)] mt-1.5 leading-tight">Pazar 28G düşüşü sonrası: Düşük %${Math.round(drift.low_aerobic?.week_end_pct ?? lowPct)} · Yüksek %${Math.round(drift.high_aerobic?.week_end_pct ?? highPct)} · Anaer %${Math.round(drift.anaerobic?.week_end_pct ?? anPct)}</p>`
       : '';
     lfBarEl.innerHTML = `
       <div class="garmin-focus-mini">

@@ -386,6 +386,7 @@ def compute_weekly_bar_drift(
 
     rem_exp = [0.0, 0.0, 0.0]
     wk_exp = [0.0, 0.0, 0.0]
+    tot_28d = [0.0, 0.0, 0.0]
     for act in activities_all or []:
         d_str = (act.get("startTimeLocal") or "")[:10]
         if not d_str:
@@ -394,15 +395,28 @@ def compute_weekly_bar_drift(
             d_obj = datetime.strptime(d_str, "%Y-%m-%d").date()
         except ValueError:
             continue
-        if wk_win_start <= d_obj < rem_win_end:
+        if wk_win_start <= d_obj <= ref_day:
             c = estimate_activity_load_contribution(act)
+            if rem_win_start <= d_obj <= ref_day:
+                tot_28d[0] += c["low_aerobic"]
+                tot_28d[1] += c["high_aerobic"]
+                tot_28d[2] += c["anaerobic"]
             if rem_win_start <= d_obj < rem_win_end:
                 rem_exp[0] += c["low_aerobic"]
                 rem_exp[1] += c["high_aerobic"]
                 rem_exp[2] += c["anaerobic"]
-            wk_exp[0] += c["low_aerobic"]
-            wk_exp[1] += c["high_aerobic"]
-            wk_exp[2] += c["anaerobic"]
+            if wk_win_start <= d_obj < rem_win_end:
+                wk_exp[0] += c["low_aerobic"]
+                wk_exp[1] += c["high_aerobic"]
+                wk_exp[2] += c["anaerobic"]
+
+    # Geçmiş 28G aktivite toplamı Garmin'in bildirdiği bar toplamıyla oranlanarak kesin düşüş hesaplanır
+    act_totals = (low_act, high_act, an_act)
+    for idx in range(3):
+        if tot_28d[idx] > 0 and act_totals[idx] > 0:
+            scale = act_totals[idx] / tot_28d[idx]
+            rem_exp[idx] *= scale
+            wk_exp[idx] *= scale
 
     end_low_pct, end_high_pct, end_an_pct = _compute_bar_pcts(
         max(0.0, low_act - rem_exp[0]),
