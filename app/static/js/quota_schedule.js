@@ -307,10 +307,7 @@ function renderDailyProtocols(protocols) {
     `;
   }
 
-  container.innerHTML = `
-    <div class="surface-card p-2.5 space-y-1 h-full flex flex-col justify-between overflow-hidden">
-      ${exerciseHtml}
-    </div>
-  `;
+  container.innerHTML = exerciseHtml;
   if (typeof refreshIcons === 'function') refreshIcons();
+  if (typeof scheduleOverviewFit === 'function') scheduleOverviewFit();
 }
