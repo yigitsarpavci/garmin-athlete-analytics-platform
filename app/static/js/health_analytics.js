@@ -12,18 +12,19 @@ function renderSleepAnalysis(sData) {
   const gBody = document.getElementById('bedtimeGroupsBody');
   if (gBody && Array.isArray(sData.bedtime_groups)) {
     gBody.innerHTML = '';
-    sData.bedtime_groups.forEach(g => {
+    sData.bedtime_groups.forEach((g, idx) => {
       const tr = document.createElement('tr');
       tr.className = "hover:bg-[var(--bg-subtle)] transition";
+      const grpCls = idx === 0 ? 'moss-text' : (idx === 1 ? 'ochre-text' : 'crimson-text');
       tr.innerHTML = `
-        <td class="py-3 px-4 font-semibold">${escapeHtml(g.group)}</td>
+        <td class="py-3 px-4 font-semibold ${grpCls}">${escapeHtml(g.group)}</td>
         <td class="py-3 px-4 font-mono text-[var(--text-secondary)]">${g.count} gece (%${g.pct})</td>
-        <td class="py-3 px-4 font-mono font-semibold accent-text">${g.sleep_h} saat</td>
-        <td class="py-3 px-4 font-mono">${g.deep_h} sa / <span class="font-semibold ochre-text">${g.rem_h} sa</span></td>
-        <td class="py-3 px-4 font-mono font-semibold">${g.score}</td>
+        <td class="py-3 px-4 font-mono font-semibold sky-text">${g.sleep_h} saat</td>
+        <td class="py-3 px-4 font-mono">${g.deep_h} sa / <span class="font-semibold violet-text">${g.rem_h} sa</span></td>
+        <td class="py-3 px-4 font-mono font-semibold ochre-text">${g.score}</td>
         <td class="py-3 px-4 font-mono font-semibold moss-text">${g.hrv} ms</td>
         <td class="py-3 px-4 font-mono text-[var(--text-secondary)]">${g.rhr} bpm</td>
-        <td class="py-3 px-4 font-mono font-medium">${g.bb_wake} / ${g.readiness}</td>
+        <td class="py-3 px-4 font-mono font-medium sky-text">${g.bb_wake} / ${g.readiness}</td>
       `;
       gBody.appendChild(tr);
     });
@@ -68,15 +69,23 @@ function renderSleepAnalysis(sData) {
 function render93dBiometrics(rows) {
   const tbody = document.getElementById('healthMetrics93dBody');
   if (!tbody || !Array.isArray(rows) || !rows.length) return;
-  tbody.innerHTML = rows.map(r => `
-    <tr class="hover:bg-[var(--bg-subtle)] transition">
-      <td class="py-1.5 px-3 font-medium">${escapeHtml(r.metric)}</td>
-      <td class="py-1.5 px-3 font-mono font-semibold accent-text">${escapeHtml(r.avg_median)}</td>
-      <td class="py-1.5 px-3 font-mono">${escapeHtml(r.min_max)}</td>
-      <td class="py-1.5 px-3 font-mono">${escapeHtml(r.ideal_ref)}</td>
-      <td class="py-1.5 px-3 text-[var(--text-secondary)]">${escapeHtml(r.status)}</td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = rows.map(r => {
+    const stLower = String(r.status || '').toLowerCase();
+    const stCls = (stLower.includes('iyi') || stLower.includes('optimal') || stLower.includes('normal') || stLower.includes('sağlıklı'))
+      ? 'moss-text font-medium'
+      : ((stLower.includes('artır') || stLower.includes('dikkat') || stLower.includes('orta') || stLower.includes('sınır'))
+        ? 'ochre-text font-medium'
+        : 'text-[var(--text-secondary)]');
+    return `
+      <tr class="hover:bg-[var(--bg-subtle)] transition">
+        <td class="py-1.5 px-3 font-medium">${escapeHtml(r.metric)}</td>
+        <td class="py-1.5 px-3 font-mono font-semibold sky-text">${escapeHtml(r.avg_median)}</td>
+        <td class="py-1.5 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(r.min_max)}</td>
+        <td class="py-1.5 px-3 font-mono violet-text">${escapeHtml(r.ideal_ref)}</td>
+        <td class="py-1.5 px-3 ${stCls}">${escapeHtml(r.status)}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function renderCorrelations(corrs) {
@@ -86,8 +95,9 @@ function renderCorrelations(corrs) {
   corrs.forEach(c => {
     const tr = document.createElement('tr');
     tr.className = "hover:bg-[var(--bg-subtle)] transition";
+    const pairCls = Number(c.r) < 0 ? 'ochre-text' : 'sky-text';
     tr.innerHTML = `
-      <td class="py-1.5 px-3 font-semibold">${escapeHtml(c.pair)}</td>
+      <td class="py-1.5 px-3 font-semibold ${pairCls}">${escapeHtml(c.pair)}</td>
       <td class="py-1.5 px-3 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
     `;
     cBody.appendChild(tr);

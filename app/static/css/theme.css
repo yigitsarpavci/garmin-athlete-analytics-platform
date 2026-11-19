@@ -222,6 +222,12 @@ button.garmin-card:hover {
 .crimson-text {
   color: var(--crimson);
 }
+.sky-text {
+  color: #4B8EC2;
+}
+.violet-text {
+  color: #8C62B8;
+}
 
 .stamp-tag {
   display: inline-flex;
@@ -265,6 +271,18 @@ button.garmin-card:hover {
   border-color: var(--crimson-border);
   background-color: var(--crimson-soft);
   color: var(--crimson);
+}
+
+.stamp-sky {
+  border-color: rgba(75, 142, 194, 0.45);
+  background-color: rgba(75, 142, 194, 0.14);
+  color: #6BA7D6;
+}
+
+.stamp-violet {
+  border-color: rgba(140, 98, 184, 0.45);
+  background-color: rgba(140, 98, 184, 0.14);
+  color: #AB86D4;
 }
 
 /* Uniform 1.5px stroke sizing for Lucide icons inside crisp instrument containers */

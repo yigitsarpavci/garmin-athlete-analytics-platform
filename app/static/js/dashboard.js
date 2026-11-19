@@ -707,9 +707,11 @@ function renderActivities(acts, rebuildFilters = true, resetPage = true) {
     const teDisplay = a.aTE ? `<span class="font-mono text-[10.5px] font-semibold moss-text">A:${Number(a.aTE).toFixed(1)}</span>/<span class="font-mono text-[10.5px] font-semibold crimson-text">An:${Number(a.anTE || 0).toFixed(1)}</span>` : '--';
     const durStr = a.dur_m !== null && a.dur_m !== undefined ? `${Number(a.dur_m).toFixed(0)} dk` : '--';
     const hrStr = `${a.avg_hr ?? '--'}/${a.max_hr ?? '--'}`;
+    const spLower = String(a.sport || '').toLowerCase();
+    const spBadgeCls = spLower === 'running' ? 'stamp-sky' : (spLower === 'strength_training' ? 'stamp-ochre' : 'stamp-violet');
     tr.innerHTML = `
       <td class="py-1.5 px-2 text-[11px] font-mono font-medium whitespace-nowrap">${escapeHtml(a.date)} <span class="text-[var(--text-muted)]">${escapeHtml(a.time || '')}</span></td>
-      <td class="py-1.5 px-2 whitespace-nowrap"><span class="stamp-tag">${escapeHtml(getDynamicSportLabel(a.sport, a.sport_tr))}</span></td>
+      <td class="py-1.5 px-2 whitespace-nowrap"><span class="stamp-tag ${spBadgeCls}">${escapeHtml(getDynamicSportLabel(a.sport, a.sport_tr))}</span></td>
       <td class="py-1.5 px-2 text-[11px] font-medium group-hover:text-[var(--accent)] transition max-w-[180px] truncate">${escapeHtml(a.name || '--')}</td>
       <td class="py-1.5 px-2 text-[11px] font-mono text-[var(--text-secondary)] tabular-nums whitespace-nowrap">${durStr}</td>
       <td class="py-1.5 px-2 text-[11px] font-mono font-semibold accent-text tabular-nums whitespace-nowrap">${a.dist_km > 0 ? Number(a.dist_km).toFixed(2) + ' km' : '--'}</td>

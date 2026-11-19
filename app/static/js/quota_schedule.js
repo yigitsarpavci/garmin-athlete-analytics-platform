@@ -176,10 +176,10 @@ function buildSpontaneousCard(spont) {
       <div class="space-y-1.5">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-            ${lucideSvg('compass', 'w-3.5 h-3.5 moss-text shrink-0')}
+            ${lucideSvg('compass', 'w-3.5 h-3.5 violet-text shrink-0')}
             <span>Spontane Branşlar</span>
           </span>
-          <span class="stamp-tag ${count > 0 ? 'stamp-moss' : ''} tabular-nums">${count} Seans</span>
+          <span class="stamp-tag ${count > 0 ? 'stamp-violet' : 'stamp-violet'} tabular-nums">${count} Seans</span>
         </div>
         ${bodyHtml}
       </div>
@@ -251,7 +251,7 @@ function buildQuotaLedgerHtml(quota) {
     ${bannerRowHtml}
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-      ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[var(--accent)]')}
+      ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[#4B8EC2]')}
       ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
       ${buildSpontaneousCard(spont)}
     </div>
@@ -279,10 +279,10 @@ function buildRestDaysPanel(restDays) {
     <div class="tint-panel p-2.5 sm:p-3 space-y-1.5">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-          ${lucideSvg('moon', 'w-3.5 h-3.5 moss-text shrink-0')}
+          ${lucideSvg('moon', 'w-3.5 h-3.5 sky-text shrink-0')}
           <span>Dinlenme Günleri (Bu Hafta Gerçekleşen)</span>
         </span>
-        <span class="stamp-tag ${count > 0 ? 'stamp-moss' : ''} tabular-nums">${count} Gün</span>
+        <span class="stamp-tag ${count > 0 ? 'stamp-sky' : ''} tabular-nums">${count} Gün</span>
       </div>
       ${chipsHtml}
       <p class="text-[11px] text-[var(--text-secondary)] leading-snug"><strong class="text-[var(--text-primary)] font-medium">Neden Önemli:</strong> ${escapeHtml(note)}</p>
