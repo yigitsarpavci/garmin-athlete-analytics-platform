@@ -34,17 +34,24 @@ Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve First
 
 ## 🚀 Hızlı Başlangıç
 
-### 1. Web Uygulamasını Başlatma
-```bash
-# Canlı telemetriyle web panelini başlatın (Port: 8085)
-make run                       # veya ./scripts/run_app.sh
+### 1. macOS Masaüstü Uygulaması veya Web Paneli Olarak Başlatma
 
-# Sentetik demo verisiyle başlatın (sample_data/)
-python3 app/server.py --demo   # veya GARMIN_DEMO_MODE=1
+- **macOS Masaüstü Uygulaması (Sadece macOS 13+ / `WKWebView`):**
+  ```bash
+  bash macos/build_app.sh
+  ```
+  `Garmin Sporcu Paneli.app` uygulamasını Masaüstü ve `~/Applications` klasörüne kurar. Uygulamaya tıklandığında yerel sunucuyu otomatik başlatır, açıkken verileri güncel tutar ve pencere kapatıldığında arka plan sunucusunu da tamamen kapatır.
+- **Web Arayüzü (macOS / Linux / Windows tarayıcıları):**
+  ```bash
+  # Canlı telemetriyle web panelini başlatın (Port: 8085)
+  make run                       # veya ./scripts/run_app.sh
 
-# Tarayıcınızda açın:
-http://localhost:8085
-```
+  # Sentetik demo verisiyle başlatın (sample_data/)
+  python3 app/server.py --demo   # veya GARMIN_DEMO_MODE=1
+
+  # Tarayıcınızda açın:
+  http://localhost:8085
+  ```
 
 ### 2. Test Süitini Çalıştırma (`36/36` Test — %100 Kapsam)
 ```bash

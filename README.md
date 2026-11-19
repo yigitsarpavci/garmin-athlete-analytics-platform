@@ -204,12 +204,19 @@ OK
   export OPENAI_API_KEY="your-openai-api-key"
   ```
 
-### 1. Launch the Web Dashboard
-```bash
-make run                       # Live telemetry (or ./scripts/run_app.sh)
-python3 app/server.py --demo   # Offline synthetic demo mode (or GARMIN_DEMO_MODE=1)
-```
-Open your browser at `http://localhost:8085`.
+### 1. Launch as macOS Desktop App (Recommended on macOS) or Web Dashboard
+
+- **macOS Native App (`WKWebView`, macOS 13+ only):**
+  ```bash
+  bash macos/build_app.sh
+  ```
+  Installs `Garmin Sporcu Paneli.app` to `~/Desktop` and `~/Applications`. Clicking the app starts the local server automatically, keeps data synced while open, and terminates the background server cleanly when closed.
+- **Web Dashboard (macOS / Linux / Windows):**
+  ```bash
+  make run                       # Live telemetry (or ./scripts/run_app.sh)
+  python3 app/server.py --demo   # Offline synthetic demo mode (or GARMIN_DEMO_MODE=1)
+  ```
+  Open your browser at `http://localhost:8085`.
 
 ### 2. Run All Tests
 ```bash
