@@ -158,7 +158,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const remBarPct = _piecewiseGaugePct(remNum, [8, 12, 18, 25, 30], remSegs);
   const remActive = remNum < 12 ? 0 : (remNum < 18 ? 1 : (remNum <= 25 ? 2 : 3));
   setText('fs-rem-val', `%${fmtDec(remPct, 1)}`);
-  setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin (Günlük): %${fmtDec(data.deep_sleep_pct, 1)} (${fmtDec(data.deep_hours, 1)}s)`);
+  setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin (Günlük): %${fmtDec(data.deep_sleep_pct, 1)} · 7G Derin: %${fmtDec(data.deep_sleep_pct_7d, 1)}`);
   _renderGarminGauge('fs-rem-bar', remSegs, remActive, remBarPct, '%10', '%20–25 Optimal', '%30');
 
   // 06. Günlük Adım

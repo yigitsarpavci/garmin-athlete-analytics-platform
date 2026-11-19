@@ -245,6 +245,7 @@ class TelemetryMixin:
             "sleep_hours_7d": sleep_hours_7d,
             "sleep_duration_hours": sleep_h_mean,
             "deep_sleep_pct": deep_pct,
+            "deep_sleep_pct_7d": self._sleep_stage_pct_7d("deep_h", deep_pct),
             "rem_sleep_pct": rem_sleep_pct,
             "rem_sleep_pct_7d": rem_sleep_pct_7d,
             "rem_hours": round(rem_h, 2),
@@ -311,6 +312,15 @@ class TelemetryMixin:
         rem_sleep_pct = round((rem_h / max(1.0, sleep_h)) * 100.0, 1)
         return deep_h, deep_pct, hrv_7d, hrv_night, rem_h, rem_sleep_pct, rhr, rhr_mean, sleep_h, sleep_h_mean, sleep_score
 
+    def _sleep_stage_pct_7d(self, col: str, fallback: float) -> float:
+        """Son 7 günlük uyku evresi (REM/Derin) yüzdelik ortalamasını döner."""
+        if {col, "sleep_h"}.issubset(self.df.columns):
+            sub_df = self.df[[col, "sleep_h"]].apply(pd.to_numeric, errors="coerce").dropna()
+            sub_df = sub_df[sub_df["sleep_h"] > 0].tail(7)
+            if not sub_df.empty:
+                return round(float(((sub_df[col] / sub_df["sleep_h"].clip(lower=1.0)) * 100.0).mean()), 1)
+        return fallback
+
 
     def _readiness_hrv_stress_metrics(self, hrv_7d, hrv_night, latest, rem_sleep_pct, sleep_h, sleep_score):
         """Uyku ortalamaları, hazırlık, HRV/stres durumu (kişisel taban çizgisine göre), solunum ve Body Battery değerlerini hesaplar."""
@@ -318,12 +328,7 @@ class TelemetryMixin:
         _tail_stat = self._tail_stat
         sleep_score_7d = round(_tail_stat("sleep_score", "mean", 7, sleep_score), 1)
         sleep_hours_7d = round(_tail_stat("sleep_h", "mean", 7, sleep_h), 2)
-        if {"rem_h", "sleep_h"}.issubset(self.df.columns):
-            rem_df = self.df[["rem_h", "sleep_h"]].apply(pd.to_numeric, errors="coerce").dropna()
-            rem_df = rem_df[rem_df["sleep_h"] > 0].tail(7)
-            rem_sleep_pct_7d = round(float(((rem_df["rem_h"] / rem_df["sleep_h"].clip(lower=1.0)) * 100.0).mean()), 1) if not rem_df.empty else rem_sleep_pct
-        else:
-            rem_sleep_pct_7d = rem_sleep_pct
+        rem_sleep_pct_7d = self._sleep_stage_pct_7d("rem_h", rem_sleep_pct)
 
         readiness_score = int(round(_num(latest.get("readiness_score"), 77)))
         readiness_7d_avg = round(_tail_stat("readiness_score", "mean", 7, readiness_score), 1)
