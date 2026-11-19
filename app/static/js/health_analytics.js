@@ -88,9 +88,6 @@ function renderCorrelations(corrs) {
     tr.className = "hover:bg-[var(--bg-subtle)] transition";
     tr.innerHTML = `
       <td class="py-1.5 px-3 font-semibold">${escapeHtml(c.pair)}</td>
-      <td class="py-1.5 px-3 font-mono font-semibold ${c.r < 0 ? 'crimson-text' : 'accent-text'}">${Number(c.r).toFixed(3)}</td>
-      <td class="py-1.5 px-3 font-mono text-[var(--text-secondary)]">${Number(c.t).toFixed(2)}</td>
-      <td class="py-1.5 px-3 font-mono font-medium text-[var(--text-secondary)]">${escapeHtml(c.p)}</td>
       <td class="py-1.5 px-3 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
     `;
     cBody.appendChild(tr);
