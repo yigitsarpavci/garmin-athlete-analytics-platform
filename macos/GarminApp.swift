@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         window.setFrame(screenFrame, display: true)
         window.title = "Garmin Sporcu Paneli"
         window.appearance = NSAppearance(named: .darkAqua)
+        window.titlebarAppearsTransparent = true
         window.backgroundColor = bgColor
         window.isReleasedWhenClosed = false
 
