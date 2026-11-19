@@ -254,17 +254,11 @@ function renderOverview(data) {
 
   const ifsStatus = document.getElementById('inFocusTrainingStatus');
   if (ifsStatus && (curLoad.status_tr || data.training_status)) {
-    const rawSt = curLoad.status_tr || data.training_status;
-    const paren = rawSt.match(/\(([^)]+)\)/);
-    ifsStatus.textContent = paren ? paren[1] : rawSt;
+    ifsStatus.textContent = curLoad.status_tr || data.training_status;
   }
   const ifsSub = document.getElementById('inFocusStatusSub');
   if (ifsSub) {
-    const lf = data.load_focus_summary || {};
-    const lowP = lf.low_aerobic_pct !== undefined ? Math.round(Number(lf.low_aerobic_pct)) : '--';
-    const highP = lf.high_aerobic_pct !== undefined ? Math.round(Number(lf.high_aerobic_pct)) : '--';
-    const anP = lf.anaerobic_pct !== undefined ? Math.round(Number(lf.anaerobic_pct)) : '--';
-    ifsSub.textContent = `ACWR ${acwrNum.toFixed(2)} · Düşük %${lowP} / Yüksek %${highP} / Anaer %${anP}`;
+    ifsSub.innerHTML = `Kondisyon: <span class="moss-text font-medium">Pozitif Trend</span> · ACWR ${acwrNum.toFixed(2)}`;
   }
 
   const kw = document.getElementById('kpi-weight');
@@ -452,27 +446,7 @@ function renderGymHistory(gym) {
 
 function renderTrainingLoad(tl) {
   if (!tl) return;
-  const cur = tl.current_status;
   const foc = tl.load_focus;
-
-  if (cur) {
-    document.getElementById('tl-status').textContent = cur.status_tr;
-    document.getElementById('tl-acute').textContent = cur.acute_load;
-    document.getElementById('tl-chronic').textContent = cur.chronic_load;
-    document.getElementById('tl-tunnel').textContent = Math.round(cur.tunnel_min) + " – " + Math.round(cur.tunnel_max);
-    document.getElementById('tl-acwr').textContent = Number(cur.acwr || 1.0).toFixed(2);
-    const badge = document.getElementById('tl-acwr-badge');
-    if (cur.acwr >= 0.8 && cur.acwr <= 1.3) {
-      badge.textContent = "SWEET SPOT";
-      badge.className = "stamp-tag stamp-moss";
-    } else if (cur.acwr > 1.5) {
-      badge.textContent = "AŞIRI YÜK";
-      badge.className = "stamp-tag stamp-crimson";
-    } else {
-      badge.textContent = cur.acwr_status || 'TAKİPTE';
-      badge.className = "stamp-tag stamp-ochre";
-    }
-  }
 
   if (foc) {
     const low = foc.aerobic_low || {};
