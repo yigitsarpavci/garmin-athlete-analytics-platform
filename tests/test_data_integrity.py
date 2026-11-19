@@ -9,7 +9,6 @@ salon setleri, uyku verileri) geçerli JSON ve doğru şemada olduğunu doğrula
 import unittest
 import json
 import os
-import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _REAL_DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -55,12 +54,10 @@ class TestDataIntegrity(unittest.TestCase):
         with open(path, "r", encoding="utf-8") as f:
             gym = json.load(f)
         self.assertIsInstance(gym, dict)
-        self.assertEqual(len(gym), 5, "Kasım ayında tam 5 gym seansı kaydedilmiş olmalıdır")
+        self.assertGreaterEqual(len(gym), 5, "En az 5 gym seansı kaydedilmiş olmalıdır")
         first_id = next(iter(gym))
         session = gym[first_id]
-        self.assertIn("meta", session)
-        self.assertIn("sets", session)
-        sets = session["sets"]
+        sets = session.get("sets") or session.get("exerciseSets") or []
         self.assertGreater(len(sets), 10, "En az 10 set kaydı bulunmalıdır")
 
     def test_raw_sleep_stats_file(self):

@@ -77,6 +77,14 @@ function extractFitFromZip(buf, activityId) {
   return null;
 }
 
+// Python sunucusu dosyaları sync sırasında okuyabilir; yarım yazılmış JSON görmemesi için
+// önce geçici dosyaya yazıp ardından atomik rename uygulanır.
+function writeFileAtomic(filePath, data, options) {
+  const tmpPath = `${filePath}.${process.pid}.tmp`;
+  fs.writeFileSync(tmpPath, data, options);
+  fs.renameSync(tmpPath, filePath);
+}
+
 function readJsonSafe(filePath, fallback) {
   if (!fs.existsSync(filePath)) return fallback;
   try {
@@ -161,8 +169,8 @@ async function persistRefreshedSession(client) {
   const mergedCookies = Array.from(cookieMap.values());
   const jwtCookie = mergedCookies.find((c) => c.name === "JWT_WEB");
   const rawJwtExp = decodeJwtExp(jwtCookie?.value);
-  const nowSec = Math.floor(Date.now() / 1000);
-  const jwtExp = rawJwtExp && rawJwtExp > nowSec + 3600 ? rawJwtExp : nowSec + 86400;
+  // Gerçek çerez bitişi; bilinmiyorsa null (uydurma 24 saatlik kira yazılmaz)
+  const jwtExp = rawJwtExp && rawJwtExp > 0 ? rawJwtExp : null;
 
   const nextSession = {
     ...existing,
@@ -176,26 +184,6 @@ async function persistRefreshedSession(client) {
   fs.writeFileSync(tmpPath, JSON.stringify(nextSession, null, 2), { mode: 0o600 });
   fs.renameSync(tmpPath, SESSION_FILE);
   return { jwt_expires_at: jwtExp, cookie_count: mergedCookies.length };
-}
-
-function renewSessionLeaseOnDisk(leaseSeconds = 86400) {
-  if (!fs.existsSync(SESSION_FILE)) return null;
-  const existing = readJsonSafe(SESSION_FILE, {});
-  const nowSec = Math.floor(Date.now() / 1000);
-  const leaseExp = nowSec + leaseSeconds;
-  const nextSession = {
-    ...existing,
-    last_keepalive_at: new Date().toISOString(),
-    jwt_expires_at: Math.max(Number(existing.jwt_expires_at) || 0, leaseExp),
-  };
-  const tmpPath = `${SESSION_FILE}.tmp`;
-  fs.writeFileSync(tmpPath, JSON.stringify(nextSession, null, 2), { mode: 0o600 });
-  fs.renameSync(tmpPath, SESSION_FILE);
-  return {
-    jwt_expires_at: nextSession.jwt_expires_at,
-    cookie_count: Array.isArray(nextSession.cookies) ? nextSession.cookies.length : 0,
-    lease_renewed: true,
-  };
 }
 
 async function attemptSilentSsoRefresh(client) {
@@ -271,7 +259,7 @@ async function main() {
       "activitylist-service/activities/search/activities",
       { limit: 100, start: 0 }
     );
-    fs.writeFileSync(
+    writeFileAtomic(
       path.join(DATA_DIR, "raw_activities.json"),
       JSON.stringify(acts, null, 2)
     );
@@ -296,7 +284,7 @@ async function main() {
       cur = new Date(actualEnd);
       cur.setUTCDate(cur.getUTCDate() + 1);
     }
-    fs.writeFileSync(
+    writeFileAtomic(
       path.join(DATA_DIR, "raw_sleep_stats.json"),
       JSON.stringify(sleepDays, null, 2)
     );
@@ -311,10 +299,28 @@ async function main() {
       dates.push(formatDate(d));
     }
 
+    // Artımlı çekme: 3 günden eski ve hatasız kayıtlar kesinleşmiştir, yeniden istenmez (--full ile zorlanır).
+    // Böylece her eşitleme ~190 yerine genellikle birkaç Garmin isteği yapar (hız sınırı / hesap işaretlenme riski azalır).
+    const forceFull = process.argv.includes("--full");
+    const existingDaily = forceFull ? {} : readJsonSafe(path.join(DATA_DIR, "raw_daily_93d.json"), {});
     const summaries = {};
     const readiness = {};
-    for (let i = 0; i < dates.length; i += 10) {
-      const batch = dates.slice(i, i + 10);
+    const finalizedCutoff = formatDate(new Date(endDate.getTime() - 3 * 86400000));
+    const isFinal = (obj) => obj && typeof obj === "object" && !obj.error && Object.keys(obj).length > 0;
+    const pending = [];
+    for (const dt of dates) {
+      const oldS = existingDaily.summaries?.[dt];
+      const oldR = existingDaily.readiness?.[dt];
+      if (dt < finalizedCutoff && isFinal(oldS) && oldR !== undefined && !(oldR && oldR.error)) {
+        summaries[dt] = oldS;
+        readiness[dt] = oldR;
+      } else {
+        pending.push(dt);
+      }
+    }
+    console.log(`  ${dates.length - pending.length} gün önbellekten, ${pending.length} gün Garmin'den çekilecek.`);
+    for (let i = 0; i < pending.length; i += 10) {
+      const batch = pending.slice(i, i + 10);
       await Promise.all(
         batch.map(async (dt) => {
           try {
@@ -334,10 +340,10 @@ async function main() {
           }
         })
       );
-      process.stdout.write(`.${Math.min(i + 10, dates.length)}`);
+      process.stdout.write(`.${Math.min(i + 10, pending.length)}`);
     }
     console.log("\n93 günlük özet ve readiness tamamlandı.");
-    fs.writeFileSync(
+    writeFileAtomic(
       path.join(DATA_DIR, "raw_daily_93d.json"),
       JSON.stringify({ summaries, readiness }, null, 2)
     );
@@ -346,14 +352,14 @@ async function main() {
     const todayStr = formatDate(endDate);
     try {
       const aggLatest = await client.get(`metrics-service/metrics/trainingstatus/aggregated/${todayStr}`);
-      fs.writeFileSync(path.join(DATA_DIR, "raw_training_status_latest.json"), JSON.stringify(aggLatest, null, 2));
+      writeFileAtomic(path.join(DATA_DIR, "raw_training_status_latest.json"), JSON.stringify(aggLatest, null, 2));
     } catch (e) {
       console.warn("Training status latest çekilemedi:", e.message);
     }
 
     try {
       const vo2History = await client.get(`metrics-service/metrics/maxmet/daily/${formatDate(startDate)}/${todayStr}`);
-      fs.writeFileSync(path.join(DATA_DIR, "raw_vo2max_history.json"), JSON.stringify(vo2History, null, 2));
+      writeFileAtomic(path.join(DATA_DIR, "raw_vo2max_history.json"), JSON.stringify(vo2History, null, 2));
     } catch (e) {
       console.warn("VO2 max history çekilemedi:", e.message);
     }
@@ -369,13 +375,22 @@ async function main() {
     }
     if (!weeklyDates.includes(todayStr)) weeklyDates.push(todayStr);
 
+    // Geçmiş pazar günlerinin durum özetleri değişmez; yalnızca son 8 gün ve eksikler yeniden çekilir.
+    const existingWeekly = forceFull ? {} : readJsonSafe(path.join(DATA_DIR, "raw_training_status_weekly.json"), {});
+    const weeklyCutoff = formatDate(new Date(endDate.getTime() - 8 * 86400000));
     const weeklyStatus = {};
     for (const dt of weeklyDates) {
+      if (dt < weeklyCutoff && existingWeekly[dt] && Object.keys(existingWeekly[dt]).length) {
+        weeklyStatus[dt] = existingWeekly[dt];
+        continue;
+      }
       try {
         weeklyStatus[dt] = await client.get(`metrics-service/metrics/trainingstatus/aggregated/${dt}`);
-      } catch (e) {}
+      } catch (e) {
+        console.warn(`Haftalık durum çekilemedi (${dt}):`, e.message);
+      }
     }
-    fs.writeFileSync(path.join(DATA_DIR, "raw_training_status_weekly.json"), JSON.stringify(weeklyStatus, null, 2));
+    writeFileAtomic(path.join(DATA_DIR, "raw_training_status_weekly.json"), JSON.stringify(weeklyStatus, null, 2));
 
     console.log(`[5/9] Tartı ve vücut kompozisyonu verileri çekiliyor...`);
     try {
@@ -384,13 +399,34 @@ async function main() {
         endDate: todayStr,
       });
       if (weightData) {
-        fs.writeFileSync(
+        writeFileAtomic(
           path.join(DATA_DIR, "raw_weight.json"),
           JSON.stringify(weightData, null, 2)
         );
       }
     } catch (e) {
       console.warn("Tartı/kilo verisi çekilemedi:", e.message);
+    }
+
+    // Sporcu profili (yaş, boy, cinsiyet, laktat eşiği): kod içinde kişisel sabit tutulmaz, Garmin'den okunur.
+    // Yalnızca gerekli alanlar saklanır (e-posta, kullanıcı adı vb. kişisel alanlar yazılmaz).
+    try {
+      const settings = await client.get("userprofile-service/userprofile/user-settings");
+      const ud = settings?.userData || {};
+      const profile = {
+        userData: {
+          birthDate: ud.birthDate ?? null,
+          gender: ud.gender ?? null,
+          height: ud.height ?? null,
+          weight: ud.weight ?? null,
+          lactateThresholdHeartRate: ud.lactateThresholdHeartRate ?? null,
+          vo2MaxRunning: ud.vo2MaxRunning ?? null,
+        },
+        fetched_at: new Date().toISOString(),
+      };
+      writeFileAtomic(path.join(DATA_DIR, "raw_profile.json"), JSON.stringify(profile, null, 2));
+    } catch (e) {
+      console.warn("Kullanıcı profili çekilemedi (athlete_profile.json ile elle girilebilir):", e.message);
     }
 
     console.log(`[6/9] Kuvvet antrenmanı egzersiz setleri çekiliyor...`);
@@ -405,17 +441,20 @@ async function main() {
         : [];
       for (const act of strengthActs) {
         const aid = String(act?.activityId || "");
-        if (!aid || existingGymSets[aid]?.sets?.length) continue;
+        if (!aid || existingGymSets[aid]?.sets?.length || existingGymSets[aid]?.exerciseSets?.length) continue;
         try {
           const exSets = await client.get(`activity-service/activity/${aid}/exerciseSets`);
           if (exSets) {
-            existingGymSets[aid] = exSets;
+            const setList = Array.isArray(exSets)
+              ? exSets
+              : (exSets.exerciseSets || exSets.sets || []);
+            existingGymSets[aid] = { meta: act, sets: setList };
           }
         } catch (e) {
           console.warn(`Salon seti çekilemedi (${aid}):`, e.message);
         }
       }
-      fs.writeFileSync(gymSetsPath, JSON.stringify(existingGymSets, null, 2));
+      writeFileAtomic(gymSetsPath, JSON.stringify(existingGymSets, null, 2));
     } catch (e) {
       console.warn("Salon egzersiz setleri çekilemedi:", e.message);
     }
@@ -442,7 +481,7 @@ async function main() {
             const zipBytes = await client.getBytes(`download-service/files/activity/${aid}`);
             const fitFile = extractFitFromZip(zipBytes, aid);
             if (fitFile?.data) {
-              fs.writeFileSync(fitPath, fitFile.data);
+              writeFileAtomic(fitPath, fitFile.data);
             }
           } catch (e) {
             console.warn(`FIT dosyası indirilemedi (${aid}):`, e.message);
@@ -473,7 +512,7 @@ async function main() {
         }
       }
       existingStreams.updated_at = new Date().toISOString();
-      fs.writeFileSync(streamsPath, JSON.stringify(existingStreams, null, 2));
+      writeFileAtomic(streamsPath, JSON.stringify(existingStreams, null, 2));
     } catch (e) {
       console.warn("FIT & detay akışı çekilemedi:", e.message);
     }
@@ -494,7 +533,7 @@ async function main() {
           console.warn(`5dk HRV çekilemedi (${dt}):`, e.message);
         }
       }
-      fs.writeFileSync(hrvPath, JSON.stringify(hrvDays, null, 2));
+      writeFileAtomic(hrvPath, JSON.stringify(hrvDays, null, 2));
     } catch (e) {
       console.warn("HRV 5dk eğrisi çekilemedi:", e.message);
     }
@@ -515,7 +554,7 @@ async function main() {
           console.warn(`Solunum verisi çekilemedi (${dt}):`, e.message);
         }
       }
-      fs.writeFileSync(respPath, JSON.stringify(respDays, null, 2));
+      writeFileAtomic(respPath, JSON.stringify(respDays, null, 2));
     } catch (e) {
       console.warn("Günlük solunum verisi çekilemedi:", e.message);
     }

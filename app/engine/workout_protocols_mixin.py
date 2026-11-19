@@ -5,18 +5,15 @@ Branş Rehberliği, Salon Set Tarihçesi, Bilinmeyen/Preset Dışı Sporlar ve S
 Tüm egzersiz hedefleri ve branş istatistikleri canlı Garmin telemetrisinden dinamik hesaplanır.
 """
 
+import logging
 import json
 import os
+from datetime import datetime
 from typing import Dict, List, Any
 
 try:
-    from athlete_principles import (
-        ATHLETE_PROFILE, NUTRITION_PRINCIPLES, STRENGTH_PRINCIPLES,
-        RUNNING_PRINCIPLES, SAME_DAY_SEQUENCE_LAW, CROSS_SPORTS_PROTOCOLS,
-        RECOVERY_AND_WATCH_SETTINGS, PRESENTATION_RULES,
-        ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
-    )
-    from engine.helpers import DATA_DIR, fmt_pace_sec, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from athlete_principles import build_athlete_principles
+    from engine.helpers import request_cached, zone_text, DATA_DIR, format_sport_tr, classify_sport_bucket, classify_run_workout
     from engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
         build_projected_gym_summary,
@@ -24,20 +21,14 @@ try:
         compute_adaptive_progression,
         load_logged_gym_sessions,
         load_program_state,
-        reset_logged_gym_sessions,
         save_logged_gym_session,
         save_program_state,
         inject_split_derived_lifts,
         select_program_split,
     )
 except ImportError:
-    from app.athlete_principles import (
-        ATHLETE_PROFILE, NUTRITION_PRINCIPLES, STRENGTH_PRINCIPLES,
-        RUNNING_PRINCIPLES, SAME_DAY_SEQUENCE_LAW, CROSS_SPORTS_PROTOCOLS,
-        RECOVERY_AND_WATCH_SETTINGS, PRESENTATION_RULES,
-        ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
-    )
-    from app.engine.helpers import DATA_DIR, fmt_pace_sec, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from app.athlete_principles import build_athlete_principles
+    from app.engine.helpers import request_cached, zone_text, DATA_DIR, format_sport_tr, classify_sport_bucket, classify_run_workout
     from app.engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
         build_projected_gym_summary,
@@ -45,12 +36,14 @@ except ImportError:
         compute_adaptive_progression,
         load_logged_gym_sessions,
         load_program_state,
-        reset_logged_gym_sessions,
         save_logged_gym_session,
         save_program_state,
         inject_split_derived_lifts,
         select_program_split,
     )
+
+
+logger = logging.getLogger(__name__)
 
 
 _EXERCISE_NAME_MAP = {
@@ -64,32 +57,10 @@ _EXERCISE_NAME_MAP = {
     "SHRUG": "Dumbbell Shrug",
 }
 
-_PROGRESSION_SPECS = [
-    ("squat", "Back Squat", "Back Squat", 2.5, "x 5 reps x 5 set", 67.5),
-    ("bench", "Bench Press", "Bench Press", 2.5, "x 5 reps x 5 set", 52.5),
-    ("row", "Barbell Row", "Barbell Row", 2.5, "x 5 reps x 5 set", 62.5),
-    ("ohp", "Overhead Press (OHP)", "Overhead Press (OHP)", 2.5, "x 5 reps x 5 set", 40.0),
-    ("deadlift", "Barbell Deadlift", "Barbell Deadlift", 5.0, "x 5 reps (1 ana set)", 65.0),
-    ("lat_pulldown", "Lat Pulldown", "Lat Pulldown", 2.5, "x 12 reps x 4 set", 47.5),
-    ("lateral_raise", "Lateral Raise", "Lateral Raise (Yana Açış)", 2.5, "x 12 reps x 3 set", 25.0),
-    ("shrug", "Dumbbell Shrug", "Dumbbell Shrug", 2.5, "x 12 reps x 3 set", 45.0),
-]
-
-_DEFAULT_PROGRESSION = {
-    "squat": {"name": "Back Squat", "history": ["45.0 kg", "65.0 kg (5x5)"], "delta": "+20.0 kg", "max_kg": 65.0, "last_date": "17 Kas", "next_kg": 67.5, "next_target": "67.5 kg x 5 reps x 5 set"},
-    "bench": {"name": "Bench Press", "history": ["45.0 kg", "50.0 kg (5x5)"], "delta": "+5.0 kg", "max_kg": 50.0, "last_date": "17 Kas", "next_kg": 52.5, "next_target": "52.5 kg x 5 reps x 5 set"},
-    "row": {"name": "Barbell Row", "history": ["45.0 kg", "60.0 kg (5x5)"], "delta": "+15.0 kg", "max_kg": 60.0, "last_date": "17 Kas", "next_kg": 62.5, "next_target": "62.5 kg x 5 reps x 5 set"},
-    "ohp": {"name": "Overhead Press (OHP)", "history": ["35.0 kg", "40.0 kg"], "delta": "+5.0 kg", "max_kg": 40.0, "last_date": "12 Kas", "next_kg": 40.0, "next_target": "40.0 kg x 5 reps x 5 set"},
-    "deadlift": {"name": "Barbell Deadlift", "history": ["50.0 kg", "60.0 kg x 5"], "delta": "+10.0 kg", "max_kg": 60.0, "last_date": "12 Kas", "next_kg": 65.0, "next_target": "65.0 kg x 5 reps (1 ana set)"},
-    "lat_pulldown": {"name": "Lat Pulldown", "history": ["40.0 kg", "45.0 kg x 12"], "delta": "+5.0 kg", "max_kg": 45.0, "last_date": "12 Kas", "next_kg": 47.5, "next_target": "47.5 kg x 12 reps x 4 set"},
-    "lateral_raise": {"name": "Lateral Raise", "history": ["20.0 kg", "25.0 kg x 12"], "delta": "Stabil Güç", "max_kg": 25.0, "last_date": "17 Kas", "next_kg": 25.0, "next_target": "25.0 kg x 12 reps x 3 set"},
-    "shrug": {"name": "Dumbbell Shrug", "history": ["35.0 kg", "45.0 kg x 12"], "delta": "Stabil 45 kg", "max_kg": 45.0, "last_date": "17 Kas", "next_kg": 45.0, "next_target": "45.0 kg x 12 reps x 3 set"},
-}
-
-
 class WorkoutProtocolsMixin:
     """Salon ağırlık geçmişi, branş rehberliği, bilinmeyen spor desteği ve seans reçeteleri."""
 
+    @request_cached
     def get_gym_exercise_history(self) -> Dict[str, Any]:
         """Garmin kuvvet seanslarının tüm set, tekrar ve dinamik progression hedeflerini döner."""
         data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
@@ -99,15 +70,17 @@ class WorkoutProtocolsMixin:
             try:
                 with open(gym_file, "r", encoding="utf-8") as f:
                     raw_data = json.load(f)
-            except Exception:
+            except (OSError, ValueError):
+                logger.warning("get_gym_exercise_history: yedek davranış uygulandı", exc_info=True)
                 raw_data = {}
 
         manual_sessions = load_logged_gym_sessions(data_dir)
         program_state = load_program_state(data_dir)
         if not raw_data and not manual_sessions:
+            baseline = compute_adaptive_progression([], bodyweight_kg=self.get_current_weight())
             return {
                 "sessions": [],
-                "progression": dict(_DEFAULT_PROGRESSION),
+                "progression": baseline["progression"],
                 "plateau_analysis": {"plateau_score": 0, "recommended_split": "5x5_linear", "tier_label": "Doğrusal İvme Aktif", "recommendation": "Veri bekleniyor.", "signals": []},
                 "program_state": program_state,
                 "split_catalog": PROGRAM_SPLIT_CATALOG,
@@ -131,7 +104,7 @@ class WorkoutProtocolsMixin:
         sessions: List[Dict[str, Any]] = []
         for act_id, info in raw_data.items():
             meta = act_meta_map.get(str(act_id), {})
-            sets = info.get("sets", [])
+            sets = info.get("sets") or info.get("exerciseSets") or []
 
             grouped_ex: List[Dict[str, Any]] = []
             last_name = None
@@ -160,10 +133,7 @@ class WorkoutProtocolsMixin:
                 grouped_ex.append({"name": last_name, "sets": curr_sets})
 
             # Yeni gelecek Garmin seanslarını da egzersiz içeriğine göre otomatik A/B sınıfla
-            is_b = (
-                bool(cat_set.intersection({"SHOULDER_PRESS", "DEADLIFT", "PULL_UP"}))
-                or str(act_id) in ("25005174809", "25051460770")
-            )
+            is_b = bool(cat_set.intersection({"SHOULDER_PRESS", "DEADLIFT", "PULL_UP"}))
             workout_type = "Workout B" if is_b else "Workout A"
 
             sessions.append({
@@ -196,17 +166,11 @@ class WorkoutProtocolsMixin:
 
         # Canlı biyometri ve Garmin yük durumu ile çok faktörlü progresyon hesapla
         metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
-        bw_kg = float(metrics.get("weight") or 87.0)
-        hrv_val = float(metrics.get("hrv") or 45.0)
-        hrv_7d = float(metrics.get("hrv_7d_avg") or hrv_val or 45.0)
+        bw_kg = float(metrics.get("weight") or self.get_current_weight())
+        hrv_val = float(metrics.get("overnight_hrv") or 45.0)
+        hrv_7d = float(metrics.get("hrv_7d") or hrv_val or 45.0)
         sleep_sc = float(metrics.get("sleep_score") or 80.0)
-        acwr_val = 1.0
-        if hasattr(self, "get_training_load_analysis"):
-            try:
-                tl = self.get_training_load_analysis() or {}
-                acwr_val = float((tl.get("current") or {}).get("acwr") or 1.0)
-            except Exception:
-                acwr_val = 1.0
+        acwr_val = float(metrics.get("acwr") or 1.0)
 
         chrono_sessions = sorted(sessions, key=lambda x: (x.get("date", ""), x.get("time", "")))
         ref_date = str(metrics.get("date") or "")[:10] or None
@@ -221,20 +185,16 @@ class WorkoutProtocolsMixin:
             reference_date=ref_date,
         )
 
-        # Program, plato analizine göre otomatik seçilir (kullanıcı seçimi yok)
+        # Program, plato analizine göre otomatik seçilir (kullanıcı seçimi yok).
+        # Okuma yolu diske yazmaz; kalıcı kayıt yalnızca veri değiştiğinde persist_program_state() ile yapılır.
         auto_split = select_program_split(int((adaptive["plateau_analysis"] or {}).get("plateau_score", 0)))
-        if program_state.get("active_split") != auto_split:
-            try:
-                program_state = save_program_state(
-                    data_dir,
-                    new_split=auto_split,
-                    reason=f"Plato skoru {adaptive['plateau_analysis'].get('plateau_score', 0)}/100 -> otomatik program seçimi",
-                    source="auto",
-                )
-            except Exception:
-                program_state = {**program_state, "active_split": auto_split}
+        program_state = {
+            **program_state,
+            "active_split": auto_split,
+            "persisted_split": program_state.get("active_split"),
+        }
 
-        inject_split_derived_lifts(adaptive["progression"], auto_split)
+        inject_split_derived_lifts(adaptive["progression"], auto_split, bodyweight_kg=bw_kg)
 
         return {
             "sessions": sessions,
@@ -253,7 +213,7 @@ class WorkoutProtocolsMixin:
         date_str = str(payload.get("date") or "").strip()
         if not date_str:
             metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
-            date_str = str(metrics.get("date") or "2026-11-19")[:10]
+            date_str = str(metrics.get("date") or datetime.now().strftime("%Y-%m-%d"))[:10]
         workout_type = str(payload.get("workout_type") or "Workout A").strip()
         exercises_in = payload.get("exercises") or []
 
@@ -284,7 +244,10 @@ class WorkoutProtocolsMixin:
         }
         save_logged_gym_session(data_dir, entry)
 
-        # Otomatik plato kontrolü: eğer auto_transition açıksa ve skor >= 70 ise öneri/geçiş bilgisi dön
+        # Yeni seans verisi plato skorunu değiştirmiş olabilir; program geçişini kalıcılaştır
+        if getattr(self, "_req_cache", None) is not None:
+            self._req_cache.clear()
+        self.persist_program_state()
         updated = self.get_gym_exercise_history()
         return {
             "status": "ok",
@@ -292,11 +255,28 @@ class WorkoutProtocolsMixin:
             "gym_history": updated,
         }
 
-    def reset_manual_gym_logs(self, mode: str = "last") -> Dict[str, Any]:
-        """Manuel girilen son seansı veya tüm manuel seansları temizler."""
+    def persist_program_state(self) -> Dict[str, Any]:
+        """
+        Plato analizinin seçtiği programı, diskteki kayıttan farklıysa training_program_state.json'a yazar.
+        Yalnızca veri değiştiğinde (Garmin sync, manuel seans kaydı/silme) çağrılır; GET istekleri yazmaz.
+        """
         data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
-        reset_logged_gym_sessions(data_dir, mode=mode)
-        return {"status": "ok", "gym_history": self.get_gym_exercise_history()}
+        gh = self.get_gym_exercise_history()
+        auto_split = (gh.get("program_state") or {}).get("active_split", "5x5_linear")
+        stored = load_program_state(data_dir)
+        if stored.get("active_split") == auto_split:
+            return stored
+        score = (gh.get("plateau_analysis") or {}).get("plateau_score", 0)
+        try:
+            return save_program_state(
+                data_dir,
+                new_split=auto_split,
+                reason=f"Plato skoru {score}/100 -> otomatik program seçimi",
+                source="auto",
+            )
+        except (OSError, ValueError):
+            logger.warning("persist_program_state: yedek davranış uygulandı", exc_info=True)
+            return stored
 
 
     def _build_dynamic_extra_sport_card(self, sport_key: str, rows_df) -> Dict[str, Any]:
@@ -324,6 +304,23 @@ class WorkoutProtocolsMixin:
                 "Omuz & Sırt Dengesi: Lat Pulldown ve OHP ile birlikte omuz kuşağı hareket açıklığını korur.",
             ]
             upcoming = {"day": "Spontane Su Branşı", "type": label, "title": f"{label} Seansı", "duration": "30 - 50 dk", "details": "Rahat ritimde sürekli aerobik yüzme; ekstra bacak yorgunluğu oluşturmaz."}
+        elif "sail" in low:
+            water_l = round(float(rows_df["water_ml"].sum()) / 1000.0, 1)
+            goal = "Uzun seanslarda core/önkol dayanıklılığı ve sıvı-elektrolit dengesi"
+            tips = [
+                "İzometrik Tutuş Gücü: Farmer's Walk ve Dead Hang, halat/kol yorgunluğunu önler.",
+                f"Sıvı & Elektrolit Protokolü: {water_l} L toplam tahmini ter kaybı gözlendi; saat başı 500-600 mL su + sodyum tüketin.",
+                "Glikojen Ön-Yüklemesi: 3 saat üzeri seanslardan 90 dk önce 70-80g kompleks karbonhidrat alın.",
+            ]
+            upcoming = {"day": "Spontane Seans (Çıktıkça İşlenir)", "type": f"{label} Seansı", "title": f"Uzun {label} Antrenmanı", "duration": "2,5 - 4 saat", "details": "2 x 750 mL matara (su + 500-800 mg sodyum). Saat başı düzenli yudumlayın."}
+        elif any(k in low for k in ("basket", "football", "soccer", "tennis", "padel", "squash", "volley", "handball")):
+            goal = "Patlayıcı hızlanma, yön değiştirme ve anaerobik dayanıklılık"
+            tips = [
+                "Doğal HIIT Katkısı: Anaerobik yük eksiğini kapatmaya doğal destek sağlar.",
+                "Yük Çakışması Kuralı: Maç günü ağır bacak (Squat/Deadlift) yerine üst vücut veya dinlenme tercih edin.",
+                "Maç Öncesi & Sonrası: 10 dk dinamik ayak bileği ısınması + 10 dk statik hamstring esnemesi.",
+            ]
+            upcoming = {"day": "Spontane Maç (Çıktıkça İşlenir)", "type": f"{label} (İsteğe Bağlı)", "title": f"{label} Maçı", "duration": "60 - 90 dk", "details": "Maç öncesi 10 dk dinamik bacak ısınması; maç sonrası 10 dk esneme."}
         elif "cycl" in low or "bik" in low:
             goal = "Düşük darbeli Zone 2 aerobik kapasite artışı ve kuadriseps oksidatif verimliliği"
             tips = [
@@ -351,6 +348,8 @@ class WorkoutProtocolsMixin:
             "upcoming_sessions": [upcoming],
         }
 
+    @request_cached
+    @zone_text
     def get_sports_guidance(self) -> Dict[str, Any]:
         """Koşu, Kuvvet, Yelken, Basketbol ve Garmin'den gelen tüm preset dışı sporlar için dinamik rehberlik döner."""
         weekly_quota = self.get_weekly_quota_summary()
@@ -359,11 +358,94 @@ class WorkoutProtocolsMixin:
         gyms_done = weekly_quota["strength"]["completed"]
         rem_gyms = weekly_quota["strength"]["remaining"]
         metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
-        cur_w = metrics.get("weight", 87.0)
+        cur_w = metrics.get("weight") or self.get_current_weight()
         prog = self.get_gym_exercise_history().get("progression", {})
 
+        latest_cadence, latest_ef, run_cnt, run_hr, run_km = self._compute_running_stats()
+
+        gym_cnt, gym_hours, gym_kcal = self._compute_strength_stats()
+
+
+        running_upcoming = self._build_running_upcoming(weekly_quota)
+
+        gym_hist_data = self.get_gym_exercise_history()
+        gym_sessions = gym_hist_data.get("sessions", [])
+        active_split = (gym_hist_data.get("program_state") or {}).get("active_split", "5x5_linear")
+        split_slots = PROGRAM_SPLIT_CATALOG.get(active_split, PROGRAM_SPLIT_CATALOG["5x5_linear"])["slots"]
+
+        gym_upcoming = self._build_gym_upcoming(active_split, gym_sessions, prog, split_slots, weekly_quota)
+
+        last_run_workout, last_workout = self._build_last_workouts(gym_sessions)
+
+        sq_t = prog.get("squat", {}).get("next_target", "--")
+        ohp_t = prog.get("ohp", {}).get("next_target", "--")
+        dl_t = prog.get("deadlift", {}).get("next_target", "--")
+        lat_t = prog.get("lat_pulldown", {}).get("next_target", "--")
+        lr_t = prog.get("lateral_raise", {}).get("next_target", "--")
+        sh_t = prog.get("shrug", {}).get("next_target", "--")
+
+        sq_pr = prog.get("squat", {}).get("max_kg", 0.0)
+        bp_pr = prog.get("bench", {}).get("max_kg", 0.0)
+        rw_pr = prog.get("row", {}).get("max_kg", 0.0)
+
+        extra_sports = self._collect_extra_sports_cards()
+
+        run_sched_status = (
+            f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/2 Tamamlandı · Kota Doldu)"
+            if rem_runs == 0 else f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/2 Yapıldı · Kalan: {rem_runs})"
+        )
+        gym_sched_status = (
+            f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Tamamlandı · Kota Doldu)"
+            if rem_gyms == 0 else f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Yapıldı · Kalan: {rem_gyms})"
+        )
+
+        return {
+            "weekly_quota": weekly_quota,
+            "extra_sports": extra_sports,
+            "running": {
+                "name": "Koşu (Running)",
+                "schedule_status": run_sched_status,
+                "current_pace": metrics.get("latest_5k", "--"),
+                "target_pace": f"{self.get_goal_5k()['pace']} (5K: <{self.get_goal_5k()['label']})",
+                "efficiency_factor": latest_ef,
+                "cadence": f"{latest_cadence} spm (Harika Form ve Düşük Darbe)",
+                "stats_summary": f"{run_cnt} Koşu • {run_km} km Mesafe • {run_hr} bpm Ortalama Nabız",
+                "last_workout": last_run_workout,
+                "how_to_improve": [
+                    "80/20 Polarize Model: Haftalık 2 koşu kotasının 1'ini Zone 2 ([[Z2_HR]], konuşma temposu), 1'ini hız intervali (Anaerobik eksik kapatıcı) olarak uygulayın.",
+                    "Laktat Eşiği İntervali: 4x1.000m @ [[INT_PACE]] ([[INT_HR]]) ile yüksek hız toleransını ve anaerobik yük barını yukarı taşıyın.",
+                    f"{latest_cadence} spm Kadans Kontrolü: Kısa, elastik adımlarla diz/eklem darbesini minimumda tutun.",
+                    f"Kilo Adaptasyonu ({cur_w:.1f} -> {self.get_target_weight():.1f} kg): Her -1 kg hafifleme 5K süresini ~14 sn hızlandırır.",
+                ],
+                "upcoming_sessions": running_upcoming,
+                "next_workout": running_upcoming[0],
+            },
+            "strength": {
+                "name": "Kuvvet Antrenmanı (Strength)",
+                "schedule_status": gym_sched_status,
+                "current_status": f"A/B Bölünmüş Rutin ({gym_cnt} seans tamamlandı)",
+                "goal": "Yağ yakımı döneminde kas kütlesini ve omurga/omuz gücünü korumak (Progressive Overload)",
+                "stats_summary": f"{gym_cnt} Seans • {gym_hours} Saat • {gym_kcal:,} kcal • Squat: {sq_pr:.0f}kg • Bench: {bp_pr:.0f}kg • Row: {rw_pr:.0f}kg",
+                "how_to_improve": [
+                    "Bileşik 5x5 Odaklanması: Workout A ve B ile tüm büyük kas gruplarında mekanik gerilim sağlar.",
+                    "Lineer Progressive Overload: Temiz tamamlanan her 5x5 sonrası üst vücuda +2.5 kg, bacağa +2.5–5.0 kg ekleyin.",
+                    "Aynı Gün Sıralama Kuralı: Koşu ile aynı gün yapılacaksa ÖNCE KOŞU, SONRA KUVVET veya araya ≥6 saat koyun.",
+                ],
+                "last_workout": last_workout,
+                "upcoming_sessions": gym_upcoming,
+                "next_workout": {
+                    "day": gym_upcoming[0]["day"],
+                    "title": gym_upcoming[0]["title"],
+                    "duration": gym_upcoming[0]["duration"],
+                    "exercises": [sq_t, ohp_t, dl_t, lat_t, lr_t, sh_t],
+                },
+            },
+        }
+
+    def _compute_running_stats(self):
+        """Koşu sayısı, mesafe, ortalama nabız, kadans ve verimlilik faktörünü hesaplar."""
         # Canlı koşu istatistikleri
-        run_cnt, run_km, run_hr, latest_cadence, latest_ef = 15, 79.5, 158, 162, 1.03
+        run_cnt, run_km, run_hr, latest_cadence, latest_ef = 0, 0.0, 0, 0, 0.0
         if hasattr(self, "adf") and not self.adf.empty:
             r_df = self.adf_3m[self.adf_3m["sport"].str.contains("running", case=False, na=False)]
             if not r_df.empty:
@@ -378,36 +460,24 @@ class WorkoutProtocolsMixin:
                 valid_ef = r_df["ef_spd"].dropna()
                 if not valid_ef.empty:
                     latest_ef = round(float(valid_ef.iloc[0]), 2)
+        return latest_cadence, latest_ef, run_cnt, run_hr, run_km
 
+
+    def _compute_strength_stats(self):
+        """Kuvvet seansı sayısını, toplam saati ve kaloriyi hesaplar."""
         # Canlı kuvvet istatistikleri
-        gym_cnt, gym_hours, gym_kcal = 5, 4.7, 1851
+        gym_cnt, gym_hours, gym_kcal = 0, 0.0, 0
         if hasattr(self, "adf") and not self.adf.empty:
             g_df = self.adf_3m[self.adf_3m["sport"].str.contains("strength|fitness_equipment", case=False, na=False)]
             if not g_df.empty:
                 gym_cnt = int(len(g_df))
                 gym_hours = round(float(g_df["dur_m"].sum()) / 60.0, 1)
                 gym_kcal = int(round(float(g_df["cal"].sum())))
+        return gym_cnt, gym_hours, gym_kcal
 
-        # Canlı yelken & basketbol istatistikleri
-        sail_cnt, sail_hours, sail_km, sail_kcal, sail_water_l = 12, 28.1, 259.8, 8561, 16.6
-        bask_cnt, bask_hours, bask_hr_min, bask_hr_max = 5, 6.5, 128, 144
-        if hasattr(self, "adf_3m") and not self.adf_3m.empty:
-            s_df = self.adf_3m[self.adf_3m["sport"].str.contains("sailing", case=False, na=False)]
-            if not s_df.empty:
-                sail_cnt = int(len(s_df))
-                sail_hours = round(float(s_df["dur_m"].sum()) / 60.0, 1)
-                sail_km = round(float(s_df["dist_km"].sum()), 1)
-                sail_kcal = int(round(float(s_df["cal"].sum())))
-                sail_water_l = round(float(s_df["water_ml"].sum()) / 1000.0, 1)
-            b_df = self.adf_3m[self.adf_3m["sport"].str.contains("basketball", case=False, na=False)]
-            if not b_df.empty:
-                bask_cnt = int(len(b_df))
-                bask_hours = round(float(b_df["dur_m"].sum()) / 60.0, 1)
-                b_hrs = b_df["avg_hr"].replace(0, float("nan")).dropna()
-                if not b_hrs.empty:
-                    bask_hr_min = int(round(float(b_hrs.min())))
-                    bask_hr_max = int(round(float(b_hrs.max())))
 
+    def _build_running_upcoming(self, weekly_quota):
+        """Kalan koşu kotası ve sonraki döngü projeksiyonlarını üretir (en az 3 öğe)."""
         running_upcoming: List[Dict[str, str]] = [
             {
                 "day": "Bu Hafta Kalan Kota (Esnek Gün)" + (" · Öncelikli" if item.get("is_prioritized") else ""),
@@ -461,12 +531,11 @@ class WorkoutProtocolsMixin:
                 "details": f"{prefix_note}: {tpl_item['coaching_note']}",
             })
             run_kinds_chain.append(next_kind)
+        return running_upcoming
 
-        gym_hist_data = self.get_gym_exercise_history()
-        gym_sessions = gym_hist_data.get("sessions", [])
-        active_split = (gym_hist_data.get("program_state") or {}).get("active_split", "5x5_linear")
-        split_slots = PROGRAM_SPLIT_CATALOG.get(active_split, PROGRAM_SPLIT_CATALOG["5x5_linear"])["slots"]
 
+    def _build_gym_upcoming(self, active_split, gym_sessions, prog, split_slots, weekly_quota):
+        """Kalan kuvvet kotası ve sonraki döngü projeksiyonlarını (aktif split'e göre) üretir."""
         ex_counts: Dict[str, int] = {}
         gym_upcoming: List[Dict[str, str]] = []
         for idx_rem, item in enumerate(weekly_quota["strength"]["remaining_items"]):
@@ -529,7 +598,11 @@ class WorkoutProtocolsMixin:
                 "details": p_details,
             })
             gym_kinds_chain.append(next_cycle_kind)
+        return gym_upcoming
 
+
+    def _build_last_workouts(self, gym_sessions):
+        """Son koşu ve son kuvvet seansının özet kartlarını üretir."""
         latest_run_act = None
         for act in sorted(self.activities_all, key=lambda x: x.get("startTimeLocal") or "", reverse=True):
             sp_k = (act.get("sport") or (act.get("activityType") or {}).get("typeKey") or "").lower()
@@ -572,134 +645,25 @@ class WorkoutProtocolsMixin:
             last_workout = {
                 "date": "Son Kuvvet Seansı",
                 "title": "Workout A (TAMAMLANDI)",
-                "exercises": ["Back Squat: 65.0 kg x 5x5", "Bench Press: 50.0 kg x 5x5", "Barbell Row: 60.0 kg x 5x5"],
+                "exercises": ["Henüz Garmin'den kuvvet seansı alınmadı"],
             }
+        return last_run_workout, last_workout
 
-        sq_t = prog.get("squat", {}).get("next_target", "67.5 kg x 5x5")
-        ohp_t = prog.get("ohp", {}).get("next_target", "40.0 kg x 5x5")
-        dl_t = prog.get("deadlift", {}).get("next_target", "65.0 kg x 5")
-        lat_t = prog.get("lat_pulldown", {}).get("next_target", "47.5 kg x 12")
-        lr_t = prog.get("lateral_raise", {}).get("next_target", "25.0 kg x 12")
-        sh_t = prog.get("shrug", {}).get("next_target", "45.0 kg x 12")
 
-        sq_pr = prog.get("squat", {}).get("max_kg", 65.0)
-        bp_pr = prog.get("bench", {}).get("max_kg", 50.0)
-        rw_pr = prog.get("row", {}).get("max_kg", 60.0)
-
+    def _collect_extra_sports_cards(self):
+        """Preset dışı (Kayak, Yüzme, Bisiklet vb.) sporları otomatik bulup rehber kartlarını üretir."""
         # Bilinmeyen / Preset dışı sporları otomatik tara (Kayak, Yüzme, Bisiklet vb.)
         extra_sports: List[Dict[str, Any]] = []
-        known_core = {"running", "strength_training", "sailing_v2", "sailing", "basketball"}
+        known_core = {"running", "strength_training"}
         if hasattr(self, "adf_3m") and not self.adf_3m.empty:
             for sp_key, grp in self.adf_3m.groupby("sport"):
                 if str(sp_key).lower() not in known_core:
                     extra_sports.append(self._build_dynamic_extra_sport_card(str(sp_key), grp))
+        return extra_sports
 
-        run_sched_status = (
-            f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/2 Tamamlandı · Kota Doldu)"
-            if rem_runs == 0 else f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/2 Yapıldı · Kalan: {rem_runs})"
-        )
-        gym_sched_status = (
-            f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Tamamlandı · Kota Doldu)"
-            if rem_gyms == 0 else f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Yapıldı · Kalan: {rem_gyms})"
-        )
 
-        return {
-            "weekly_quota": weekly_quota,
-            "extra_sports": extra_sports,
-            "running": {
-                "name": "Koşu (Running)",
-                "schedule_status": run_sched_status,
-                "current_pace": metrics.get("latest_5k", "5:48 /km"),
-                "target_pace": "4:54 /km (5K: <24:30)",
-                "efficiency_factor": latest_ef,
-                "cadence": f"{latest_cadence} spm (Harika Form ve Düşük Darbe)",
-                "stats_summary": f"{run_cnt} Koşu • {run_km} km Mesafe • {run_hr} bpm Ortalama Nabız",
-                "last_workout": last_run_workout,
-                "how_to_improve": [
-                    "80/20 Polarize Model: Haftalık 2 koşu kotasının 1'ini Zone 2 (140-150 bpm, konuşma temposu), 1'ini hız intervali (Anaerobik eksik kapatıcı) olarak uygulayın.",
-                    "Laktat Eşiği İntervali: 4x1.000m @ 5:15 /km (172-180 bpm) ile yüksek hız toleransını ve anaerobik yük barını yukarı taşıyın.",
-                    f"{latest_cadence} spm Kadans Kontrolü: Kısa, elastik adımlarla diz/eklem darbesini minimumda tutun.",
-                    f"Kilo Adaptasyonu ({cur_w:.1f} -> 81.0 kg): Her -1 kg hafifleme 5K süresini ~14 sn hızlandırır.",
-                ],
-                "upcoming_sessions": running_upcoming,
-                "next_workout": running_upcoming[0],
-            },
-            "strength": {
-                "name": "Kuvvet Antrenmanı (Strength)",
-                "schedule_status": gym_sched_status,
-                "current_status": f"A/B Bölünmüş Rutin ({gym_cnt} seans tamamlandı)",
-                "goal": "Yağ yakımı döneminde kas kütlesini ve omurga/omuz gücünü korumak (Progressive Overload)",
-                "stats_summary": f"{gym_cnt} Seans • {gym_hours} Saat • {gym_kcal:,} kcal • Squat: {sq_pr:.0f}kg • Bench: {bp_pr:.0f}kg • Row: {rw_pr:.0f}kg",
-                "how_to_improve": [
-                    "Bileşik 5x5 Odaklanması: Workout A ve B ile tüm büyük kas gruplarında mekanik gerilim sağlar.",
-                    "Lineer Progressive Overload: Temiz tamamlanan her 5x5 sonrası üst vücuda +2.5 kg, bacağa +2.5–5.0 kg ekleyin.",
-                    "Aynı Gün Sıralama Kuralı: Koşu ile aynı gün yapılacaksa ÖNCE KOŞU, SONRA KUVVET veya araya ≥6 saat koyun.",
-                ],
-                "last_workout": last_workout,
-                "upcoming_sessions": gym_upcoming,
-                "next_workout": {
-                    "day": gym_upcoming[0]["day"],
-                    "title": gym_upcoming[0]["title"],
-                    "duration": gym_upcoming[0]["duration"],
-                    "exercises": [sq_t, ohp_t, dl_t, lat_t, lr_t, sh_t],
-                },
-            },
-            "sailing": {
-                "name": "Yelken (Sailing)",
-                "schedule_status": "Spontane / Dönemsel Branş (Garmin Otomatik Algılama)",
-                "current_status": f"Son dönemde {sail_cnt} seans ({sail_hours} saat, {sail_km} km, {sail_kcal:,} kcal)",
-                "goal": "Uzun deniz seanslarında core/önkol dayanıklılığı ve sıvı-elektrolit dengesi",
-                "stats_summary": f"{sail_cnt} Seans • {sail_km} km • {sail_water_l} L Tahmini Ter Kaybı (Kotadan yer tutmaz; saatten otomatik işlenir)",
-                "how_to_improve": [
-                    "İzometrik Tutuş Gücü: Farmer's Walk ve Dead Hang halat çekişi yorgunluğunu önler.",
-                    f"Sıvı & Elektrolit Protokolü: {sail_water_l} L toplam ter kaybı gözlendi; saat başı 500-600 mL su + sodyum tüketin.",
-                    "Glikojen Ön-Yüklemesi: 3 saat üzeri seanslardan 90 dk önce 70-80g kompleks karbonhidrat alın.",
-                ],
-                "upcoming_sessions": [
-                    {
-                        "day": "Spontane Seans (Çıktıkça İşlenir)",
-                        "type": "Yelken Seansı (İsteğe Bağlı)",
-                        "title": "Rüzgar & Kondisyon Seansı",
-                        "duration": "2,5 - 4 saat",
-                        "details": "Teknede 2 x 750 mL matara (su + 500-800 mg sodyum). Saat başı düzenli yudumlayın.",
-                    }
-                ],
-                "next_workout": {
-                    "day": "İsteğe Bağlı / Çıktıkça",
-                    "title": "Uzun Yelken Antrenmanı",
-                    "duration": "2,5 - 4 saat",
-                    "hydration_plan": "2 x 750 mL elektrolitli su.",
-                },
-            },
-            "basketball": {
-                "name": "Basketbol",
-                "schedule_status": "Spontane / Dönemsel Branş (Garmin Otomatik Algılama)",
-                "current_status": f"{bask_cnt} maç • {bask_hours} saat • Ort. nabız {bask_hr_min}-{bask_hr_max} bpm",
-                "goal": "Patlayıcı hızlanma, yön değiştirme ve anaerobik dayanıklılık",
-                "stats_summary": f"{bask_cnt} Maç • {bask_hours} Saat • Zone 4-5 Doğal HIIT (Saatten otomatik algılanır)",
-                "how_to_improve": [
-                    "Doğal HIIT Katkısı: Anaerobik güç eksiğini kapatmaya doğal destek sağlar.",
-                    "Yük Çakışması Kuralı: Maç günü ağır bacak (Squat/Deadlift) yerine üst vücut veya dinlenme tercih edin.",
-                    "Maç Öncesi & Sonrası: 10 dk dinamik ayak bileği ısınması + 10 dk statik hamstring esnemesi.",
-                ],
-                "upcoming_sessions": [
-                    {
-                        "day": "Spontane Maç (Çıktıkça İşlenir)",
-                        "type": "Haftalık Maç (İsteğe Bağlı)",
-                        "title": "Basketbol Maçı",
-                        "duration": "60 - 90 dk",
-                        "details": "Maç öncesi 10 dk dinamik bacak ısınması; maç sonrası 10 dk esneme.",
-                    }
-                ],
-                "next_workout": {
-                    "day": "İsteğe Bağlı / Çıktıkça",
-                    "title": "Basketbol Maçı",
-                    "duration": "60 - 90 dk",
-                    "target_hr": "Z2 - Z4 arası değişken",
-                },
-            },
-        }
-
+    @request_cached
+    @zone_text
     def get_detailed_daily_workout_protocols(self) -> List[Dict[str, Any]]:
         """Canlı gym PR hedeflerine, kiloya ve haftalık kota durumuna bağlı 7 seans/şablon reçetesi döner."""
         quota = self.get_weekly_quota_summary()
@@ -752,274 +716,19 @@ class WorkoutProtocolsMixin:
         sh = prog.get("shrug", {})
 
         metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
-        cur_w = float(metrics.get("weight", 87.0))
+        cur_w = float(metrics.get("weight") or self.get_current_weight())
         prot_g = round(cur_w * 2.0)
 
         gym_hist_full = self.get_gym_exercise_history()
         active_split = (gym_hist_full.get("program_state") or {}).get("active_split", "5x5_linear")
         protocols = [
-            {
-                "day_code": "tuesday",
-                "slot_label": "Workout A",
-                "quota_status": "completed" if gym_a_done else ("remaining" if "gym_a" in rem_gym_kinds else "completed"),
-                "day_title": "Kuvvet Reçetesi A: Workout A (Tüm Vücut Güç & Hipertrofi)",
-                "category": "gym",
-                "badge": "Workout A",
-                "badge_color": "blue",
-                "status_note": _quota_note((not gym_a_done) and ("gym_a" in rem_gym_kinds), gyms_done, rem_gyms, "Kuvvet", "Uygun olduğun herhangi bir günde uygula"),
-                "objective": "Nöromüsküler güç inşası, göğüs, bacak, sırt ve yan omuz gelişimi (Progressive Overload). Sabit gün zorunluluğu olmadan haftanın uygun gününe yerleştirilir.",
-                "warmup": "5 dk dinamik kalça & omuz mobilitesi + Boş bar ile 2x10 Squat ve 2x10 Bench Press hafif ısınma setleri.",
-                "exercises": [
-                    {
-                        "num": 1, "name": "Barbell Back Squat", "sets": 5, "reps": 5,
-                        "current_achieved": f"{sq.get('max_kg', 65.0):.1f} kg ({sq.get('last_date', 'Son')})",
-                        "target_weight": sq.get("next_target", "67.5 kg (+2.5 kg Artış)"),
-                        "rest_sec": "150 - 180 sn", "target_rpe": "8.0",
-                        "coaching_cue": "Paralel altı derinlik, göğüs dik, topuklardan dengeli zemin itişi.",
-                    },
-                    {
-                        "num": 2, "name": "Barbell Bench Press", "sets": 5, "reps": 5,
-                        "current_achieved": f"{bp.get('max_kg', 50.0):.1f} kg ({bp.get('last_date', 'Son')})",
-                        "target_weight": bp.get("next_target", "52.5 kg (Yeni PR Denemesi)"),
-                        "rest_sec": "120 - 150 sn", "target_rpe": "8.5",
-                        "coaching_cue": "Kürek kemikleri geride kilitli, barı kontrollü göğüs ucuna indirip patlayıcı itiş.",
-                    },
-                    {
-                        "num": 3, "name": "Barbell Bent-Over Row", "sets": 5, "reps": 5,
-                        "current_achieved": f"{rw.get('max_kg', 60.0):.1f} kg ({rw.get('last_date', 'Son')})",
-                        "target_weight": rw.get("next_target", "62.5 kg (+2.5 kg Artış)"),
-                        "rest_sec": "120 - 150 sn", "target_rpe": "8.0",
-                        "coaching_cue": "Gövde 45 derece eğik, bel nötr, barı alt karına çekip kürek kemiklerini sıkıştırın.",
-                    },
-                    {
-                        "num": 4, "name": "Dumbbell Lateral Raise (Yan Açış)", "sets": 3, "reps": 12,
-                        "current_achieved": f"{lr.get('max_kg', 25.0):.1f} kg ({lr.get('last_date', 'Son')})",
-                        "target_weight": lr.get("next_target", "25.0 kg x 12"),
-                        "rest_sec": "60 - 75 sn", "target_rpe": "8.0",
-                        "coaching_cue": "Yan deltoid hipertrofisi ve V-Taper omuz genişliği için dirsekler hafif kırık, tepe noktada 1 sn bekleme.",
-                    },
-                    {
-                        "num": 5, "name": "Dumbbell / Barbell Shrug (Trapez)", "sets": 3, "reps": 12,
-                        "current_achieved": f"{sh.get('max_kg', 45.0):.1f} kg ({sh.get('last_date', 'Son')})",
-                        "target_weight": sh.get("next_target", "45.0 kg x 12"),
-                        "rest_sec": "60 - 75 sn", "target_rpe": "8.0",
-                        "coaching_cue": "Trapez kalınlığı ve tutuş gücü; yelkende hiking ve deadlift kilitlenişini korur.",
-                    },
-                ],
-                "cooldown": "5 dk hafif statik esneme (göğüs açış, kalça fleksör ve hamstring).",
-                "telemetry_targets": {
-                    "hr_range": "115 - 130 bpm (Zone 1)",
-                    "est_calories": "~2.850 kcal toplam harcama",
-                    "nutrition": f"2.450 kcal alım | {prot_g}g Protein | 250g Karbonhidrat | 80g Sağlıklı Yağ | 3.0 L Su",
-                },
-            },
-            {
-                "day_code": "wednesday",
-                "slot_label": "Toparlanma",
-                "quota_status": "optional",
-                "day_title": "Rejenerasyon Şablonu: Tam Dinlenme & Kas Onarımı",
-                "category": "rest",
-                "badge": "Esnek Dinlenme",
-                "badge_color": "slate",
-                "status_note": f"Esnek Toparlanma Penceresi • Bu hafta {total_done}/4 seans tamamlandı, {total_rem} seans kaldı",
-                "objective": "Arka arkaya yüklenen kasları onarmak ve kalan haftalık kota seanslarına yüksek hazırlıkla girmek.",
-                "warmup": "Gerekli değil.",
-                "exercises": [
-                    {
-                        "num": 1,
-                        "name": "Rejenerasyon Protokolü",
-                        "duration": "Tüm Gün Dinlenme",
-                        "protocol": "10 dk Foam Roller masajı, kalça mobilitesi ve 20 dk hafif yürüyüş.",
-                        "coaching_cue": f"Bu hafta {total_done}/4 planlı seans ({runs_done} Koşu + {gyms_done} Kuvvet) tamamlandı. Yorgunluk günlerinde bu şablonu seçin.",
-                    }
-                ],
-                "cooldown": "00:30 öncesi uyku hazırlığı (8 saat tam toparlanma).",
-                "telemetry_targets": {
-                    "hr_range": "<100 bpm (Parasempatik Toparlanma)",
-                    "est_calories": "~2.500 kcal toplam harcama",
-                    "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 220g Karbonhidrat | 80g Sağlıklı Yağ | 2.5 - 3.0 L Su",
-                },
-            },
-            {
-                "day_code": "thursday",
-                "slot_label": "Zone 2",
-                "quota_status": z2_status,
-                "day_title": "Koşu Reçetesi #1: Zone 2 Aerobik Taban (45-50 dk)",
-                "category": "running",
-                "badge": "Zone 2 Taban",
-                "badge_color": "emerald",
-                "status_note": z2_note,
-                "objective": "Sol karıncık atım hacmini büyütmek ve aerobik tabanı nabız tavanını aşmadan korumak.",
-                "warmup": "5-8 dk dinamik kalça ve ayak bileği mobilitesi.",
-                "exercises": [
-                    {
-                        "num": 1, "name": "Ana Koşu: Zone 2 Taban Koşusu",
-                        "duration": "45 - 50 dakika kesintisiz",
-                        "distance_est": "6.8 - 7.5 km",
-                        "target_hr": "140 - 150 bpm (Katı Tavan 150 bpm)",
-                        "target_pace": "6:35 - 6:50 /km",
-                        "cadence_target": "160 - 165 spm",
-                        "ground_contact_time": "Hedef <275 ms",
-                        "coaching_cue": "Burundan rahat konuşma temposu. Nabız 151 bpm olduğunda yürüyüşe düşüp indirin.",
-                    }
-                ],
-                "cooldown": "8 dk baldır, aşil ve kuadriseps statik esnemesi.",
-                "telemetry_targets": {
-                    "hr_range": "140 - 150 bpm (Zone 2 Taban)",
-                    "est_calories": "~2.950 kcal toplam harcama",
-                    "nutrition": f"2.550 kcal alım | {prot_g}g Protein | 275g Karbonhidrat | 80g Yağ | 3.5 L Su",
-                },
-            },
-            {
-                "day_code": "friday",
-                "slot_label": "Hazırlık",
-                "quota_status": "optional",
-                "day_title": "Rejenerasyon Şablonu: Hafif Mobilite & Kuvvet Öncesi Hazırlık",
-                "category": "rest",
-                "badge": "Esnek Hazırlık",
-                "badge_color": "slate",
-                "status_note": f"Esnek Ara Gün • Kalan Kota: {rem_runs} Koşu + {rem_gyms} Kuvvet",
-                "objective": "Bacak ve merkezi sinir sistemini sıradaki seans için tazelemek.",
-                "warmup": "Gerekli değil.",
-                "exercises": [
-                    {
-                        "num": 1,
-                        "name": "Hafif Mobilite & Uyku Hazırlığı",
-                        "duration": "Tüm Gün Dinlenme",
-                        "protocol": "10 dk kalça/omuz eklem açma ve hafif akşam yürüyüşü.",
-                        "coaching_cue": f"Kalan kotanı ({rem_runs} Koşu, {rem_gyms} Kuvvet) dağıtırken ağır bacak kuvveti ile interval arasına yerleştir.",
-                    }
-                ],
-                "cooldown": "Gece 00:30 öncesi yatış ve glikojen dengelemesi.",
-                "telemetry_targets": {
-                    "hr_range": "<100 bpm (Parasempatik Gün)",
-                    "est_calories": "~2.450 kcal toplam harcama",
-                    "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 230g Karbonhidrat | 80g Yağ | 3.0 L Su",
-                },
-            },
-            {
-                "day_code": "saturday",
-                "slot_label": "Workout B",
-                "quota_status": "completed" if gym_b_done else ("remaining" if "gym_b" in rem_gym_kinds else "completed"),
-                "day_title": "Kuvvet Reçetesi B: Workout B (Arka Zincir, Omuz & Çekiş)",
-                "category": "gym",
-                "badge": "Workout B",
-                "badge_color": "blue",
-                "status_note": _quota_note((not gym_b_done) and ("gym_b" in rem_gym_kinds), gyms_done, rem_gyms, "Kuvvet", "Toparlanmana uygun herhangi bir günde uygula"),
-                "objective": "Arka zincir, omuz itiş gücü, kanat hipertrofisi ve trapez dayanıklılığı.",
-                "warmup": "5-8 dk dinamik eklem açma + Boş bar ile Squat ve OHP ısınma setleri.",
-                "exercises": [
-                    {
-                        "num": 1, "name": "Barbell Back Squat", "sets": 5, "reps": 5,
-                        "current_achieved": f"{sq.get('max_kg', 65.0):.1f} kg ({sq.get('last_date', 'Son')})",
-                        "target_weight": sq.get("next_target", "67.5 kg x 5x5"),
-                        "rest_sec": "150 - 180 sn", "target_rpe": "8.0",
-                        "coaching_cue": "Haftanın 2. bacak seansı; hacim ve alt vücut gücü.",
-                    },
-                    {
-                        "num": 2, "name": "Barbell Overhead Press (OHP)", "sets": 5, "reps": 5,
-                        "current_achieved": f"{ohp.get('max_kg', 40.0):.1f} kg ({ohp.get('last_date', 'Son')})",
-                        "target_weight": ohp.get("next_target", "40.0 kg x 5x5"),
-                        "rest_sec": "120 - 150 sn", "target_rpe": "8.5",
-                        "coaching_cue": "Kalça ve karın kilitli, barı dik çizgide baş üzerine itiş.",
-                    },
-                    {
-                        "num": 3, "name": "Barbell Deadlift", "sets": 1, "reps": 5,
-                        "current_achieved": f"{dl.get('max_kg', 60.0):.1f} kg ({dl.get('last_date', 'Son')})",
-                        "target_weight": dl.get("next_target", "65.0 kg (+5.0 kg Artış)"),
-                        "rest_sec": "180 sn (Tek ağır ana set)", "target_rpe": "8.5",
-                        "coaching_cue": "Bel omurları nötr, bar kaval kemiğine yakın, kalçadan kilitleniş.",
-                    },
-                    {
-                        "num": 4, "name": "Lat Pulldown (Geniş Tutuş)", "sets": 4, "reps": 12,
-                        "current_achieved": f"{lat.get('max_kg', 45.0):.1f} kg ({lat.get('last_date', 'Son')})",
-                        "target_weight": lat.get("next_target", "47.5 kg x 12"),
-                        "rest_sec": "75 - 90 sn", "target_rpe": "8.0",
-                        "coaching_cue": "Kanat genişliği için göğüs üstüne çekiş ve tepe sıkıştırma.",
-                    },
-                    {
-                        "num": 5, "name": "Dumbbell Lateral Raise (Yan Açış)", "sets": 3, "reps": 12,
-                        "current_achieved": f"{lr.get('max_kg', 25.0):.1f} kg ({lr.get('last_date', 'Son')})",
-                        "target_weight": lr.get("next_target", "25.0 kg"),
-                        "rest_sec": "60 - 75 sn", "target_rpe": "8.0",
-                        "coaching_cue": "Yan omuz başı hipertrofisi.",
-                    },
-                    {
-                        "num": 6, "name": "Dumbbell / Barbell Shrug (Trapez)", "sets": 3, "reps": 12,
-                        "current_achieved": f"{sh.get('max_kg', 45.0):.1f} kg ({sh.get('last_date', 'Son')})",
-                        "target_weight": sh.get("next_target", "45.0 kg"),
-                        "rest_sec": "60 - 75 sn", "target_rpe": "8.0",
-                        "coaching_cue": "Üst trapez izolasyonu ve tutuş dayanıklılığı.",
-                    },
-                ],
-                "cooldown": "5 dk arka bacak ve sırt açma esnemesi.",
-                "telemetry_targets": {
-                    "hr_range": "115 - 130 bpm (Zone 1)",
-                    "est_calories": "~2.900 kcal toplam harcama",
-                    "nutrition": f"2.500 kcal alım | {prot_g}g Protein | 270g Karbonhidrat | 80g Yağ | 3.0 L Su",
-                },
-            },
-            {
-                "day_code": "sunday",
-                "slot_label": "Aktif Dinlenme",
-                "quota_status": "optional",
-                "day_title": "Aktif Toparlanma Şablonu: Mobilite, Yürüyüş & Esnek Kapanış",
-                "category": "active_recovery",
-                "badge": "Aktif Dinlenme",
-                "badge_color": "emerald",
-                "status_note": (
-                    "Haftalık 4/4 Antrenman Kotası Tamamlandı • Aktif Toparlanma"
-                    if total_rem == 0
-                    else f"Esnek Aktif Toparlanma • Haftalık Kotadan Kalan: {total_rem} Seans"
-                ),
-                "objective": "Laktat temizliği, parasempatik tonus artışı ve eklem sağlığı.",
-                "warmup": "Gerekli değil.",
-                "exercises": [
-                    {
-                        "num": 1,
-                        "name": "Açık Hava Tempolu Yürüyüş & Esneme",
-                        "duration": "30 - 45 dakika",
-                        "target_hr": "<110 bpm (Zone 1 Hafif)",
-                        "protocol": "Açık havada tempolu yürüyüş + 15 dk tüm vücut statik esneme ve NSDR.",
-                        "coaching_cue": "Kan dolaşımını artırarak sonraki hafta kotasına taze giriş sağlamak.",
-                    }
-                ],
-                "cooldown": "Ekranlardan uzaklaşma.",
-                "telemetry_targets": {
-                    "hr_range": "<110 bpm (Zone 1)",
-                    "est_calories": "~2.500 kcal toplam harcama",
-                    "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 220g Karbonhidrat | 80g Yağ | 2.5 - 3.0 L Su",
-                },
-            },
-            {
-                "day_code": "monday",
-                "slot_label": "5K İnterval",
-                "quota_status": int_status,
-                "day_title": "Koşu Reçetesi #2: 5K Hız İntervali & Anaerobik Yük (4 x 1.000m)",
-                "category": "running",
-                "badge": "5K İnterval",
-                "badge_color": "purple",
-                "status_note": int_note,
-                "objective": "Laktat eşiğini ve barın ortasında kalan Anaerobik (Zone 5) yükünü yukarı çekmek.",
-                "warmup": "10 dk hafif jog @ 135-145 bpm + 3 adet 50m strides + kalça mobilitesi.",
-                "exercises": [
-                    {
-                        "num": 1, "name": "4 x 1.000 Metre Hız Tekrarları (Laktat Eşiği & Anaerobik)",
-                        "sets": 4, "reps": "1.000 Metre",
-                        "target_pace": "5:15 /km tempo",
-                        "target_hr": "172 - 182 bpm (Zone 4 - 5)",
-                        "rest_between_reps": "Her 1000m sonrası 3 DAKİKA yavaş yürüyüş / hafif jog",
-                        "cadence_target": "165 - 170 spm",
-                        "coaching_cue": "Ağır bacak gününün ertesi günü değil, taze bacakla (veya kuvvetten önce) 4 tekrar boyunca eşit 5:15 temposu koruyun.",
-                    }
-                ],
-                "cooldown": "8-10 dk hafif toparlanma jogu + derin baldır esnemesi.",
-                "telemetry_targets": {
-                    "hr_range": "172 - 183 bpm (Zirve Zone 4-5)",
-                    "est_calories": "~3.050 kcal toplam harcama",
-                    "nutrition": f"2.650 kcal alım | {prot_g}g Protein | 300g Karbonhidrat | 80g Yağ | 3.5 L Su + Elektrolit",
-                },
-            },
+                self._protocol_tuesday_gym_a(_quota_note, bp, gym_a_done, gyms_done, lr, prot_g, rem_gym_kinds, rem_gyms, rw, sh, sq),
+                self._protocol_wednesday_rest(gyms_done, prot_g, runs_done, total_done, total_rem),
+                self._protocol_thursday_zone2_run(prot_g, z2_note, z2_status),
+                self._protocol_friday_prep_rest(prot_g, rem_gyms, rem_runs),
+                self._protocol_saturday_gym_b(_quota_note, dl, gym_b_done, gyms_done, lat, lr, ohp, prot_g, rem_gym_kinds, rem_gyms, sh, sq),
+                self._protocol_sunday_active_recovery(prot_g, total_rem),
+                self._protocol_monday_interval_run(int_note, int_status, prot_g),
         ]
         if active_split != "5x5_linear":
             slots = PROGRAM_SPLIT_CATALOG.get(active_split, {}).get("slots", ["push", "pull"])
@@ -1038,17 +747,290 @@ class WorkoutProtocolsMixin:
                     gym_idx += 1
         return protocols
 
-    def get_athlete_principles(self) -> Dict[str, Any]:
-        """Kullanıcının belirlediği temel sporcu ilkelerini döner."""
+    def _protocol_tuesday_gym_a(self, _quota_note, bp, gym_a_done, gyms_done, lr, prot_g, rem_gym_kinds, rem_gyms, rw, sh, sq) -> Dict[str, Any]:
+        """Salı: Workout A (tüm vücut güç & hipertrofi) kuvvet reçetesi."""
         return {
-            "profile": ATHLETE_PROFILE,
-            "nutrition": NUTRITION_PRINCIPLES,
-            "strength": STRENGTH_PRINCIPLES,
-            "running": RUNNING_PRINCIPLES,
-            "same_day_sequence": SAME_DAY_SEQUENCE_LAW,
-            "cross_sports": CROSS_SPORTS_PROTOCOLS,
-            "recovery_and_watch": RECOVERY_AND_WATCH_SETTINGS,
-            "presentation": PRESENTATION_RULES,
-            "athlete_levels": ATHLETE_LEVELS_FRAMEWORK,
-            "progression_triggers": DYNAMIC_PROGRESSION_TRIGGERS,
+            "day_code": "tuesday",
+            "slot_label": "Workout A",
+            "quota_status": "completed" if gym_a_done else ("remaining" if "gym_a" in rem_gym_kinds else "completed"),
+            "day_title": "Kuvvet Reçetesi A: Workout A (Tüm Vücut Güç & Hipertrofi)",
+            "category": "gym",
+            "badge": "Workout A",
+            "badge_color": "blue",
+            "status_note": _quota_note((not gym_a_done) and ("gym_a" in rem_gym_kinds), gyms_done, rem_gyms, "Kuvvet", "Uygun olduğun herhangi bir günde uygula"),
+            "objective": "Nöromüsküler güç inşası, göğüs, bacak, sırt ve yan omuz gelişimi (Progressive Overload). Sabit gün zorunluluğu olmadan haftanın uygun gününe yerleştirilir.",
+            "warmup": "5 dk dinamik kalça & omuz mobilitesi + Boş bar ile 2x10 Squat ve 2x10 Bench Press hafif ısınma setleri.",
+            "exercises": [
+                {
+                    "num": 1, "name": "Barbell Back Squat", "sets": 5, "reps": 5,
+                    "current_achieved": f"{sq.get('max_kg', 0.0):.1f} kg ({sq.get('last_date', 'Son')})",
+                    "target_weight": sq.get("next_target", "--"),
+                    "rest_sec": "150 - 180 sn", "target_rpe": "8.0",
+                    "coaching_cue": "Paralel altı derinlik, göğüs dik, topuklardan dengeli zemin itişi.",
+                },
+                {
+                    "num": 2, "name": "Barbell Bench Press", "sets": 5, "reps": 5,
+                    "current_achieved": f"{bp.get('max_kg', 0.0):.1f} kg ({bp.get('last_date', 'Son')})",
+                    "target_weight": bp.get("next_target", "--"),
+                    "rest_sec": "120 - 150 sn", "target_rpe": "8.5",
+                    "coaching_cue": "Kürek kemikleri geride kilitli, barı kontrollü göğüs ucuna indirip patlayıcı itiş.",
+                },
+                {
+                    "num": 3, "name": "Barbell Bent-Over Row", "sets": 5, "reps": 5,
+                    "current_achieved": f"{rw.get('max_kg', 0.0):.1f} kg ({rw.get('last_date', 'Son')})",
+                    "target_weight": rw.get("next_target", "--"),
+                    "rest_sec": "120 - 150 sn", "target_rpe": "8.0",
+                    "coaching_cue": "Gövde 45 derece eğik, bel nötr, barı alt karına çekip kürek kemiklerini sıkıştırın.",
+                },
+                {
+                    "num": 4, "name": "Dumbbell Lateral Raise (Yan Açış)", "sets": 3, "reps": 12,
+                    "current_achieved": f"{lr.get('max_kg', 0.0):.1f} kg ({lr.get('last_date', 'Son')})",
+                    "target_weight": lr.get("next_target", "--"),
+                    "rest_sec": "60 - 75 sn", "target_rpe": "8.0",
+                    "coaching_cue": "Yan deltoid hipertrofisi ve V-Taper omuz genişliği için dirsekler hafif kırık, tepe noktada 1 sn bekleme.",
+                },
+                {
+                    "num": 5, "name": "Dumbbell / Barbell Shrug (Trapez)", "sets": 3, "reps": 12,
+                    "current_achieved": f"{sh.get('max_kg', 0.0):.1f} kg ({sh.get('last_date', 'Son')})",
+                    "target_weight": sh.get("next_target", "--"),
+                    "rest_sec": "60 - 75 sn", "target_rpe": "8.0",
+                    "coaching_cue": "Trapez kalınlığı ve tutuş gücü; yelkende hiking ve deadlift kilitlenişini korur.",
+                },
+            ],
+            "cooldown": "5 dk hafif statik esneme (göğüs açış, kalça fleksör ve hamstring).",
+            "telemetry_targets": {
+                "hr_range": "115 - 130 bpm (Zone 1)",
+                "est_calories": "~2.850 kcal toplam harcama",
+                "nutrition": f"2.450 kcal alım | {prot_g}g Protein | 250g Karbonhidrat | 80g Sağlıklı Yağ | 3.0 L Su",
+            },
         }
+
+    def _protocol_wednesday_rest(self, gyms_done, prot_g, runs_done, total_done, total_rem) -> Dict[str, Any]:
+        """Çarşamba: tam dinlenme ve kas onarımı şablonu."""
+        return {
+            "day_code": "wednesday",
+            "slot_label": "Toparlanma",
+            "quota_status": "optional",
+            "day_title": "Rejenerasyon Şablonu: Tam Dinlenme & Kas Onarımı",
+            "category": "rest",
+            "badge": "Esnek Dinlenme",
+            "badge_color": "slate",
+            "status_note": f"Esnek Toparlanma Penceresi • Bu hafta {total_done}/4 seans tamamlandı, {total_rem} seans kaldı",
+            "objective": "Arka arkaya yüklenen kasları onarmak ve kalan haftalık kota seanslarına yüksek hazırlıkla girmek.",
+            "warmup": "Gerekli değil.",
+            "exercises": [
+                {
+                    "num": 1,
+                    "name": "Rejenerasyon Protokolü",
+                    "duration": "Tüm Gün Dinlenme",
+                    "protocol": "10 dk Foam Roller masajı, kalça mobilitesi ve 20 dk hafif yürüyüş.",
+                    "coaching_cue": f"Bu hafta {total_done}/4 planlı seans ({runs_done} Koşu + {gyms_done} Kuvvet) tamamlandı. Yorgunluk günlerinde bu şablonu seçin.",
+                }
+            ],
+            "cooldown": "00:30 öncesi uyku hazırlığı (8 saat tam toparlanma).",
+            "telemetry_targets": {
+                "hr_range": "<100 bpm (Parasempatik Toparlanma)",
+                "est_calories": "~2.500 kcal toplam harcama",
+                "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 220g Karbonhidrat | 80g Sağlıklı Yağ | 2.5 - 3.0 L Su",
+            },
+        }
+
+    def _protocol_thursday_zone2_run(self, prot_g, z2_note, z2_status) -> Dict[str, Any]:
+        """Perşembe: Zone 2 aerobik taban koşu reçetesi."""
+        return {
+            "day_code": "thursday",
+            "slot_label": "Zone 2",
+            "quota_status": z2_status,
+            "day_title": "Koşu Reçetesi #1: Zone 2 Aerobik Taban (45-50 dk)",
+            "category": "running",
+            "badge": "Zone 2 Taban",
+            "badge_color": "emerald",
+            "status_note": z2_note,
+            "objective": "Sol karıncık atım hacmini büyütmek ve aerobik tabanı nabız tavanını aşmadan korumak.",
+            "warmup": "5-8 dk dinamik kalça ve ayak bileği mobilitesi.",
+            "exercises": [
+                {
+                    "num": 1, "name": "Ana Koşu: Zone 2 Taban Koşusu",
+                    "duration": "45 - 50 dakika kesintisiz",
+                    "distance_est": "6.8 - 7.5 km",
+                    "target_hr": "[[Z2_HR]] (Katı Tavan [[Z2_HR_CAP]] bpm)",
+                    "target_pace": "[[Z2_PACE]]",
+                    "cadence_target": "160 - 165 spm",
+                    "ground_contact_time": "Hedef <275 ms",
+                    "coaching_cue": "Burundan rahat konuşma temposu. Nabız [[Z2_HR_CAP]]+ bpm olduğunda yürüyüşe düşüp indirin.",
+                }
+            ],
+            "cooldown": "8 dk baldır, aşil ve kuadriseps statik esnemesi.",
+            "telemetry_targets": {
+                "hr_range": "[[Z2_HR]] (Zone 2 Taban)",
+                "est_calories": "~2.950 kcal toplam harcama",
+                "nutrition": f"2.550 kcal alım | {prot_g}g Protein | 275g Karbonhidrat | 80g Yağ | 3.5 L Su",
+            },
+        }
+
+    def _protocol_friday_prep_rest(self, prot_g, rem_gyms, rem_runs) -> Dict[str, Any]:
+        """Cuma: hafif mobilite ve kuvvet öncesi hazırlık şablonu."""
+        return {
+            "day_code": "friday",
+            "slot_label": "Hazırlık",
+            "quota_status": "optional",
+            "day_title": "Rejenerasyon Şablonu: Hafif Mobilite & Kuvvet Öncesi Hazırlık",
+            "category": "rest",
+            "badge": "Esnek Hazırlık",
+            "badge_color": "slate",
+            "status_note": f"Esnek Ara Gün • Kalan Kota: {rem_runs} Koşu + {rem_gyms} Kuvvet",
+            "objective": "Bacak ve merkezi sinir sistemini sıradaki seans için tazelemek.",
+            "warmup": "Gerekli değil.",
+            "exercises": [
+                {
+                    "num": 1,
+                    "name": "Hafif Mobilite & Uyku Hazırlığı",
+                    "duration": "Tüm Gün Dinlenme",
+                    "protocol": "10 dk kalça/omuz eklem açma ve hafif akşam yürüyüşü.",
+                    "coaching_cue": f"Kalan kotanı ({rem_runs} Koşu, {rem_gyms} Kuvvet) dağıtırken ağır bacak kuvveti ile interval arasına yerleştir.",
+                }
+            ],
+            "cooldown": "Gece 00:30 öncesi yatış ve glikojen dengelemesi.",
+            "telemetry_targets": {
+                "hr_range": "<100 bpm (Parasempatik Gün)",
+                "est_calories": "~2.450 kcal toplam harcama",
+                "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 230g Karbonhidrat | 80g Yağ | 3.0 L Su",
+            },
+        }
+
+    def _protocol_saturday_gym_b(self, _quota_note, dl, gym_b_done, gyms_done, lat, lr, ohp, prot_g, rem_gym_kinds, rem_gyms, sh, sq) -> Dict[str, Any]:
+        """Cumartesi: Workout B (arka zincir, omuz & çekiş) kuvvet reçetesi."""
+        return {
+            "day_code": "saturday",
+            "slot_label": "Workout B",
+            "quota_status": "completed" if gym_b_done else ("remaining" if "gym_b" in rem_gym_kinds else "completed"),
+            "day_title": "Kuvvet Reçetesi B: Workout B (Arka Zincir, Omuz & Çekiş)",
+            "category": "gym",
+            "badge": "Workout B",
+            "badge_color": "blue",
+            "status_note": _quota_note((not gym_b_done) and ("gym_b" in rem_gym_kinds), gyms_done, rem_gyms, "Kuvvet", "Toparlanmana uygun herhangi bir günde uygula"),
+            "objective": "Arka zincir, omuz itiş gücü, kanat hipertrofisi ve trapez dayanıklılığı.",
+            "warmup": "5-8 dk dinamik eklem açma + Boş bar ile Squat ve OHP ısınma setleri.",
+            "exercises": [
+                {
+                    "num": 1, "name": "Barbell Back Squat", "sets": 5, "reps": 5,
+                    "current_achieved": f"{sq.get('max_kg', 0.0):.1f} kg ({sq.get('last_date', 'Son')})",
+                    "target_weight": sq.get("next_target", "--"),
+                    "rest_sec": "150 - 180 sn", "target_rpe": "8.0",
+                    "coaching_cue": "Haftanın 2. bacak seansı; hacim ve alt vücut gücü.",
+                },
+                {
+                    "num": 2, "name": "Barbell Overhead Press (OHP)", "sets": 5, "reps": 5,
+                    "current_achieved": f"{ohp.get('max_kg', 0.0):.1f} kg ({ohp.get('last_date', 'Son')})",
+                    "target_weight": ohp.get("next_target", "--"),
+                    "rest_sec": "120 - 150 sn", "target_rpe": "8.5",
+                    "coaching_cue": "Kalça ve karın kilitli, barı dik çizgide baş üzerine itiş.",
+                },
+                {
+                    "num": 3, "name": "Barbell Deadlift", "sets": 1, "reps": 5,
+                    "current_achieved": f"{dl.get('max_kg', 0.0):.1f} kg ({dl.get('last_date', 'Son')})",
+                    "target_weight": dl.get("next_target", "--"),
+                    "rest_sec": "180 sn (Tek ağır ana set)", "target_rpe": "8.5",
+                    "coaching_cue": "Bel omurları nötr, bar kaval kemiğine yakın, kalçadan kilitleniş.",
+                },
+                {
+                    "num": 4, "name": "Lat Pulldown (Geniş Tutuş)", "sets": 4, "reps": 12,
+                    "current_achieved": f"{lat.get('max_kg', 0.0):.1f} kg ({lat.get('last_date', 'Son')})",
+                    "target_weight": lat.get("next_target", "--"),
+                    "rest_sec": "75 - 90 sn", "target_rpe": "8.0",
+                    "coaching_cue": "Kanat genişliği için göğüs üstüne çekiş ve tepe sıkıştırma.",
+                },
+                {
+                    "num": 5, "name": "Dumbbell Lateral Raise (Yan Açış)", "sets": 3, "reps": 12,
+                    "current_achieved": f"{lr.get('max_kg', 0.0):.1f} kg ({lr.get('last_date', 'Son')})",
+                    "target_weight": lr.get("next_target", "--"),
+                    "rest_sec": "60 - 75 sn", "target_rpe": "8.0",
+                    "coaching_cue": "Yan omuz başı hipertrofisi.",
+                },
+                {
+                    "num": 6, "name": "Dumbbell / Barbell Shrug (Trapez)", "sets": 3, "reps": 12,
+                    "current_achieved": f"{sh.get('max_kg', 0.0):.1f} kg ({sh.get('last_date', 'Son')})",
+                    "target_weight": sh.get("next_target", "--"),
+                    "rest_sec": "60 - 75 sn", "target_rpe": "8.0",
+                    "coaching_cue": "Üst trapez izolasyonu ve tutuş dayanıklılığı.",
+                },
+            ],
+            "cooldown": "5 dk arka bacak ve sırt açma esnemesi.",
+            "telemetry_targets": {
+                "hr_range": "115 - 130 bpm (Zone 1)",
+                "est_calories": "~2.900 kcal toplam harcama",
+                "nutrition": f"2.500 kcal alım | {prot_g}g Protein | 270g Karbonhidrat | 80g Yağ | 3.0 L Su",
+            },
+        }
+
+    def _protocol_sunday_active_recovery(self, prot_g, total_rem) -> Dict[str, Any]:
+        """Pazar: aktif toparlanma, mobilite ve esnek kapanış şablonu."""
+        return {
+            "day_code": "sunday",
+            "slot_label": "Aktif Dinlenme",
+            "quota_status": "optional",
+            "day_title": "Aktif Toparlanma Şablonu: Mobilite, Yürüyüş & Esnek Kapanış",
+            "category": "active_recovery",
+            "badge": "Aktif Dinlenme",
+            "badge_color": "emerald",
+            "status_note": (
+                "Haftalık 4/4 Antrenman Kotası Tamamlandı • Aktif Toparlanma"
+                if total_rem == 0
+                else f"Esnek Aktif Toparlanma • Haftalık Kotadan Kalan: {total_rem} Seans"
+            ),
+            "objective": "Laktat temizliği, parasempatik tonus artışı ve eklem sağlığı.",
+            "warmup": "Gerekli değil.",
+            "exercises": [
+                {
+                    "num": 1,
+                    "name": "Açık Hava Tempolu Yürüyüş & Esneme",
+                    "duration": "30 - 45 dakika",
+                    "target_hr": "<110 bpm (Zone 1 Hafif)",
+                    "protocol": "Açık havada tempolu yürüyüş + 15 dk tüm vücut statik esneme ve NSDR.",
+                    "coaching_cue": "Kan dolaşımını artırarak sonraki hafta kotasına taze giriş sağlamak.",
+                }
+            ],
+            "cooldown": "Ekranlardan uzaklaşma.",
+            "telemetry_targets": {
+                "hr_range": "<110 bpm (Zone 1)",
+                "est_calories": "~2.500 kcal toplam harcama",
+                "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 220g Karbonhidrat | 80g Yağ | 2.5 - 3.0 L Su",
+            },
+        }
+
+    def _protocol_monday_interval_run(self, int_note, int_status, prot_g) -> Dict[str, Any]:
+        """Pazartesi: 5K hız intervali ve anaerobik yük koşu reçetesi."""
+        return {
+            "day_code": "monday",
+            "slot_label": "5K İnterval",
+            "quota_status": int_status,
+            "day_title": "Koşu Reçetesi #2: 5K Hız İntervali & Anaerobik Yük (4 x 1.000m)",
+            "category": "running",
+            "badge": "5K İnterval",
+            "badge_color": "purple",
+            "status_note": int_note,
+            "objective": "Laktat eşiğini ve barın ortasında kalan Anaerobik (Zone 5) yükünü yukarı çekmek.",
+            "warmup": "10 dk hafif jog @ [[WARM_HR]] + 3 adet 50m strides + kalça mobilitesi.",
+            "exercises": [
+                {
+                    "num": 1, "name": "4 x 1.000 Metre Hız Tekrarları (Laktat Eşiği & Anaerobik)",
+                    "sets": 4, "reps": "1.000 Metre",
+                    "target_pace": "[[INT_PACE]] tempo",
+                    "target_hr": "[[Z45_HR]] (Zone 4 - 5)",
+                    "rest_between_reps": "Her 1000m sonrası 3 DAKİKA yavaş yürüyüş / hafif jog",
+                    "cadence_target": "165 - 170 spm",
+                    "coaching_cue": "Ağır bacak gününün ertesi günü değil, taze bacakla (veya kuvvetten önce) 4 tekrar boyunca eşit [[INT_PACE]] temposu koruyun.",
+                }
+            ],
+            "cooldown": "8-10 dk hafif toparlanma jogu + derin baldır esnemesi.",
+            "telemetry_targets": {
+                "hr_range": "[[Z45_HR]] (Zirve Zone 4-5)",
+                "est_calories": "~3.050 kcal toplam harcama",
+                "nutrition": f"2.650 kcal alım | {prot_g}g Protein | 300g Karbonhidrat | 80g Yağ | 3.5 L Su + Elektrolit",
+            },
+        }
+
+    @request_cached
+    def get_athlete_principles(self) -> Dict[str, Any]:
+        """Genel antrenman çerçeveleri + sporcunun kendi profilinden ve Garmin verisinden türetilen ilkeler."""
+        return build_athlete_principles(self)
