@@ -500,6 +500,12 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         self.assertEqual(carry["gym_order"], ["gym_c", "gym_a", "gym_b"])
         self.assertIn("Legs", carry["missed_sessions"])
 
+    def test_extra_sessions_without_capacity_keep_baseline_targets(self):
+        stub, now = self._make_stub(split="5x5_linear", plateau=25, chronic=240.0, vo2max=44.0, runs_28d=12, gyms_28d=12)
+        dyn = stub.compute_dynamic_weekly_targets(now=now)
+        self.assertEqual(dyn["run_target"], 2)
+        self.assertEqual(dyn["gym_target"], 2)
+
     def test_advanced_runner_scales_run_target_and_projection_horizon(self):
         stub, now = self._make_stub(split="push_pull", plateau=58, chronic=480.0, vo2max=53.0, runs_28d=15, gyms_28d=10)
         dyn = stub.compute_dynamic_weekly_targets(now=now)

@@ -303,7 +303,8 @@ class WeeklyQuotaMixin:
         slot_keys = ["gym_a", "gym_b", "gym_c"][:num_slots]
 
         if num_slots == 2:
-            if active_split in ("push_pull", "upper_lower") and (
+            has_gym_capacity = chronic_load >= 360 and plateau_score >= 45
+            if active_split in ("push_pull", "upper_lower") and has_gym_capacity and (
                 gyms_per_wk >= 3.2 or (chronic_load >= 420 and plateau_score >= 55)
             ):
                 gym_target = 4
@@ -315,10 +316,10 @@ class WeeklyQuotaMixin:
             gym_target = num_slots * cycles
             gym_sequence = slot_keys * cycles
 
-        # 2) Koşu gün sayısı (2, 3 veya 4) + eksik yük barlarından 4-6 seanslık projeksiyon
-        if (runs_per_wk >= 3.5 and chronic_load >= 450) or (runs_per_wk >= 3.75 and vo2max >= 52):
+        # 2) Koşu gün sayısı (2, 3 veya 4) — kapasite (kronik yük / VO2max) yetmiyorsa fazla koşu yapılsa bile artış olmaz
+        if runs_per_wk >= 3.25 and chronic_load >= 450 and vo2max >= 50:
             run_target = 4
-        elif runs_per_wk >= 2.6 or (chronic_load >= 360 and runs_per_wk >= 2.2) or (vo2max >= 50 and chronic_load >= 340):
+        elif (chronic_load >= 360 and runs_per_wk >= 2.2) or (vo2max >= 50 and chronic_load >= 320 and runs_per_wk >= 2.0):
             run_target = 3
         else:
             run_target = 2
