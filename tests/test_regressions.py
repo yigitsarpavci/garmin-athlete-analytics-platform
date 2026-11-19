@@ -392,14 +392,15 @@ class TestLoadFocusRunSelection(unittest.TestCase):
         }, [], n=4, ref_dt=mon)
         self.assertEqual(pred_high["steps"][0]["kind"], "tempo")
 
-        # 6. Üç bar da >= %85 doluysa dinamik Gym önerir; bar düştüğünde sonraki güncellemede geri koşuya döner
+        # 6. Üç bar da >= %85 dolu olsa bile asla ekstra Gym önermez, en düşük yük barına göre koşu seçer
         pred_full = predict_next_n_runs({
             "targets_available": True,
             "aerobic_low": {"actual": 360.0, "target_max": 400.0},
             "aerobic_high": {"actual": 450.0, "target_max": 500.0},
             "anaerobic": {"actual": 230.0, "target_max": 260.0},
         }, [], n=4, ref_dt=mon)
-        self.assertEqual(pred_full["steps"][0]["kind"], "gym_overflow")
+        self.assertNotEqual(pred_full["steps"][0]["kind"], "gym_overflow")
+        self.assertIn(pred_full["steps"][0]["kind"], ("zone2", "tempo", "interval"))
 
         # Sonraki güncellemede 28G pencereden düşüşle Anaerobik %70'e indiyse tekrar İnterval'e döner
         pred_dropped = predict_next_n_runs({

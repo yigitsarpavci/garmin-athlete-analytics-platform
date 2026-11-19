@@ -234,31 +234,21 @@ def predict_next_n_runs(
             low_act, high_act, an_act, low_max, high_max, an_max, targets_available
         )
 
-        if targets_available and min(low_pct, high_pct, an_pct) >= overflow_threshold:
-            chosen = "gym_overflow"
-            add_low = add_high = add_an = 0.0
-            src_date = None
-            est_load = 0.0
-            reason = (
-                f"Koşu #{step_idx} öncesi 3 bar da yüksek (Düşük %{low_pct:.0f}, Yüksek %{high_pct:.0f}, Anaer %{an_pct:.0f} ≥ %{overflow_threshold:.0f}) "
-                "-> koşu yerine ekstra Kuvvet önerildi; bar düşünce otomatik koşuya döner."
-            )
-        else:
-            pct_map = {"zone2": low_pct, "tempo": high_pct, "interval": an_pct}
-            if not targets_available:
-                # Hedef tavanı yokken Tempo aşırı tetiklenmesin; sadece Zone 2 vs İnterval dengesi
-                pct_map = {"zone2": low_pct, "interval": an_pct}
-            chosen = min(pct_map, key=lambda k: pct_map[k])
-            prof = profiles[chosen]
-            add_low = prof["low_aerobic"]
-            add_high = prof["high_aerobic"]
-            add_an = prof["anaerobic"]
-            src_date = prof["source_date"]
-            est_load = prof["total_load"]
-            reason = (
-                f"Koşu #{step_idx} öncesi en düşük bar {labels[chosen]} "
-                f"(Düşük %{low_pct:.0f} · Yüksek %{high_pct:.0f} · Anaer %{an_pct:.0f})."
-            )
+        pct_map = {"zone2": low_pct, "tempo": high_pct, "interval": an_pct}
+        if not targets_available:
+            # Hedef tavanı yokken Tempo aşırı tetiklenmesin; sadece Zone 2 vs İnterval dengesi
+            pct_map = {"zone2": low_pct, "interval": an_pct}
+        chosen = min(pct_map, key=lambda k: pct_map[k])
+        prof = profiles[chosen]
+        add_low = prof["low_aerobic"]
+        add_high = prof["high_aerobic"]
+        add_an = prof["anaerobic"]
+        src_date = prof["source_date"]
+        est_load = prof["total_load"]
+        reason = (
+            f"Koşu #{step_idx} öncesi en düşük bar {labels[chosen]} "
+            f"(Düşük %{low_pct:.0f} · Yüksek %{high_pct:.0f} · Anaer %{an_pct:.0f})."
+        )
 
         new_low = round(low_act + add_low, 1)
         new_high = round(high_act + add_high, 1)
