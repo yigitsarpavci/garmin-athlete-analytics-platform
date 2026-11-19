@@ -87,13 +87,11 @@ function restoreSavedNavigation() {
 
 function setTab(tabId, persist = true) {
   let targetTab = tabId;
-  if (tabId === 'activities' || tabId === 'settings') {
-    targetTab = 'training_load';
-  } else if (tabId === 'analytics') {
+  if (tabId === 'activities' || tabId === 'settings' || tabId === 'training_load' || tabId === 'analytics') {
     targetTab = 'health';
   }
 
-  const tabs = ['overview', 'plan', 'sports', 'training_load', 'health'];
+  const tabs = ['overview', 'plan', 'sports', 'health'];
   tabs.forEach(t => {
     const sec = document.getElementById('section-' + t);
     const nav = document.getElementById('nav-' + t);
