@@ -269,6 +269,9 @@ def evaluate_session_lift(
         outcome = "PASSED_AMRAP"
     elif all_sets_clean:
         outcome = "PASSED_CLEAN"
+    elif not spec["is_compound"] and completion_ratio >= 0.72 and top_w > 0:
+        # İzolasyon/aksesuar hareketlerinde piramit veya 3 set tamamlama normal konsolidasyon sayılır
+        outcome = "PASSED_CLEAN" if (len(working) >= target_sets and weight_drop_kg <= 2.5 and completion_ratio >= 0.95) else "PARTIAL_STALL"
     elif completion_ratio >= 0.80 and len(working) >= max(1, target_sets - 1):
         outcome = "PARTIAL_STALL"
     else:
@@ -457,21 +460,27 @@ def compute_adaptive_progression(
         consec_stalls = 0
         deloads = 0
         prev_top = 0.0
+        prev_eff = 0.0
         for rec in lift_records:
             oc = rec["outcome"]
             tw = rec["top_weight_kg"]
+            ew = rec["effective_weight_kg"]
             if oc in ("PARTIAL_STALL", "FAILED"):
-                if tw >= prev_top - 0.5:
+                # Eğer bir önceki seansa göre hem pik hem efektif ağırlık arttıysa bu yeni ağırlıkta ilk denemedir (takılma sıfırlanır -> 1)
+                if prev_top > 0 and (tw > prev_top + 0.5 or ew > prev_eff + 0.5):
+                    consec_stalls = 1
+                elif tw >= prev_top - 0.5:
                     consec_stalls += 1
                 else:
                     consec_stalls = 1
-                if consec_stalls >= 2:
+                if consec_stalls >= 2 and spec["is_compound"]:
                     deloads += 1
             else:
                 consec_stalls = 0
-            if prev_top > 0 and tw < prev_top * 0.92:
+            if prev_top > 0 and tw < prev_top * 0.90:
                 deloads += 1
             prev_top = tw
+            prev_eff = ew
 
         latest = lift_records[-1]
         first = lift_records[0]
@@ -499,7 +508,7 @@ def compute_adaptive_progression(
             decision = "DETRAINING_RESET"
             reason = f"Son seanstan {days_gap} gün geçti; güvenli adaptasyon için %10 hafifletildi."
         elif last_outcome in ("PARTIAL_STALL", "FAILED"):
-            if consec_stalls >= 2:
+            if consec_stalls >= 2 and (spec["is_compound"] or last_outcome == "FAILED"):
                 next_kg = round_to_plate(last_w * 0.90, step_kg)
                 decision = "DELOAD_10PCT"
                 reason = (
@@ -542,14 +551,16 @@ def compute_adaptive_progression(
         # Çok adımlı gelecek seans projeksiyonları [step0, step1, step2, step3]
         proj_weights = [next_kg]
         sim_w = next_kg
-        for step_idx in range(1, 4):
-            sim_step = 2.5 if (key == "deadlift" and (sim_w / max(40.0, bodyweight_kg)) >= 1.10) else step_kg
-            # Eğer şu anki seans CONSOLIDATE veya DELOAD ise step0'da sabitlenir/düşer,
-            # step1'den itibaren başarılı tamamlama varsayımıyla progresyona devam eder
-            if step_idx == 1 and decision == "DETRAINING_RESET":
+        for step_idx in range(1, 5):
+            if key == "lateral_raise":
+                # Lateral raise izolasyon olduğu için 2 seans konsolidasyon sonrası +2.5 kg artar
+                if step_idx % 2 == 0:
+                    sim_w = round_to_plate(sim_w + step_kg, 2.5)
+            elif key == "deadlift":
+                sim_step = 2.5 if (sim_w / max(40.0, bodyweight_kg)) >= 1.15 else 5.0
                 sim_w = round_to_plate(sim_w + sim_step, 2.5)
             else:
-                sim_w = round_to_plate(sim_w + sim_step, 2.5)
+                sim_w = round_to_plate(sim_w + step_kg, 2.5)
             proj_weights.append(sim_w)
 
         diff = round(last_w - first["top_weight_kg"], 1)
@@ -710,89 +721,93 @@ def build_projected_gym_summary(
     progression: Dict[str, Any],
     step_idx: int = 0,
     active_split: str = "5x5_linear",
+    ex_counts: Optional[Dict[str, int]] = None,
 ) -> Tuple[str, str, str]:
     """
-    Belirtilen seans slotu ve projeksiyon adımı (step_idx: 0, 1, 2) için
-    gerçek kilo progresyonlu (örn. 67.5 -> 70.0 -> 72.5 kg) başlık ve egzersiz özeti üretir.
+    Belirtilen seans slotu için her hareketin kendi projeksiyon sayacını (ex_counts)
+    kullanarak gerçek kilo progresyonlu başlık ve egzersiz özeti üretir.
     """
     def _w(key: str) -> float:
+        idx = ex_counts.get(key, 0) if ex_counts is not None else step_idx
+        if ex_counts is not None:
+            ex_counts[key] = idx + 1
         p = progression.get(key) or {}
         pw = p.get("projected_weights") or []
-        if step_idx < len(pw):
-            return float(pw[step_idx])
+        if idx < len(pw):
+            return float(pw[idx])
         return float(p.get("next_kg") or LIFT_PROFILES[key]["fallback_next"])
-
-    sq = _w("squat")
-    bp = _w("bench")
-    rw = _w("row")
-    ohp = _w("ohp")
-    dl = _w("deadlift")
-    lat = _w("lat_pulldown")
-    lr = _w("lateral_raise")
-    sh = _w("shrug")
 
     if active_split == "push_pull":
         if slot_kind in ("push", "gym_a"):
+            sq, bp, ohp, lr = _w("squat"), _w("bench"), _w("ohp"), _w("lateral_raise")
             inc_db = round_to_plate(bp * 0.34, 2.5)
             return (
-                "Push (İtme + Ön Bacak)",
-                f"Kuvvet · Push (İtme & Ön Bacak)",
+                "Push",
+                "Kuvvet · Push (İtme & Ön Bacak)",
                 f"Squat {sq:.1f} kg (4x6) · Bench {bp:.1f} kg (4x6-8) · OHP {ohp:.1f} kg (3x8) · Incline DB {inc_db:.1f} kg (3x10) · Lateral {lr:.1f} kg (4x12)",
             )
         else:
+            dl, rw, lat, sh = _w("deadlift"), _w("row"), _w("lat_pulldown"), _w("shrug")
             rdl = round_to_plate(dl * 0.85, 2.5)
             return (
-                "Pull (Çekme + Arka Zincir)",
-                f"Kuvvet · Pull (Çekme & Arka Zincir)",
+                "Pull",
+                "Kuvvet · Pull (Çekme & Arka Zincir)",
                 f"Deadlift {dl:.1f} kg (3x5) · Row {rw:.1f} kg (4x6-8) · Lat Pulldown {lat:.1f} kg (4x10) · RDL {rdl:.1f} kg (3x8) · Shrug {sh:.1f} kg (3x12)",
             )
 
     if active_split == "upper_lower":
         if slot_kind in ("upper", "gym_a"):
+            bp, rw, ohp, lat, lr = _w("bench"), _w("row"), _w("ohp"), _w("lat_pulldown"), _w("lateral_raise")
             return (
-                "Upper (Üst Vücut Güç)",
-                f"Kuvvet · Upper Body (Üst Vücut)",
+                "Upper",
+                "Kuvvet · Upper Body (Üst Vücut)",
                 f"Bench {bp:.1f} kg (4x6) · Row {rw:.1f} kg (4x6) · OHP {ohp:.1f} kg (3x8) · Lat {lat:.1f} kg (3x10) · Lateral {lr:.1f} kg (3x12)",
             )
         else:
+            sq, dl, sh = _w("squat"), _w("deadlift"), _w("shrug")
             rdl = round_to_plate(dl * 0.80, 2.5)
             return (
-                "Lower (Alt Vücut Güç)",
-                f"Kuvvet · Lower Body (Alt Vücut)",
+                "Lower",
+                "Kuvvet · Lower Body (Alt Vücut)",
                 f"Squat {sq:.1f} kg (4x5-6) · Deadlift {dl:.1f} kg (2x5) · RDL {rdl:.1f} kg (3x8) · Shrug {sh:.1f} kg (3x12)",
             )
 
     if active_split == "ppl":
         if slot_kind in ("push", "gym_a"):
+            bp, ohp, lr = _w("bench"), _w("ohp"), _w("lateral_raise")
             inc_db = round_to_plate(bp * 0.34, 2.5)
             return (
-                "Push (Göğüs / Omuz / Triceps)",
+                "Push",
                 "Kuvvet · PPL Push",
                 f"Bench {bp:.1f} kg (4x6-8) · OHP {ohp:.1f} kg (3x8-10) · Incline DB {inc_db:.1f} kg (3x10) · Lateral {lr:.1f} kg (4x15)",
             )
         elif slot_kind in ("pull", "gym_b"):
+            dl, rw, lat, sh = _w("deadlift"), _w("row"), _w("lat_pulldown"), _w("shrug")
             return (
-                "Pull (Sırt / Arka Omuz / Biceps)",
+                "Pull",
                 "Kuvvet · PPL Pull",
                 f"Deadlift {dl:.1f} kg (2x5) · Row {rw:.1f} kg (4x6-8) · Lat {lat:.1f} kg (4x10) · Shrug {sh:.1f} kg (3x12)",
             )
         else:
+            sq, dl = _w("squat"), _w("deadlift")
             rdl = round_to_plate(dl * 0.80, 2.5)
             return (
-                "Legs (Bacak & Core)",
+                "Legs",
                 "Kuvvet · PPL Legs",
                 f"Squat {sq:.1f} kg (4x6) · RDL {rdl:.1f} kg (3x8-10) · Bulgar Squat / Calf (3x12)",
             )
 
-    # Varsayılan: 5x5_linear
+    # Varsayılan: 5x5_linear (Workout A: 5 egzersiz, Workout B: 6 egzersiz)
     if slot_kind == "gym_a":
+        sq, bp, rw, lr, sh = _w("squat"), _w("bench"), _w("row"), _w("lateral_raise"), _w("shrug")
         return (
             "Workout A",
             "Kuvvet #1 · Workout A (5x5)",
             f"Squat {sq:.1f} kg (5x5) · Bench {bp:.1f} kg (5x5) · Row {rw:.1f} kg (5x5) · Lateral {lr:.1f} kg · Shrug {sh:.1f} kg",
         )
+    sq, ohp, dl, lat, lr, sh = _w("squat"), _w("ohp"), _w("deadlift"), _w("lat_pulldown"), _w("lateral_raise"), _w("shrug")
     return (
         "Workout B",
         "Kuvvet #2 · Workout B (5x5)",
-        f"Squat {sq:.1f} kg (5x5) · OHP {ohp:.1f} kg (5x5) · Deadlift {dl:.1f} kg (1x5) · Lat {lat:.1f} kg (4x12) · Lateral {lr:.1f} kg",
+        f"Squat {sq:.1f} kg (5x5) · OHP {ohp:.1f} kg (5x5) · Deadlift {dl:.1f} kg (1x5) · Lat {lat:.1f} kg (4x12) · Lateral {lr:.1f} kg · Shrug {sh:.1f} kg",
     )

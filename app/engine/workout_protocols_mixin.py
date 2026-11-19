@@ -455,16 +455,17 @@ class WorkoutProtocolsMixin:
         active_split = (gym_hist_data.get("program_state") or {}).get("active_split", "5x5_linear")
         split_slots = PROGRAM_SPLIT_CATALOG.get(active_split, PROGRAM_SPLIT_CATALOG["5x5_linear"])["slots"]
 
+        ex_counts: Dict[str, int] = {}
         gym_upcoming: List[Dict[str, str]] = []
         for idx_rem, item in enumerate(weekly_quota["strength"]["remaining_items"]):
             raw_kind = item.get("slot_kind", "gym_a")
             eff_kind = split_slots[idx_rem % len(split_slots)] if active_split != "5x5_linear" else raw_kind
             p_type, p_title, p_details = build_projected_gym_summary(
-                eff_kind, prog, step_idx=idx_rem, active_split=active_split
+                eff_kind, prog, step_idx=idx_rem, active_split=active_split, ex_counts=ex_counts
             )
             gym_upcoming.append({
                 "day": "Bu Hafta Kalan Kota (Esnek Gün)" + (" · Öncelikli" if item.get("is_prioritized") else ""),
-                "type": f"{p_type} (Bu Hafta Kalan Kota)",
+                "type": f"{p_type} · Kalan",
                 "title": p_title if active_split != "5x5_linear" else item["title"],
                 "duration": item["duration"],
                 "details": p_details,
@@ -497,7 +498,7 @@ class WorkoutProtocolsMixin:
             step_idx = len(gym_upcoming)
             step_num = len(gym_upcoming) - rem_gym_count + 1
             p_type, p_title, p_details = build_projected_gym_summary(
-                next_cycle_kind, prog, step_idx=step_idx, active_split=active_split
+                next_cycle_kind, prog, step_idx=step_idx, active_split=active_split, ex_counts=ex_counts
             )
             prev_label = (
                 "Workout A" if prev_gym == "gym_a"
@@ -510,7 +511,7 @@ class WorkoutProtocolsMixin:
             )
             gym_upcoming.append({
                 "day": day_lbl,
-                "type": f"{p_type} (Projeksiyon)",
+                "type": f"{p_type} · Projeksiyon",
                 "title": p_title,
                 "duration": "55 dk",
                 "details": p_details,
