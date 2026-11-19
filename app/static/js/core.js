@@ -92,13 +92,53 @@ function setTab(tabId) {
   }
 }
 
+function closeAllNavDropdowns() {
+  document.querySelectorAll('.nav-dropdown.is-open').forEach(el => {
+    el.classList.remove('is-open');
+  });
+}
+
+function toggleNavDropdown(tabId, ev) {
+  if (ev) ev.stopPropagation();
+  const wrap = document.querySelector(`.nav-dropdown[data-nav-dropdown="${tabId}"]`);
+  const wasOpen = wrap ? wrap.classList.contains('is-open') : false;
+  closeAllNavDropdowns();
+  setTab(tabId);
+  if (wrap && !wasOpen) {
+    wrap.classList.add('is-open');
+  }
+}
+
+function selectNavSubTab(tabId, subTabId, ev) {
+  if (ev) ev.stopPropagation();
+  setTab(tabId);
+  setSubTab(tabId, subTabId);
+  closeAllNavDropdowns();
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.nav-dropdown')) {
+    closeAllNavDropdowns();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAllNavDropdowns();
+});
+
 function setSubTab(group, paneKey) {
   document.querySelectorAll(`[data-subpane-group="${group}"]`).forEach(el => {
     el.classList.toggle('hidden', el.dataset.subpane !== paneKey);
   });
   document.querySelectorAll(`[data-subtab-group="${group}"]`).forEach(btn => {
     const active = btn.dataset.subtab === paneKey;
-    btn.className = active ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
+    if (btn.classList.contains('nav-dropdown-item')) {
+      btn.className = active ? 'nav-dropdown-item nav-dropdown-item-active' : 'nav-dropdown-item';
+    } else {
+      btn.className = active ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
+    }
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
   if (group === 'analytics' && paneKey === 'charts' && document.getElementById('chart-hrv')) {

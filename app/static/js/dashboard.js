@@ -198,7 +198,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const stepCur = Number(data.steps ?? 0);
   const stepGoal = Math.max(1, Number(data.step_goal ?? 10000));
   const stepPct = Math.max(0, Math.min(100, (stepCur / stepGoal) * 100));
-  const stepAvgPct = Math.max(0, Math.min(100, (Number(data.steps_7d_avg ?? 0) / stepGoal) * 100));
   setText('fs-steps-val', formatTrInt(data.steps));
   setText('fs-steps-badge', `7G Ort: ${formatTrInt(data.steps_7d_avg)}`);
   setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})`);
@@ -208,7 +207,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
       <div class="garmin-gauge">
         <div class="garmin-fill-track">
           <div class="seg-green h-full rounded-[2px]" style="width:${stepPct.toFixed(0)}%"></div>
-          <span class="garmin-gauge-pin" style="left:${Math.max(3, Math.min(97, stepAvgPct)).toFixed(0)}%" title="7G Ortalama"></span>
         </div>
         <div class="garmin-gauge-scale">
           <span>0</span>

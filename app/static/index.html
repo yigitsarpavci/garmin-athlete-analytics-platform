@@ -37,16 +37,91 @@
   <header class="site-header flex-shrink-0">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between gap-3">
-        <!-- 6 Primary Top-Level Navigation Headings -->
-        <nav aria-label="Ana Navigasyon" class="nav-tablist custom-scrollbar min-w-0 flex-1">
-          <button type="button" onclick="setTab('overview')" id="nav-overview" aria-current="page"
-            class="nav-tab nav-tab-active">Genel Bakış</button>
-          <button type="button" onclick="setTab('plan')" id="nav-plan" class="nav-tab">Antrenman Planı</button>
-          <button type="button" onclick="setTab('sports')" id="nav-sports" class="nav-tab">Branşlar</button>
-          <button type="button" onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Yük &amp;
-            Aktiviteler</button>
-          <button type="button" onclick="setTab('health')" id="nav-health" class="nav-tab">Sağlık &amp; Uyku</button>
-          <button type="button" onclick="setTab('settings')" id="nav-settings" class="nav-tab">Saat Ayarları</button>
+        <!-- 6 Primary Top-Level Navigation Headings with Dropdown Sub-Menus -->
+        <nav aria-label="Ana Navigasyon" class="nav-tablist min-w-0 flex-1">
+          <div class="nav-dropdown" data-nav-dropdown="overview">
+            <button type="button" onclick="toggleNavDropdown('overview', event)" id="nav-overview" aria-current="page"
+              class="nav-tab nav-tab-active">
+              <span>Genel Bakış</span>
+              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="nav-dropdown-menu" role="menu">
+              <button type="button" onclick="selectNavSubTab('overview', 'kpi12', event)" data-subtab-group="overview"
+                data-subtab="kpi12" class="nav-dropdown-item nav-dropdown-item-active">12 Temel Gösterge</button>
+              <button type="button" onclick="selectNavSubTab('overview', 'quota_brief', event)" data-subtab-group="overview"
+                data-subtab="quota_brief" class="nav-dropdown-item">Günlük Durum</button>
+              <button type="button" onclick="selectNavSubTab('overview', 'ledger', event)" data-subtab-group="overview"
+                data-subtab="ledger" class="nav-dropdown-item">Performans &amp; Trend</button>
+            </div>
+          </div>
+
+          <div class="nav-dropdown" data-nav-dropdown="plan">
+            <button type="button" onclick="toggleNavDropdown('plan', event)" id="nav-plan" class="nav-tab">
+              <span>Antrenman Planı</span>
+              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="nav-dropdown-menu" role="menu">
+              <button type="button" onclick="selectNavSubTab('plan', 'quota', event)" data-subtab-group="plan"
+                data-subtab="quota" class="nav-dropdown-item nav-dropdown-item-active">Haftalık Kota Özeti</button>
+              <button type="button" onclick="selectNavSubTab('plan', 'schedule', event)" data-subtab-group="plan"
+                data-subtab="schedule" class="nav-dropdown-item">7 Günlük Esnek Takvim</button>
+              <button type="button" onclick="selectNavSubTab('plan', 'protocols', event)" data-subtab-group="plan"
+                data-subtab="protocols" class="nav-dropdown-item">Antrenman İçerikleri</button>
+            </div>
+          </div>
+
+          <div class="nav-dropdown" data-nav-dropdown="sports">
+            <button type="button" onclick="toggleNavDropdown('sports', event)" id="nav-sports" class="nav-tab">
+              <span>Branşlar</span>
+              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="nav-dropdown-menu" role="menu">
+              <button type="button" onclick="selectNavSubTab('sports', 'run_branch', event)" data-subtab-group="sports"
+                data-subtab="run_branch" class="nav-dropdown-item nav-dropdown-item-active">Koşu Branş Özeti</button>
+              <button type="button" onclick="selectNavSubTab('sports', 'gym_branch', event)" data-subtab-group="sports"
+                data-subtab="gym_branch" class="nav-dropdown-item">Kuvvet Branş Özeti</button>
+              <button type="button" onclick="selectNavSubTab('sports', 'gym', event)" data-subtab-group="sports"
+                data-subtab="gym" class="nav-dropdown-item">5x5 Ağırlık Hedefleri</button>
+              <button type="button" onclick="selectNavSubTab('sports', 'gym_history', event)" data-subtab-group="sports"
+                data-subtab="gym_history" class="nav-dropdown-item">Salon Geçmişi</button>
+              <button type="button" onclick="selectNavSubTab('sports', 'prog', event)" data-subtab-group="sports"
+                data-subtab="prog" class="nav-dropdown-item">Seviye &amp; İlerleme</button>
+              <button type="button" onclick="selectNavSubTab('sports', 'tiers', event)" data-subtab-group="sports"
+                data-subtab="tiers" class="nav-dropdown-item">Referans Tablosu</button>
+            </div>
+          </div>
+
+          <div class="nav-dropdown" data-nav-dropdown="training_load">
+            <button type="button" onclick="toggleNavDropdown('training_load', event)" id="nav-training_load" class="nav-tab">
+              <span>Yük &amp; Aktiviteler</span>
+              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="nav-dropdown-menu" role="menu">
+              <button type="button" onclick="selectNavSubTab('training_load', 'load', event)" data-subtab-group="training_load"
+                data-subtab="load" class="nav-dropdown-item nav-dropdown-item-active">Yük &amp; ACWR Odağı</button>
+              <button type="button" onclick="selectNavSubTab('training_load', 'activities', event)" data-subtab-group="training_load"
+                data-subtab="activities" class="nav-dropdown-item">Aktivite Geçmişi</button>
+            </div>
+          </div>
+
+          <div class="nav-dropdown" data-nav-dropdown="health">
+            <button type="button" onclick="toggleNavDropdown('health', event)" id="nav-health" class="nav-tab">
+              <span>Sağlık &amp; Uyku</span>
+              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="nav-dropdown-menu" role="menu">
+              <button type="button" onclick="selectNavSubTab('health', 'clinic', event)" data-subtab-group="health"
+                data-subtab="clinic" class="nav-dropdown-item nav-dropdown-item-active">Genel Sağlık &amp; Fitness Yaşı</button>
+              <button type="button" onclick="selectNavSubTab('health', 'sleep', event)" data-subtab-group="health"
+                data-subtab="sleep" class="nav-dropdown-item">Uyku &amp; Yatış Saati</button>
+              <button type="button" onclick="selectNavSubTab('health', 'metrics', event)" data-subtab-group="health"
+                data-subtab="metrics" class="nav-dropdown-item">93G Ortalamalar</button>
+              <button type="button" onclick="selectNavSubTab('health', 'correlations', event)" data-subtab-group="health"
+                data-subtab="correlations" class="nav-dropdown-item">Korelasyon Matrisi</button>
+            </div>
+          </div>
+
+          <button type="button" onclick="closeAllNavDropdowns(); setTab('settings')" id="nav-settings" class="nav-tab">Saat Ayarları</button>
         </nav>
 
         <div class="flex items-center gap-1.5 shrink-0 py-1">
@@ -73,17 +148,8 @@
     <!-- 1. GENEL BAKIŞ (3 ALT SEKME: 12 TEMEL GÖSTERGE / GÜNLÜK DURUM & KOTA / PERFORMANS & TREND) -->
     <div id="section-overview" class="single-screen-section gap-2.5">
 
-      <!-- Minimal Single-Row Sub-Tabs for Overview -->
-      <div
-        class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-medium)] pb-2 shrink-0">
-        <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('overview', 'kpi12')" data-subtab-group="overview"
-            data-subtab="kpi12" class="subtab-btn subtab-btn-active">12 Temel Gösterge</button>
-          <button type="button" onclick="setSubTab('overview', 'quota_brief')" data-subtab-group="overview"
-            data-subtab="quota_brief" class="subtab-btn">Günlük Durum</button>
-          <button type="button" onclick="setSubTab('overview', 'ledger')" data-subtab-group="overview"
-            data-subtab="ledger" class="subtab-btn">Performans &amp; Trend</button>
-        </div>
+      <!-- Minimal Single-Row Status Strip for Overview -->
+      <div class="flex items-center justify-end gap-2 shrink-0">
         <span id="firstScreenDateBadge" class="stamp-tag stamp-accent">Son Kayıt: --</span>
       </div>
 
@@ -438,14 +504,6 @@
             class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden sm:inline">Esnek
             2 Koşu + 2 Kuvvet Kotası</span>
         </div>
-        <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('plan', 'quota')" data-subtab-group="plan" data-subtab="quota"
-            class="subtab-btn subtab-btn-active">Haftalık Kota Özeti</button>
-          <button type="button" onclick="setSubTab('plan', 'schedule')" data-subtab-group="plan" data-subtab="schedule"
-            class="subtab-btn">7 Günlük Esnek Takvim</button>
-          <button type="button" onclick="setSubTab('plan', 'protocols')" data-subtab-group="plan"
-            data-subtab="protocols" class="subtab-btn">Antrenman İçerikleri</button>
-        </div>
       </div>
 
       <div data-subpane-group="plan" data-subpane="quota" class="single-screen-pane">
@@ -514,20 +572,6 @@
           <span
             class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden lg:inline">Koşu
             · Kuvvet · İlerleme</span>
-        </div>
-        <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('sports', 'run_branch')" data-subtab-group="sports"
-            data-subtab="run_branch" class="subtab-btn subtab-btn-active">Koşu Branş Özeti</button>
-          <button type="button" onclick="setSubTab('sports', 'gym_branch')" data-subtab-group="sports"
-            data-subtab="gym_branch" class="subtab-btn">Kuvvet Branş Özeti</button>
-          <button type="button" onclick="setSubTab('sports', 'gym')" data-subtab-group="sports" data-subtab="gym"
-            class="subtab-btn">5x5 Ağırlık Hedefleri</button>
-          <button type="button" onclick="setSubTab('sports', 'gym_history')" data-subtab-group="sports"
-            data-subtab="gym_history" class="subtab-btn">Salon Geçmişi</button>
-          <button type="button" onclick="setSubTab('sports', 'prog')" data-subtab-group="sports" data-subtab="prog"
-            class="subtab-btn">Seviye &amp; İlerleme</button>
-          <button type="button" onclick="setSubTab('sports', 'tiers')" data-subtab-group="sports" data-subtab="tiers"
-            class="subtab-btn">Referans Tablosu</button>
         </div>
       </div>
 
@@ -631,12 +675,6 @@
           <span
             class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden sm:inline">ACWR
             Dengesi · Aktivite Günlüğü</span>
-        </div>
-        <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('training_load', 'load')" data-subtab-group="training_load"
-            data-subtab="load" class="subtab-btn subtab-btn-active">Yük &amp; ACWR Odağı</button>
-          <button type="button" onclick="setSubTab('training_load', 'activities')" data-subtab-group="training_load"
-            data-subtab="activities" class="subtab-btn">Aktivite Geçmişi</button>
         </div>
       </div>
 
@@ -847,16 +885,6 @@
           <span
             class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden lg:inline">Klinik
             Özet · Uyku · 93G · Korelasyon</span>
-        </div>
-        <div class="subtab-bar">
-          <button type="button" onclick="setSubTab('health', 'clinic')" data-subtab-group="health" data-subtab="clinic"
-            class="subtab-btn subtab-btn-active">Genel Sağlık &amp; Fitness Yaşı</button>
-          <button type="button" onclick="setSubTab('health', 'sleep')" data-subtab-group="health" data-subtab="sleep"
-            class="subtab-btn">Uyku &amp; Yatış Saati</button>
-          <button type="button" onclick="setSubTab('health', 'metrics')" data-subtab-group="health"
-            data-subtab="metrics" class="subtab-btn">93G Ortalamalar</button>
-          <button type="button" onclick="setSubTab('health', 'correlations')" data-subtab-group="health"
-            data-subtab="correlations" class="subtab-btn">Korelasyon Matrisi</button>
         </div>
       </div>
 
