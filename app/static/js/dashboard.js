@@ -161,7 +161,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const scActive = scNum < 60 ? 0 : (scNum < 80 ? 1 : (scNum < 90 ? 2 : 3));
   setText('fs-sleepscore-val', sc !== null ? `${sc} / 100` : '-- / 100');
   setText('fs-sleepscore-badge', sc !== null ? (sc >= 80 ? 'İyi' : (sc >= 65 ? 'Orta' : 'Düşük')) : '--');
-  setText('fs-sleepscore-sub', `7G Ort: ${fmtDec(data.sleep_score_7d, 1)} · Solunum: ${fmtDec(data.resp_sleep, 1)} br/dk`);
+  setText('fs-sleepscore-sub', `7G Ort: ${fmtDec(data.sleep_score_7d, 1)}`);
   _renderGarminGauge('fs-sleepscore-bar',
     [{ cls: 'seg-red', flex: 1.5 }, { cls: 'seg-amber', flex: 1.3 }, { cls: 'seg-green', flex: 1.2 }, { cls: 'seg-blue', flex: 1 }],
     scActive, scNum, '0', '80 İyi', '100'
