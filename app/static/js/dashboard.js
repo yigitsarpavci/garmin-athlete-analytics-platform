@@ -101,8 +101,8 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const hrvBase = Number(data.hrv_7d ?? 46) || 46;
   const hrvStLower = String(data.hrv_status || '').toLowerCase();
   const hrvAvgColor = (hrvStLower.includes('zayıf') || hrvStLower.includes('poor') || hrvBase < 32)
-    ? '#ef4444'
-    : ((hrvStLower.includes('düşük') || hrvStLower.includes('low') || hrvBase < 38) ? '#f59e0b' : '#22c55e');
+    ? '#C96A5B'
+    : ((hrvStLower.includes('düşük') || hrvStLower.includes('low') || hrvBase < 38) ? '#C99A49' : '#5E8F74');
   setText('fs-hrv-val', `${data.overnight_hrv !== undefined ? Math.round(data.overnight_hrv) : '--'} ms`);
   setText('fs-hrv-badge', data.hrv_status || 'Dengeli');
   const hrvSubEl = document.getElementById('fs-hrv-sub');

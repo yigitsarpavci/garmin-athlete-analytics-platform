@@ -7,40 +7,40 @@
   --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Deep Forest / Pine & Woodland Moss Nature Dark Theme */
-  --bg-base-dark: #0B1510;
-  --bg-surface-dark: #112019;
-  --bg-elevated-dark: #172B21;
-  --bg-hover-dark: #203A2D;
-  --bg-subtle-dark: rgba(116, 198, 157, 0.055);
+  /* Matte Deep Pine & Muted Sage Nature Dark Theme */
+  --bg-base-dark: #0A100D;
+  --bg-surface-dark: #101915;
+  --bg-elevated-dark: #16231D;
+  --bg-hover-dark: #1C2C25;
+  --bg-subtle-dark: rgba(107, 143, 122, 0.05);
 
-  --border-subtle-dark: #223B2E;
-  --border-medium-dark: #315643;
-  --border-hover-dark: #52B788;
+  --border-subtle-dark: #1D2D25;
+  --border-medium-dark: #2A3F35;
+  --border-hover-dark: #4B7A62;
 
-  --text-primary-dark: #ECF4EE;
-  --text-secondary-dark: #A5C3B0;
-  --text-muted-dark: #769E86;
+  --text-primary-dark: #E6ECE8;
+  --text-secondary-dark: #93A89B;
+  --text-muted-dark: #63786B;
 
-  --accent-dark: #52B788;
-  --accent-hover-dark: #74C69D;
-  --accent-soft-dark: rgba(82, 183, 136, 0.14);
-  --accent-border-dark: rgba(82, 183, 136, 0.36);
+  --accent-dark: #4A7C63;
+  --accent-hover-dark: #5E9479;
+  --accent-soft-dark: rgba(74, 124, 99, 0.14);
+  --accent-border-dark: rgba(74, 124, 99, 0.34);
 
-  --moss-dark: #74C69D;
-  --moss-soft-dark: rgba(116, 198, 157, 0.14);
-  --moss-border-dark: rgba(116, 198, 157, 0.34);
+  --moss-dark: #5E8F74;
+  --moss-soft-dark: rgba(94, 143, 116, 0.13);
+  --moss-border-dark: rgba(94, 143, 116, 0.30);
 
-  --ochre-dark: #E9B44C;
-  --ochre-soft-dark: rgba(233, 180, 76, 0.13);
-  --ochre-border-dark: rgba(233, 180, 76, 0.32);
+  --ochre-dark: #C99A49;
+  --ochre-soft-dark: rgba(201, 154, 73, 0.12);
+  --ochre-border-dark: rgba(201, 154, 73, 0.28);
 
-  --crimson-dark: #EB7A68;
-  --crimson-soft-dark: rgba(235, 122, 104, 0.13);
-  --crimson-border-dark: rgba(235, 122, 104, 0.32);
+  --crimson-dark: #C96A5B;
+  --crimson-soft-dark: rgba(201, 106, 91, 0.12);
+  --crimson-border-dark: rgba(201, 106, 91, 0.28);
 
-  --scrollbar-track-dark: #0B1510;
-  --scrollbar-thumb-dark: #315643;
+  --scrollbar-track-dark: #0A100D;
+  --scrollbar-thumb-dark: #2A3F35;
 
   --bg-base: var(--bg-base-dark);
   --bg-surface: var(--bg-surface-dark);
@@ -60,7 +60,7 @@
   --accent-hover: var(--accent-hover-dark);
   --accent-soft: var(--accent-soft-dark);
   --accent-border: var(--accent-border-dark);
-  --accent-contrast: #08120D;
+  --accent-contrast: #F2F6F3;
 
   --moss: var(--moss-dark);
   --moss-soft: var(--moss-soft-dark);
@@ -759,7 +759,7 @@ html.dark .text-emerald-300 {
 }
 .seg-red { background-color: #EF5350; }
 .seg-amber { background-color: #E9B44C; }
-.seg-green { background-color: #52B788; }
+.seg-green { background-color: #4A7C63; }
 .seg-blue { background-color: #38BDF8; }
 .seg-purple { background-color: #A855F7; }
 .garmin-gauge-pin {
