@@ -617,6 +617,10 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
                 return obj.isoformat()
             return str(obj)
 
+        try:
+            data = engine.fill_zone_tokens(data)
+        except Exception:
+            logger.debug("fill_zone_tokens başarısız", exc_info=True)
         sanitized_data = _sanitize(data)
         payload = json.dumps(sanitized_data, ensure_ascii=False, default=_json_default).encode("utf-8")
         self.send_response(status_code)

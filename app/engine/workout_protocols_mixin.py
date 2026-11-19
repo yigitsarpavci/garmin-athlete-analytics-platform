@@ -13,7 +13,7 @@ from typing import Dict, List, Any
 
 try:
     from athlete_principles import build_athlete_principles
-    from engine.helpers import request_cached, zone_text, DATA_DIR, format_sport_tr
+    from engine.helpers import fnum, request_cached, zone_text, DATA_DIR, format_sport_tr
     from engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
         build_projected_gym_summary,
@@ -28,7 +28,7 @@ try:
     )
 except ImportError:
     from app.athlete_principles import build_athlete_principles
-    from app.engine.helpers import request_cached, zone_text, DATA_DIR, format_sport_tr
+    from app.engine.helpers import fnum, request_cached, zone_text, DATA_DIR, format_sport_tr
     from app.engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
         build_projected_gym_summary,
@@ -167,9 +167,9 @@ class WorkoutProtocolsMixin:
         # Canlı biyometri ve Garmin yük durumu ile çok faktörlü progresyon hesapla
         metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
         bw_kg = float(metrics.get("weight") or self.get_current_weight())
-        hrv_val = float(metrics.get("overnight_hrv") or 45.0)
-        hrv_7d = float(metrics.get("hrv_7d") or hrv_val or 45.0)
-        sleep_sc = float(metrics.get("sleep_score") or 80.0)
+        hrv_val = fnum(metrics.get("overnight_hrv"), 45.0)
+        hrv_7d = fnum(metrics.get("hrv_7d") or hrv_val, 45.0)
+        sleep_sc = fnum(metrics.get("sleep_score"), 80.0)
         acwr_val = float(metrics.get("acwr") or 1.0)
 
         chrono_sessions = sorted(sessions, key=lambda x: (x.get("date", ""), x.get("time", "")))
@@ -237,7 +237,7 @@ class WorkoutProtocolsMixin:
             "date": date_str,
             "time": str(payload.get("time") or "18:00"),
             "workout_type": workout_type,
-            "duration_min": float(payload.get("duration_min") or 55.0),
+            "duration_min": fnum(payload.get("duration_min"), 55.0),
             "calories": int(payload.get("calories") or 360),
             "total_volume_kg": round(total_vol, 1),
             "exercises": normalized_ex,
@@ -691,7 +691,7 @@ class WorkoutProtocolsMixin:
             ],
             "cooldown": "5 dk hafif statik esneme (göğüs açış, kalça fleksör ve hamstring).",
             "telemetry_targets": {
-                "hr_range": "115 - 130 bpm (Zone 1)",
+                "hr_range": "[[Z1_HR]] (Zone 1)",
                 "est_calories": self.nutrition_texts("gym").get("spend_line", "--"),
                 "nutrition": f"{self.nutrition_texts('gym')['line']} | 3.0 L Su",
             },
@@ -721,7 +721,7 @@ class WorkoutProtocolsMixin:
             ],
             "cooldown": "00:30 öncesi uyku hazırlığı (8 saat tam toparlanma).",
             "telemetry_targets": {
-                "hr_range": "<100 bpm (Parasempatik Toparlanma)",
+                "hr_range": "<[[REST_CAP]] bpm (Parasempatik Toparlanma)",
                 "est_calories": self.nutrition_texts("rest").get("spend_line", "--"),
                 "nutrition": f"{self.nutrition_texts('rest')['line']} | 2.5 - 3.0 L Su",
             },
@@ -762,7 +762,7 @@ class WorkoutProtocolsMixin:
 
     def _protocol_tempo_run(self, tempo_note, tempo_status, prot_g) -> Dict[str, Any]:
         """Yüksek Aerobik: Tempo / Eşik koşu reçetesi."""
-        mx = float(getattr(self, "max_hr_estimate", 0) or 200)
+        mx = fnum(getattr(self, "max_hr_estimate", 0), 200)
         z3_lo = int(round(0.77 * mx))
         z3_hi = int(round(0.84 * mx))
         return {
@@ -818,7 +818,7 @@ class WorkoutProtocolsMixin:
             ],
             "cooldown": "Gece 00:30 öncesi yatış ve glikojen dengelemesi.",
             "telemetry_targets": {
-                "hr_range": "<100 bpm (Parasempatik Gün)",
+                "hr_range": "<[[REST_CAP]] bpm (Parasempatik Gün)",
                 "est_calories": self.nutrition_texts("rest").get("spend_line", "--"),
                 "nutrition": f"{self.nutrition_texts('rest')['line']} | 3.0 L Su",
             },
@@ -883,7 +883,7 @@ class WorkoutProtocolsMixin:
             ],
             "cooldown": "5 dk arka bacak ve sırt açma esnemesi.",
             "telemetry_targets": {
-                "hr_range": "115 - 130 bpm (Zone 1)",
+                "hr_range": "[[Z1_HR]] (Zone 1)",
                 "est_calories": self.nutrition_texts("gym").get("spend_line", "--"),
                 "nutrition": f"{self.nutrition_texts('gym')['line']} | 3.0 L Su",
             },
@@ -911,14 +911,14 @@ class WorkoutProtocolsMixin:
                     "num": 1,
                     "name": "Açık Hava Tempolu Yürüyüş & Esneme",
                     "duration": "30 - 45 dakika",
-                    "target_hr": "<110 bpm (Zone 1 Hafif)",
+                    "target_hr": "<[[Z1_CAP]] bpm (Zone 1 Hafif)",
                     "protocol": "Açık havada tempolu yürüyüş + 15 dk tüm vücut statik esneme ve NSDR.",
                     "coaching_cue": "Kan dolaşımını artırarak sonraki hafta kotasına taze giriş sağlamak.",
                 }
             ],
             "cooldown": "Ekranlardan uzaklaşma.",
             "telemetry_targets": {
-                "hr_range": "<110 bpm (Zone 1)",
+                "hr_range": "<[[Z1_CAP]] bpm (Zone 1)",
                 "est_calories": self.nutrition_texts("rest").get("spend_line", "--"),
                 "nutrition": f"{self.nutrition_texts('rest')['line']} | 2.5 - 3.0 L Su",
             },

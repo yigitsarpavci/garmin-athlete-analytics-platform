@@ -5,14 +5,15 @@ Dinamik İlerleme Analizi ve Antrenman Sonu 5 Maddelik Debrief Motoru Mixin'i.
 Anahtar uyuşmazlıkları giderilmiş, tüm PR'lar, ACWR ve 24s biyometri canlı verilerden çekilir.
 """
 
+import pandas as pd
 from typing import Dict, Any
 
 try:
     from athlete_principles import ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
-    from engine.helpers import zone_text, format_sport_tr, classify_run_workout
+    from engine.helpers import fnum, zone_text, format_sport_tr, classify_run_workout
 except ImportError:
     from app.athlete_principles import ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
-    from app.engine.helpers import zone_text, format_sport_tr, classify_run_workout
+    from app.engine.helpers import fnum, zone_text, format_sport_tr, classify_run_workout
 
 
 class ProgressionDebriefMixin:
@@ -30,7 +31,7 @@ class ProgressionDebriefMixin:
 
         acwr = float(cur_status.get("acwr") or 1.0)
         rhr = float(metrics.get("resting_hr") or metrics.get("rhr") or self.get_physiology()["rhr"])
-        stress = float(metrics.get("stress") or 28.4)
+        stress = fnum(metrics.get("stress"), 28.4)
         cur_weight = float(metrics.get("weight") or self.get_current_weight())
         squat_pr = float(prog.get("squat", {}).get("max_kg") or 0.0)
         bench_pr = float(prog.get("bench", {}).get("max_kg") or 0.0)
@@ -82,13 +83,13 @@ class ProgressionDebriefMixin:
                 f"Vücut ağırlığının ({cur_weight:.0f} kg) üzerinde kaldırma kriteri ileri seviye içindir. Şu an "
                 f"Squat {squat_pr:.0f} kg ({squat_ratio:.2f}x VA), Deadlift {deadlift_pr:.0f} kg ({dl_ratio:.2f}x VA), "
                 f"Row {row_pr:.0f} kg ve Bench {bench_pr:.0f} kg ({bench_ratio:.2f}x VA) seviyesindesin. "
-                "İlk hedef haftada 2 gün A/B 5x5 ile kendi vücut ağırlığına (~85 kg Squat/Deadlift, ~65–70 kg Bench) ulaşmak."
+                f"İlk hedef haftada 2 gün A/B 5x5 ile kendi vücut ağırlığına (~{cur_weight:.0f} kg Squat/Deadlift, ~{0.75 * cur_weight:.0f} kg Bench) ulaşmak."
             )
 
         # 3. Koşu Branşı & Load Focus Yönlendirmesi
-        low_pct = load_focus.get("aerobic_low", {}).get("pct_of_target", 92.0)
-        high_pct = load_focus.get("aerobic_high", {}).get("pct_of_target", 91.0)
-        an_pct = load_focus.get("anaerobic", {}).get("pct_of_target", 62.0)
+        low_pct = load_focus.get("aerobic_low", {}).get("pct_of_target") or 0.0
+        high_pct = load_focus.get("aerobic_high", {}).get("pct_of_target") or 0.0
+        an_pct = load_focus.get("anaerobic", {}).get("pct_of_target") or 0.0
         running_style_advice = (
             f"Firstbeat yük dengesinde Yüksek Aerobik (%{high_pct:.0f}) ve Düşük Aerobik (%{low_pct:.0f}) "
             f"barın üst sınırına yakınken Anaerobik yük (%{an_pct:.0f}) daha düşük. Önce 5K hız intervalini (4x1000m @ Z4-5) uygula; "
@@ -166,8 +167,8 @@ class ProgressionDebriefMixin:
         acute_load = cur_status.get("acute_load", 0)
         chronic_load = cur_status.get("chronic_load", 0)
         acwr = float(cur_status.get("acwr") or 1.0)
-        tunnel_min = float(cur_status.get("tunnel_min") or 200.0)
-        tunnel_max = float(cur_status.get("tunnel_max") or 340.0)
+        tunnel_min = fnum(cur_status.get("tunnel_min"), 0.0)
+        tunnel_max = fnum(cur_status.get("tunnel_max"), 0.0)
         vo2_val = daily.get("vo2max", 0.0)
 
         active_cals_latest, bb_low, bb_wake, sleep_h_total, sleep_stages_txt, stress_latest = self._collect_24h_biometrics(daily)
@@ -224,12 +225,12 @@ class ProgressionDebriefMixin:
             "daily_biometrics_24h": {
                 "date": daily.get("date"),
                 "weight_kg": cur_w,
-                "total_loss_kg": daily.get("total_loss_kg", -8.0),
-                "resting_hr_bpm": daily.get("resting_hr", 54),
-                "overnight_hrv_ms": daily.get("overnight_hrv", 43.0),
-                "hrv_7d_avg_ms": daily.get("hrv_7d", 46.0),
-                "hrv_status": "Dengeli (Optimal Parasempatik Toparlanma)" if (daily.get("overnight_hrv") or 43) >= 38 else "Yük Altında (Dinlenme İzle)",
-                "sleep_score": daily.get("sleep_score", 82.0),
+                "total_loss_kg": daily.get("total_loss_kg"),
+                "resting_hr_bpm": daily.get("resting_hr"),
+                "overnight_hrv_ms": daily.get("overnight_hrv"),
+                "hrv_7d_avg_ms": daily.get("hrv_7d"),
+                "hrv_status": "Dengeli (Optimal Parasempatik Toparlanma)" if (daily.get("overnight_hrv") or 0) >= ((self.get_hrv_baseline() or {}).get("low") or 0) else "Yük Altında (Dinlenme İzle)",
+                "sleep_score": daily.get("sleep_score"),
                 "sleep_hours": round(sleep_h_total, 2),
                 "sleep_stages": sleep_stages_txt,
                 "body_battery_wake": bb_wake,
@@ -328,20 +329,37 @@ class ProgressionDebriefMixin:
 
 
     def _collect_24h_biometrics(self, daily):
-        """Son 24 saatin uyku evreleri, Body Battery, stres ve aktif kalori verilerini toplar."""
-        # Son günün canlı uyku / Body Battery / stres değerleri
-        latest_row = self.df.iloc[-1] if hasattr(self, "df") and not self.df.empty else {}
-        deep_h = float(latest_row.get("deep_h") or 1.3)
-        rem_h = float(latest_row.get("rem_h") or 1.4)
-        sleep_h_total = float(daily.get("sleep_hours") or 7.0) or 7.0
-        deep_pct = round(deep_h / sleep_h_total * 100) if sleep_h_total > 0 else 20
-        rem_pct = round(rem_h / sleep_h_total * 100) if sleep_h_total > 0 else 20
-        sleep_stages_txt = f"Derin: {int(deep_h)}s {int((deep_h % 1) * 60)}dk (%{deep_pct}), REM: {int(rem_h)}s {int((rem_h % 1) * 60)}dk (%{rem_pct})"
-        bb_wake = int(latest_row.get("bb_wake") or 78) if latest_row.get("bb_wake") == latest_row.get("bb_wake") else 78
-        bb_low = int(latest_row.get("bb_low") or 25) if latest_row.get("bb_low") == latest_row.get("bb_low") else 25
-        stress_latest = int(latest_row.get("avg_stress") or daily.get("stress") or 25) if (latest_row.get("avg_stress") or daily.get("stress")) else 25
-        active_cals_latest = int(latest_row.get("active_kcal") or 340) if latest_row.get("active_kcal") == latest_row.get("active_kcal") else 340
-        return active_cals_latest, bb_low, bb_wake, sleep_h_total, sleep_stages_txt, stress_latest
+        """Son 24 saatin uyku evreleri, Body Battery, stres ve aktif kalori verileri; her metrik için son GEÇERLİ değer (yoksa None)."""
+        df = self.df if hasattr(self, "df") else None
+
+        def _last(col: str):
+            if df is None or df.empty or col not in df.columns:
+                return None
+            ser = pd.to_numeric(df[col], errors="coerce").dropna()
+            return float(ser.iloc[-1]) if not ser.empty else None
+
+        sleep_h_total = fnum(daily.get("sleep_hours"), 0.0)
+        deep_h, rem_h = _last("deep_h"), _last("rem_h")
+        if df is not None and not df.empty and {"sleep_h", "deep_h", "rem_h"}.issubset(df.columns):
+            valid = df[pd.to_numeric(df["sleep_h"], errors="coerce").gt(0) & df["deep_h"].notna() & df["rem_h"].notna()]
+            if not valid.empty:
+                deep_h, rem_h = float(valid.iloc[-1]["deep_h"]), float(valid.iloc[-1]["rem_h"])
+                sleep_h_total = sleep_h_total or float(valid.iloc[-1]["sleep_h"])
+        if deep_h is not None and rem_h is not None and sleep_h_total > 0:
+            deep_pct = round(deep_h / sleep_h_total * 100)
+            rem_pct = round(rem_h / sleep_h_total * 100)
+            sleep_stages_txt = f"Derin: {int(deep_h)}s {int((deep_h % 1) * 60)}dk (%{deep_pct}), REM: {int(rem_h)}s {int((rem_h % 1) * 60)}dk (%{rem_pct})"
+        else:
+            sleep_stages_txt = "Uyku evresi verisi yok"
+
+        def _as_int(v):
+            return int(round(v)) if v is not None else None
+
+        stress_val = _last("avg_stress")
+        if stress_val is None:
+            stress_val = fnum(daily.get("stress"), float("nan"))
+            stress_val = None if stress_val != stress_val else stress_val
+        return _as_int(_last("active_kcal")), _as_int(_last("bb_low")), _as_int(_last("bb_wake")), sleep_h_total, sleep_stages_txt, _as_int(stress_val)
 
 
     def _plan_next_session(self, sport):
@@ -373,7 +391,7 @@ class ProgressionDebriefMixin:
             next_session_info = {
                 "day": "Bu Hafta Esnek Kota · Toparlanmana Uygun Bir Gün",
                 "title": f"{next_item['title']} ({next_item['duration']})",
-                "target_hr": "115 - 130 bpm (Zone 1)",
+                "target_hr": "[[Z1_HR]] (Zone 1)",
                 "target_pace": next_item["exercises_summary"],
                 "purpose": f"{weekly_quota['headline']}. Bacak toparlanmana göre uygun bir günde kuvvet kotanı tamamlayabilirsin.",
             }
@@ -381,7 +399,7 @@ class ProgressionDebriefMixin:
             next_session_info = {
                 "day": "Haftalık 4/4 Kota Tamamlandı · Esnek Toparlanma",
                 "title": "Aktif Toparlanma / Mobilite veya Spontane Branş",
-                "target_hr": "<110 bpm (Zone 1)",
+                "target_hr": "<[[Z1_CAP]] bpm (Zone 1)",
                 "target_pace": "Hafif yürüyüş, esneme veya isteğe bağlı spontane branş",
                 "purpose": f"{weekly_quota['headline']}. Sonraki Pazartesi temiz 0/2 kotasına taze başla.",
             }

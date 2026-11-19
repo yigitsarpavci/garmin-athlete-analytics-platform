@@ -69,6 +69,15 @@ SPORT_TR_MAP: Dict[str, str] = {
     "hiit": "HIIT",
 }
 
+def fnum(value: Any, default: float = 0.0) -> float:
+    """Değeri float'a çevirir; None, boş, NaN veya sonsuz ise `default` döner (NaN `or` ile eksik sayılmaz, bu yüzden float(x or d) güvensizdir)."""
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        return float(default)
+    return out if np.isfinite(out) else float(default)
+
+
 def format_sport_tr(sport_key: Optional[str], fallback_name: str = "") -> str:
     """Herhangi bir Garmin typeKey spor kodunu Türkçe etikete dönüştürür."""
     raw = (sport_key or "").strip().lower()

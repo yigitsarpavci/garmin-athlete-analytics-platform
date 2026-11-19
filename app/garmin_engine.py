@@ -150,7 +150,7 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
             return summ[-1]["weight_kg"] if date_str else summ[-1]["weight_kg"]
         return self._fallback_weight()
 
-    ZONE_TOKENS = ("[[Z2_HR]]", "[[Z2_HR_CAP]]", "[[Z2_PACE]]", "[[INT_HR]]", "[[INT_PACE]]", "[[Z45_HR]]", "[[WARM_HR]]", "[[Z2_HR_MID]]")
+    ZONE_TOKENS = ("[[Z2_HR]]", "[[Z2_HR_CAP]]", "[[Z2_PACE]]", "[[INT_HR]]", "[[INT_PACE]]", "[[Z45_HR]]", "[[WARM_HR]]", "[[Z2_HR_MID]]", "[[Z1_HR]]", "[[Z1_CAP]]", "[[REST_CAP]]")
 
     @staticmethod
     def _fmt_pace(sec: float) -> str:
@@ -160,7 +160,7 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
     def get_training_zones(self) -> Dict[str, str]:
         """
         Antrenman reçetelerindeki nabız ve tempo değerlerini sporcunun KENDİ verisinden türetir:
-        nabız bantları maksimum nabzın yüzdesidir (Z2 %69-74, interval %85-89, Z4-5 %84-90, ısınma %66.5-71.4);
+        nabız bantları maksimum nabzın yüzdesidir (Z2 %69-74, interval %85-89, Z4-5 %84-90, ısınma %66.5-71.4, Zone 1 %57-65, Zone 1 tavan %55, dinlenme/parasempatik tavan %50);
         Zone 2 temposu, Z2 nabzındaki kardiyak verimlilikten (EF = m/dk / bpm); interval temposu güncel 5K temposunun %90'ıdır.
         Veri yoksa tempo '--' döner.
         """
@@ -196,6 +196,9 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
             "[[INT_PACE]]": pace_int,
             "[[Z45_HR]]": f"{int(round(0.837 * mx))} - {int(round(0.90 * mx))} bpm",
             "[[WARM_HR]]": f"{int(round(0.665 * mx))}-{int(round(0.714 * mx))} bpm",
+            "[[Z1_HR]]": f"{int(round(0.57 * mx))}-{int(round(0.65 * mx))} bpm",
+            "[[Z1_CAP]]": str(int(round(0.55 * mx))),
+            "[[REST_CAP]]": str(int(round(0.50 * mx))),
         }
         self._zones_cache = (self.df, zones)
         return zones

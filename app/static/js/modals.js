@@ -197,8 +197,8 @@ function renderDebriefModalContent(d, idx) {
   document.getElementById('debriefHrv').textContent = `${bio.overnight_hrv_ms} ms`;
   document.getElementById('debriefSleep').textContent = `${bio.sleep_score} / 100`;
   document.getElementById('debriefSleepTime').textContent = `${bio.sleep_hours} sa (${bio.sleep_stages || ''})`;
-  document.getElementById('debriefBb').textContent = `${bio.body_battery_wake} / ${bio.body_battery_current}`;
-  document.getElementById('debriefStress').textContent = `${bio.stress_score} Puan`;
+  document.getElementById('debriefBb').textContent = `${bio.body_battery_wake ?? '--'} / ${bio.body_battery_current ?? '--'}`;
+  document.getElementById('debriefStress').textContent = (bio.stress_score != null ? `${bio.stress_score} Puan` : '--');
 
   const avgDiff = hrComp.avg_hr_diff !== undefined ? hrComp.avg_hr_diff : 0;
   const diffSign = avgDiff > 0 ? `+${avgDiff}` : `${avgDiff}`;

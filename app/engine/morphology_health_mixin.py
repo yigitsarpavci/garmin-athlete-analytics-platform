@@ -17,9 +17,9 @@ _TR_FULL_MONTHS = [
 
 
 try:
-    from engine.helpers import request_cached
+    from engine.helpers import fnum, request_cached
 except ImportError:
-    from app.engine.helpers import request_cached
+    from app.engine.helpers import fnum, request_cached
 
 
 class MorphologyHealthMixin:
@@ -136,11 +136,11 @@ class MorphologyHealthMixin:
         max_hr = phys["max_hr"]
         rhr = float(metrics.get("rhr") or metrics.get("resting_hr") or phys["rhr"])
         vo2 = float(metrics.get("vo2max") or 0.0)
-        stress = float(metrics.get("stress") or 28.4)
-        sleep_dur = float(metrics.get("sleep_duration_hours") or metrics.get("sleep_hours") or 7.0)
+        stress = fnum(metrics.get("stress"), 28.4)
+        sleep_dur = fnum(metrics.get("sleep_duration_hours") or metrics.get("sleep_hours"), 7.0)
         days_count = len(self.df) if getattr(self, "df", None) is not None and not self.df.empty else 93
-        resp = float(metrics.get("resp_sleep") or 13.8)
-        deep_pct = float(metrics.get("deep_sleep_pct") or 18.4)
+        resp = fnum(metrics.get("resp_sleep"), fnum(self.get_personal_baseline("resp_sleep").get("mean"), 0.0))
+        deep_pct = fnum(metrics.get("deep_sleep_pct"), 18.4)
         cur_w = float(metrics.get("weight") or self.get_current_weight())
         cur_bmi = float(metrics.get("bmi") or round(cur_w / self.height_m2, 2))
         start_w = self.get_start_weight()
@@ -284,7 +284,7 @@ class MorphologyHealthMixin:
                 "needed_actions": [
                     f"Kilonun {cur_w:.1f} kg'dan {target_w:.1f} kg'a inmesi (Bağıl VO2 Max artışı sağlar).",
                     f"VO2 Max puanının {vo2:.1f}'ten {target_vo2} seviyesine çıkması.",
-                    "Dinlenik nabzın 50-52 bpm aralığına yerleşmesi.",
+                    f"Dinlenik nabzın {max(35, round(rhr) - 4)}-{max(36, round(rhr) - 2)} bpm aralığına yerleşmesi.",
                 ],
             },
         }
@@ -379,6 +379,12 @@ class MorphologyHealthMixin:
             base_target_dt = first_day + timedelta(days=240)
         return goal_pace_sec, base_target_dt
 
+    @staticmethod
+    def _pace_band(sec: float) -> str:
+        """Saniye/km değerinin ±7 sn bandını "m:ss - m:ss /km" olarak yazar."""
+        lo, hi = int(round(sec - 7)), int(round(sec + 7))
+        return f"{lo // 60}:{lo % 60:02d} - {hi // 60}:{hi % 60:02d} /km"
+
     def get_z2_pace_5min_tracker(self, now: Optional[datetime] = None) -> Dict[str, Any]:
         """Zone 2 temposunu canlı çeker; tarih veya hız hedefine ulaşıldığında bir sonraki hedef kademesine geçer."""
         now = now or datetime.now()
@@ -387,7 +393,7 @@ class MorphologyHealthMixin:
 
         goal_pace_sec, base_target_dt = self.get_z2_goal(now)
 
-        latest_z2_pace_sec = float(z2_center or 420.0)
+        latest_z2_pace_sec = fnum(z2_center, 420.0)
         latest_run_pace = f"{int(latest_z2_pace_sec // 60)}:{int(round(latest_z2_pace_sec % 60)):02d} /km"
         latest_run_hr = z2_default_hr
         latest_ef = round(60000.0 / (latest_z2_pace_sec * z2_default_hr), 2)
@@ -404,7 +410,7 @@ class MorphologyHealthMixin:
                     if dist > 1500 and dur > 0:
                         if any_run is None:
                             any_run = act
-                        if 125 <= hr <= 154:
+                        if 0.62 * self.get_physiology()["max_hr"] <= hr <= 0.77 * self.get_physiology()["max_hr"]:
                             z2_candidate = act
                             break
             chosen = z2_candidate or any_run
@@ -475,8 +481,8 @@ class MorphologyHealthMixin:
             ],
             "timeline_milestones": [
                 {"period": f"Mevcut ({now.year})", "pace": latest_run_pace, "weight": f"{cur_w:.1f} kg", "status": "Aerobik Taban İnşası"},
-                {"period": f"+{max(1, rem_weeks // 3)} Hafta", "pace": "6:05 - 6:20 /km", "weight": f"{max(target_w, cur_w - 2.5):.1f} kg", "status": "İlk Hafifleme ve Kadans Kazanımı"},
-                {"period": f"+{max(2, (rem_weeks * 2) // 3)} Hafta", "pace": "5:30 - 5:45 /km", "weight": f"{max(target_w, cur_w - 4.5):.1f} kg", "status": "Kılcal Damarlanma & Mitokondri Artışı"},
+                {"period": f"+{max(1, rem_weeks // 3)} Hafta", "pace": self._pace_band(latest_z2_pace_sec - (latest_z2_pace_sec - target_pace_sec) / 3.0), "weight": f"{max(target_w, cur_w - 2.5):.1f} kg", "status": "İlk Hafifleme ve Kadans Kazanımı"},
+                {"period": f"+{max(2, (rem_weeks * 2) // 3)} Hafta", "pace": self._pace_band(latest_z2_pace_sec - 2.0 * (latest_z2_pace_sec - target_pace_sec) / 3.0), "weight": f"{max(target_w, cur_w - 4.5):.1f} kg", "status": "Kılcal Damarlanma & Mitokondri Artışı"},
                 {"period": target_date_str, "pace": f"{target_pace}", "weight": f"{target_w:.1f} kg", "status": f"Hedef Atletik Zirve (@ {z2_hr} bpm)"},
             ],
         }

@@ -162,16 +162,16 @@ class CustomPlanMixin:
 
         if g_routine == "ppl":
             gyms = [
-                {"slot_kind": "gym", "type": "İtiş (Push)", "badge": "Push", "title_suffix": "İtiş / Push (Göğüs, Omuz, Triceps)", "secondary": "Bench Press, Incline DB Press, OHP, Lateral Raise, Triceps Pushdown", "target": "115-130 bpm (Zone 1)", "duration": "55 dk"},
-                {"slot_kind": "gym", "type": "Çekiş (Pull)", "badge": "Pull", "title_suffix": "Çekiş / Pull (Sırt, Arka Omuz, Biceps)", "secondary": "Lat Pulldown, Barbell Row, Seated Cable Row, Face Pull, Curl", "target": "115-130 bpm (Zone 1)", "duration": "55 dk"},
+                {"slot_kind": "gym", "type": "İtiş (Push)", "badge": "Push", "title_suffix": "İtiş / Push (Göğüs, Omuz, Triceps)", "secondary": "Bench Press, Incline DB Press, OHP, Lateral Raise, Triceps Pushdown", "target": "[[Z1_HR]] (Zone 1)", "duration": "55 dk"},
+                {"slot_kind": "gym", "type": "Çekiş (Pull)", "badge": "Pull", "title_suffix": "Çekiş / Pull (Sırt, Arka Omuz, Biceps)", "secondary": "Lat Pulldown, Barbell Row, Seated Cable Row, Face Pull, Curl", "target": "[[Z1_HR]] (Zone 1)", "duration": "55 dk"},
                 {"slot_kind": "gym", "type": "Bacak (Legs)", "badge": "Legs", "title_suffix": "Bacak / Legs (Kuadriseps & Arka Zincir)", "secondary": "Back Squat, Romanian Deadlift, Leg Press, Leg Curl, Baldır", "target": "125-140 bpm (Zone 1-2)", "duration": "55 dk"},
-                {"slot_kind": "gym", "type": "Üst Vücut & Core", "badge": "Üst + Core", "title_suffix": "Üst Vücut & Core Hipertrofisi", "secondary": "Dumbbell Press, Barfiks, Lateral Raise, Cable Core", "target": "115-130 bpm (Zone 1)", "duration": "50 dk"},
+                {"slot_kind": "gym", "type": "Üst Vücut & Core", "badge": "Üst + Core", "title_suffix": "Üst Vücut & Core Hipertrofisi", "secondary": "Dumbbell Press, Barfiks, Lateral Raise, Cable Core", "target": "[[Z1_HR]] (Zone 1)", "duration": "50 dk"},
             ]
         elif g_routine == "upper_lower":
             gyms = [
-                {"slot_kind": "gym", "type": "Üst Vücut Güç", "badge": "Üst Güç", "title_suffix": "Üst Vücut Güç & Hipertrofi", "secondary": "Bench Press, Barbell Row, OHP, Lat Pulldown, Yan Açış", "target": "115-130 bpm (Zone 1)", "duration": "55 dk"},
+                {"slot_kind": "gym", "type": "Üst Vücut Güç", "badge": "Üst Güç", "title_suffix": "Üst Vücut Güç & Hipertrofi", "secondary": "Bench Press, Barbell Row, OHP, Lat Pulldown, Yan Açış", "target": "[[Z1_HR]] (Zone 1)", "duration": "55 dk"},
                 {"slot_kind": "gym", "type": "Alt Vücut Güç", "badge": "Alt Güç", "title_suffix": "Alt Vücut & Core Güç", "secondary": "Squat, Deadlift, Lunge, Hanging Leg Raise, Plank", "target": "125-140 bpm (Zone 1-2)", "duration": "55 dk"},
-                {"slot_kind": "gym", "type": "Üst Vücut Hacim", "badge": "Üst Hacim", "title_suffix": "Üst Vücut Aksesuar & Hacim", "secondary": "Incline DB Press, Cable Row, Dips, Barfiks", "target": "115-130 bpm (Zone 1)", "duration": "50 dk"},
+                {"slot_kind": "gym", "type": "Üst Vücut Hacim", "badge": "Üst Hacim", "title_suffix": "Üst Vücut Aksesuar & Hacim", "secondary": "Incline DB Press, Cable Row, Dips, Barfiks", "target": "[[Z1_HR]] (Zone 1)", "duration": "50 dk"},
                 {"slot_kind": "gym", "type": "Alt Vücut Fonksiyonel", "badge": "Alt Fonk.", "title_suffix": "Alt Vücut & Fonksiyonel", "secondary": "Front Squat / Goblet Squat, Hip Thrust, Baldır, Core", "target": "120-135 bpm (Zone 1)", "duration": "50 dk"},
             ]
         elif g_routine == "bodyweight":
@@ -181,9 +181,9 @@ class CustomPlanMixin:
             ]
         else:
             gyms = [
-                {"slot_kind": "gym_a", "type": "Workout A (5x5)", "badge": "Workout A", "title_suffix": "Workout A (Squat, Bench Press, Barbell Row 5x5)", "secondary": "Bileşik güç (5x5) + Lateral Raise (3x12) & Shrug (3x12)", "target": "115-130 bpm (Zone 1)", "duration": "55 dk"},
-                {"slot_kind": "gym_b", "type": "Workout B (5x5)", "badge": "Workout B", "title_suffix": "Workout B (Squat, OHP, Deadlift, Lat Pulldown)", "secondary": "Arka zincir & omuz gücü + Lat Pulldown (4x12), Lateral Raise & Shrug", "target": "115-130 bpm (Zone 1)", "duration": "55 dk"},
-                {"slot_kind": "gym_a", "type": "Workout A Ek", "badge": "Workout A+", "title_suffix": "Workout A Tekrarı veya Aksesuar", "secondary": "Squat 5x5, Bench Press 5x5, Lateral Raise & Core", "target": "115-130 bpm (Zone 1)", "duration": "50 dk"},
+                {"slot_kind": "gym_a", "type": "Workout A (5x5)", "badge": "Workout A", "title_suffix": "Workout A (Squat, Bench Press, Barbell Row 5x5)", "secondary": "Bileşik güç (5x5) + Lateral Raise (3x12) & Shrug (3x12)", "target": "[[Z1_HR]] (Zone 1)", "duration": "55 dk"},
+                {"slot_kind": "gym_b", "type": "Workout B (5x5)", "badge": "Workout B", "title_suffix": "Workout B (Squat, OHP, Deadlift, Lat Pulldown)", "secondary": "Arka zincir & omuz gücü + Lat Pulldown (4x12), Lateral Raise & Shrug", "target": "[[Z1_HR]] (Zone 1)", "duration": "55 dk"},
+                {"slot_kind": "gym_a", "type": "Workout A Ek", "badge": "Workout A+", "title_suffix": "Workout A Tekrarı veya Aksesuar", "secondary": "Squat 5x5, Bench Press 5x5, Lateral Raise & Core", "target": "[[Z1_HR]] (Zone 1)", "duration": "50 dk"},
             ]
         return runs, gyms
 
@@ -421,7 +421,7 @@ class CustomPlanMixin:
                     "day": f"Kota Slotu {slot_num} · Aktif Toparlanma (Esnek Gün)",
                     "primary": "Aktif Toparlanma / Yürüyüş & Mobilite",
                     "secondary": "30-40 dk hafif yürüyüş, esneme ve nefes egzersizi",
-                    "target": "<110 bpm (Zone 1)",
+                    "target": "<[[Z1_CAP]] bpm (Zone 1)",
                     "calories": f"~{tdee - 150} kcal",
                     "macro": f"{target_kcal - 100} kcal ({protein_g}g P / {max(60, carbs_g - 20)}g K / {fat_g}g Y)",
                     "slot_kind": "active_recovery", "is_completed": False, "is_flexible": True,
@@ -431,7 +431,7 @@ class CustomPlanMixin:
                     "day": f"Kota Slotu {slot_num} · Dinlenme Tamponu (Esnek Gün)",
                     "primary": "Tam Dinlenme / Rejenerasyon",
                     "secondary": "Sinir sistemi ve kas toparlanması, erken uyku",
-                    "target": "<100 bpm (Parasempatik gün)",
+                    "target": "<[[REST_CAP]] bpm (Parasempatik gün)",
                     "calories": f"~{tdee - 250} kcal",
                     "macro": f"{target_kcal - 150} kcal ({protein_g}g P / {max(60, carbs_g - 35)}g K / {fat_g}g Y)",
                     "slot_kind": "rest", "is_completed": False, "is_flexible": True,

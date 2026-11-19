@@ -13,9 +13,9 @@ import numpy as np
 import pandas as pd
 
 try:
-    from engine.helpers import request_cached, zone_text, format_sport_tr, classify_sport_bucket
+    from engine.helpers import fnum, request_cached, zone_text, format_sport_tr, classify_sport_bucket
 except ImportError:
-    from app.engine.helpers import request_cached, zone_text, format_sport_tr, classify_sport_bucket
+    from app.engine.helpers import fnum, request_cached, zone_text, format_sport_tr, classify_sport_bucket
 
 
 logger = logging.getLogger(__name__)
@@ -333,15 +333,18 @@ class TelemetryMixin:
 
     def _sleep_and_rhr_basics(self, latest):
         """Dinlenik nabız, gece HRV, uyku süresi/evreleri ve yüzdelerini son günden hesaplar."""
-        rhr = int(round(float(latest.get("rhr") or 53)))
+        def _own(col: str, fallback: float = 0.0) -> float:
+            return fnum(self.get_personal_baseline(col).get("mean"), fallback)
+
+        rhr = int(round(fnum(latest.get("rhr"), _own("rhr", self.get_physiology()["rhr"]))))
         rhr_mean = round(float(self.df["rhr"].dropna().mean()), 1) if self.df["rhr"].notna().any() else float(rhr)
-        hrv_night = float(latest.get("hrv_night") or 44)
-        hrv_7d = float(latest.get("hrv_7d") or 44)
-        sleep_score = float(latest.get("sleep_score") or 82)
-        sleep_h = float(latest.get("sleep_h") or 7.0)
+        hrv_night = fnum(latest.get("hrv_night"), _own("hrv_night"))
+        hrv_7d = fnum(latest.get("hrv_7d"), _own("hrv_night"))
+        sleep_score = fnum(latest.get("sleep_score"), _own("sleep_score"))
+        sleep_h = fnum(latest.get("sleep_h"), _own("sleep_h"))
         sleep_h_mean = round(float(self.df["sleep_h"].dropna().mean()), 2) if self.df["sleep_h"].notna().any() else sleep_h
-        deep_h = float(latest.get("deep_h") or 1.3)
-        rem_h = float(latest.get("rem_h") or 1.4)
+        deep_h = fnum(latest.get("deep_h"), _own("deep_h"))
+        rem_h = fnum(latest.get("rem_h"), _own("rem_h"))
         deep_pct = round((deep_h / max(1.0, sleep_h)) * 100.0, 1)
         rem_sleep_pct = round((rem_h / max(1.0, sleep_h)) * 100.0, 1)
         return deep_h, deep_pct, hrv_7d, hrv_night, rem_h, rem_sleep_pct, rhr, rhr_mean, sleep_h, sleep_h_mean, sleep_score
@@ -364,7 +367,7 @@ class TelemetryMixin:
         sleep_hours_7d = round(_tail_stat("sleep_h", "mean", 7, sleep_h), 2)
         rem_sleep_pct_7d = self._sleep_stage_pct_7d("rem_h", rem_sleep_pct)
 
-        readiness_score = int(round(_num(latest.get("readiness_score"), 77)))
+        readiness_score = int(round(_num(latest.get("readiness_score"), fnum(self.get_personal_baseline("readiness_score").get("mean"), 0.0))))
         readiness_7d_avg = round(_tail_stat("readiness_score", "mean", 7, readiness_score), 1)
         readiness_status = "Yüksek Hazırlık" if readiness_score >= 70 else ("Orta Hazırlık" if readiness_score >= 45 else "Toparlanma Gerekli")
 
@@ -372,14 +375,14 @@ class TelemetryMixin:
         hrv_base = self.get_personal_baseline("hrv_night")
         hrv_band = max(3.0, 0.75 * hrv_base["std"]) if hrv_base["reliable"] else 6.0
         hrv_status = "Dengeli" if abs(hrv_night - hrv_7d) <= hrv_band else ("Yüksek Rezerv" if hrv_night > hrv_7d else "Baskılanmış")
-        stress_latest = float(latest.get("avg_stress")) if pd.notnull(latest.get("avg_stress")) else round(_tail_stat("avg_stress", "mean", len(self.df), 28.4), 1)
+        stress_latest = float(latest.get("avg_stress")) if pd.notnull(latest.get("avg_stress")) else round(_tail_stat("avg_stress", "mean", len(self.df), fnum(self.get_personal_baseline("avg_stress").get("mean"), 0.0)), 1)
         stress_7d_avg = round(_tail_stat("avg_stress", "mean", 7, stress_latest), 1)
         stress_base = self.get_personal_baseline("avg_stress")
         s_lo, s_hi = (stress_base["p25"], stress_base["p75"]) if stress_base["reliable"] else (25.0, 38.0)
         stress_status = "Düşük / Rahat" if stress_latest <= s_lo else ("Normal / Dengeli" if stress_latest <= s_hi else "Yüksek Stres")
-        resp_val = round(float(latest.get("resp_sleep") or self.df["resp_sleep"].dropna().mean() or 13.8), 1)
-        bb_wake = int(round(_num(latest.get("bb_wake"), 78)))
-        bb_low = int(round(_num(latest.get("bb_low"), 20)))
+        resp_val = round(fnum(latest.get("resp_sleep"), fnum(self.get_personal_baseline("resp_sleep").get("mean"), 0.0)), 1)
+        bb_wake = int(round(_num(latest.get("bb_wake"), fnum(self.get_personal_baseline("bb_wake").get("mean"), 0.0))))
+        bb_low = int(round(_num(latest.get("bb_low"), fnum(self.get_personal_baseline("bb_low").get("mean"), 0.0))))
         return bb_low, bb_wake, hrv_status, readiness_7d_avg, readiness_score, readiness_status, rem_sleep_pct_7d, resp_val, sleep_hours_7d, sleep_score_7d, stress_7d_avg, stress_latest, stress_status
 
 
@@ -665,7 +668,7 @@ class TelemetryMixin:
         """Son ~8 haftanın tartı kayıtlarından doğrusal regresyonla haftalık kilo değişimini (kg/hf) hesaplar."""
         hist = self.get_weight_history() if hasattr(self, "get_weight_history") else []
         if len(hist) < 2:
-            return -0.89  # Tartı geçmişi yoksa profil başlangıç temposu
+            return 0.0  # Tartı geçmişi yoksa tempo bilinmiyor
         last_dt = datetime.strptime(hist[-1]["date"], "%Y-%m-%d")
         pts = [
             ((datetime.strptime(h["date"], "%Y-%m-%d") - last_dt).days, h["weight_kg"])
@@ -673,13 +676,13 @@ class TelemetryMixin:
             if (last_dt - datetime.strptime(h["date"], "%Y-%m-%d")).days <= window_days
         ]
         if len(pts) < 2 or pts[-1][0] - pts[0][0] < 7:
-            return -0.89
+            return 0.0
         n = len(pts)
         mx = sum(x for x, _ in pts) / n
         my = sum(y for _, y in pts) / n
         den = sum((x - mx) ** 2 for x, _ in pts)
         if den <= 0:
-            return -0.89
+            return 0.0
         slope_per_day = sum((x - mx) * (y - my) for x, y in pts) / den
         return round(slope_per_day * 7.0, 2)
 

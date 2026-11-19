@@ -464,7 +464,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
 
             def get_training_load_analytics(self):
                 return {
-                    "current_status": {"chronic_load": chronic, "vo2max": vo2max},
+                    "current_status": {"chronic_load": chronic, "vo2max": vo2max, "tunnel_max": 500.0},
                     "load_focus": {
                         "targets_available": True,
                         "aerobic_low": {"actual": 200.0, "target_max": 400.0},
@@ -504,7 +504,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
                 act["startTimeLocal"] = (now - timedelta(days=(idx % 12) + 4)).strftime("%Y-%m-%d 10:00:00")
         # Tüm 3 bar %92+ ve 28G pencereden düşecek yük yok -> 0 koşu bile %85+ korur
         stub.get_training_load_analytics = lambda: {
-            "current_status": {"chronic_load": 480.0, "vo2max": 53.0},
+            "current_status": {"chronic_load": 480.0, "vo2max": 53.0, "tunnel_max": 500.0},
             "load_focus": {
                 "targets_available": True,
                 "aerobic_low": {"actual": 370.0, "target_max": 400.0},
@@ -523,7 +523,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
             "averageHR": 175, "activityTrainingLoad": 90, "aerobicTrainingEffect": 3.0, "anaerobicTrainingEffect": 2.0,
         })
         stub.get_training_load_analytics = lambda: {
-            "current_status": {"chronic_load": 480.0, "vo2max": 53.0},
+            "current_status": {"chronic_load": 480.0, "vo2max": 53.0, "tunnel_max": 500.0},
             "load_focus": {
                 "targets_available": True,
                 "aerobic_low": {"actual": 370.0, "target_max": 400.0},
@@ -554,7 +554,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         }]
         # 1) Koşu sonrası tüm barlar >= %85 ve Pazar'a kadar 0 ek koşu gerekiyorsa: target 1'e düşer
         stub.get_training_load_analytics = lambda: {
-            "current_status": {"chronic_load": 480.0, "vo2max": 53.0},
+            "current_status": {"chronic_load": 480.0, "vo2max": 53.0, "tunnel_max": 500.0},
             "load_focus": {
                 "targets_available": True,
                 "aerobic_low": {"actual": 370.0, "target_max": 400.0},
@@ -567,7 +567,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
 
         # 2) Koşu sonrası 1 bar < %85 kalmışsa: fitlik hedefi (3) verilir, counter için 4 verilmez
         stub.get_training_load_analytics = lambda: {
-            "current_status": {"chronic_load": 480.0, "vo2max": 53.0},
+            "current_status": {"chronic_load": 480.0, "vo2max": 53.0, "tunnel_max": 500.0},
             "load_focus": {
                 "targets_available": True,
                 "aerobic_low": {"actual": 370.0, "target_max": 400.0},
@@ -578,7 +578,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         dyn_under_85 = stub.compute_dynamic_weekly_targets(now=now)
         self.assertEqual(dyn_under_85["run_target"], 3)
 
-        # 3) Fitlik 2'ye düşerse (chronic < 360) ve 2 koşu zaten yapılmış + bar < %85 ise bile 2 verilir (ekstra eklenmez)
+        # 3) Fitlik 2'ye düşerse (kronik yük tünel üst sınırının %90'ının altında) ve 2 koşu zaten yapılmış + bar < %85 ise bile 2 verilir (ekstra eklenmez)
         stub.activities_all.append({
             "sport": "running",
             "startTimeLocal": (now - timedelta(days=1)).strftime("%Y-%m-%d 09:00:00"),
@@ -586,7 +586,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
             "activityTrainingLoad": 80, "aerobicTrainingEffect": 3.0, "anaerobicTrainingEffect": 0.0,
         })
         stub.get_training_load_analytics = lambda: {
-            "current_status": {"chronic_load": 260.0, "vo2max": 46.0},
+            "current_status": {"chronic_load": 260.0, "vo2max": 46.0, "tunnel_max": 500.0},
             "load_focus": {
                 "targets_available": True,
                 "aerobic_low": {"actual": 300.0, "target_max": 400.0},
@@ -666,3 +666,30 @@ class TestPersonalNutritionAndStatus(unittest.TestCase):
         eng.df = pd.DataFrame()
         self.assertIsNone(eng.get_day_nutrition("run"))
         self.assertEqual(eng.nutrition_texts("run")["macro"], "--")
+
+
+class TestNanSafety(unittest.TestCase):
+    """Gün başında yarım kalan (NaN) satırlar API'yi çökertmemeli veya uydurma değer göstermemeli."""
+
+    def test_fnum_treats_nan_none_and_inf_as_missing(self):
+        from app.engine.helpers import fnum
+        self.assertEqual(fnum(float("nan"), 5.0), 5.0)
+        self.assertEqual(fnum(None, 3.0), 3.0)
+        self.assertEqual(fnum(float("inf"), 1.0), 1.0)
+        self.assertEqual(fnum("7.5", 0.0), 7.5)
+
+    def test_24h_biometrics_uses_last_valid_values_not_invented_defaults(self):
+        import pandas as pd
+        from app.engine.progression_debrief_mixin import ProgressionDebriefMixin
+        stub = ProgressionDebriefMixin.__new__(ProgressionDebriefMixin)
+        nan = float("nan")
+        stub.df = pd.DataFrame({
+            "sleep_h": [7.0, nan], "deep_h": [1.0, nan], "rem_h": [1.5, nan],
+            "bb_wake": [70.0, nan], "bb_low": [12.0, nan], "avg_stress": [30.0, 33.0], "active_kcal": [400.0, 20.0],
+        })
+        act, bb_low, bb_wake, sleep_h, stages, stress = stub._collect_24h_biometrics({"sleep_hours": nan})
+        self.assertEqual((bb_low, bb_wake, stress), (12, 70, 33))
+        self.assertEqual(sleep_h, 7.0)
+        self.assertIn("Derin: 1s 0dk (%14)", stages)
+        stub.df = pd.DataFrame()
+        self.assertEqual(stub._collect_24h_biometrics({})[3:5], (0.0, "Uyku evresi verisi yok"))

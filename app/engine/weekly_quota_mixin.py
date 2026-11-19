@@ -210,14 +210,16 @@ class WeeklyQuotaMixin:
                 logger.warning("compute_dynamic_weekly_targets gym_history fallback", exc_info=True)
 
         chronic_load = 0.0
-        vo2max = 0.0
+        tunnel_max = 0.0
+        acwr_now = 1.0
         load_focus: Dict[str, Any] = {}
         if hasattr(self, "get_training_load_analytics"):
             try:
                 tl = self.get_training_load_analytics() or {}
                 cs = tl.get("current_status") or {}
                 chronic_load = float(cs.get("chronic_load") or 0.0)
-                vo2max = float(cs.get("vo2max") or 0.0)
+                tunnel_max = float(cs.get("tunnel_max") or 0.0)
+                acwr_now = float(cs.get("acwr") or 1.0)
                 load_focus = tl.get("load_focus") or {}
             except Exception:
                 logger.warning("compute_dynamic_weekly_targets load_analytics fallback", exc_info=True)
@@ -256,11 +258,10 @@ class WeeklyQuotaMixin:
         gym_target = 2
         gym_sequence = ["gym_a", "gym_b"]
 
-        # 2) Koşu fitliğine göre temel gün sayısı (yalnızca 2 veya 3 gün; maks 3)
-        if chronic_load >= 360 or (vo2max >= 50 and chronic_load >= 320):
-            base_run_target = 3
-        else:
-            base_run_target = 2
+        # 2) Koşu fitliğine göre temel gün sayısı (yalnızca 2 veya 3 gün; maks 3). Eşikler sporcunun kendi verisinden gelir:
+        #    kronik yük Garmin'in kendi "optimal tünel" üst sınırının %90'ına ulaştıysa 3 gün (tünel yoksa son 28 günde haftada >=3 koşu).
+        capacity_ok = (chronic_load >= 0.9 * tunnel_max) if tunnel_max > 0 else (runs_per_wk >= 3.0)
+        base_run_target = 3 if capacity_ok and acwr_now <= 1.3 else 2
 
         # Her koşu sonrası güncel fitlik ve load_focus değerlerine göre bu haftaki hedefi ayarla:
         # Tüm barlar >= %85 korunabiliyorsa kalan koşu sayısını eksilt; %85 altı varsa fitlik hedefini ver (ekstra ekleme).
@@ -784,7 +785,7 @@ class WeeklyQuotaMixin:
                 return {
                     "primary": f"Kuvvet #{ordinal} · Kalan Kota{prio_hint} · {summary.split(' · Lateral')[0]}",
                     "secondary": f"Esnek Gün — Bu hafta geriye {rem_gyms} kuvvet kaldı ({quota_lbl}), istediğin uygun gün uygula • {summary}",
-                    "target": "115-128 bpm (Zone 1)" if slot_kind == "gym_a" else "115-130 bpm (Zone 1)",
+                    "target": "[[Z1_HR]] (Zone 1)",
                     **{k: v for k, v in self.nutrition_texts("gym").items() if k in ("calories", "macro")},
                 }
             if slot_kind == "tempo":
@@ -842,7 +843,7 @@ class WeeklyQuotaMixin:
                     f"{prev2_lbl} + {prev1_lbl} üst üste yüklendiği için bugün toparlanma günü olarak ayrıldı; "
                     f"kalan {total_rem} seans dinlenmiş günlere kaydırıldı"
                 ),
-                "target": "<105 bpm (Aktif Dinlenme)",
+                "target": "<[[REST_CAP]] bpm (Aktif Dinlenme)",
                 **{k: v for k, v in self.nutrition_texts("rest").items() if k in ("calories", "macro")},
             }
         elif day.i == 6:
@@ -856,7 +857,7 @@ class WeeklyQuotaMixin:
             row_data = {
                 "primary": "Aktif Toparlanma / Mobilite & Esnek Yürüyüş",
                 "secondary": f"Esnek Gün — Hafif yürüyüş, esneme, nefes (NSDR) • {quota_note}",
-                "target": "<110 bpm (Zone 1)",
+                "target": "<[[Z1_CAP]] bpm (Zone 1)",
                 **{k: v for k, v in self.nutrition_texts("rest").items() if k in ("calories", "macro")},
             }
         else:
@@ -875,7 +876,7 @@ class WeeklyQuotaMixin:
             row_data = {
                 "primary": "Esnek Toparlanma / Rejenerasyon Penceresi",
                 "secondary": sec_txt,
-                "target": "<100 bpm (Parasempatik gün)",
+                "target": "<[[REST_CAP]] bpm (Parasempatik gün)",
                 **{k: v for k, v in self.nutrition_texts("rest").items() if k in ("calories", "macro")},
             }
         return day_label, row_data, slot_kind
