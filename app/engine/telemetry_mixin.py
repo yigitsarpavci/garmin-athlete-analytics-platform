@@ -673,10 +673,10 @@ class TelemetryMixin:
     @zone_text
     def get_training_load_analytics(self) -> Dict[str, Any]:
         """Firstbeat Training Load, ACWR ve gerçek bar doluluklarına göre enerji odak tavsiyesi döner."""
-        lb_map = self.training_status_latest.get("mostRecentTrainingLoadBalance", {}).get("metricsTrainingLoadBalanceDTOMap", {})
+        lb_map = (self.training_status_latest.get("mostRecentTrainingLoadBalance") or {}).get("metricsTrainingLoadBalanceDTOMap") or {}
         lb = list(lb_map.values())[0] if lb_map else {}
 
-        st_map = self.training_status_latest.get("mostRecentTrainingStatus", {}).get("latestTrainingStatusData", {})
+        st_map = (self.training_status_latest.get("mostRecentTrainingStatus") or {}).get("latestTrainingStatusData") or {}
         st = list(st_map.values())[0] if st_map else {}
         ac = st.get("acuteTrainingLoadDTO", {}) or {}
 
@@ -788,9 +788,9 @@ class TelemetryMixin:
         """Haftalık Firstbeat durum, ACWR ve yük dengesi serisini üretir."""
         weekly_progression = []
         for dt, obj in sorted(self.training_status_weekly.items()):
-            dev_map_w = obj.get("mostRecentTrainingLoadBalance", {}).get("metricsTrainingLoadBalanceDTOMap", {})
+            dev_map_w = (obj.get("mostRecentTrainingLoadBalance") or {}).get("metricsTrainingLoadBalanceDTOMap") or {}
             lb_w = list(dev_map_w.values())[0] if dev_map_w else {}
-            st_map_w = obj.get("mostRecentTrainingStatus", {}).get("latestTrainingStatusData", {})
+            st_map_w = (obj.get("mostRecentTrainingStatus") or {}).get("latestTrainingStatusData") or {}
             st_w = list(st_map_w.values())[0] if st_map_w else {}
             ac_w = st_w.get("acuteTrainingLoadDTO", {}) or {}
             raw_stat = st_w.get("trainingStatusFeedbackPhrase", "--")

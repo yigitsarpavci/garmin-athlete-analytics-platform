@@ -290,57 +290,18 @@ def compute_maintenance_runs_for_85(
     threshold: float = OVERFLOW_THRESHOLD_PCT,
 ) -> int:
     """
-    Tüm 3 Firstbeat yük barı >= %85 doluysa ve hafta sonuna (Pazar dahil) 28 günlük pencereden
-    düşecek yüklerden sonra bile koşu yapmadan >= %85 kalıyorsa 0 döner.
-    Aksi halde gelecek koşunun ne kadar yük getireceği kesin bilinemeyeceği için
-    base_run_target değerini korur (eksiltme koşu sonrası gerçek yüke göre yapılır).
+    compute_weekly_bar_drift ile birebir aynı hesabı kullanarak:
+    Tüm 3 Firstbeat yük barı >= %85 ise ve Pazar sonuna kadar (28G düşüşleri dahil)
+    ek koşu yapmadan >= %85 kalıyorsa 0 döner; aksi halde base_run_target döner.
     """
     if base_run_target <= 0 or not load_focus:
         return base_run_target
-    al = load_focus.get("aerobic_low") or {}
-    ah = load_focus.get("aerobic_high") or {}
-    an = load_focus.get("anaerobic") or {}
-
-    low_act = float(al.get("actual") or 0.0)
-    high_act = float(ah.get("actual") or 0.0)
-    an_act = float(an.get("actual") or 0.0)
-    low_max = float(al.get("target_max") or 0.0)
-    high_max = float(ah.get("target_max") or 0.0)
-    an_max = float(an.get("target_max") or 0.0)
-    targets_available = bool(load_focus.get("targets_available", True) and low_max > 0 and an_max > 0)
-    if not targets_available:
+    drift = compute_weekly_bar_drift(load_focus, activities_all, ref_dt=ref_dt)
+    if not drift.get("targets_available"):
         return base_run_target
-
-    cur_pcts = _compute_bar_pcts(low_act, high_act, an_act, low_max, high_max, an_max, True)
-    if min(cur_pcts) < threshold:
-        return base_run_target
-
-    ref_day = (ref_dt or datetime.now()).date()
-    monday = ref_day - timedelta(days=ref_day.weekday())
-    sunday = monday + timedelta(days=6)
-    win_start = ref_day - timedelta(days=28)
-    win_end = sunday - timedelta(days=27)  # Pazar dahil kalan hafta günleri
-    exp_low = exp_high = exp_an = 0.0
-    for act in activities_all or []:
-        d_str = (act.get("startTimeLocal") or "")[:10]
-        if not d_str:
-            continue
-        try:
-            d_obj = datetime.strptime(d_str, "%Y-%m-%d").date()
-        except ValueError:
-            continue
-        if win_start <= d_obj < win_end:
-            c = estimate_activity_load_contribution(act)
-            exp_low += c["low_aerobic"]
-            exp_high += c["high_aerobic"]
-            exp_an += c["anaerobic"]
-
-    sim_low = max(0.0, low_act - exp_low)
-    sim_high = max(0.0, high_act - exp_high)
-    sim_an = max(0.0, an_act - exp_an)
-    if min(_compute_bar_pcts(sim_low, sim_high, sim_an, low_max, high_max, an_max, True)) >= threshold:
+    bars = (drift["low_aerobic"], drift["high_aerobic"], drift["anaerobic"])
+    if min(b["current_pct"] for b in bars) >= threshold and min(b["week_end_pct"] for b in bars) >= threshold:
         return 0
-
     return base_run_target
 
 

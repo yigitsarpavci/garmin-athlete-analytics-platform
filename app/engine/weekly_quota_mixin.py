@@ -377,7 +377,6 @@ class WeeklyQuotaMixin:
         prev_run_kinds = [classify_run_workout(r)["kind"] for r in prev_runs_sorted]
         prev_had_interval = "interval" in prev_run_kinds
         prev_had_zone2 = "zone2" in prev_run_kinds
-        prev_had_tempo = "tempo" in prev_run_kinds
 
         prev_gym_types = [gym_type_by_date.get((g.get("startTimeLocal") or "")[:10], "Kuvvet") for g in prev_gyms_sorted]
         prev_had_a = any("Workout A" in wt for wt in prev_gym_types)
@@ -411,43 +410,16 @@ class WeeklyQuotaMixin:
         run_priority_reason: Optional[str] = None
         gym_priority_reason: Optional[str] = None
 
-        if len(prev_runs_sorted) == 1 and run_target > 0:
-            if prev_had_tempo and not prev_had_interval and not prev_had_zone2:
-                missed_sessions.append("5K Hız İntervali (Geçen hafta Tempo koşuldu, AnTE 0.0)")
-                if "interval" in run_order:
-                    run_order.remove("interval")
-                    run_order.insert(0, "interval")
+        if len(prev_runs_sorted) < run_target and run_target > 0:
+            if len(prev_runs_sorted) == 0 and any(True for _ in prev_gyms_sorted):
+                missed_sessions.extend(["Zone 2 Koşu", "5K Hız İntervali"])
+            elif len(prev_runs_sorted) == 1:
+                if prev_had_zone2 and not prev_had_interval:
+                    missed_sessions.append("5K Hız İntervali")
+                elif prev_had_interval and not prev_had_zone2:
+                    missed_sessions.append("Zone 2 Koşu")
                 else:
-                    run_order[0] = "interval"
-                run_priority_reason = "Geçen hafta koşu Tempo (AnTE 0.0) yapıldığı için 5K Hız İntervali bu hafta ilk sıraya alındı."
-            elif prev_had_zone2 and not prev_had_interval:
-                missed_sessions.append("5K Hız İntervali")
-                if "interval" in run_order:
-                    run_order.remove("interval")
-                    run_order.insert(0, "interval")
-                else:
-                    run_order[0] = "interval"
-                run_priority_reason = "Geçen hafta eksik kalan 5K Hız İntervali bu hafta ilk koşu önceliğine alındı."
-            elif prev_had_interval and not prev_had_zone2:
-                missed_sessions.append("Zone 2 Koşu")
-                if "zone2" in run_order:
-                    run_order.remove("zone2")
-                    run_order.insert(0, "zone2")
-                else:
-                    run_order[0] = "zone2"
-                run_priority_reason = "Geçen hafta eksik kalan Zone 2 Koşu bu hafta ilk koşu önceliğine alındı."
-            else:
-                missed_sessions.append("2. Koşu seansı")
-        elif len(prev_runs_sorted) >= 2 and prev_had_tempo and not prev_had_interval and not prev_had_zone2:
-            missed_sessions.append("5K Hız İntervali (Geçen hafta Tempo koşuldu, AnTE 0.0)")
-            if "interval" in run_order:
-                run_order.remove("interval")
-                run_order.insert(0, "interval")
-            else:
-                run_order[0] = "interval"
-            run_priority_reason = "Geçen hafta koşular sürekli Tempo (AnTE 0.0) olarak yapıldığı ve Anaerobik yük eksik kaldığı için 5K Hız İntervali ilk önceliğe alındı."
-        elif len(prev_runs_sorted) == 0 and any(True for _ in prev_gyms_sorted):
-            missed_sessions.extend(["Zone 2 Koşu", "5K Hız İntervali"])
+                    missed_sessions.append("2. Koşu seansı")
 
         if len(prev_gyms_sorted) == 1:
             if prev_had_a and not prev_had_b:
@@ -948,105 +920,38 @@ class WeeklyQuotaMixin:
 
 
     def _record_run_activity(self, st, act, act_name, avg_hr, cal, d_str, day_short, dist_m, dur_m, hr_txt):
-        """Koşu aktivitesini sınıflandırır (interval / Zone 2 / tempo), haftalık kotaya sayar ve plan sapmasını kaydeder."""
-        idx_r = len(st.runs_done_list)
+        """Koşu aktivitesini sınıflandırır (interval / Zone 2 / tempo) ve haftalık kotaya sayar."""
         st.runs_done_list.append(act)
         r_cls = classify_run_workout(act)
         actual_kind = r_cls["kind"]
         st.completed_run_kinds.append(actual_kind)
-
-        expected_kind = st.planned_run_order[idx_r] if idx_r < len(st.planned_run_order) else st.planned_run_order[-1]
-        if expected_kind in st.completed_run_kinds[:-1]:
-            alt = [k for k in st.planned_run_order if k != expected_kind]
-            if alt:
-                expected_kind = alt[0]
-        expected_label = _BASE_QUOTA_TEMPLATES[expected_kind]["short_label"]
-        r_cls["expected_kind"] = expected_kind
-        r_cls["expected_label"] = expected_label
-        r_cls["is_deviation"] = (actual_kind != expected_kind)
         st.run_cls_by_id[id(act)] = r_cls
 
         dist_km = round(dist_m / 1000.0, 2) if dist_m > 0 else 0.0
-        item_label = day_short
-
-        if actual_kind == "tempo":
-            dev = {
-                "date": d_str,
-                "day_label": day_short,
-                "category": "running",
-                "planned_kind": expected_kind,
-                "planned_label": expected_label,
-                "actual_kind": actual_kind,
-                "actual_label": r_cls["label_tr"],
-                "badge": f"Kota Güncellendi: {r_cls['short_label']}",
-                "note": (
-                    f"{day_short} yapılan {r_cls['label_tr']} ({avg_hr} bpm, TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']}) "
-                    f"haftalık koşu kotasına sayıldı ve koşu kotası 1 düşürüldü. "
-                    f"{expected_label} ise henüz yapılmadığı için haftanın kalan koşu kotası olarak korundu."
-                ),
-            }
-            st.plan_deviations.append(dev)
-            st.day_deviations.setdefault(d_str, []).append(dev)
-        elif r_cls["is_deviation"]:
-            dev = {
-                "date": d_str,
-                "day_label": day_short,
-                "category": "running",
-                "planned_kind": expected_kind,
-                "planned_label": expected_label,
-                "actual_kind": actual_kind,
-                "actual_label": r_cls["label_tr"],
-                "badge": f"Kota Güncellendi: {r_cls['short_label']}",
-                "note": (
-                    f"{day_short} yapılan {r_cls['label_tr']} haftalık koşu kotasına sayıldı ve kota 1 düşürüldü; "
-                    f"kalan koşu kotası {expected_label} olarak güncellendi."
-                ),
-            }
-            st.plan_deviations.append(dev)
-            st.day_deviations.setdefault(d_str, []).append(dev)
-
         st.runs_completed_items.append({
             "date": d_str,
             "day_label": day_short,
             "title": act_name,
             "workout_type": r_cls["label_tr"],
             "actual_kind": actual_kind,
-            "expected_kind": expected_kind,
-            "is_deviation": r_cls["is_deviation"],
             "te_label": r_cls["te_label"],
             "an_te": r_cls["an_te"],
             "distance_km": dist_km,
             "duration_min": dur_m,
             "avg_hr": avg_hr,
             "calories": cal,
-            "label": item_label,
+            "label": day_short,
         })
 
 
     def _record_strength_activity(self, st, act, avg_hr, cal, d_str, day_short, dur_m, hr_txt):
-        """Kuvvet aktivitesini haftalık kotaya sayar, Workout A/B türünü belirler ve plan sapmasını kaydeder."""
+        """Kuvvet aktivitesini haftalık kotaya sayar ve Workout A/B türünü belirler."""
         idx_g = len(st.gyms_done_list)
         st.gyms_done_list.append(act)
         w_type = st.gym_type_by_date.get(d_str) or "Kuvvet"
         st.last_gym_type = w_type if w_type != "Kuvvet" else st.last_gym_type
         g_kind = "gym_a" if "Workout A" in w_type else ("gym_b" if "Workout B" in w_type else st.planned_gym_order[min(idx_g, len(st.planned_gym_order) - 1)])
         st.completed_gym_kinds.append(g_kind)
-        expected_g = st.planned_gym_order[idx_g] if idx_g < len(st.planned_gym_order) else st.planned_gym_order[-1]
-        if g_kind != expected_g and w_type != "Kuvvet":
-            exp_g_lbl = _BASE_QUOTA_TEMPLATES[expected_g]["short_label"]
-            dev = {
-                "date": d_str,
-                "day_label": day_short,
-                "category": "strength",
-                "planned_kind": expected_g,
-                "planned_label": exp_g_lbl,
-                "actual_kind": g_kind,
-                "actual_label": w_type,
-                "badge": f"Kota Güncellendi: {w_type}",
-                "note": f"{day_short} günü {w_type} uygulandı ve haftalık kuvvet kotasına sayıldı; kalan kuvvet kotası {exp_g_lbl} olarak güncellendi.",
-            }
-            st.plan_deviations.append(dev)
-            st.day_deviations.setdefault(d_str, []).append(dev)
         st.gyms_completed_items.append({
             "date": d_str,
             "day_label": day_short,

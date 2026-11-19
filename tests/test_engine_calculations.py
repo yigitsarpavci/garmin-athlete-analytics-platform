@@ -248,8 +248,6 @@ class TestEngineCalculations(unittest.TestCase):
         self.assertTrue(q_tempo["post_tempo_adapted"])
         self.assertEqual(q_tempo["running"]["completed_kinds"], ["tempo"])
         self.assertEqual(q_tempo["running"]["remaining_items"][0]["slot_kind"], "interval")
-        self.assertTrue(len(q_tempo["plan_deviations"]) >= 1)
-        self.assertIn("Tempo Koşusu", q_tempo["plan_deviations"][0]["actual_label"])
 
         # 3) 0 Koşu + 0 Kuvvet (+ 1 spontane Yelken kotadan yemez)
         with patch.object(self.engine, "activities_all", [sailing_1]):
@@ -328,7 +326,6 @@ class TestEngineCalculations(unittest.TestCase):
         # 1) Pazartesi (sched[0]) İnterval değil Tempo Koşusu yazmalı ve kotaya sayıldığını belirtmeli
         self.assertIn("Tempo Koşusu", sched[0]["primary"])
         self.assertIn("haftalık koşu kotasına sayıldı", sched[0]["secondary"])
-        self.assertEqual(sched[0].get("deviation_badge"), "Kota Güncellendi: Tempo Koşusu")
 
         # 2) Arka arkaya Pzt Tempo + Salı Gym A yapıldığı için Çarşamba (sched[2]) uyarlanmış toparlanma olmalı
         self.assertEqual(sched[2]["slot_kind"], "rest")
