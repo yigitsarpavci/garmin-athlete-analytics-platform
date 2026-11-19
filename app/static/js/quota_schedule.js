@@ -346,7 +346,6 @@ function renderDailyProtocols(protocols) {
         <th class="py-1 px-1.5">Egzersiz</th>
         <th class="py-1 px-1.5">Set x Tekrar</th>
         <th class="py-1 px-1.5">Mevcut &amp; Hedef Ağırlık</th>
-        <th class="py-1 px-1.5">Dinlenme &amp; RPE</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-[var(--border-subtle)]">
@@ -359,7 +358,6 @@ function renderDailyProtocols(protocols) {
             <span class="stamp-tag stamp-moss">${escapeHtml(ex.target_weight)}</span>
             ${ex.current_achieved ? `<span class="font-mono text-[11px] text-[var(--text-muted)] ml-1">Son: ${escapeHtml(ex.current_achieved)}</span>` : ''}
           </td>
-          <td class="py-1 px-1.5 font-mono text-[var(--text-secondary)] whitespace-nowrap">${escapeHtml(ex.rest_sec)} <span class="text-[var(--text-muted)]">(${escapeHtml(ex.target_rpe || 'RPE 8')})</span></td>
         </tr>
       `).join('')}
     </tbody>
