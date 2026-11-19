@@ -365,8 +365,6 @@ function renderGymHistory(gym) {
   const activeSplit = (gym.program_state || {}).active_split || '5x5_linear';
   const catalog = gym.split_catalog || {};
   const splitInfo = catalog[activeSplit] || { short_name: '5x5 Doğrusal', name: 'StrongLifts 5x5' };
-  const activeBadge = document.getElementById('gymActiveSplitBadge');
-  if (activeBadge) activeBadge.textContent = (splitInfo.short_name || '5x5').toUpperCase();
 
   const evoBar = document.getElementById('gymProgramEvolutionBar');
   if (evoBar) {
