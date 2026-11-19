@@ -483,6 +483,23 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         types = [stub._build_quota_remaining_item(k, idx + 1)["type"] for idx, k in enumerate(dyn["gym_sequence"])]
         self.assertEqual(types, ["Push", "Pull", "Legs"])
 
+        # Geçen hafta sadece Push ve Pull yapılıp Legs eksik kaldıysa yeni haftada Legs ilk sıraya çıkmalı
+        from datetime import timedelta
+        mon = now - timedelta(days=now.weekday())
+        prev_start = (mon - timedelta(days=7)).strftime("%Y-%m-%d")
+        prev_end = (mon - timedelta(days=1)).strftime("%Y-%m-%d")
+        stub.activities_all = [a for a in stub.activities_all if not (prev_start <= a["startTimeLocal"][:10] <= prev_end)]
+        stub.activities_all.extend([
+            {"sport": "strength_training", "startTimeLocal": (mon - timedelta(days=6)).strftime("%Y-%m-%d 10:00:00"), "duration": 3300},
+            {"sport": "strength_training", "startTimeLocal": (mon - timedelta(days=4)).strftime("%Y-%m-%d 10:00:00"), "duration": 3300},
+        ])
+        carry = stub._analyze_previous_week_carryover(mon, {
+            (mon - timedelta(days=6)).strftime("%Y-%m-%d"): "Push",
+            (mon - timedelta(days=4)).strftime("%Y-%m-%d"): "Pull",
+        }, dyn=dyn)
+        self.assertEqual(carry["gym_order"], ["gym_c", "gym_a", "gym_b"])
+        self.assertIn("Legs", carry["missed_sessions"])
+
     def test_advanced_runner_scales_run_target_and_projection_horizon(self):
         stub, now = self._make_stub(split="push_pull", plateau=58, chronic=480.0, vo2max=53.0, runs_28d=15, gyms_28d=10)
         dyn = stub.compute_dynamic_weekly_targets(now=now)

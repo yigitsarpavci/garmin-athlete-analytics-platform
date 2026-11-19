@@ -483,8 +483,26 @@ class WeeklyQuotaMixin:
                 gym_priority_reason = "Geçen hafta yalnızca Workout B yapıldığı için eksik kalan Workout A bu hafta ilk kuvvet önceliğine alındı."
             else:
                 missed_sessions.append("2. Kuvvet seansı")
+        elif "gym_c" in gym_order and 0 < len(prev_gyms_sorted) < gym_target:
+            prev_had_c = any("Leg" in wt or "Bacak" in wt for wt in prev_gym_types)
+            base_slots = ["gym_a", "gym_b", "gym_c"]
+            done_set = set()
+            if prev_had_a:
+                done_set.add("gym_a")
+            if prev_had_b:
+                done_set.add("gym_b")
+            if prev_had_c:
+                done_set.add("gym_c")
+            missing_slots = [s for s in base_slots if s not in done_set]
+            if missing_slots and done_set:
+                name_map = {"gym_a": "Push", "gym_b": "Pull", "gym_c": "Legs"}
+                missed_labels = [name_map[s] for s in missing_slots]
+                missed_sessions.extend(missed_labels)
+                rotated = missing_slots + [s for s in base_slots if s in done_set]
+                gym_order = rotated * max(1, gym_target // 3)
+                gym_priority_reason = f"Geçen hafta eksik kalan {', '.join(missed_labels)} bu hafta ilk kuvvet önceliğine alındı."
         elif len(prev_gyms_sorted) == 0 and any(True for _ in prev_runs_sorted):
-            missed_sessions.extend(["Workout A", "Workout B"])
+            missed_sessions.extend(["Push", "Pull", "Legs"] if "gym_c" in gym_order else ["Workout A", "Workout B"])
 
         # Sıradaki 4-6 koşuyu son gerçek koşuların EPOC/TE katkılarıyla kapalı çevrim simüle et
         run_prediction = dyn.get("run_prediction")
@@ -1061,7 +1079,14 @@ class WeeklyQuotaMixin:
         st.gyms_done_list.append(act)
         w_type = st.gym_type_by_date.get(d_str) or "Kuvvet"
         st.last_gym_type = w_type if w_type != "Kuvvet" else st.last_gym_type
-        g_kind = "gym_a" if "Workout A" in w_type else ("gym_b" if "Workout B" in w_type else st.planned_gym_order[min(idx_g, len(st.planned_gym_order) - 1)])
+        if any(k in w_type for k in ("Workout A", "Push", "Upper")):
+            g_kind = "gym_a"
+        elif any(k in w_type for k in ("Workout B", "Pull", "Lower")):
+            g_kind = "gym_b"
+        elif "Leg" in w_type or "Bacak" in w_type:
+            g_kind = "gym_c"
+        else:
+            g_kind = st.planned_gym_order[min(idx_g, len(st.planned_gym_order) - 1)]
         st.completed_gym_kinds.append(g_kind)
         expected_g = st.planned_gym_order[idx_g] if idx_g < len(st.planned_gym_order) else st.planned_gym_order[-1]
         if g_kind != expected_g and w_type != "Kuvvet":
