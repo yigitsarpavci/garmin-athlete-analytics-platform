@@ -8,7 +8,6 @@ import zlib
 
 
 def write_png(path: str, size: int = 1024) -> None:
-    bg = (13, 19, 15, 255)        # #0D130F
     card = (20, 31, 24, 255)      # #141F18
     border = (74, 124, 99, 255)   # #4A7C63
     pulse = (94, 143, 116, 255)   # #5E8F74
