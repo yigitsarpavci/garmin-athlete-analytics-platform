@@ -321,10 +321,10 @@ class TestEngineCalculations(unittest.TestCase):
             with patch.object(self.engine, "get_weekly_quota_summary", return_value=quota):
                 protocols = self.engine.get_detailed_daily_workout_protocols()
 
-        # 1) Pazartesi (sched[0]) İnterval değil Tempo Koşusu yazmalı
+        # 1) Pazartesi (sched[0]) İnterval değil Tempo Koşusu yazmalı ve kotaya sayıldığını belirtmeli
         self.assertIn("Tempo Koşusu", sched[0]["primary"])
-        self.assertIn("5K Hız İntervali yerine Tempo Koşusu", sched[0]["secondary"])
-        self.assertEqual(sched[0].get("deviation_badge"), "Plan Dışı: Tempo Koşusu")
+        self.assertIn("haftalık koşu kotasına sayıldı", sched[0]["secondary"])
+        self.assertEqual(sched[0].get("deviation_badge"), "Kota Güncellendi: Tempo Koşusu")
 
         # 2) Arka arkaya Pzt Tempo + Salı Gym A yapıldığı için Çarşamba (sched[2]) uyarlanmış toparlanma olmalı
         self.assertEqual(sched[2]["slot_kind"], "rest")

@@ -327,7 +327,7 @@ class WeeklyQuotaMixin:
 
                     if actual_kind == "tempo":
                         item_label = (
-                            f"{day_short} · {r_cls['label_tr']} [Planlanan {expected_label} Yerine] "
+                            f"{day_short} · {r_cls['label_tr']} [Haftalık Koşu Kotasına Sayıldı] "
                             f"({dist_txt}{dur_m} dk{hr_txt} · TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']})"
                         )
                         dev = {
@@ -338,18 +338,18 @@ class WeeklyQuotaMixin:
                             "planned_label": expected_label,
                             "actual_kind": actual_kind,
                             "actual_label": r_cls["label_tr"],
-                            "badge": f"Plan Dışı: {r_cls['short_label']}",
+                            "badge": f"Kota Güncellendi: {r_cls['short_label']}",
                             "note": (
-                                f"{day_short} günü planlanan {expected_label} yerine {r_cls['label_tr']} "
-                                f"({avg_hr} bpm, TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']}) yapıldı. "
-                                f"{expected_label} yapıldı sayılmadı; kalan günler güncel duruma göre yeniden planlandı."
+                                f"{day_short} yapılan {r_cls['label_tr']} ({avg_hr} bpm, TE: {r_cls['te_label']}, AnTE: {r_cls['an_te']}) "
+                                f"haftalık koşu kotasına sayıldı ve koşu kotası 1 düşürüldü. "
+                                f"{expected_label} ise henüz yapılmadığı için haftanın kalan koşu kotası olarak korundu."
                             ),
                         }
                         plan_deviations.append(dev)
                         day_deviations.setdefault(d_str, []).append(dev)
                     elif r_cls["is_deviation"]:
                         item_label = (
-                            f"{day_short} · {r_cls['label_tr']} [Planlanan {expected_label} Yerine] "
+                            f"{day_short} · {r_cls['label_tr']} [Haftalık Koşu Kotasına Sayıldı] "
                             f"({dist_txt}{dur_m} dk{hr_txt})"
                         )
                         dev = {
@@ -360,10 +360,10 @@ class WeeklyQuotaMixin:
                             "planned_label": expected_label,
                             "actual_kind": actual_kind,
                             "actual_label": r_cls["label_tr"],
-                            "badge": f"Tür Değişimi: {r_cls['short_label']}",
+                            "badge": f"Kota Güncellendi: {r_cls['short_label']}",
                             "note": (
-                                f"{day_short} günü {expected_label} yerine {r_cls['label_tr']} uygulandı; "
-                                f"kalan koşu kotası eksik kalan türe göre güncellendi."
+                                f"{day_short} yapılan {r_cls['label_tr']} haftalık koşu kotasına sayıldı ve kota 1 düşürüldü; "
+                                f"kalan koşu kotası {expected_label} olarak güncellendi."
                             ),
                         }
                         plan_deviations.append(dev)
@@ -405,8 +405,8 @@ class WeeklyQuotaMixin:
                             "planned_label": exp_g_lbl,
                             "actual_kind": g_kind,
                             "actual_label": w_type,
-                            "badge": f"Tür Değişimi: {w_type}",
-                            "note": f"{day_short} günü planlanan {exp_g_lbl} yerine {w_type} yapıldı; sıradaki kuvvet seansı {exp_g_lbl} olarak güncellendi.",
+                            "badge": f"Kota Güncellendi: {w_type}",
+                            "note": f"{day_short} günü {w_type} uygulandı ve haftalık kuvvet kotasına sayıldı; kalan kuvvet kotası {exp_g_lbl} olarak güncellendi.",
                         }
                         plan_deviations.append(dev)
                         day_deviations.setdefault(d_str, []).append(dev)
@@ -541,13 +541,13 @@ class WeeklyQuotaMixin:
                         exp_lbl = r_cls.get("expected_label", "5K Hız İntervali")
                         details.append(
                             f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm{te_txt}) — "
-                            f"Planlanan {exp_lbl} yerine {r_cls['label_tr']} algılandı; {exp_lbl} yapıldı sayılmadı, kalan günler güncellendi"
+                            f"{r_cls['label_tr']} haftalık koşu kotasına sayıldı (kota 1 düşüldü); {exp_lbl} kalan koşu kotasında korundu"
                         )
                     elif r_cls.get("is_deviation"):
                         exp_lbl = r_cls.get("expected_label", "Diğer Tür")
                         details.append(
                             f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm{te_txt}) — "
-                            f"Planlanan {exp_lbl} yerine {r_cls['label_tr']} uygulandı"
+                            f"{r_cls['label_tr']} haftalık koşu kotasına sayıldı; {exp_lbl} kalan kotada korundu"
                         )
                     else:
                         details.append(f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm{te_txt})")
@@ -764,9 +764,8 @@ class WeeklyQuotaMixin:
                 tempo_dev = next((d for d in deviations if d.get("actual_kind") == "tempo"), None)
                 if tempo_dev:
                     return (
-                        f"{tempo_dev['day_label']} günü planlanan {tempo_dev['planned_label']} yerine "
-                        f"{tempo_dev['actual_label']} yapıldığı için {tempo_dev['planned_label']} tamamlanmadı sayıldı; "
-                        f"kalan koşu kotasında telafi olarak planlandı."
+                        f"{tempo_dev['day_label']} yapılan {tempo_dev['actual_label']} haftalık koşu kotasını 1 düşürdü; "
+                        f"{tempo_dev['planned_label']} ise henüz yapılmadığı için haftanın kalan koşu kotası olarak ayrıldı."
                     )
             if idx == 0 and kind == carry["run_order"][0]:
                 return carry["run_priority_reason"]
@@ -788,7 +787,7 @@ class WeeklyQuotaMixin:
         done_parts: List[str] = []
         if runs_done > 0:
             if post_tempo_adapted:
-                done_parts.append(f"{runs_done} Koşu (Plan Dışı Tempo)")
+                done_parts.append(f"{runs_done} Koşu (Tempo — Kotaya Sayıldı)")
             else:
                 done_parts.append(f"{runs_done} Koşu")
         if gyms_done > 0:

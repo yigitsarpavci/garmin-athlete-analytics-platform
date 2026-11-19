@@ -204,7 +204,7 @@ function buildQuotaLedgerHtml(quota) {
         <div class="flex flex-wrap items-center justify-between gap-1.5">
           <span class="font-mono text-[9.5px] uppercase tracking-wider ochre-text font-semibold flex items-center gap-1">
             ${lucideSvg('alert-triangle', 'w-3 h-3 shrink-0 ochre-text')}
-            <span>Plan Uyarlaması</span>
+            <span>Kota Uyarlaması</span>
           </span>
           <span class="stamp-tag stamp-ochre">${escapeHtml(d.badge || 'Güncellendi')}</span>
         </div>
