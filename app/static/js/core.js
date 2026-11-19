@@ -58,7 +58,38 @@ async function safeFetchJson(url) {
   }
 }
 
-function setTab(tabId) {
+const STORAGE_TAB_KEY = 'garmin_active_tab';
+const STORAGE_SUBTABS_KEY = 'garmin_active_subtabs';
+
+function saveActiveSubTab(group, paneKey) {
+  try {
+    const raw = localStorage.getItem(STORAGE_SUBTABS_KEY);
+    const map = raw ? JSON.parse(raw) : {};
+    map[group] = paneKey;
+    localStorage.setItem(STORAGE_SUBTABS_KEY, JSON.stringify(map));
+  } catch (_) {}
+}
+
+function restoreSavedNavigation() {
+  try {
+    const savedTab = localStorage.getItem(STORAGE_TAB_KEY);
+    const rawSubs = localStorage.getItem(STORAGE_SUBTABS_KEY);
+    const subMap = rawSubs ? JSON.parse(rawSubs) : {};
+
+    if (subMap && typeof subMap === 'object') {
+      Object.entries(subMap).forEach(([group, paneKey]) => {
+        if (document.querySelector(`[data-subpane-group="${group}"][data-subpane="${paneKey}"]`)) {
+          setSubTab(group, paneKey, false);
+        }
+      });
+    }
+    if (savedTab && document.getElementById('section-' + savedTab)) {
+      setTab(savedTab, false);
+    }
+  } catch (_) {}
+}
+
+function setTab(tabId, persist = true) {
   let targetTab = tabId;
   if (tabId === 'activities' || tabId === 'settings') {
     targetTab = 'training_load';
@@ -85,12 +116,16 @@ function setTab(tabId) {
     }
   });
 
+  if (persist) {
+    try { localStorage.setItem(STORAGE_TAB_KEY, targetTab); } catch (_) {}
+  }
+
   if (tabId === 'activities') {
-    setSubTab('training_load', 'activities');
+    setSubTab('training_load', 'activities', persist);
   } else if (tabId === 'settings') {
-    setSubTab('training_load', 'hr_zones');
+    setSubTab('training_load', 'hr_zones', persist);
   } else if (tabId === 'analytics') {
-    setSubTab('health', 'metrics');
+    setSubTab('health', 'metrics', persist);
   }
 }
 
@@ -130,7 +165,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeAllNavDropdowns();
 });
 
-function setSubTab(group, paneKey) {
+function setSubTab(group, paneKey, persist = true) {
   document.querySelectorAll(`[data-subpane-group="${group}"]`).forEach(el => {
     el.classList.toggle('hidden', el.dataset.subpane !== paneKey);
   });
@@ -143,14 +178,13 @@ function setSubTab(group, paneKey) {
     }
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
-  if (group === 'analytics' && paneKey === 'charts' && document.getElementById('chart-hrv')) {
-    renderCharts();
-  }
+  if (persist) saveActiveSubTab(group, paneKey);
 }
 
 async function initApp() {
   try {
     initTheme();
+    restoreSavedNavigation();
 
     const [
       overview,

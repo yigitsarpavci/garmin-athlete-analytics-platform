@@ -335,6 +335,10 @@ let selectedProtocolMode = 0;
 
 function selectProtocolDay(mode) {
   selectedProtocolMode = mode;
+  try {
+    const p = Array.isArray(cachedDailyProtocols) ? cachedDailyProtocols[mode] : null;
+    if (p && p.day_code) localStorage.setItem('garmin_active_protocol_code', p.day_code);
+  } catch (_) {}
   renderDailyProtocols(cachedDailyProtocols);
 }
 
@@ -371,9 +375,17 @@ function renderDailyProtocols(protocols) {
     return oa - ob;
   });
 
+  let savedIdx = -1;
+  if (typeof selectedProtocolMode !== 'number') {
+    try {
+      const savedCode = localStorage.getItem('garmin_active_protocol_code');
+      if (savedCode) savedIdx = protocols.findIndex(p => p.day_code === savedCode);
+    } catch (_) {}
+  }
+
   let activeIdx = typeof selectedProtocolMode === 'number' && protocols[selectedProtocolMode]
     ? selectedProtocolMode
-    : (sortedIndices.find(idx => protocols[idx]?.quota_status === 'remaining') ?? sortedIndices[0]);
+    : (savedIdx >= 0 ? savedIdx : (sortedIndices.find(idx => protocols[idx]?.quota_status === 'remaining') ?? sortedIndices[0]));
   if (activeIdx < 0 || activeIdx >= protocols.length) activeIdx = sortedIndices[0] ?? 0;
   selectedProtocolMode = activeIdx;
 
