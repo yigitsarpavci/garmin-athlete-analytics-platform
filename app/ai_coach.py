@@ -516,7 +516,7 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
             return (
                 "🎯 **Zone 2 Temposu & Esnek Haftalık Koşu Kotası:**\n"
                 f"Şu anki {self.engine.get_training_zones()['[[Z2_HR_MID]]']} bpm Zone 2 temponuz {z2_cur}'dir. {self.engine.get_target_weight():.0f} kg hedef kilonuza inerken "
-                f"80/20 polarize modelle ({z2_date} hedefinde) {self.engine.get_training_zones()['[[Z2_HR_MID]]']} bpm nabızda {z2_tgt} temposuna ilerliyorsunuz.\n"
+                f"En eksik yük barını dolduran koşularla ({z2_date} hedefinde) {self.engine.get_training_zones()['[[Z2_HR_MID]]']} bpm nabızda {z2_tgt} temposuna ilerliyorsunuz.\n"
                 f"• **Bu Haftaki Koşu Kotası ({week_range}):** {r_done}/{r_target} koşu tamamlandı, geriye {r_rem} koşu kaldı.\n"
                 f"• **Kalan Koşu Türü:** {rem_runs_txt}\n"
                 "• **Esnek Planlama:** Sabit bir güne bağlı kalmadan bacaklarınız taze olduğunda haftanın herhangi bir uygun gününde uygulayabilirsiniz."

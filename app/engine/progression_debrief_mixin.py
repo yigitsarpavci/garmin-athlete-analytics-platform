@@ -19,7 +19,7 @@ class ProgressionDebriefMixin:
 
     @zone_text
     def get_athlete_progression_assessment(self) -> Dict[str, Any]:
-        """Canlı ACWR, RHR, stres, Load Focus ve gym PR değerlerinden gelişim tavsiyesi üretir."""
+        """Canlı ACWR, kapasite (kronik yük/Garmin tüneli), Load Focus ve gym PR değerlerinden gelişim tavsiyesi üretir."""
         tl = self.get_training_load_analytics()
         cur_status = tl.get("current_status", {})
         load_focus = tl.get("load_focus", {})
@@ -28,8 +28,6 @@ class ProgressionDebriefMixin:
         prog = gym.get("progression", {})
 
         acwr = float(cur_status.get("acwr") or 1.0)
-        rhr = float(metrics.get("resting_hr") or metrics.get("rhr") or self.get_physiology()["rhr"])
-        stress = fnum(metrics.get("stress"), 28.4)
         cur_weight = float(metrics.get("weight") or self.get_current_weight())
         squat_pr = float(prog.get("squat", {}).get("max_kg") or 0.0)
         bench_pr = float(prog.get("bench", {}).get("max_kg") or 0.0)
@@ -44,35 +42,40 @@ class ProgressionDebriefMixin:
         latest_5k = metrics.get("latest_5k", "--")
         cadence = int(metrics.get("latest_cadence") or 159)
 
-        # 1. Haftalık gün modeli: kuvvet DAİMA 2 gün (Workout A / B); koşu yalnızca 2 veya 3 gün (fitliğe göre)
+        # 1. Haftalık gün modeli: kuvvet DAİMA 2 gün (Workout A / B); temel koşu günü 2 veya 3 (kapasiteye göre).
+        #    Bu haftaki fiili koşu hedefi, yük barları doluysa fazla yüklenmeyi önlemek için daha da düşebilir (0-1).
         dyn = self.compute_dynamic_weekly_targets()
         base_runs = int(dyn.get("base_run_target") or 2)
+        week_runs = int(dyn.get("run_target") if dyn.get("run_target") is not None else base_runs)
         chronic_now = float(cur_status.get("chronic_load") or 0.0)
         tunnel_top = float(cur_status.get("tunnel_max") or 0.0)
-        acwr_ok = (0.85 <= acwr <= 1.25) and (stress < 48.0)
-        near_capacity = tunnel_top > 0 and chronic_now >= 0.8 * tunnel_top
-        can_increase_days = bool(base_runs < 3 and acwr_ok and near_capacity)
+        cap_pct = (chronic_now / tunnel_top * 100.0) if tunnel_top > 0 else None
+        cap_txt = f"Kronik yük ({chronic_now:.0f}) Garmin tünel üst sınırının ({tunnel_top:.0f}) %{cap_pct:.0f}'inde" if cap_pct is not None else f"Kronik yük {chronic_now:.0f}"
+        near_capacity = cap_pct is not None and cap_pct >= 80.0
+        can_increase_days = bool(base_runs < 3 and 0.8 <= acwr <= 1.3 and near_capacity)
         if base_runs >= 3:
             volume_verdict = "3 KOŞU + 2 KUVVET (Kapasite Yeterli)"
-            volume_advice = (
-                f"Kronik yük ({chronic_now:.0f}) Garmin tünelinin üst bandına ulaştı ve ACWR ({acwr:.2f}) uygun; "
-                "haftada 3 koşu taşınabilir. Kuvvet her zaman 2 gün (A/B) kalır."
-            )
-            next_level_days = "Koşu 3 gün zaten aktif; kuvvet 2 gün sabit (A/B)"
+            volume_advice = f"{cap_txt}; ACWR ({acwr:.2f}) uygun, haftada 3 koşu taşınabilir. Kuvvet her zaman 2 gün (A/B) kalır."
+            next_level_days = "Koşu 3 gün aktif; kuvvet 2 gün sabit (A/B)"
+        elif acwr > 1.3:
+            volume_verdict = "2 KOŞU + 2 KUVVET (Yükü Dengele)"
+            volume_advice = f"Akut yük kronik tabanın üstüne çıktı (ACWR {acwr:.2f}); koşu sayısını artırma, önce yükü dengele. {cap_txt}."
+            next_level_days = "ACWR 1.30 altına inince 3. koşu değerlendirilir"
         elif can_increase_days:
-            volume_verdict = "3. KOŞU EKLENEBİLİR"
-            volume_advice = (
-                f"ACWR ({acwr:.2f}) dengede, kronik yük ({chronic_now:.0f}) tünel üst sınırının ({tunnel_top:.0f}) %80'ini geçti; "
-                "haftaya 1 hafif 30 dk koşu eklenebilir. Kuvvet 2 gün (A/B) olarak kalır."
-            )
-            next_level_days = "3 Koşu + 2 Kuvvet (A/B)"
+            volume_verdict = "3. KOŞUYA YAKLAŞIYORSUN"
+            volume_advice = f"ACWR ({acwr:.2f}) dengede; {cap_txt}; %90'a ulaşınca haftalık hedef 3 koşuya çıkar. Kuvvet 2 gün (A/B) kalır."
+            next_level_days = "Kapasite %90'a ulaşınca 3 Koşu + 2 Kuvvet"
+        elif acwr < 0.8:
+            volume_verdict = "2 KOŞU + 2 KUVVET (Akut Yük Düşük)"
+            volume_advice = f"Akut yük düşük (ACWR {acwr:.2f}); form kaybını önlemek için 2 koşuyu aksatma, ardından yükü kademeli artır. {cap_txt}."
+            next_level_days = "Akut yük toparlanınca ve kapasite artınca 3 Koşu + 2 Kuvvet"
         else:
             volume_verdict = "2 KOŞU + 2 KUVVET (Koru)"
-            volume_advice = (
-                f"ACWR ({acwr:.2f}) ve kronik yük ({chronic_now:.0f}) henüz 3. koşuyu desteklemiyor; "
-                "haftalık 2 Koşu + 2 Kuvvet (A/B) düzenini koru. Kapasite arttıkça koşu 3 güne çıkabilir, kuvvet 2 gün sabit kalır."
-            )
-            next_level_days = "Şimdilik 2 Koşu + 2 Kuvvet; kapasite artınca 3 Koşu + 2 Kuvvet"
+            need_txt = "3. koşu için %90 gerekiyor" if cap_pct is not None else "Garmin tünel verisi yok; son 28 günde haftada 3 koşu yapılırsa 3. koşu açılır"
+            volume_advice = f"{cap_txt}; {need_txt}. Haftalık 2 Koşu + 2 Kuvvet (A/B) düzenini koru."
+            next_level_days = "Kapasite artınca 3 Koşu + 2 Kuvvet"
+        if week_runs < base_runs:
+            volume_advice += f" Bu hafta yük barları dolu olduğu için koşu hedefi {week_runs}'e düşürüldü (fazla yüklenmeyi önlemek için)."
 
         # 2. Kuvvet Branşı: program sabit A/B; ilerleme yük artışıyla gelir (split değişmez)
         if squat_pr >= 1.0 * cur_weight and bench_pr >= 0.8 * cur_weight:  # çerçeve eşiği: Squat ≥ 1.0x VA, Bench ≥ 0.8x VA
@@ -95,19 +98,14 @@ class ProgressionDebriefMixin:
         high_pct = load_focus.get("aerobic_high", {}).get("pct_of_target") or 0.0
         an_pct = load_focus.get("anaerobic", {}).get("pct_of_target") or 0.0
         focus_label = load_focus.get("recommended_focus_label") or "dengeli"
+        focus_short = {"anaerobic": "ANAEROBİK", "aerobic_low": "DÜŞÜK AEROBİK", "aerobic_high": "YÜKSEK AEROBİK"}.get(load_focus.get("primary_deficit"), "DENGELİ")
+        next_run = ((dyn.get("run_prediction") or {}).get("steps") or [None])[0]
+        run_names = {"zone2": "Zone 2 Taban ([[Z2_HR]])", "tempo": "Tempo / Eşik", "interval": "5K Hız İntervali ([[INT_PACE]])"}
+        next_run_txt = run_names.get((next_run or {}).get("kind"), "en eksik bara göre seçilir")
         running_style_advice = (
             f"Firstbeat yük dengesi: Düşük Aerobik %{low_pct:.0f} · Yüksek Aerobik %{high_pct:.0f} · Anaerobik %{an_pct:.0f}. "
             f"En eksik bar: {focus_label}; sıradaki koşuyu buna göre seç. "
             "Zone 2 hızın [[Z2_HR_MID]] bpm'de 6:00 /km altına indiğinde ve kapasite uygunsa koşu 2'den 3 güne çıkarılabilir (kuvvet 2 gün sabit)."
-        )
-
-        # 4. Deload Analizi
-        needs_deload = (acwr > 1.35) or (stress > 48.0) or (rhr > 60.0)
-        deload_status = "GEREKMİYOR (Normal)" if not needs_deload else "DİKKAT: YÜKÜ AZALT"
-        deload_note = (
-            "Toparlanma ve ACWR değerleri normal aralıkta; planlı antrenmanları güvenle yapabilirsin."
-            if not needs_deload else
-            "Yorgunluk ve stres yüksek; bu hafta antrenman hacmini %40 azaltıp dinlenmeye ağırlık ver."
         )
 
         return {
@@ -127,17 +125,12 @@ class ProgressionDebriefMixin:
                 "running_style_advice": running_style_advice,
             },
             "running_progression": {
-                "verdict": f"{base_runs} GÜN KOŞU (80/20 Planı)",
+                "verdict": f"EN EKSİK BAR: {focus_short}",
                 "current_metrics": f"VO2 Max: {vo2max:.1f} · En İyi 5K: {latest_5k} · Kadans: {cadence} spm",
                 "load_balance": f"Düşük Aer: %{low_pct:.0f} · Yüksek Aer: %{high_pct:.0f} · Anaerobik: %{an_pct:.0f}",
-                "current_model": f"Haftada {base_runs} Koşu: en düşük Firstbeat barına göre Zone 2 Taban ([[Z2_HR]]) / Tempo / 5K Hız İntervali ([[INT_PACE]]) seçilir",
+                "current_model": f"Plan: her koşu o günkü en eksik Firstbeat barını doldurur. Sıradaki koşu: {next_run_txt}",
                 "next_milestone": f"Orta Vade: 5K < {self.get_goal_5k()['label']} ({self.get_goal_5k()['pace']}) · Zone 2 @ 6:00 /km altı",
                 "advice": running_style_advice,
-            },
-            "fatigue_and_deload": {
-                "status": deload_status,
-                "needs_deload": needs_deload,
-                "note": deload_note,
             },
         }
 

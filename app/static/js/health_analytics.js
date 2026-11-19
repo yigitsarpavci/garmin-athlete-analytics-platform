@@ -87,7 +87,6 @@ function renderProgressionAssessment(data) {
   const vp = data.volume_progression || {};
   const st = data.style_transition || {};
   const rp = data.running_progression || {};
-  const fd = data.fatigue_and_deload || {};
 
   const tierBadge = document.getElementById('progressionTierBadge');
   if (tierBadge && data.current_tier_label) {
@@ -115,26 +114,16 @@ function renderProgressionAssessment(data) {
         <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(st.advice || '')}</p>
       </div>
 
-      <div class="tint-panel p-3 space-y-1.5 border-l-[3px] border-l-[var(--accent)]">
+      <div class="tint-panel p-3 space-y-1.5 border-l-[3px] border-l-[var(--accent)] md:col-span-2">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
           <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">3. Koşu: Mevcut Durum ve Hedef</span>
-          <span class="stamp-tag stamp-moss">${escapeHtml(rp.verdict || '80/20 KOŞU PLANI')}</span>
+          <span class="stamp-tag stamp-moss">${escapeHtml(rp.verdict || 'EN EKSİK BAR')}</span>
         </div>
         <p class="font-mono text-[11px] font-semibold accent-text">${escapeHtml(rp.current_metrics || '')}</p>
         <p class="text-xs text-[var(--text-primary)] font-medium leading-snug">${escapeHtml(rp.current_model || '')}</p>
         <p class="font-mono text-[12px] text-[var(--text-secondary)]">${escapeHtml(rp.load_balance || '')}</p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(rp.advice || st.running_style_advice || '')}</p>
         <p class="text-[12px] moss-text tint-moss-panel p-1.5 leading-snug"><strong class="font-semibold">Sıradaki Koşu Hedefleri:</strong> ${escapeHtml(rp.next_milestone || '')}</p>
-      </div>
-
-      <div class="tint-panel p-3 space-y-1.5">
-        <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">4. Yorgunluk ve Dinlenme</span>
-          <span class="stamp-tag ${fd.needs_deload ? 'stamp-ochre' : 'stamp-moss'}">${escapeHtml(fd.status || '--')}</span>
-        </div>
-        <p class="text-xs font-semibold">${fd.needs_deload ? 'Hacmi %40 Düşür' : 'Normal Yükte Devam'}</p>
-        <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(fd.note || '')}</p>
-        <p class="text-[11px] ochre-text tint-ochre-panel p-1.5 leading-snug"><strong class="font-semibold">Not:</strong> Yorgunluk yüksekse veya uyku düşükse antrenmanı hafif yürüyüşe çevirin.</p>
       </div>
     `;
   }

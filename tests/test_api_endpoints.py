@@ -195,7 +195,6 @@ class TestApiEndpoints(unittest.TestCase):
         data = self.get_json("/api/progression")
         self.assertIn("volume_progression", data)
         self.assertIn("style_transition", data)
-        self.assertIn("fatigue_and_deload", data)
 
     def test_daily_protocols_endpoint(self):
         """GET /api/daily-protocols detaylı antrenman reçetesini test eder."""
