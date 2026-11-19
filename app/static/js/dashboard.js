@@ -379,29 +379,11 @@ async function changeGymHistoryPage(delta) {
 function renderGymHistory(gym) {
   if (!gym) return;
 
-  const activeSplit = (gym.program_state || {}).active_split || '5x5_linear';
-  const catalog = gym.split_catalog || {};
-  const splitInfo = catalog[activeSplit] || { short_name: '5x5 Doğrusal', name: 'StrongLifts 5x5' };
-
   const evoBar = document.getElementById('gymProgramEvolutionBar');
   if (evoBar) {
-    const pa = gym.plateau_analysis || { plateau_score: 0, tier_label: 'Doğrusal İvme Aktif', recommendation: '', signals: [], recommended_split: '5x5_linear' };
+    const pa = gym.plateau_analysis || { plateau_score: 0 };
     const pScore = pa.plateau_score || 0;
-    evoBar.innerHTML = `
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="space-y-0.5">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-mono text-[11px] uppercase tracking-wider font-semibold accent-text">Aktif Program: ${escapeHtml(splitInfo.name || splitInfo.short_name || '')}</span>
-            <span class="stamp-tag stamp-accent">Haftada 2 Gün A/B</span>
-            <span class="stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'}">Plato Skoru: ${pScore}/100</span>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(pa.tier_label || '')} · ${escapeHtml(pa.recommendation || '')}</p>
-        </div>
-      </div>
-      <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] font-mono text-[var(--text-muted)]">
-        ${(pa.signals || []).map(sig => `<span>• ${escapeHtml(sig)}</span>`).join('')}
-      </div>
-    `;
+    evoBar.innerHTML = `<span class="stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'}">Plato Skoru: ${pScore}/100</span>`;
   }
 
   const progGrid = document.getElementById('gymProgressionGrid');
