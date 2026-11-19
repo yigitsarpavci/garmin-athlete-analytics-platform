@@ -32,7 +32,7 @@ function _build93dRowGauge(r) {
     : `Ort: ${avgTxt}`;
 
   return `
-    <div class="space-y-0.5 min-w-[185px]">
+    <div class="space-y-0.5 w-full">
       <div class="flex items-baseline justify-between gap-2 font-mono text-[10px]">
         <span class="font-semibold sky-text">${escapeHtml(avgDisplay)}</span>
         <span class="violet-text shrink-0">İdeal: ${escapeHtml(r.ideal_ref)}</span>
@@ -56,8 +56,8 @@ function render93dBiometrics(rows) {
   if (!tbody || !Array.isArray(rows) || !rows.length) return;
   tbody.innerHTML = rows.map(r => `
       <tr class="hover:bg-[var(--bg-subtle)] transition">
-        <td class="py-1 px-2 font-medium whitespace-nowrap">${escapeHtml(r.metric)}</td>
-        <td class="py-1 px-2">${_build93dRowGauge(r)}</td>
+        <td class="py-1 px-2 font-medium whitespace-nowrap w-px pr-3">${escapeHtml(r.metric)}</td>
+        <td class="py-1 px-2 w-full">${_build93dRowGauge(r)}</td>
       </tr>
     `).join('');
 }
