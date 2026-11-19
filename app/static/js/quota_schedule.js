@@ -390,15 +390,6 @@ function renderDailyProtocols(protocols) {
 
   container.innerHTML = `
     <div class="surface-card p-2.5 space-y-1 h-full flex flex-col justify-between overflow-hidden">
-      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-1.5 shrink-0">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="stamp-tag stamp-accent">${escapeHtml(p.badge)}</span>
-          ${getQuotaStatusStamp(p.quota_status)}
-          <h4 class="font-editorial text-sm sm:text-base font-medium tracking-tight">${escapeHtml(p.day_title)}</h4>
-        </div>
-        <span class="font-mono text-[12px] text-[var(--text-secondary)]">${escapeHtml(p.status_note)}</span>
-      </div>
-
       ${exerciseHtml}
     </div>
   `;
