@@ -554,7 +554,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         self.assertEqual(dyn["run_target"], 4)
         self.assertIn(dyn["projection_horizon"], (4, 5, 6))
         self.assertEqual(len(dyn["run_prediction"]["steps"]), dyn["projection_horizon"])
-        self.assertIn("Bu hafta 4 Koşu:", dyn["run_plan_summary"])
+        self.assertIn("Bu hafta 4 Koşu", dyn["run_plan_summary"])
 
 
 if __name__ == "__main__":

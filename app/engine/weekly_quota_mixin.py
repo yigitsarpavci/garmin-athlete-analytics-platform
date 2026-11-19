@@ -316,11 +316,13 @@ class WeeklyQuotaMixin:
             gym_target = num_slots * cycles
             gym_sequence = slot_keys * cycles
 
-        # 2) Koşu fitliğine göre temel gün sayısı (2, 3 veya 4) + tüm barlar >= %85 ise koruma sayısına düşürme
+        # 2) Koşu fitliğine göre temel gün sayısı (1, 2, 3 veya 4) + tüm barlar >= %85 ise koruma sayısına düşürme
         if runs_per_wk >= 3.25 and chronic_load >= 450 and vo2max >= 50:
             base_run_target = 4
         elif (chronic_load >= 360 and runs_per_wk >= 2.2) or (vo2max >= 50 and chronic_load >= 320 and runs_per_wk >= 2.0):
             base_run_target = 3
+        elif 0 < chronic_load < 140 and runs_per_wk < 1.0:
+            base_run_target = 1
         else:
             base_run_target = 2
 
@@ -342,16 +344,11 @@ class WeeklyQuotaMixin:
         while len(run_sequence) < run_target:
             run_sequence.append(fallback_runs[len(run_sequence)])
 
-        # Bu haftaki koşu dağılım özeti ("Bu hafta 2 İnterval + 1 Zone 2")
         if run_target == 0:
             run_plan_summary = "Bu hafta 0 Koşu (Tüm yük barları %85+ korunuyor)"
         else:
-            run_counts: Dict[str, int] = {}
-            for rk in run_sequence:
-                run_counts[rk] = run_counts.get(rk, 0) + 1
-            run_dist_parts = [f"{cnt} {_RUN_SHORT_LABELS.get(rk, rk)}" for rk, cnt in run_counts.items()]
             suffix = " (%85+ koruma)" if run_target < base_run_target else ""
-            run_plan_summary = f"Bu hafta {run_target} Koşu: " + " + ".join(run_dist_parts) + suffix
+            run_plan_summary = f"Bu hafta {run_target} Koşu · En eksiği Quick Workout'tan yap{suffix}"
 
         # Kuvvet program özeti
         split_short = split_meta.get("short_name", active_split)
