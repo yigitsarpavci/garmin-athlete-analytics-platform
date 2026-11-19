@@ -372,7 +372,6 @@ function renderGymHistory(gym) {
   if (evoBar) {
     const pa = gym.plateau_analysis || { plateau_score: 0, tier_label: 'Doğrusal İvme Aktif', recommendation: '', signals: [], recommended_split: '5x5_linear' };
     const pScore = pa.plateau_score || 0;
-    const barColor = pScore >= 55 ? 'bg-[var(--ochre)]' : 'bg-[var(--moss)]';
     evoBar.innerHTML = `
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="space-y-0.5">
@@ -383,9 +382,6 @@ function renderGymHistory(gym) {
           </div>
           <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(pa.tier_label || '')} · ${escapeHtml(pa.recommendation || '')}</p>
         </div>
-      </div>
-      <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
-        <div class="${barColor} h-1.5" style="width: ${Math.max(4, Math.min(100, pScore))}%;"></div>
       </div>
       <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] font-mono text-[var(--text-muted)]">
         ${(pa.signals || []).map(sig => `<span>• ${escapeHtml(sig)}</span>`).join('')}
