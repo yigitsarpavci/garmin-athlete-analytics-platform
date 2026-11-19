@@ -98,7 +98,7 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
             const prioBadge = item.prioritized_from_last_week
               ? `<span class="stamp-tag stamp-ochre">GEÇEN HAFTADAN ÖNCELİKLİ</span>`
               : '';
-            return `<button type="button" onclick="openQuotaItemRecipe('${slotKind}', '${dayCode}')" class="w-full text-left tint-panel px-2 py-1.5 hover:border-[var(--border-hover)] transition flex items-center justify-between gap-2 group">
+            return `<div class="w-full text-left tint-panel px-2 py-1.5">
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="stamp-tag stamp-accent">${escapeHtml(item.short_label || item.badge || item.type || 'Kalan')}</span>
@@ -107,8 +107,7 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
                 </div>
                 ${detail ? `<p class="text-[10px] text-[var(--text-secondary)] mt-0.5 leading-snug whitespace-normal break-words">${escapeHtml(detail)}</p>` : ''}
               </div>
-              ${lucideSvg('arrow-right', 'w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] shrink-0 transition')}
-            </button>`;
+            </div>`;
           }).join('')}
         </div>
       </div>`
@@ -276,14 +275,7 @@ function renderWeeklyScheduleTable(scheduleList) {
   sBody.innerHTML = '';
   scheduleList.forEach((s, idx) => {
     const tr = document.createElement('tr');
-    tr.className = "hover:bg-[var(--bg-subtle)] transition cursor-pointer group";
-    tr.title = "Bu esnek kota seansının detaylı antrenman ve beslenme reçetesine gitmek için tıklayın";
-    tr.onclick = () => {
-      if (typeof setTab === 'function') setTab('plan');
-      if (typeof setSubTab === 'function') setSubTab('plan', 'protocols');
-      const targetIdx = resolveProtocolIndex(s.slot_kind, s.protocol_day_code, `${s.primary || ''} ${s.day || ''}`, idx);
-      if (typeof selectProtocolDay === 'function') selectProtocolDay(targetIdx);
-    };
+    tr.className = "transition";
     const isDone = Boolean(s.is_completed) || (s.secondary || '').includes('TAMAMLANDI');
     const slotKind = s.slot_kind || '';
     const isQuotaSlot = !isDone && (
