@@ -58,24 +58,24 @@ class TelemetryMixin:
             return f"{v:.{dec}f}{suffix}".replace(".", ",") if v is not None and not np.isnan(v) else "--"
 
         specs = [
-            ("Günlük Adım Sayısı", "steps", 0, "", "8.000 – 12.000", "Günlük fiziksel hareket hacmi"),
-            ("Günlük Mesafe", "dist_km", 2, " km", "7,0 – 12,0 km", "Koşu, yürüyüş ve diğer branş toplamı"),
-            ("Günlük Harcama", "total_kcal", 0, " kcal", "2.800 – 3.200", "Bazal + aktif toplam enerji tüketimi"),
-            ("Dinlenik Nabız (RHR)", "rhr", 1, " bpm", "48 – 56 bpm", "Düşük RHR güçlü kardiyak rezervi gösterir"),
-            ("Gece HRV", "hrv_night", 1, " ms", "37 – 58 ms", "Parasempatik otonom denge göstergesi"),
-            ("Günlük Ort. Stres", "avg_stress", 1, "", "25 – 35", "Gün içi sempatik yük puanı"),
-            ("Sabah Body Battery", "bb_wake", 1, "", "75 – 100", "Gece uykusundan sonraki başlangıç rezervi"),
-            ("Akşam Dip Enerji", "bb_low", 1, "", "15 – 30", "Gün sonu rezerv dibi"),
-            ("Toplam Uyku Süresi", "sleep_h", 2, " sa", "7,5 – 8,5 sa", "Kas/sinir sistemi yenilenme süresi"),
-            ("Derin Uyku Oranı", "deep_h", 1, "%", "%15 – %20", "Doku tamiri ve anabolik faz"),
-            ("REM Uyku Oranı", "rem_h", 1, "%", "%20 – %25", "Bilişsel ve nörolojik toparlanma fazı"),
-            ("Garmin Uyku Puanı", "sleep_score", 1, "", "80 – 100", "Genel uyku mimarisi skoru"),
-            ("Gece SpO2", "spo2_avg", 1, "%", "%95 – %98", "Gece kandaki oksijen doygunluğu"),
-            ("Antrenman Hazırlığı", "readiness_score", 1, "", "65 – 100", "Günlük antrenman yüküne tolerans puanı"),
+            ("Günlük Adım Sayısı", "steps", 0, "", "8.000 – 12.000", "Günlük fiziksel hareket hacmi", 8000.0, 12000.0, "higher_better"),
+            ("Günlük Mesafe", "dist_km", 2, " km", "7,0 – 12,0 km", "Koşu, yürüyüş ve diğer branş toplamı", 7.0, 12.0, "higher_better"),
+            ("Günlük Harcama", "total_kcal", 0, " kcal", "2.800 – 3.200", "Bazal + aktif toplam enerji tüketimi", 2800.0, 3200.0, "range"),
+            ("Dinlenik Nabız (RHR)", "rhr", 1, " bpm", "48 – 56 bpm", "Düşük RHR güçlü kardiyak rezervi gösterir", 48.0, 56.0, "lower_better"),
+            ("Gece HRV", "hrv_night", 1, " ms", "37 – 58 ms", "Parasempatik otonom denge göstergesi", 37.0, 58.0, "higher_better"),
+            ("Günlük Ort. Stres", "avg_stress", 1, "", "25 – 35", "Gün içi sempatik yük puanı", 25.0, 35.0, "lower_better"),
+            ("Sabah Body Battery", "bb_wake", 1, "", "75 – 100", "Gece uykusundan sonraki başlangıç rezervi", 75.0, 100.0, "higher_better"),
+            ("Akşam Dip Enerji", "bb_low", 1, "", "15 – 30", "Gün sonu rezerv dibi", 15.0, 30.0, "range"),
+            ("Toplam Uyku Süresi", "sleep_h", 2, " sa", "7,5 – 8,5 sa", "Kas/sinir sistemi yenilenme süresi", 7.5, 8.5, "higher_better"),
+            ("Derin Uyku Oranı", "deep_h", 1, "%", "%15 – %20", "Doku tamiri ve anabolik faz", 15.0, 20.0, "higher_better"),
+            ("REM Uyku Oranı", "rem_h", 1, "%", "%20 – %25", "Bilişsel ve nörolojik toparlanma fazı", 20.0, 25.0, "higher_better"),
+            ("Garmin Uyku Puanı", "sleep_score", 1, "", "80 – 100", "Genel uyku mimarisi skoru", 80.0, 100.0, "higher_better"),
+            ("Gece SpO2", "spo2_avg", 1, "%", "%95 – %98", "Gece kandaki oksijen doygunluğu", 95.0, 98.0, "higher_better"),
+            ("Antrenman Hazırlığı", "readiness_score", 1, "", "65 – 100", "Günlük antrenman yüküne tolerans puanı", 65.0, 100.0, "higher_better"),
         ]
         rows = []
         n_days = len(self.df)
-        for label, col, dec, sfx, ref_rng, note in specs:
+        for label, col, dec, sfx, ref_rng, note, id_lo, id_hi, polarity in specs:
             if col not in self.df.columns:
                 continue
             if col in ("deep_h", "rem_h") and "sleep_h" in self.df.columns:
@@ -118,6 +118,13 @@ class TelemetryMixin:
                 "min_max": rng_str,
                 "ideal_ref": ref_rng,
                 "status": extra_note,
+                "avg_val": round(mean_v, 2),
+                "med_val": round(med_v, 2),
+                "min_val": round(min_v, 2),
+                "max_val": round(max_v, 2),
+                "ideal_low": id_lo,
+                "ideal_high": id_hi,
+                "polarity": polarity,
             })
         return rows
 

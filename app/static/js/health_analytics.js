@@ -1,5 +1,51 @@
 /* Garmin Athlete IQ — Health, Sleep Architecture, 93d Biometrics, Morphology, Settings & Progression */
 
+function _build93dRowGauge(r) {
+  const avg = Number(r.avg_val);
+  const lo = Number(r.min_val);
+  const hi = Number(r.max_val);
+  const idLo = Number(r.ideal_low);
+  const idHi = Number(r.ideal_high);
+  if ([avg, lo, hi, idLo, idHi].some(Number.isNaN) || hi <= lo) {
+    return `<span class="font-mono sky-text">${escapeHtml(r.avg_median)}</span>`;
+  }
+  const scaleLo = Math.min(lo, idLo);
+  const scaleHi = Math.max(hi, idHi);
+  const segs = r.polarity === 'lower_better'
+    ? [{ cls: 'seg-blue', flex: 1 }, { cls: 'seg-green', flex: 1.4 }, { cls: 'seg-amber', flex: 1.1 }]
+    : (r.polarity === 'range'
+      ? [{ cls: 'seg-amber', flex: 1 }, { cls: 'seg-green', flex: 1.4 }, { cls: 'seg-amber', flex: 1 }]
+      : [{ cls: 'seg-amber', flex: 1.1 }, { cls: 'seg-green', flex: 1.4 }, { cls: 'seg-blue', flex: 1 }]);
+  const breaks = [scaleLo, idLo, idHi, scaleHi];
+  const activeIdx = avg < idLo ? 0 : (avg <= idHi ? 1 : 2);
+  const rawPct = typeof _piecewiseGaugePct === 'function'
+    ? _piecewiseGaugePct(avg, breaks, segs)
+    : ((avg - scaleLo) / Math.max(0.01, scaleHi - scaleLo)) * 100;
+  const clamped = Math.max(4, Math.min(96, rawPct));
+  const minMaxParts = String(r.min_max || '').split('–').map(s => s.trim());
+  const minLbl = minMaxParts[0] || String(r.min_val);
+  const maxLbl = minMaxParts[1] || String(r.max_val);
+
+  return `
+    <div class="space-y-0.5 min-w-[165px]">
+      <div class="flex items-baseline justify-between gap-2 font-mono text-[10.5px]">
+        <span class="font-semibold sky-text">${escapeHtml(r.avg_median)}</span>
+        <span class="violet-text text-[10px]">İdeal: ${escapeHtml(r.ideal_ref)}</span>
+      </div>
+      <div class="garmin-gauge">
+        <div class="garmin-gauge-track">
+          ${segs.map((s, idx) => `<div class="garmin-seg ${s.cls} ${idx === activeIdx ? 'active' : ''}" style="flex:${s.flex}"></div>`).join('')}
+          <span class="garmin-gauge-pin" style="left:${clamped.toFixed(1)}%"></span>
+        </div>
+        <div class="garmin-gauge-scale">
+          <span>${escapeHtml(minLbl)}</span>
+          <span>${escapeHtml(maxLbl)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function render93dBiometrics(rows) {
   const tbody = document.getElementById('healthMetrics93dBody');
   if (!tbody || !Array.isArray(rows) || !rows.length) return;
@@ -12,10 +58,8 @@ function render93dBiometrics(rows) {
         : 'text-[var(--text-secondary)]');
     return `
       <tr class="hover:bg-[var(--bg-subtle)] transition">
-        <td class="py-1 px-2 font-medium">${escapeHtml(r.metric)}</td>
-        <td class="py-1 px-2 font-mono font-semibold sky-text">${escapeHtml(r.avg_median)}</td>
-        <td class="py-1 px-2 font-mono text-[var(--text-secondary)]">${escapeHtml(r.min_max)}</td>
-        <td class="py-1 px-2 font-mono violet-text">${escapeHtml(r.ideal_ref)}</td>
+        <td class="py-1 px-2 font-medium whitespace-nowrap">${escapeHtml(r.metric)}</td>
+        <td class="py-1 px-2">${_build93dRowGauge(r)}</td>
         <td class="py-1 px-2 ${stCls}">${escapeHtml(r.status)}</td>
       </tr>
     `;
