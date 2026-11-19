@@ -121,25 +121,24 @@ let currentDebriefIdx = 0;
 function renderDebriefSwitchButtons(activeIdx) {
   const bar = document.getElementById('debriefSwitchBar');
   if (!bar) return;
-  const acts = Array.isArray(window.globalActivities) ? window.globalActivities : [];
-  const seen = new Set();
-  const tabs = [];
+  const acts = (typeof globalActivities !== 'undefined' && Array.isArray(globalActivities))
+    ? globalActivities
+    : (Array.isArray(window.globalActivities) ? window.globalActivities : []);
 
-  acts.forEach((a, i) => {
-    const spKey = String(a.sport || a.sport_tr || 'other').toLowerCase();
-    if (seen.has(spKey)) return;
-    seen.add(spKey);
-    const shortSport = spKey === 'strength_training'
-      ? 'Gym'
-      : (typeof getDynamicSportLabel === 'function' ? getDynamicSportLabel(a.sport, a.sport_tr) : (a.sport_tr || a.sport || 'Antrenman'));
-    tabs.push({ idx: i, label: `Son ${shortSport}` });
+  const gymIdx = acts.findIndex(a => String(a.sport || '').toLowerCase() === 'strength_training');
+  const runIdx = acts.findIndex(a => String(a.sport || '').toLowerCase() === 'running');
+  const otherIdx = acts.findIndex(a => {
+    const sp = String(a.sport || '').toLowerCase();
+    return sp && sp !== 'strength_training' && sp !== 'running';
   });
 
-  if (!tabs.length) {
-    tabs.push({ idx: 0, label: 'Son Seans' });
-  }
+  const tabs = [];
+  if (gymIdx >= 0) tabs.push({ idx: gymIdx, label: 'Son Gym' });
+  if (runIdx >= 0) tabs.push({ idx: runIdx, label: 'Son Koşu' });
+  if (otherIdx >= 0) tabs.push({ idx: otherIdx, label: 'Son Diğer Spor' });
+  if (!tabs.length) tabs.push({ idx: 0, label: 'Son Gym' });
 
-  bar.innerHTML = tabs.slice(0, 4).map(t => {
+  bar.innerHTML = tabs.map(t => {
     const cls = t.idx === activeIdx ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
     return `<button type="button" onclick="openDebriefModal(${t.idx})" class="${cls}">${escapeHtml(t.label)}</button>`;
   }).join('');
