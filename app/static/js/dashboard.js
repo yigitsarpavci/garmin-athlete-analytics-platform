@@ -194,7 +194,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const acwrBarPct = _piecewiseGaugePct(acwrNum, [0.5, 0.8, 1.3, 1.5, 1.8], acwrSegs);
   const acwrActive = acwrNum < 0.8 ? 0 : (acwrNum <= 1.3 ? 1 : (acwrNum <= 1.5 ? 2 : 3));
   setText('fs-acuteload-val', formatTrInt(acuteVal));
-  setText('fs-acuteload-sub', `Kronik (28G): ${formatTrInt(chronicVal)} · Tünel: ${tMin}–${tMax}`);
+  setText('fs-acuteload-sub', `Kronik (28G): ${formatTrInt(chronicVal)}`);
   _renderGarminGauge('fs-acuteload-bar', acwrSegs, acwrActive, acwrBarPct, '<0.8', '0.8–1.3 Optimal', '>1.5');
 
   // 08. Load Focus
