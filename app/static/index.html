@@ -507,45 +507,43 @@
       </section>
     </div>
 
-    <!-- 5. ANALİZLER (KORELASYONLAR + 93G BİYOMETRİK ORTALAMALAR) -->
-    <div id="section-health" class="single-screen-section gap-3 overflow-y-auto custom-scrollbar pr-0.5 hidden">
-      <section id="correlationsCard" class="surface-card p-4 sm:p-5 space-y-2.5 flex flex-col shrink-0">
-        <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight shrink-0">Korelasyonlar</h3>
-        <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi"
-          class="table-scroll-region overflow-x-auto">
-          <table class="w-full text-left text-[12px]">
-            <thead>
-              <tr>
-                <th class="py-2 px-3">Değişken Çifti</th>
-                <th class="py-2 px-3">Sporcu İçgörüsü (veriden)</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
-          </table>
-        </div>
-      </section>
+    <!-- 5. ANALİZLER (BİRLEŞİK TABLO: KORELASYONLAR + 93G ORTALAMALAR) -->
+    <div id="section-health" class="single-screen-section hidden">
+      <section id="healthUnifiedCard" class="surface-card p-3 flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+          <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi"
+            class="lg:col-span-5 lg:border-r lg:border-[var(--border-subtle)] lg:pr-3 table-scroll-region overflow-x-auto">
+            <table class="w-full text-left text-[11px] leading-snug">
+              <thead>
+                <tr>
+                  <th class="py-1.5 px-2">Değişken Çifti</th>
+                  <th class="py-1.5 px-2">Sporcu İçgörüsü (veriden)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
+            </table>
+          </div>
 
-      <section id="healthMetrics93dCard" class="surface-card p-4 sm:p-5 space-y-2.5 flex flex-col shrink-0">
-        <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight shrink-0">93G Ortalamalar</h3>
-        <div tabindex="0" role="region" aria-label="93 günlük biyometrik özetler tablosu"
-          class="table-scroll-region overflow-x-auto">
-          <table class="w-full text-left text-[12px]">
-            <thead>
-              <tr>
-                <th class="py-2 px-3">Gösterge</th>
-                <th class="py-2 px-3">Ortalama (Medyan)</th>
-                <th class="py-2 px-3">Min – Maks</th>
-                <th class="py-2 px-3">İdeal Referans</th>
-                <th class="py-2 px-3">Klinik Durum</th>
-              </tr>
-            </thead>
-            <tbody id="healthMetrics93dBody" class="divide-y divide-[var(--border-subtle)] font-sans">
-              <tr>
-                <td colspan="5" class="py-4 px-3 text-center text-[var(--text-secondary)]">93 günlük biyometrik
-                  göstergeler Garmin verilerinden hesaplanıyor...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div tabindex="0" role="region" aria-label="93 günlük biyometrik özetler tablosu"
+            class="lg:col-span-7 table-scroll-region overflow-x-auto">
+            <table class="w-full text-left text-[11px] leading-snug">
+              <thead>
+                <tr>
+                  <th class="py-1.5 px-2">Gösterge</th>
+                  <th class="py-1.5 px-2">Ortalama (Medyan)</th>
+                  <th class="py-1.5 px-2">Min – Maks</th>
+                  <th class="py-1.5 px-2">İdeal Referans</th>
+                  <th class="py-1.5 px-2">Klinik Durum</th>
+                </tr>
+              </thead>
+              <tbody id="healthMetrics93dBody" class="divide-y divide-[var(--border-subtle)] font-sans">
+                <tr>
+                  <td colspan="5" class="py-3 px-2 text-center text-[var(--text-secondary)]">93 günlük biyometrik
+                    göstergeler Garmin verilerinden hesaplanıyor...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </div>

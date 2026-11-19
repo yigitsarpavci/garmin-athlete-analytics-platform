@@ -12,11 +12,11 @@ function render93dBiometrics(rows) {
         : 'text-[var(--text-secondary)]');
     return `
       <tr class="hover:bg-[var(--bg-subtle)] transition">
-        <td class="py-1.5 px-3 font-medium">${escapeHtml(r.metric)}</td>
-        <td class="py-1.5 px-3 font-mono font-semibold sky-text">${escapeHtml(r.avg_median)}</td>
-        <td class="py-1.5 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(r.min_max)}</td>
-        <td class="py-1.5 px-3 font-mono violet-text">${escapeHtml(r.ideal_ref)}</td>
-        <td class="py-1.5 px-3 ${stCls}">${escapeHtml(r.status)}</td>
+        <td class="py-1 px-2 font-medium">${escapeHtml(r.metric)}</td>
+        <td class="py-1 px-2 font-mono font-semibold sky-text">${escapeHtml(r.avg_median)}</td>
+        <td class="py-1 px-2 font-mono text-[var(--text-secondary)]">${escapeHtml(r.min_max)}</td>
+        <td class="py-1 px-2 font-mono violet-text">${escapeHtml(r.ideal_ref)}</td>
+        <td class="py-1 px-2 ${stCls}">${escapeHtml(r.status)}</td>
       </tr>
     `;
   }).join('');
@@ -35,8 +35,8 @@ function renderCorrelations(corrs) {
     tr.className = "hover:bg-[var(--bg-subtle)] transition";
     const pairCls = c.significant ? (Number(c.r) < 0 ? 'ochre-text' : 'sky-text') : 'text-[var(--text-muted)]';
     tr.innerHTML = `
-      <td class="py-1.5 px-3 font-semibold ${pairCls}">${escapeHtml(c.pair)}</td>
-      <td class="py-1.5 px-3 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
+      <td class="py-1 px-2 font-semibold ${pairCls}">${escapeHtml(c.pair)}</td>
+      <td class="py-1 px-2 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
     `;
     cBody.appendChild(tr);
   });
