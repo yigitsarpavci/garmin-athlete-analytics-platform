@@ -321,8 +321,7 @@ function renderDailyProtocols(protocols) {
     const idleCls = 'subtab-btn';
     tabsEl.innerHTML = `<div class="subtab-bar">${sortedIndices.map((idx) => {
       const p = protocols[idx];
-      const remDot = p.quota_status === 'remaining' ? ' <span class="accent-text">●</span>' : '';
-      return `<button type="button" data-calls="[[&quot;selectProtocolDay&quot;, ${idx}]]" class="${activeIdx === idx ? activeCls : idleCls}">${escapeHtml(getProtocolTabLabel(p))}${remDot}</button>`;
+      return `<button type="button" data-calls="[[&quot;selectProtocolDay&quot;, ${idx}]]" class="${activeIdx === idx ? activeCls : idleCls}">${escapeHtml(getProtocolTabLabel(p))}</button>`;
     }).join('')}</div>`;
   }
 
