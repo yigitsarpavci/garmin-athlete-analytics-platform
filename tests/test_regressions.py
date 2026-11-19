@@ -486,10 +486,10 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
     def test_maintenance_reduction_when_all_bars_stay_above_85(self):
         from datetime import timedelta
         stub, now = self._make_stub(split="push_pull", plateau=58, chronic=480.0, vo2max=53.0, runs_28d=15, gyms_28d=10)
-        # Tüm koşuları son 14 güne çek -> önümüzdeki 7 günde 28G pencereden düşecek yük yok
+        # Tüm koşuları bu haftanın Pazartesi'sinden önceki son 14 güne çek -> bu hafta 0 koşu yapılmış, önümüzdeki günlerde 28G pencereden düşecek yük yok
         for idx, act in enumerate(stub.activities_all):
             if act["sport"] == "running":
-                act["startTimeLocal"] = (now - timedelta(days=(idx % 14) + 1)).strftime("%Y-%m-%d 10:00:00")
+                act["startTimeLocal"] = (now - timedelta(days=(idx % 12) + 4)).strftime("%Y-%m-%d 10:00:00")
         # Tüm 3 bar %92+ ve 28G pencereden düşecek yük yok -> 0 koşu bile %85+ korur
         stub.get_training_load_analytics = lambda: {
             "current_status": {"chronic_load": 480.0, "vo2max": 53.0},
@@ -531,6 +531,62 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         self.assertIn(dyn["projection_horizon"], (4, 5, 6))
         self.assertEqual(len(dyn["run_prediction"]["steps"]), dyn["projection_horizon"])
         self.assertIn("Bu hafta 3 Koşu", dyn["run_plan_summary"])
+
+    def test_midweek_reevaluation_after_run_adjusts_target_without_counter_overflow(self):
+        from datetime import timedelta
+        stub, now = self._make_stub(split="5x5_linear", plateau=40, chronic=480.0, vo2max=53.0, runs_28d=0, gyms_28d=0)
+        # Bu hafta Pzt günü 1 koşu yapılmış olsun (now = Çarşamba)
+        stub.activities_all = [{
+            "sport": "running",
+            "startTimeLocal": (now - timedelta(days=2)).strftime("%Y-%m-%d 09:00:00"),
+            "duration": 2700, "distance": 7000, "averageHR": 165,
+            "activityTrainingLoad": 100, "aerobicTrainingEffect": 3.4, "anaerobicTrainingEffect": 2.0,
+        }]
+        # 1) Koşu sonrası tüm barlar >= %85 ve Pazar'a kadar 0 ek koşu gerekiyorsa: target 1'e düşer
+        stub.get_training_load_analytics = lambda: {
+            "current_status": {"chronic_load": 480.0, "vo2max": 53.0},
+            "load_focus": {
+                "targets_available": True,
+                "aerobic_low": {"actual": 370.0, "target_max": 400.0},
+                "aerobic_high": {"actual": 465.0, "target_max": 500.0},
+                "anaerobic": {"actual": 240.0, "target_max": 260.0},
+            },
+        }
+        dyn_zero_more = stub.compute_dynamic_weekly_targets(now=now)
+        self.assertEqual(dyn_zero_more["run_target"], 1)
+
+        # 2) Koşu sonrası 1 bar < %85 kalmışsa: fitlik hedefi (3) verilir, counter için 4 verilmez
+        stub.get_training_load_analytics = lambda: {
+            "current_status": {"chronic_load": 480.0, "vo2max": 53.0},
+            "load_focus": {
+                "targets_available": True,
+                "aerobic_low": {"actual": 370.0, "target_max": 400.0},
+                "aerobic_high": {"actual": 465.0, "target_max": 500.0},
+                "anaerobic": {"actual": 150.0, "target_max": 260.0},
+            },
+        }
+        dyn_under_85 = stub.compute_dynamic_weekly_targets(now=now)
+        self.assertEqual(dyn_under_85["run_target"], 3)
+
+        # 3) Fitlik 2'ye düşerse (chronic < 360) ve 2 koşu zaten yapılmış + bar < %85 ise bile 2 verilir (ekstra eklenmez)
+        stub.activities_all.append({
+            "sport": "running",
+            "startTimeLocal": (now - timedelta(days=1)).strftime("%Y-%m-%d 09:00:00"),
+            "duration": 2700, "distance": 7000, "averageHR": 150,
+            "activityTrainingLoad": 80, "aerobicTrainingEffect": 3.0, "anaerobicTrainingEffect": 0.0,
+        })
+        stub.get_training_load_analytics = lambda: {
+            "current_status": {"chronic_load": 260.0, "vo2max": 46.0},
+            "load_focus": {
+                "targets_available": True,
+                "aerobic_low": {"actual": 300.0, "target_max": 400.0},
+                "aerobic_high": {"actual": 350.0, "target_max": 500.0},
+                "anaerobic": {"actual": 120.0, "target_max": 260.0},
+            },
+        }
+        dyn_dropped = stub.compute_dynamic_weekly_targets(now=now)
+        self.assertEqual(dyn_dropped["run_target"], 2)
+        self.assertEqual(dyn_dropped["gym_target"], 2)
 
 
 if __name__ == "__main__":

@@ -315,8 +315,10 @@ def compute_maintenance_runs_for_85(
         return base_run_target
 
     ref_day = (ref_dt or datetime.now()).date()
+    monday = ref_day - timedelta(days=ref_day.weekday())
+    sunday = monday + timedelta(days=6)
     win_start = ref_day - timedelta(days=28)
-    win_end = ref_day - timedelta(days=21)
+    win_end = sunday - timedelta(days=27)  # Pazar dahil kalan hafta günleri
     exp_low = exp_high = exp_an = 0.0
     for act in activities_all or []:
         d_str = (act.get("startTimeLocal") or "")[:10]

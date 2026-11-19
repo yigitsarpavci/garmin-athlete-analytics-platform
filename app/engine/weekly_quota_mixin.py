@@ -236,11 +236,14 @@ class WeeklyQuotaMixin:
             except Exception:
                 logger.warning("compute_dynamic_weekly_targets load_analytics fallback", exc_info=True)
 
-        # Son 28 günlük gerçek koşu / kuvvet sıklığı
+        # Son 28 günlük gerçek koşu / kuvvet sıklığı ve bu hafta (Pzt-Paz) tamamlanan koşular
         cutoff_date = (ref_dt - timedelta(days=28)).date()
         end_date = ref_dt.date()
+        week_monday = end_date - timedelta(days=end_date.weekday())
+        week_sunday = week_monday + timedelta(days=6)
         runs_28d = 0
         gyms_28d = 0
+        runs_done_this_week = 0
         for act in getattr(self, "activities_all", []) or []:
             d_raw = (act.get("startTimeLocal") or "")[:10]
             if not d_raw:
@@ -249,10 +252,12 @@ class WeeklyQuotaMixin:
                 d_val = datetime.strptime(d_raw, "%Y-%m-%d").date()
             except ValueError:
                 continue
-            if not (cutoff_date <= d_val <= end_date):
-                continue
             sp_key = act.get("sport") or (act.get("activityType") or {}).get("typeKey") or ""
             bucket = classify_sport_bucket(sp_key)
+            if week_monday <= d_val <= min(end_date, week_sunday) and bucket == "running":
+                runs_done_this_week += 1
+            if not (cutoff_date <= d_val <= end_date):
+                continue
             if bucket == "running":
                 runs_28d += 1
             elif bucket == "strength":
@@ -261,7 +266,7 @@ class WeeklyQuotaMixin:
         runs_per_wk = runs_28d / 4.0
         gyms_per_wk = gyms_28d / 4.0
 
-        # 1) Kuvvet kotası daima 2 günlük Workout A / Workout B
+        # 1) Kuvvet kotası daima 2 günlük Workout A / Workout B (hesaplamaya girilmez)
         gym_target = 2
         gym_sequence = ["gym_a", "gym_b"]
 
@@ -271,9 +276,16 @@ class WeeklyQuotaMixin:
         else:
             base_run_target = 2
 
-        run_target = compute_maintenance_runs_for_85(
-            load_focus, getattr(self, "activities_all", []) or [], base_run_target, ref_dt=ref_dt
-        )
+        # Her koşu sonrası güncel fitlik ve load_focus değerlerine göre bu haftaki hedefi ayarla:
+        # Tüm barlar >= %85 korunabiliyorsa kalan koşu sayısını eksilt; %85 altı varsa fitlik hedefini ver (ekstra ekleme).
+        remaining_fitness_budget = max(0, base_run_target - runs_done_this_week)
+        if remaining_fitness_budget > 0:
+            needed_additional = compute_maintenance_runs_for_85(
+                load_focus, getattr(self, "activities_all", []) or [], remaining_fitness_budget, ref_dt=ref_dt
+            )
+            run_target = runs_done_this_week + needed_additional
+        else:
+            run_target = base_run_target
 
         proj_n = max(4, min(6, max(2, run_target) + 2))
         run_prediction = None
