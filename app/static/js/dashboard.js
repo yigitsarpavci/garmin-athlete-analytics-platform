@@ -284,7 +284,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const rdNum = rdVal ?? 75;
   const rdActive = rdNum < 25 ? 0 : (rdNum < 50 ? 1 : (rdNum < 75 ? 2 : (rdNum < 95 ? 3 : 4)));
   const recHVal = data.recovery_time_h !== undefined && data.recovery_time_h !== null ? Number(data.recovery_time_h) : 0;
-  const recStr = recHVal <= 0.1 ? '0 sa (Hazır)' : `${fmtDec(recHVal, 1)} sa`;
+  const recStr = recHVal <= 0.1 ? '0 sa' : `${fmtDec(recHVal, 1)} sa`;
   setText('fs-readiness-val', rdVal !== null ? `${rdVal} / 100` : '-- / 100');
   setText('fs-readiness-badge', data.readiness_status || '--');
   setText('fs-readiness-sub', `7G Ort: ${fmtDec(data.readiness_7d_avg, 1)} · BB: ${data.bb_wake ?? '--'} · Toparlanma: ${recStr}`);
