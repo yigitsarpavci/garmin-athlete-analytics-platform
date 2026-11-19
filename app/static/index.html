@@ -26,9 +26,6 @@
             id="nav-overview" aria-current="page" class="nav-tab nav-tab-active"><span class="nav-full">Genel
               Bakış</span><span class="nav-short">Genel</span></button>
 
-          <button type="button" data-calls="[[&quot;setTab&quot;, &quot;plan&quot;]]" id="nav-plan"
-            class="nav-tab"><span class="nav-full">Antrenman Planı</span><span class="nav-short">Plan</span></button>
-
           <div class="nav-dropdown" data-nav-dropdown="sports">
             <button type="button" data-calls="[[&quot;toggleNavDropdown&quot;, &quot;sports&quot;, &quot;@event&quot;]]"
               id="nav-sports" aria-haspopup="true" aria-expanded="false" class="nav-tab">
@@ -72,10 +69,10 @@
   <main class="single-screen-main flex-1 min-h-0 w-full px-4 sm:px-6 py-2.5 overflow-hidden flex flex-col">
 
     <!-- 1. GENEL BAKIŞ (3 ALT SEKME: 12 TEMEL GÖSTERGE / GÜNLÜK DURUM & KOTA / PERFORMANS & TREND) -->
-    <div id="section-overview" class="single-screen-section gap-2.5">
+    <div id="section-overview" class="single-screen-section gap-2.5 overflow-y-auto custom-scrollbar pr-0.5">
 
       <!-- OVERVIEW SUBPANE 1: 12 TEMEL GÖSTERGE -->
-      <div data-subpane-group="overview" data-subpane="kpi12" class="single-screen-pane">
+      <div data-subpane-group="overview" data-subpane="kpi12" class="single-screen-pane" style="flex:none;overflow:visible">
         <!-- İlk Ekran 12 Temel Garmin Telemetri Göstergesi (Compact Command Grid) -->
         <section id="firstScreenTelemetrySection" aria-label="Ana Ekran 12 Temel Telemetri Göstergesi"
           class="surface-ledger overflow-hidden flex flex-col">
@@ -234,6 +231,17 @@
           </div>
         </aside>
 
+        <section id="planQuotaSummary" aria-label="Haftalık Kota ve Kalan Seans Özeti"
+          class="field-dossier p-3 mt-2.5 space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span
+              class="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık
+              Kota &amp; Kalan Seanslar</span>
+            <span class="stamp-tag stamp-accent">Yükleniyor...</span>
+          </div>
+          <p class="text-xs text-[var(--text-secondary)]">Haftalık kota özeti hazırlanıyor...</p>
+        </section>
+
         <!-- Kompakt Performans & Trend Şeridi -->
         <section aria-label="Performans & Trend Özeti"
           class="surface-ledger mt-2.5 overflow-hidden grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
@@ -274,28 +282,7 @@
       </div>
     </div>
 
-    <!-- 2. ANTRENMAN PLANI (BİRLEŞİK: HAFTALIK KOTA ÖZETİ + ANTRENMAN İÇERİKLERİ) -->
-    <div id="section-plan" class="single-screen-section gap-2.5 overflow-y-auto custom-scrollbar pr-0.5 hidden">
-      <section id="planQuotaSummary" aria-label="Haftalık Kota ve Kalan Seans Özeti"
-        class="field-dossier p-3.5 sm:p-4 space-y-2.5 shrink-0">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span
-            class="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Haftalık
-            Kota &amp; Kalan Seanslar</span>
-          <span class="stamp-tag stamp-accent">Yükleniyor...</span>
-        </div>
-        <p class="text-xs text-[var(--text-secondary)]">Haftalık kota özeti hazırlanıyor...</p>
-      </section>
-
-      <section class="surface-card p-3 sm:p-3.5 space-y-2 flex flex-col shrink-0" id="dailyProtocolsSection">
-        <div class="flex flex-wrap items-center justify-start gap-2 border-b border-[var(--border-subtle)] pb-1.5 shrink-0">
-          <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs"></div>
-        </div>
-        <div id="dailyProtocolsContainer"></div>
-      </section>
-    </div>
-
-    <!-- 3. BRANŞLAR (ALT SEKMELER: 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME) -->
+    <!-- 2. BRANŞLAR (ALT SEKMELER: 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME) -->
     <div id="section-sports" class="single-screen-section gap-2.5 hidden">
       <div data-subpane-group="sports" data-subpane="gym" class="single-screen-pane">
         <section class="surface-card p-4 sm:p-5 space-y-3.5 flex flex-col overflow-hidden" id="gymHistorySection">
@@ -336,7 +323,7 @@
         </section>
       </div>
 
-      <div data-subpane-group="sports" data-subpane="prog" class="single-screen-pane hidden">
+      <div data-subpane-group="sports" data-subpane="prog" class="single-screen-pane overflow-y-auto custom-scrollbar hidden">
         <section class="surface-card p-3.5 sm:p-4 space-y-2 flex flex-col overflow-hidden"
           id="progressionAssessmentSection">
           <div
@@ -350,10 +337,17 @@
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 flex-1 content-start" id="progressionCardsGrid"></div>
         </section>
+        <section class="surface-card p-3 sm:p-3.5 space-y-2 flex flex-col shrink-0 mt-2.5" id="dailyProtocolsSection">
+          <div class="flex flex-wrap items-center justify-start gap-2 border-b border-[var(--border-subtle)] pb-1.5 shrink-0">
+            <div id="protocolDayTabs" class="flex flex-wrap items-center gap-1.5 text-xs"></div>
+          </div>
+          <div id="dailyProtocolsContainer"></div>
+        </section>
+
       </div>
     </div>
 
-    <!-- 4. ANALİZLER & GEÇMİŞ (SOL: KORELASYONLAR + GEÇMİŞ ARAMA, SAĞ: 93G ORTALAMALAR) -->
+    <!-- 3. ANALİZLER & GEÇMİŞ (SOL: KORELASYONLAR + GEÇMİŞ ARAMA, SAĞ: 93G ORTALAMALAR) -->
     <div id="section-health" class="single-screen-section overflow-y-auto custom-scrollbar pr-0.5 hidden">
       <section id="healthUnifiedCard" class="surface-card p-3 flex flex-col shrink-0">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">

@@ -80,7 +80,7 @@ function setTab(tabId, persist = true) {
     targetTab = 'health';
   }
 
-  const tabs = ['overview', 'plan', 'sports', 'health'];
+  const tabs = ['overview', 'sports', 'health'];
   tabs.forEach(t => {
     const sec = document.getElementById('section-' + t);
     const nav = document.getElementById('nav-' + t);
