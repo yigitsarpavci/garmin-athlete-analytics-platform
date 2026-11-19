@@ -40,7 +40,7 @@ Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve First
   ```bash
   bash macos/build_app.sh
   ```
-  `Garmin Sporcu Paneli.app` uygulamasını Masaüstü ve `~/Applications` klasörüne kurar. Uygulamaya tıklandığında yerel sunucuyu otomatik başlatır, açıkken verileri güncel tutar ve pencere kapatıldığında arka plan sunucusunu da tamamen kapatır.
+  Masaüstü ve `~/Applications` klasörüne yerel macOS masaüstü uygulamasını (`Garmin 2.0.app`) kurar. Uygulamaya tıklandığında yerel sunucuyu otomatik başlatır, açıkken verileri güncel tutar ve pencere kapatıldığında arka plan sunucusunu da tamamen kapatır.
 - **Web Arayüzü (macOS / Linux / Windows tarayıcıları):**
   ```bash
   # Canlı telemetriyle web panelini başlatın (Port: 8085)

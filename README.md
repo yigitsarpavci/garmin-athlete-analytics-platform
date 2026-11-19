@@ -210,7 +210,7 @@ OK
   ```bash
   bash macos/build_app.sh
   ```
-  Installs `Garmin Sporcu Paneli.app` to `~/Desktop` and `~/Applications`. Clicking the app starts the local server automatically, keeps data synced while open, and terminates the background server cleanly when closed.
+  Installs the native macOS desktop app (`Garmin 2.0.app`) to `~/Desktop` and `~/Applications`. Clicking the app starts the local server automatically, keeps data synced while open, and terminates the background server cleanly when closed.
 - **Web Dashboard (macOS / Linux / Windows):**
   ```bash
   make run                       # Live telemetry (or ./scripts/run_app.sh)

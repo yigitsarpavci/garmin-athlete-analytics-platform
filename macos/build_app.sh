@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-APP_NAME="Garmin Sporcu Paneli"
-BUNDLE_ID="com.sarp.garmin-sporcu-paneli"
+APP_NAME="Garmin 2.0"
+BUNDLE_ID="com.sarp.garmin-athlete-analytics"
 
 BUILD_DIR="$SCRIPT_DIR/build"
 APP_BUNDLE="$BUILD_DIR/${APP_NAME}.app"
@@ -66,8 +66,9 @@ PLIST
 
 codesign --force --deep --sign - "$APP_BUNDLE" >/dev/null 2>&1 || true
 
-echo "4/4 Installing to Desktop and ~/Applications..."
+echo "4/4 Installing to Desktop and ~/Applications (cleaning old versions)..."
 mkdir -p "$HOME/Desktop" "$HOME/Applications"
+rm -rf "$HOME/Desktop/Garmin Sporcu Paneli.app" "$HOME/Applications/Garmin Sporcu Paneli.app"
 rm -rf "$HOME/Desktop/${APP_NAME}.app" "$HOME/Applications/${APP_NAME}.app"
 cp -R "$APP_BUNDLE" "$HOME/Desktop/${APP_NAME}.app"
 cp -R "$APP_BUNDLE" "$HOME/Applications/${APP_NAME}.app"
