@@ -376,7 +376,7 @@ function renderWeeklyStreak(activities) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     const iso = d.toISOString().slice(0, 10);
-    dayMap[iso] = null;
+    dayMap[iso] = [];
   }
 
   const prevDays = new Set();
@@ -385,38 +385,41 @@ function renderWeeklyStreak(activities) {
     d.setDate(monday.getDate() + i);
     prevDays.add(d.toISOString().slice(0, 10));
   }
-  const prevActiveDays = new Set();
+  let thisSessionCount = 0;
   let prevSessionCount = 0;
   activities.forEach(a => {
     const d = (a.date || a.startTimeLocal || '').slice(0, 10);
-    if (d in dayMap && !dayMap[d]) {
+    if (d in dayMap) {
       const sp = (a.sport || '').toLowerCase();
-      dayMap[d] = {
+      dayMap[d].push({
         isRun: sp.includes('run') || sp.includes('koş'),
-        icon: getSportLucideIcon(a.sport || a.sport_tr || a.name)
-      };
+        icon: getSportLucideIcon(a.sport || a.sport_tr || a.name),
+        title: `${a.name || a.sport_tr || a.sport || 'Antrenman'}${a.dur_m ? ` (${Math.round(a.dur_m)} dk)` : ''}`
+      });
+      thisSessionCount += 1;
     }
     if (prevDays.has(d)) {
-      prevActiveDays.add(d);
       prevSessionCount += 1;
     }
   });
 
-  const activeCount = Object.values(dayMap).filter(Boolean).length;
-  const prevActiveCount = prevActiveDays.size;
   if (badge) {
-    badge.innerHTML = `${activeCount}/7 Gün <span class="text-[10px] font-normal text-[var(--text-secondary)] ml-1.5">· Geçen Hafta: ${prevSessionCount} Seans (${prevActiveCount}/7 Gün)</span>`;
+    badge.innerHTML = `${thisSessionCount} Seans <span class="text-[10px] font-normal text-[var(--text-secondary)] ml-1.5">· Geçen Hafta: ${prevSessionCount} Seans</span>`;
   }
 
   const keys = Object.keys(dayMap).sort();
   strip.innerHTML = keys.map((iso, idx) => {
-    const info = dayMap[iso];
+    const items = dayMap[iso] || [];
     const lbl = dayNames[order[idx]];
-    if (info) {
-      const cls = info.isRun
-        ? 'accent-bg border border-[var(--accent)]'
-        : 'bg-[var(--text-primary)] text-[var(--bg-surface)] border border-[var(--text-primary)]';
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] ${cls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
+    if (items.length) {
+      const boxCls = items.length > 1 ? 'w-6 h-7' : 'w-7 h-7';
+      const iconsHtml = items.map(info => {
+        const cls = info.isRun
+          ? 'accent-bg border border-[var(--accent)]'
+          : 'bg-[var(--text-primary)] text-[var(--bg-surface)] border border-[var(--text-primary)]';
+        return `<span title="${String(info.title).replace(/"/g, '&quot;')}" class="${boxCls} rounded-[2px] ${cls} flex items-center justify-center shrink-0">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span>`;
+      }).join('');
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-secondary)] font-medium mb-1.5">${lbl}</span><div class="inline-flex items-center justify-center gap-0.5">${iconsHtml}</div></div>`;
     }
     return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-muted)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
   }).join('');
