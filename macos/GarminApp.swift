@@ -66,20 +66,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         window = NSWindow(
             contentRect: screenFrame,
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.minSize = NSSize(width: 980, height: 680)
         window.setFrame(screenFrame, display: true)
         window.title = "Garmin 2.0"
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = true
+        window.appearance = NSAppearance(named: .darkAqua)
         window.backgroundColor = bgColor
         window.isReleasedWhenClosed = false
 
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
+        let macScript = WKUserScript(
+            source: "document.documentElement.classList.add('macos-app');",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        )
+        config.userContentController.addUserScript(macScript)
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
         webView.autoresizingMask = [.width, .height]
         webView.navigationDelegate = self

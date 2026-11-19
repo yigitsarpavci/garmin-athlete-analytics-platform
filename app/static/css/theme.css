@@ -404,6 +404,10 @@ select:focus-visible,
 nav:has(.nav-dropdown:hover) .nav-dropdown:not(:hover) .nav-dropdown-menu {
   display: none;
 }
+
+html.macos-app .site-header > div {
+  padding-left: 5.25rem;
+}
 .nav-dropdown-item {
   display: flex;
   align-items: center;
