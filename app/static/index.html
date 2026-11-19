@@ -37,16 +37,16 @@
                 data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym&quot;, &quot;@event&quot;]]"
                 data-subtab-group="sports" data-subtab="gym" class="nav-dropdown-item nav-dropdown-item-active">5x5 Ağırlık Hedefleri</button>
               <button type="button"
-                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym_history&quot;, &quot;@event&quot;]]"
-                data-subtab-group="sports" data-subtab="gym_history" class="nav-dropdown-item">Salon Geçmişi</button>
-              <button type="button"
                 data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;prog&quot;, &quot;@event&quot;]]"
                 data-subtab-group="sports" data-subtab="prog" class="nav-dropdown-item">Seviye &amp; İlerleme</button>
             </div>
           </div>
 
+          <button type="button" data-calls="[[&quot;setTab&quot;, &quot;history&quot;]]" id="nav-history"
+            class="nav-tab">Geçmiş</button>
+
           <button type="button" data-calls="[[&quot;setTab&quot;, &quot;health&quot;]]" id="nav-health"
-            class="nav-tab"><span class="nav-full">Analizler &amp; Geçmiş</span><span class="nav-short">Analiz</span></button>
+            class="nav-tab"><span class="nav-full">Analizler</span><span class="nav-short">Analiz</span></button>
         </nav>
 
         <div class="flex items-center gap-2 shrink-0 py-1">
@@ -298,31 +298,6 @@
         </section>
       </div>
 
-      <div data-subpane-group="sports" data-subpane="gym_history" class="single-screen-pane hidden">
-        <section class="surface-card p-3.5 sm:p-4 space-y-2 flex flex-col overflow-hidden">
-          <div tabindex="0" role="region" aria-label="Salon kuvvet antrenmanları tablosu"
-            class="table-scroll-region max-h-[calc(100vh-14rem)] overflow-y-auto">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr>
-                  <th class="py-1.5 px-2">Tarih</th>
-                  <th class="py-1.5 px-2">Rutin</th>
-                  <th class="py-1.5 px-2">Süre &amp; Kalori</th>
-                  <th class="py-1.5 px-2">Toplam Hacim</th>
-                  <th class="py-1.5 px-2">Egzersizler, Setler &amp; Ağırlıklar (kg)</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="gymHistoryTableBody"></tbody>
-            </table>
-            <div id="gymHistoryFooter" class="flex items-center justify-between gap-2 px-2 py-2 font-mono text-[11px] text-[var(--text-secondary)]">
-              <span id="gymHistoryCount"></span>
-              <button type="button" id="gymHistoryMoreBtn" data-calls="[[&quot;loadMoreGymHistory&quot;]]"
-                class="stamp-tag stamp-accent hidden cursor-pointer">Daha eski seansları göster</button>
-            </div>
-          </div>
-        </section>
-      </div>
-
       <div data-subpane-group="sports" data-subpane="prog" class="single-screen-pane overflow-y-auto custom-scrollbar hidden">
         <section class="surface-card p-3.5 sm:p-4 space-y-2 flex flex-col overflow-hidden"
           id="progressionAssessmentSection">
@@ -347,25 +322,12 @@
       </div>
     </div>
 
-    <!-- 3. ANALİZLER & GEÇMİŞ (SOL: KORELASYONLAR + GEÇMİŞ ARAMA, SAĞ: 93G ORTALAMALAR) -->
-    <div id="section-health" class="single-screen-section overflow-y-auto custom-scrollbar pr-0.5 hidden">
-      <section id="healthUnifiedCard" class="surface-card p-3 flex flex-col shrink-0">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
-          <div class="lg:col-span-7 lg:border-r lg:border-[var(--border-subtle)] lg:pr-3 space-y-2.5 min-w-0">
-            <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi"
-              class="table-scroll-region overflow-x-auto">
-              <table class="w-full text-left text-[11px] leading-snug">
-                <thead>
-                  <tr>
-                    <th class="py-1 px-2">Değişken Çifti</th>
-                    <th class="py-1 px-2">Sporcu İçgörüsü (veriden)</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
-              </table>
-            </div>
-
-            <div id="activitiesCard" class="border-t border-[var(--border-subtle)] pt-2 space-y-1.5 min-w-0">
+    <!-- 3. GEÇMİŞ (ÜSTTE GENEL GEÇMİŞ: TÜM AKTİVİTELER, ALTTA SALON GEÇMİŞİ) -->
+    <div id="section-history" class="single-screen-section gap-2.5 hidden">
+      <div data-subpane-group="history" data-subpane="all" class="single-screen-pane flex flex-col gap-2.5">
+        <section class="surface-card p-3 space-y-2 flex flex-col overflow-hidden min-h-0" style="flex:1 1 0">
+            <div id="activitiesCard" class="flex flex-col gap-1.5 min-w-0 min-h-0 flex-1">
+              <span class="font-mono text-[11px] uppercase tracking-wider font-semibold text-[var(--text-secondary)]">Genel Geçmiş · Tüm Aktiviteler</span>
               <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 px-2.5 py-1.5 tint-panel text-[10.5px]">
                 <div>
                   <span class="font-mono text-[10px] text-[var(--text-secondary)] block uppercase">Seans</span>
@@ -404,7 +366,7 @@
               </div>
 
               <div tabindex="0" role="region" aria-label="Aktivite telemetri tablosu"
-                class="table-scroll-region overflow-x-auto">
+                class="table-scroll-region overflow-auto flex-1 min-h-0">
                 <table class="w-full text-left text-[10.5px] leading-tight">
                   <thead>
                     <tr>
@@ -434,6 +396,51 @@
                     class="btn-secondary text-[10.5px] px-2 py-0.5" style="min-block-size:1.5rem">Sonraki</button>
                 </div>
               </div>
+            </div>
+        </section>
+
+        <section class="surface-card p-3 space-y-2 flex flex-col overflow-hidden min-h-0" style="flex:1 1 0">
+          <span class="font-mono text-[11px] uppercase tracking-wider font-semibold text-[var(--text-secondary)]">Salon Geçmişi · Kuvvet Antrenmanları</span>
+          <div tabindex="0" role="region" aria-label="Salon kuvvet antrenmanları tablosu"
+            class="table-scroll-region overflow-auto flex-1 min-h-0">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr>
+                  <th class="py-1.5 px-2">Tarih</th>
+                  <th class="py-1.5 px-2">Rutin</th>
+                  <th class="py-1.5 px-2">Süre &amp; Kalori</th>
+                  <th class="py-1.5 px-2">Toplam Hacim</th>
+                  <th class="py-1.5 px-2">Egzersizler, Setler &amp; Ağırlıklar (kg)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border-subtle)]" id="gymHistoryTableBody"></tbody>
+            </table>
+            <div id="gymHistoryFooter" class="flex items-center justify-between gap-2 px-2 py-2 font-mono text-[11px] text-[var(--text-secondary)]">
+              <span id="gymHistoryCount"></span>
+              <button type="button" id="gymHistoryMoreBtn" data-calls="[[&quot;loadMoreGymHistory&quot;]]"
+                class="stamp-tag stamp-accent hidden cursor-pointer">Daha eski seansları göster</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- 4. ANALİZLER (SOL: KORELASYONLAR, SAĞ: 93G ORTALAMALAR) -->
+    <div id="section-health" class="single-screen-section overflow-y-auto custom-scrollbar pr-0.5 hidden">
+      <section id="healthUnifiedCard" class="surface-card p-3 flex flex-col shrink-0">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+          <div class="lg:col-span-7 lg:border-r lg:border-[var(--border-subtle)] lg:pr-3 space-y-2.5 min-w-0">
+            <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi"
+              class="table-scroll-region overflow-x-auto">
+              <table class="w-full text-left text-[11px] leading-snug">
+                <thead>
+                  <tr>
+                    <th class="py-1 px-2">Değişken Çifti</th>
+                    <th class="py-1 px-2">Sporcu İçgörüsü (veriden)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
+              </table>
             </div>
           </div>
 

@@ -74,44 +74,50 @@ function restoreSavedNavigation() {
   } catch (_) {}
 }
 
-/* Genel Bakış tek ekrana sığar: içerik kaydırma yerine, ekran yüksekliğine göre otomatik küçültülür (zoom). Çok küçülmesi gerekirse (<0.7) kaydırmaya döner. */
-const OVERVIEW_MIN_ZOOM = 0.7;
-let _overviewFitBusy = false;
-function fitOverviewToScreen() {
-  const sec = document.getElementById('section-overview');
-  const pane = document.querySelector('[data-subpane-group="overview"][data-subpane="kpi12"]');
-  if (!sec || !pane || sec.classList.contains('hidden') || _overviewFitBusy) return;
-  _overviewFitBusy = true;
+/* TEK EKRAN KURALI: hiçbir sayfa kaydırma gerektirmez. İçerik pencere yüksekliğini aşarsa, görünür sayfanın içeriği otomatik küçültülür (zoom).
+   Tablolar kendi içinde kaydırılır; çok küçülmesi gerekirse (<0.7) o sayfa kaydırmaya döner. Mobilde (<640px) uygulanmaz. */
+const FIT_MIN_ZOOM = 0.7;
+let _fitBusy = false;
+function _fitContainer(c) {
+  const kids = [...c.children].filter(k => k.offsetParent !== null || k.tagName === 'SECTION');
+  kids.forEach(k => { k.style.zoom = ''; });
+  c.style.overflowY = '';
+  if (window.innerWidth < 640 || !c.clientHeight) return;
+  let z = 1;
+  while (z > FIT_MIN_ZOOM && c.scrollHeight > c.clientHeight + 1) {
+    z = Math.max(FIT_MIN_ZOOM, +(z - 0.03).toFixed(2));
+    kids.forEach(k => { k.style.zoom = String(z); });
+  }
+  c.style.overflowY = c.scrollHeight > c.clientHeight + 1 ? 'auto' : 'hidden';
+}
+function fitVisibleToScreen() {
+  if (_fitBusy) return;
+  _fitBusy = true;
   try {
-    pane.style.zoom = '';
-    if (window.innerWidth < 640) return; // mobilde normal kaydırma + alt menü
-    const avail = sec.clientHeight;
-    if (!avail) return;
-    let z = 1;
-    while (z > OVERVIEW_MIN_ZOOM && pane.getBoundingClientRect().height > avail) {
-      z = Math.max(OVERVIEW_MIN_ZOOM, +(z - 0.03).toFixed(2));
-      pane.style.zoom = String(z);
-    }
-    sec.style.overflowY = pane.getBoundingClientRect().height > avail + 1 ? 'auto' : 'hidden';
+    document.querySelectorAll('#section-overview, #section-health, .single-screen-pane').forEach(c => {
+      if (c.offsetParent !== null && !c.matches('[data-subpane-group="overview"]')) _fitContainer(c);
+    });
   } finally {
-    _overviewFitBusy = false;
+    _fitBusy = false;
   }
 }
-let _overviewFitTimer = null;
+let _fitTimer = null;
 function scheduleOverviewFit() {
-  clearTimeout(_overviewFitTimer);
-  _overviewFitTimer = setTimeout(fitOverviewToScreen, 60);
+  clearTimeout(_fitTimer);
+  _fitTimer = setTimeout(fitVisibleToScreen, 60);
 }
 window.addEventListener('resize', scheduleOverviewFit);
 window.addEventListener('DOMContentLoaded', scheduleOverviewFit);
 
 function setTab(tabId, persist = true) {
   let targetTab = tabId;
-  if (tabId === 'activities' || tabId === 'settings' || tabId === 'training_load' || tabId === 'analytics') {
+  if (tabId === 'activities') {
+    targetTab = 'history';
+  } else if (tabId === 'settings' || tabId === 'training_load' || tabId === 'analytics') {
     targetTab = 'health';
   }
 
-  const tabs = ['overview', 'sports', 'health'];
+  const tabs = ['overview', 'sports', 'history', 'health'];
   tabs.forEach(t => {
     const sec = document.getElementById('section-' + t);
     const nav = document.getElementById('nav-' + t);
@@ -133,11 +139,8 @@ function setTab(tabId, persist = true) {
   if (persist) {
     try { localStorage.setItem(STORAGE_TAB_KEY, targetTab); } catch (_) {}
   }
-  if (targetTab === 'overview') scheduleOverviewFit();
+  scheduleOverviewFit();
 
-  if (tabId === 'activities') {
-    setSubTab('training_load', 'activities', persist);
-  }
 }
 
 function closeAllNavDropdowns() {
@@ -208,6 +211,7 @@ function setSubTab(group, paneKey, persist = true) {
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
   if (persist) saveActiveSubTab(group, paneKey);
+  scheduleOverviewFit();
 }
 
 /* Boş / hatalı durumlar için kullanıcıya ne yapacağını söyleyen şerit */
