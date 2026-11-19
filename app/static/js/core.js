@@ -164,6 +164,17 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeAllNavDropdowns();
 });
+document.querySelectorAll('.nav-dropdown').forEach(wrap => {
+  wrap.addEventListener('mouseenter', () => {
+    document.querySelectorAll('.nav-dropdown.is-open').forEach(openEl => {
+      if (openEl !== wrap) openEl.classList.remove('is-open');
+    });
+    const active = document.activeElement;
+    if (active && active.closest('.nav-dropdown') && active.closest('.nav-dropdown') !== wrap && typeof active.blur === 'function') {
+      active.blur();
+    }
+  });
+});
 
 function setSubTab(group, paneKey, persist = true) {
   document.querySelectorAll(`[data-subpane-group="${group}"]`).forEach(el => {
