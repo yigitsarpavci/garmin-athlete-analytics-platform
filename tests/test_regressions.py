@@ -381,5 +381,18 @@ class TestLoadFocusRunSelection(unittest.TestCase):
             self.assertEqual(res["run_order"], ["zone2", "interval"])
 
 
+class TestDebriefLoadTunnelInterpretation(unittest.TestCase):
+    def test_acute_below_tunnel_reports_below_not_inside(self):
+        """Akut yük (208) tünelin (215-404) altındayken 'içindesiniz' dememeli."""
+        blk = GarminAthleteEngine._build_debrief_load_block(26.9, 208, 269, 0.70, "LOW", 215, 404)
+        self.assertFalse(blk["in_sweet_spot"])
+        self.assertIn("altında", blk["interpretation"])
+        self.assertNotIn("içindesiniz", blk["interpretation"])
+
+        blk_ok = GarminAthleteEngine._build_debrief_load_block(50.0, 280, 269, 1.04, "OPTIMAL", 215, 404)
+        self.assertTrue(blk_ok["in_sweet_spot"])
+        self.assertIn("içindesiniz", blk_ok["interpretation"])
+
+
 if __name__ == "__main__":
     unittest.main()

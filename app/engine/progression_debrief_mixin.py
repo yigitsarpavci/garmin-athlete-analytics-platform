@@ -206,20 +206,11 @@ class ProgressionDebriefMixin:
                 "te_label": act.get("te_label", "TOPARLANMA"),
                 "water_loss_ml": act.get("water_ml", 0),
             },
-            "training_load": {
-                "session_epoc_load": session_load,
-                "acute_load": acute_load,
-                "chronic_load": chronic_load,
-                "acwr": acwr,
-                "acwr_status": cur_status.get("acwr_status", "OPTIMAL (Sweet Spot)"),
-                "tunnel_min": tunnel_min,
-                "tunnel_max": tunnel_max,
-                "in_sweet_spot": 0.8 <= acwr <= 1.3,
-                "interpretation": (
-                    f"Akut yük ({acute_load}) ve kronik yük ({chronic_load}) dengede (ACWR: {acwr:.2f}). "
-                    f"Garmin Firstbeat yük tüneli ({tunnel_min:.0f} - {tunnel_max:.0f}) içindesiniz."
-                ),
-            },
+            "training_load": self._build_debrief_load_block(
+                session_load, acute_load, chronic_load, acwr,
+                cur_status.get("acwr_status", "OPTIMAL (Sweet Spot)"),
+                tunnel_min, tunnel_max,
+            ),
             "productive_evaluation": {
                 "status_code": status_code,
                 "status_tr": status_tr,
@@ -395,4 +386,48 @@ class ProgressionDebriefMixin:
                 "purpose": f"{weekly_quota['headline']}. Sonraki Pazartesi temiz 0/2 kotasına taze başla.",
             }
         return next_session_info, weekly_quota
+
+    @staticmethod
+    def _build_debrief_load_block(
+        session_load: float,
+        acute_load: float,
+        chronic_load: float,
+        acwr: float,
+        acwr_status: str,
+        tunnel_min: float,
+        tunnel_max: float,
+    ) -> Dict[str, Any]:
+        """ACWR ve Firstbeat yük tüneli sınırlarına göre doğru yorumu üretir."""
+        if acwr < 0.8:
+            acwr_sentence = f"Akut yük ({acute_load}) kronik yükün ({chronic_load}) altında (ACWR: {acwr:.2f} · Düşük)."
+        elif acwr > 1.3:
+            acwr_sentence = f"Akut yük ({acute_load}) kronik yüke ({chronic_load}) göre yüksek (ACWR: {acwr:.2f} · Aşırı Yük)."
+        else:
+            acwr_sentence = f"Akut yük ({acute_load}) ve kronik yük ({chronic_load}) dengede (ACWR: {acwr:.2f})."
+
+        has_tunnel = tunnel_max > 0 and tunnel_max >= tunnel_min
+        if has_tunnel and acute_load < tunnel_min:
+            tunnel_sentence = f"Garmin Firstbeat yük tünelinin ({tunnel_min:.0f} - {tunnel_max:.0f}) {tunnel_min - acute_load:.0f} puan altındasınız."
+            in_tunnel = False
+        elif has_tunnel and acute_load > tunnel_max:
+            tunnel_sentence = f"Garmin Firstbeat yük tünelinin ({tunnel_min:.0f} - {tunnel_max:.0f}) {acute_load - tunnel_max:.0f} puan üzerindesiniz."
+            in_tunnel = False
+        elif has_tunnel:
+            tunnel_sentence = f"Garmin Firstbeat yük tüneli ({tunnel_min:.0f} - {tunnel_max:.0f}) içindesiniz."
+            in_tunnel = True
+        else:
+            tunnel_sentence = "Yük tüneli aralığı mevcut değil."
+            in_tunnel = 0.8 <= acwr <= 1.3
+
+        return {
+            "session_epoc_load": session_load,
+            "acute_load": acute_load,
+            "chronic_load": chronic_load,
+            "acwr": acwr,
+            "acwr_status": acwr_status,
+            "tunnel_min": tunnel_min,
+            "tunnel_max": tunnel_max,
+            "in_sweet_spot": (0.8 <= acwr <= 1.3) and in_tunnel,
+            "interpretation": f"{acwr_sentence} {tunnel_sentence}",
+        }
 
