@@ -166,10 +166,9 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const stepGoal = Math.max(1, Number(data.step_goal ?? 10000));
   const stepPct = Math.max(0, Math.min(100, (stepCur / stepGoal) * 100));
   setText('fs-steps-val', formatTrInt(data.steps));
-  const asOfTxt = data.data_as_of ? ` · Saat ${String(data.data_as_of).slice(11, 16)} eşitlemesi${data.data_is_stale ? ' (güncel değil)' : ''}` : '';
-  setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})${asOfTxt}`);
+  setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})`);
   const stepsSubEl = document.getElementById('fs-steps-sub');
-  if (stepsSubEl) stepsSubEl.style.color = data.data_is_stale ? 'var(--ochre)' : '';
+  if (stepsSubEl) stepsSubEl.style.color = '';
   const stepBarEl = document.getElementById('fs-steps-bar');
   if (stepBarEl) {
     const pinLeft = Math.max(2, Math.min(98, stepPct));
