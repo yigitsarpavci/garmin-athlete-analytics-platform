@@ -253,6 +253,38 @@ function buildQuotaLedgerHtml(quota) {
       ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
       ${buildSpontaneousCard(spont)}
     </div>
+
+    ${buildRestDaysPanel(quota.rest_days)}
+  `;
+}
+
+function buildRestDaysPanel(restDays) {
+  const rd = restDays || { count: 0, days: [], importance_note: '' };
+  const days = Array.isArray(rd.days) ? rd.days : [];
+  const count = Number(rd.count ?? days.length ?? 0);
+  const chipsHtml = days.length
+    ? `<div class="flex flex-wrap items-center gap-1.5">${days.map(d => `
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 border border-[var(--border-medium)] bg-[var(--bg-surface)] font-mono text-[11px] moss-text">
+          ${lucideSvg('check', 'w-3 h-3 shrink-0 moss-text')}
+          <span>${escapeHtml(d.label || d.date)}</span>
+        </span>
+      `).join('')}</div>`
+    : '<p class="text-[11px] text-[var(--text-muted)]">Bu hafta henüz tamamlanmış dinlenme günü yok.</p>';
+
+  const note = rd.importance_note || 'Dinlenme günleri kas onarımını, HRV/Readiness toparlanmasını ve bir sonraki antrenmanın kalitesini korur.';
+
+  return `
+    <div class="tint-panel p-2.5 sm:p-3 space-y-1.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+          ${lucideSvg('moon', 'w-3.5 h-3.5 moss-text shrink-0')}
+          <span>Dinlenme Günleri (Bu Hafta Gerçekleşen)</span>
+        </span>
+        <span class="stamp-tag ${count > 0 ? 'stamp-moss' : ''} tabular-nums">${count} Gün</span>
+      </div>
+      ${chipsHtml}
+      <p class="text-[11px] text-[var(--text-secondary)] leading-snug"><strong class="text-[var(--text-primary)] font-medium">Neden Önemli:</strong> ${escapeHtml(note)}</p>
+    </div>
   `;
 }
 

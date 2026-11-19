@@ -720,6 +720,7 @@ class WeeklyQuotaMixin:
                 "day_label": day_label,
                 "slot_kind": slot_kind,
                 "is_completed": is_completed,
+                "is_past": is_past,
                 **row_data,
             })
 
@@ -881,5 +882,24 @@ class WeeklyQuotaMixin:
                 "items": spontaneous_items,
                 "labels": [s["label"] for s in spontaneous_items],
                 "status_text": spont_status_text,
+            },
+            "rest_days": {
+                "count": sum(
+                    1 for d in week_meta["days"]
+                    if d.get("is_past") and not d.get("is_completed") and d.get("slot_kind") == "rest"
+                ),
+                "days": [
+                    {
+                        "date": d["date_str"],
+                        "label": d["day_label"].split(" (")[0].strip(),
+                    }
+                    for d in week_meta["days"]
+                    if d.get("is_past") and not d.get("is_completed") and d.get("slot_kind") == "rest"
+                ],
+                "importance_note": (
+                    "Dinlenme günleri kas glikojenini ve mikro-hasarları onarır, merkezi sinir sistemi "
+                    "yorgunluğunu düşürür, HRV/Readiness rezervini yükseltir ve ACWR dengesini koruyarak "
+                    "bir sonraki sert antrenmanda yüksek kalite (ve düşük sakatlık riski) sağlar."
+                ),
             },
         }
