@@ -345,13 +345,14 @@ function renderLatestActivitySummary(activities) {
   const iconName = getSportLucideIcon(a.sport || a.sport_tr || a.name);
   const dur = a.dur_m ? `${Math.round(a.dur_m)} dk` : '--';
   const hr = a.avg_hr ? `${a.avg_hr} bpm` : '--';
+  const cal = a.cal ? `${Math.round(a.cal)} kcal` : '--';
   row.innerHTML = `
     <span class="font-medium truncate flex items-center gap-2">
       ${lucideSvg(iconName, 'w-3.5 h-3.5 accent-text shrink-0')}
       <span class="truncate">${a.name || a.sport_tr || a.sport || 'Antrenman'}</span>
       <span class="font-mono text-[10px] text-[var(--text-muted)] font-normal">(${a.date})</span>
     </span>
-    <span class="font-mono text-[11px] text-[var(--text-secondary)] font-medium tabular-nums shrink-0 ml-2">${dur} · ${hr}</span>
+    <span class="font-mono text-[11px] text-[var(--text-secondary)] font-medium tabular-nums shrink-0 ml-2">${dur} · ${hr} · ${cal}</span>
   `;
   refreshIcons();
 }
