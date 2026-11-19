@@ -2,6 +2,7 @@
 let globalOverview = null;
 let globalSports = null;
 let globalActivities = null;
+let globalGymTypeByDate = {};
 let globalCharts = null;
 let currentActiveProfile = {
   is_current_athlete: true,
@@ -240,7 +241,13 @@ async function initApp() {
       globalSports = sports;
       renderSports(globalSports);
     }
-    if (gymData) renderGymHistory(gymData);
+    if (gymData) {
+      globalGymTypeByDate = {};
+      (gymData.sessions || []).forEach(s => {
+        if (s && s.date && s.workout_type) globalGymTypeByDate[String(s.date).slice(0, 10)] = s.workout_type;
+      });
+      renderGymHistory(gymData);
+    }
     if (tlData) renderTrainingLoad(tlData);
     if (activities) {
       globalActivities = activities;
@@ -383,17 +390,83 @@ function _getRunKindLogo(kind) {
   };
 }
 
+function _classifyGymLogoKind(a) {
+  const dStr = String(a.date || a.startTimeLocal || '').slice(0, 10);
+  const wType = String(a.workout_type || (dStr ? globalGymTypeByDate[dStr] : '') || a.name || '').toLowerCase();
+  if (wType.includes('push') || wType.includes('itme')) return 'push';
+  if (wType.includes('pull') || wType.includes('çekme')) return 'pull';
+  if (wType.includes('upper') || wType.includes('üst')) return 'upper';
+  if (wType.includes('lower') || wType.includes('alt vücut')) return 'lower';
+  if (wType.includes('leg') || wType.includes('bacak')) return 'legs';
+  if (wType.includes('workout b') || /\bb\b/.test(wType)) return 'workout_b';
+  if (wType.includes('workout a') || /\ba\b/.test(wType)) return 'workout_a';
+  return null;
+}
+
+function _getGymKindLogo(kind) {
+  const map = {
+    workout_a: {
+      label: 'Workout A',
+      lblCls: 'ochre-text',
+      boxCls: 'bg-[rgba(201,154,73,0.16)] text-[#E0A954] border border-[rgba(201,154,73,0.48)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5L12 5l3.5 9.5M9.7 11.5h4.6"/><line x1="4" y1="19" x2="20" y2="19"/><line x1="6" y1="17" x2="6" y2="21"/><line x1="18" y1="17" x2="18" y2="21"/></svg>`
+    },
+    workout_b: {
+      label: 'Workout B',
+      lblCls: 'text-[#E08575]',
+      boxCls: 'bg-[rgba(201,106,91,0.16)] text-[#E08575] border border-[rgba(201,106,91,0.48)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5v9.5h4.2a2.3 2.3 0 0 0 0-4.6H9m0 0h3.8a2.1 2.1 0 0 0 0-4.9H9"/><line x1="4" y1="19" x2="20" y2="19"/><line x1="6" y1="17" x2="6" y2="21"/><line x1="18" y1="17" x2="18" y2="21"/></svg>`
+    },
+    push: {
+      label: 'Push',
+      lblCls: 'ochre-text',
+      boxCls: 'bg-[rgba(201,154,73,0.16)] text-[#E0A954] border border-[rgba(201,154,73,0.48)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 8l4-4 4 4"/><line x1="4" y1="20" x2="20" y2="20"/><line x1="6" y1="18" x2="6" y2="22"/><line x1="18" y1="18" x2="18" y2="22"/></svg>`
+    },
+    pull: {
+      label: 'Pull',
+      lblCls: 'text-[#6BA7D6]',
+      boxCls: 'bg-[rgba(75,142,194,0.16)] text-[#6BA7D6] border border-[rgba(75,142,194,0.48)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="4" x2="20" y2="4"/><path d="M12 8v12M8 16l4 4 4-4"/></svg>`
+    },
+    upper: {
+      label: 'Upper',
+      lblCls: 'ochre-text',
+      boxCls: 'bg-[rgba(201,154,73,0.16)] text-[#E0A954] border border-[rgba(201,154,73,0.48)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6"/><rect x="7" y="13" width="10" height="6" rx="1"/></svg>`
+    },
+    lower: {
+      label: 'Lower',
+      lblCls: 'moss-text',
+      boxCls: 'bg-[rgba(122,168,125,0.16)] text-[#8BC38E] border border-[rgba(122,168,125,0.48)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="5" x2="19" y2="5"/><path d="M7 9l5 10 5-10"/></svg>`
+    },
+    legs: {
+      label: 'Legs',
+      lblCls: 'moss-text',
+      boxCls: 'bg-[rgba(122,168,125,0.16)] text-[#8BC38E] border border-[rgba(122,168,125,0.48)]',
+      svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="5" x2="19" y2="5"/><path d="M8 9v5l-2 5M16 9v5l2 5"/></svg>`
+    }
+  };
+  return map[kind] || null;
+}
+
 function _buildStreakActivityEntry(a) {
   const sp = (a.sport || '').toLowerCase();
   const isRun = sp.includes('run') || sp.includes('koş');
+  const isGym = sp.includes('strength') || sp.includes('kuvvet') || sp.includes('gym');
   const runKind = isRun ? _classifyRunLogoKind(a) : null;
   const runLogo = runKind ? _getRunKindLogo(runKind) : null;
+  const gymKind = isGym ? _classifyGymLogoKind(a) : null;
+  const gymLogo = gymKind ? _getGymKindLogo(gymKind) : null;
+  const prefix = runLogo ? `${runLogo.label} · ` : (gymLogo ? `${gymLogo.label} · ` : '');
   return {
     isRun,
     runLogo,
-    isGym: sp.includes('strength') || sp.includes('kuvvet') || sp.includes('gym'),
+    isGym,
+    gymLogo,
     icon: getSportLucideIcon(a.sport || a.sport_tr || a.name),
-    title: `${runLogo ? runLogo.label + ' · ' : ''}${a.name || a.sport_tr || a.sport || 'Antrenman'}${a.dur_m ? ` (${Math.round(a.dur_m)} dk)` : ''}`
+    title: `${prefix}${a.name || a.sport_tr || a.sport || 'Antrenman'}${a.dur_m ? ` (${Math.round(a.dur_m)} dk)` : ''}`
   };
 }
 
@@ -409,6 +482,9 @@ function _renderStreakDayCell(lbl, items, iso, todayIso, showLabel = true) {
     const info = items[0];
     if (info.isRun && info.runLogo) {
       return `<div class="flex flex-col items-center">${mkLbl(info.runLogo.lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${info.runLogo.boxCls} flex items-center justify-center">${info.runLogo.svg}</span></div>`;
+    }
+    if (info.isGym && info.gymLogo) {
+      return `<div class="flex flex-col items-center">${mkLbl(info.gymLogo.lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${info.gymLogo.boxCls} flex items-center justify-center">${info.gymLogo.svg}</span></div>`;
     }
     const lblCls = info.isGym ? 'ochre-text' : 'text-[#AB86D4]';
     const boxCls = info.isGym
