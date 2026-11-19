@@ -137,7 +137,7 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
   `;
 }
 
-function buildSpontaneousCard(spont) {
+function buildSpontaneousCard(spont, restCount = 0) {
   const count = spont.count ?? 0;
   const items = Array.isArray(spont.items) ? spont.items : [];
   const labels = Array.isArray(spont.labels) ? spont.labels : [];
@@ -174,12 +174,15 @@ function buildSpontaneousCard(spont) {
   return `
     <div class="tint-panel p-2.5 space-y-1.5 flex flex-col justify-between min-w-0">
       <div class="space-y-1.5">
-        <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center justify-between gap-1.5 flex-wrap">
           <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
             ${lucideSvg('compass', 'w-3.5 h-3.5 violet-text shrink-0')}
             <span>Spontane Branşlar</span>
           </span>
-          <span class="stamp-tag ${count > 0 ? 'stamp-violet' : 'stamp-violet'} tabular-nums">${count} Seans</span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="font-mono text-[10.5px] text-[var(--text-muted)] tabular-nums inline-flex items-center gap-1" title="Bu hafta gerçekleşen dinlenme günü">${lucideSvg('moon', 'w-3 h-3 sky-text shrink-0')}${restCount}g dinlenme</span>
+            <span class="stamp-tag stamp-violet tabular-nums">${count} Seans</span>
+          </div>
         </div>
         ${bodyHtml}
       </div>
@@ -231,30 +234,15 @@ function buildQuotaLedgerHtml(quota) {
     ? `<div class="grid grid-cols-1 lg:grid-cols-2 gap-1.5">${deviationHtml}${adaptHtml}</div>`
     : '';
 
-  return `
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-1.5 border-b border-[var(--border-subtle)]">
-      <div class="space-y-0.5 min-w-0">
-        <div class="flex flex-wrap items-center gap-1.5">
-          <span class="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)] flex items-center gap-1.5">
-            ${lucideSvg('check-square', 'w-3.5 h-3.5 accent-text shrink-0')}
-            <span>Haftalık Kota &amp; Kalan Seanslar</span>
-          </span>
-          <span class="stamp-tag">${escapeHtml(weekRange)}</span>
-          ${quota.is_custom && quota.athlete_name ? `<span class="stamp-tag stamp-accent">${escapeHtml(quota.athlete_name)}</span>` : ''}
-        </div>
-      </div>
-      <div class="flex items-center gap-2 shrink-0 self-start sm:self-center">
-        <span class="font-mono text-[11px] text-[var(--text-muted)] tabular-nums inline-flex items-center gap-1" title="Bu hafta gerçekleşen dinlenme günü">${lucideSvg('moon', 'w-3 h-3 sky-text shrink-0')}${Number((quota.rest_days || {}).count ?? ((quota.rest_days || {}).days || []).length ?? 0)} gün dinlenme</span>
-        <span class="stamp-tag ${totalBadgeCls} tabular-nums">${total.completed} / ${total.target} Tamamlandı</span>
-      </div>
-    </div>
+  const restCount = Number((quota.rest_days || {}).count ?? ((quota.rest_days || {}).days || []).length ?? 0);
 
+  return `
     ${bannerRowHtml}
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
       ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[#4B8EC2]')}
       ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
-      ${buildSpontaneousCard(spont)}
+      ${buildSpontaneousCard(spont, restCount)}
     </div>
 
   `;
