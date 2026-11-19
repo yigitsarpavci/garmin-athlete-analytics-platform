@@ -65,18 +65,8 @@
             </div>
           </div>
 
-          <div class="nav-dropdown" data-nav-dropdown="training_load">
-            <button type="button" onclick="toggleNavDropdown('training_load', event)" id="nav-training_load" class="nav-tab">
-              <span>Yük &amp; Aktiviteler</span>
-              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
-            </button>
-            <div class="nav-dropdown-menu" role="menu">
-              <button type="button" onclick="selectNavSubTab('training_load', 'load', event)" data-subtab-group="training_load"
-                data-subtab="load" class="nav-dropdown-item nav-dropdown-item-active">Yük &amp; ACWR Odağı</button>
-              <button type="button" onclick="selectNavSubTab('training_load', 'activities', event)" data-subtab-group="training_load"
-                data-subtab="activities" class="nav-dropdown-item">Aktivite Geçmişi</button>
-            </div>
-          </div>
+          <button type="button" onclick="setTab('training_load')" id="nav-training_load" class="nav-tab">Yük &amp;
+            Aktiviteler</button>
 
           <div class="nav-dropdown" data-nav-dropdown="health">
             <button type="button" onclick="toggleNavDropdown('health', event)" id="nav-health" class="nav-tab">
@@ -407,10 +397,9 @@
       </div>
     </div>
 
-    <!-- 4. YÜK & AKTİVİTELER (2 ALT SEKME: YÜK & ACWR ODAĞI / AKTİVİTE GEÇMİŞİ SAYFALI) -->
-    <div id="section-training_load" class="single-screen-section gap-2.5 hidden">
-      <div data-subpane-group="training_load" data-subpane="load" class="single-screen-pane">
-        <div class="flex flex-col gap-3">
+    <!-- 4. YÜK & AKTİVİTELER (BİRLEŞİK: YÜK & ACWR ODAĞI + AKTİVİTE GEÇMİŞİ) -->
+    <div id="section-training_load" class="single-screen-section gap-3 overflow-y-auto custom-scrollbar pr-0.5 hidden">
+      <div class="flex flex-col gap-3 shrink-0">
           <div
             class="surface-ledger grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)] shrink-0">
             <div class="p-4">
@@ -521,11 +510,9 @@
               <p class="text-[var(--text-primary)] leading-snug">Yük dağılımı hesaplanıyor...</p>
             </div>
           </section>
-        </div>
       </div>
 
-      <div data-subpane-group="training_load" data-subpane="activities" class="single-screen-pane hidden">
-        <section id="activitiesCard" class="surface-card p-3.5 sm:p-4 space-y-2.5 flex flex-col overflow-hidden">
+      <section id="activitiesCard" class="surface-card p-3.5 sm:p-4 space-y-2.5 flex flex-col shrink-0">
           <div
             class="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--border-subtle)] pb-2 shrink-0">
             <div>
@@ -603,7 +590,6 @@
             </div>
           </div>
         </section>
-      </div>
     </div>
 
     <!-- 5. SAĞLIK & UYKU (4 ALT SEKME: GENEL SAĞLIK & FİTNESS YAŞI / UYKU & YATIŞ SAATİ / 93G BİYOMETRİK ORTALAMALAR / KORELASYON MATRİSİ) -->
