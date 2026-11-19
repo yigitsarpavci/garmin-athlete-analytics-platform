@@ -209,20 +209,28 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     const bar = (cls, label, pct, dObj) => {
       const w = Math.min(100, Math.max(6, pct));
       const pin = Math.max(3, Math.min(97, w));
-      const dTxt = dObj && dObj.expiring_pct > 0
-        ? ` <span class="text-[var(--text-muted)]">→%${Math.round(dObj.week_end_pct)} (-%${Math.round(dObj.expiring_pct)})</span>`
+      const endPct = dObj ? Number(dObj.week_end_pct ?? pct) : pct;
+      const endPin = Math.max(3, Math.min(97, Math.min(100, Math.max(4, endPct))));
+      const showEndDot = dObj && dObj.expiring_pct > 0;
+      const endDotHtml = showEndDot
+        ? `<span title="Pazar 28G düşüşü sonrası: %${Math.round(endPct)} (-%${Math.round(dObj.expiring_pct)})" style="position:absolute;left:${endPin}%;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:9999px;background:#E57368;border:1.5px solid #131a16;z-index:2;pointer-events:auto;" aria-hidden="true"></span>`
         : '';
       return `
         <div>
           <div class="garmin-fill-track garmin-fill-track--pin">
             <div class="${cls} h-full" style="width:${w}%"></div>
+            ${endDotHtml}
             <span class="garmin-gauge-pin" style="left:${pin}%"></span>
           </div>
-          <div class="garmin-gauge-scale mt-0.5"><span>${label}</span><span>%${Math.round(pct)}${dTxt}</span></div>
+          <div class="garmin-gauge-scale mt-0.5"><span>${label}</span><span>%${Math.round(pct)}</span></div>
         </div>`;
     };
-    const driftFooter = drift
-      ? `<p class="font-mono text-[10.5px] text-[var(--text-secondary)] mt-1.5 leading-tight">Pazar 28G düşüşü sonrası: Düşük %${Math.round(drift.low_aerobic?.week_end_pct ?? lowPct)} · Yüksek %${Math.round(drift.high_aerobic?.week_end_pct ?? highPct)} · Anaer %${Math.round(drift.anaerobic?.week_end_pct ?? anPct)}</p>`
+    const hasAnyDrop = drift && [drift.low_aerobic, drift.high_aerobic, drift.anaerobic].some(d => d && d.expiring_pct > 0);
+    const driftLegend = hasAnyDrop
+      ? `<div class="flex items-center justify-end gap-3 mt-1 font-mono text-[10px] text-[var(--text-muted)]">
+          <span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:#f0ede4;display:inline-block" aria-hidden="true"></span>Güncel</span>
+          <span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:#E57368;display:inline-block" aria-hidden="true"></span>Pazar 28G düşüşü</span>
+        </div>`
       : '';
     lfBarEl.innerHTML = `
       <div class="garmin-focus-mini">
@@ -230,7 +238,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
         ${bar('seg-amber', 'Yüksek', highPct, drift?.high_aerobic)}
         ${bar('seg-purple', 'Anaer', anPct, drift?.anaerobic)}
       </div>
-      ${driftFooter}
+      ${driftLegend}
     `;
   }
 }
