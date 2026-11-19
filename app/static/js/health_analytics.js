@@ -126,11 +126,8 @@ function renderProgressionAssessment(data) {
       <div class="tint-panel p-3 space-y-1.5 border-l-[3px] border-l-[var(--accent)] md:col-span-2">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
           <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">3. Koşu: Mevcut Durum ve Hedef</span>
-          <span class="stamp-tag stamp-moss">${escapeHtml(rp.verdict || 'EN EKSİK BAR')}</span>
         </div>
-        <p class="font-mono text-[11px] font-semibold accent-text">${escapeHtml(rp.current_metrics || '')}</p>
         <p class="text-xs text-[var(--text-primary)] font-medium leading-snug">${escapeHtml(rp.current_model || '')}</p>
-        <p class="font-mono text-[12px] text-[var(--text-secondary)]">${escapeHtml(rp.load_balance || '')}</p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(rp.advice || st.running_style_advice || '')}</p>
         <p class="text-[12px] moss-text tint-moss-panel p-1.5 leading-snug"><strong class="font-semibold">Sıradaki Koşu Hedefleri:</strong> ${escapeHtml(rp.next_milestone || '')}</p>
       </div>

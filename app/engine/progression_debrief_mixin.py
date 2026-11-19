@@ -39,8 +39,6 @@ class ProgressionDebriefMixin:
         dl_ratio = round(deadlift_pr / max(1.0, cur_weight), 2)
 
         vo2max = float(metrics.get("vo2max") or 0.0)
-        latest_5k = metrics.get("latest_5k", "--")
-        cadence = int(metrics.get("latest_cadence") or 159)
 
         # 1. Haftalık gün modeli: kuvvet DAİMA 2 gün (Workout A / B); temel koşu günü 2 veya 3 (kapasiteye göre).
         #    Bu haftaki fiili koşu hedefi, yük barları doluysa fazla yüklenmeyi önlemek için daha da düşebilir (0-1).
@@ -94,22 +92,13 @@ class ProgressionDebriefMixin:
             )
 
         # 3. Koşu Branşı & Load Focus Yönlendirmesi
-        low_pct = load_focus.get("aerobic_low", {}).get("pct_of_target") or 0.0
-        high_pct = load_focus.get("aerobic_high", {}).get("pct_of_target") or 0.0
-        an_pct = load_focus.get("anaerobic", {}).get("pct_of_target") or 0.0
-        focus_label = load_focus.get("recommended_focus_label") or "dengeli"
-        focus_short = {"anaerobic": "ANAEROBİK", "aerobic_low": "DÜŞÜK AEROBİK", "aerobic_high": "YÜKSEK AEROBİK", "deload": "YOK · DELOAD"}.get(load_focus.get("primary_deficit"), "DENGELİ")
         next_run = ((dyn.get("run_prediction") or {}).get("steps") or [None])[0]
         run_names = {"zone2": "Zone 2", "tempo": "Tempo", "interval": "İnterval"}
         next_run_txt = run_names.get((next_run or {}).get("kind"), "en eksik bara göre seçilir")
         next_run_txt = f"Quick Workout > {next_run_txt}" if next_run_txt in run_names.values() else next_run_txt
         if load_focus.get("primary_deficit") == "deload":
             next_run_txt = "yok; tüm barlar dolu ve düşmüyor, hafta sonuna kadar deload"
-        running_style_advice = (
-            f"Firstbeat yük dengesi: Düşük Aerobik %{low_pct:.0f} · Yüksek Aerobik %{high_pct:.0f} · Anaerobik %{an_pct:.0f}. "
-            f"En eksik bar: {focus_label}; sıradaki koşuyu buna göre seç. "
-            "Kapasite uygunsa koşu 2'den 3 güne çıkarılabilir (kuvvet 2 gün sabit)."
-        )
+        running_style_advice = "Kapasite uygunsa koşu 2'den 3 güne çıkarılabilir (kuvvet 2 gün sabit)."
 
         return {
             "current_tier_label": f"Kuvvet: Başlangıç–Orta ({squat_ratio:.2f}x VA) · Koşu: Orta Seviye (VO2 {vo2max:.1f})",
@@ -128,9 +117,6 @@ class ProgressionDebriefMixin:
                 "running_style_advice": running_style_advice,
             },
             "running_progression": {
-                "verdict": f"EN EKSİK BAR: {focus_short}",
-                "current_metrics": f"VO2 Max: {vo2max:.1f} · En İyi 5K: {latest_5k} · Kadans: {cadence} spm",
-                "load_balance": f"Düşük Aer: %{low_pct:.0f} · Yüksek Aer: %{high_pct:.0f} · Anaerobik: %{an_pct:.0f}",
                 "current_model": f"Plan: her koşu o günkü en eksik Firstbeat barını doldurur; antrenmanı saatte Quick Workout'tan seçersin (Zone 2 / Tempo / İnterval). Sıradaki: {next_run_txt}",
                 "next_milestone": f"Orta Vade: 5K < {self.get_goal_5k()['label']} ({self.get_goal_5k()['pace']}) · Zone 2 @ 6:00 /km altı",
                 "advice": running_style_advice,
