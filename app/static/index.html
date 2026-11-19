@@ -151,173 +151,128 @@
 
       <!-- OVERVIEW SUBPANE 1: 12 TEMEL GÖSTERGE -->
       <div data-subpane-group="overview" data-subpane="kpi12" class="single-screen-pane">
-        <!-- İlk Ekran 12 Temel Garmin Telemetri Göstergesi (Above-the-Fold Command Grid) -->
+        <!-- İlk Ekran 12 Temel Garmin Telemetri Göstergesi (Compact Command Grid) -->
         <section id="firstScreenTelemetrySection" aria-label="Ana Ekran 12 Temel Telemetri Göstergesi"
-          class="surface-ledger overflow-hidden h-full flex flex-col">
-          <div
-            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 grid-rows-3 gap-px bg-[var(--border-subtle)] flex-1 min-h-0">
-            <!-- 01. HRV -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+          class="surface-ledger overflow-hidden flex flex-col">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-[var(--border-subtle)]">
+            <!-- HRV -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">01 ·
-                  HRV</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">HRV</span>
               </div>
-              <p id="fs-hrv-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--
-                ms</p>
+              <p id="fs-hrv-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">-- ms</p>
               <div id="fs-hrv-bar"></div>
-              <p id="fs-hrv-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">
-                7G Ort: -- · RHR: --</p>
+              <p id="fs-hrv-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · RHR: --</p>
             </div>
 
-            <!-- 02. VO2 Max -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- VO2 Max -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">02 ·
-                  VO2 Max</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">VO2 Max</span>
               </div>
-              <p id="fs-vo2-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--
-              </p>
+              <p id="fs-vo2-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
               <div id="fs-vo2-bar"></div>
-              <p id="fs-vo2-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">
-                Trend: --</p>
+              <p id="fs-vo2-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">Trend: --</p>
             </div>
 
-            <!-- 03. Sleep Score -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- Sleep Score -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">03 ·
-                  Sleep Score</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Sleep Score</span>
               </div>
-              <p id="fs-sleepscore-val"
-                class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
+              <p id="fs-sleepscore-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
               <div id="fs-sleepscore-bar"></div>
-              <p id="fs-sleepscore-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: --</p>
+              <p id="fs-sleepscore-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: --</p>
             </div>
 
-            <!-- 04. Sleep Süre -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- Sleep Süre -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">04 ·
-                  Uyku Süresi</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Uyku Süresi</span>
               </div>
-              <p id="fs-sleephours-val"
-                class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--s --dk</p>
+              <p id="fs-sleephours-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--s --dk</p>
               <div id="fs-sleephours-bar"></div>
-              <p id="fs-sleephours-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · 93G:
-                --</p>
+              <p id="fs-sleephours-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · 93G: --</p>
             </div>
 
-            <!-- 05. REM Oranı -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- REM Oranı -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">05 ·
-                  REM Oranı</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">REM Oranı</span>
               </div>
-              <p id="fs-rem-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">
-                %--</p>
+              <p id="fs-rem-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">%--</p>
               <div id="fs-rem-bar"></div>
-              <p id="fs-rem-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">
-                7G REM: %-- · Derin: %--</p>
+              <p id="fs-rem-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">7G REM: %-- · Derin: %--</p>
             </div>
 
-            <!-- 06. Günlük Adım -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- Günlük Adım -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">06 ·
-                  Adım</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Adım</span>
               </div>
-              <p id="fs-steps-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">
-                --</p>
+              <p id="fs-steps-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
               <div id="fs-steps-bar"></div>
-              <p id="fs-steps-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- ·
-                Hedef: --</p>
+              <p id="fs-steps-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- · Hedef: --</p>
             </div>
 
-            <!-- 07. Acute Load -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- Acute Load -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">07 ·
-                  Acute Load</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Acute Load</span>
               </div>
-              <p id="fs-acuteload-val"
-                class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+              <p id="fs-acuteload-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
               <div id="fs-acuteload-bar"></div>
-              <p id="fs-acuteload-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Kronik: -- ·
-                Tünel: --</p>
+              <p id="fs-acuteload-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">Kronik: -- · Tünel: --</p>
             </div>
 
-            <!-- 08. Load Focus -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- Load Focus -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">08 ·
-                  Load Focus</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Load Focus</span>
               </div>
-              <p id="fs-loadfocus-val" class="font-mono text-sm sm:text-base font-bold tracking-tight truncate">--</p>
+              <p id="fs-loadfocus-val" class="font-mono text-xs sm:text-sm font-bold tracking-tight truncate">--</p>
               <div id="fs-loadfocus-bar"></div>
-              <p id="fs-loadfocus-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Düşük -- · Yüksek
-                -- · Anaer --</p>
+              <p id="fs-loadfocus-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">Düşük -- · Yüksek -- · Anaer --</p>
             </div>
 
-            <!-- 09. Günlük Stres -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- Günlük Stres -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">09 ·
-                  Stres</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Stres</span>
               </div>
-              <p id="fs-stress-val"
-                class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+              <p id="fs-stress-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">--</p>
               <div id="fs-stress-bar"></div>
-              <p id="fs-stress-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Son
-                Tam Gün: --</p>
+              <p id="fs-stress-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Son Tam Gün: --</p>
             </div>
 
-            <!-- 10. Training Readiness -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- Training Readiness -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">10 ·
-                  Readiness</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Readiness</span>
               </div>
-              <p id="fs-readiness-val"
-                class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
+              <p id="fs-readiness-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
               <div id="fs-readiness-bar"></div>
-              <p id="fs-readiness-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Sabah
-                BB: --</p>
+              <p id="fs-readiness-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Sabah BB: --</p>
             </div>
 
-            <!-- 11. 7 Gün Antrenman -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- 7 Gün Antrenman -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">11 ·
-                  7 Gün Antro</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">7 Gün Antro</span>
               </div>
-              <p id="fs-7d-workouts-val"
-                class="font-mono text-base sm:text-lg font-bold tabular-nums tracking-tight truncate">-- Seans · -- dk
-              </p>
+              <p id="fs-7d-workouts-val" class="font-mono text-sm sm:text-base font-bold tabular-nums tracking-tight truncate">-- Seans · -- dk</p>
               <div id="fs-7d-workouts-bar"></div>
-              <p id="fs-7d-workouts-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Top: -- km · --
-                kcal · Yük: --</p>
+              <p id="fs-7d-workouts-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">Top: -- km · -- kcal · Yük: --</p>
             </div>
 
-            <!-- 12. Günlük Kalori -->
-            <div class="bg-[var(--bg-surface)] p-3.5 sm:p-4 flex flex-col justify-between min-w-0 space-y-1.5">
+            <!-- Günlük Kalori -->
+            <div class="bg-[var(--bg-surface)] p-2.5 sm:p-3 flex flex-col justify-between min-w-0 space-y-1">
               <div class="flex items-center justify-between gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)] truncate">12 ·
-                  Kalori</span>
+                <span class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Kalori</span>
               </div>
-              <p id="fs-calories-val"
-                class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- kcal</p>
+              <p id="fs-calories-val" class="font-mono text-lg sm:text-xl font-bold tabular-nums tracking-tight truncate">-- kcal</p>
               <div id="fs-calories-bar"></div>
-              <p id="fs-calories-sub"
-                class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- ·
-                Bugün: --</p>
+              <p id="fs-calories-sub" class="font-mono text-[10px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- · Bugün: --</p>
             </div>
           </div>
         </section>
