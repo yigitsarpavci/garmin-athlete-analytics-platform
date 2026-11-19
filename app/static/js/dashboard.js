@@ -87,12 +87,19 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     );
   }
 
-  // 01. HRV (7 Günlük Bar Chart + Durum)
+  // 01. HRV (7 Günlük Bar Chart + 7G Ort Renk İndikatörü)
   const hrvVal = Number(data.overnight_hrv ?? 43);
   const hrvBase = Number(data.hrv_7d ?? 46) || 46;
+  const hrvStLower = String(data.hrv_status || '').toLowerCase();
+  const hrvAvgColor = (hrvStLower.includes('zayıf') || hrvStLower.includes('poor') || hrvBase < 32)
+    ? '#ef4444'
+    : ((hrvStLower.includes('düşük') || hrvStLower.includes('low') || hrvBase < 38) ? '#f59e0b' : '#22c55e');
   setText('fs-hrv-val', `${data.overnight_hrv !== undefined ? Math.round(data.overnight_hrv) : '--'} ms`);
   setText('fs-hrv-badge', data.hrv_status || 'Dengeli');
-  setText('fs-hrv-sub', `7G Ort: ${data.hrv_7d ?? '--'} ms · RHR: ${data.resting_hr ?? '--'} bpm`);
+  const hrvSubEl = document.getElementById('fs-hrv-sub');
+  if (hrvSubEl) {
+    hrvSubEl.innerHTML = `<span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:${hrvAvgColor};display:inline-block" aria-hidden="true"></span><span>7G Ort: <strong style="color:${hrvAvgColor}">${escapeHtml(String(data.hrv_7d ?? '--'))} ms</strong></span></span> · RHR: ${escapeHtml(String(data.resting_hr ?? '--'))} bpm`;
+  }
   const hrvSeries = Array.isArray(data.hrv_7d_series) ? data.hrv_7d_series : [];
   const hrvBarEl = document.getElementById('fs-hrv-bar');
   if (hrvBarEl) {
@@ -101,6 +108,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
       const minV = vals.length ? Math.max(10, Math.min(...vals) - 6) : 25;
       const maxV = vals.length ? Math.max(...vals, hrvBase + 5) : 65;
       const span = Math.max(10, maxV - minV);
+      const avgBottomPx = Math.max(10, Math.min(22, 9 + ((hrvBase - minV) / span) * 13));
       const barsHtml = hrvSeries.map((d, idx) => {
         const v = Number(d.hrv) || 0;
         const hPct = v > 0 ? Math.max(18, Math.min(100, ((v - minV) / span) * 100)) : 12;
@@ -117,7 +125,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
           <span class="hrv-7d-lbl">${escapeHtml(dayLbl)}</span>
         </div>`;
       }).join('');
-      hrvBarEl.innerHTML = `<div class="hrv-7d-wrap"><div class="hrv-7d-bars">${barsHtml}</div></div>`;
+      hrvBarEl.innerHTML = `<div class="hrv-7d-wrap"><div class="hrv-7d-bars">${barsHtml}<span class="hrv-7d-avg-line" style="bottom:${avgBottomPx.toFixed(0)}px;color:${hrvAvgColor}" title="7G Ort: ${escapeHtml(String(data.hrv_7d ?? '--'))} ms"></span></div></div>`;
     } else {
       const hrvRatioPct = Math.max(8, Math.min(92, 50 + ((hrvVal - hrvBase) / Math.max(10, hrvBase * 0.4)) * 35));
       const hrvSt = String(data.hrv_status || '').toLowerCase();

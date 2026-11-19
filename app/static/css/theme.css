@@ -747,12 +747,22 @@ html.dark .text-emerald-300 {
   width: 100%;
 }
 .hrv-7d-bars {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 3px;
   align-items: end;
   height: 24px;
   padding: 2px 0 0;
+}
+.hrv-7d-avg-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1.5px dashed currentColor;
+  opacity: 0.78;
+  pointer-events: none;
+  z-index: 2;
 }
 .hrv-7d-col {
   display: flex;
