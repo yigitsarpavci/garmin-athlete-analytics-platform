@@ -124,7 +124,8 @@
           <button type="button" onclick="closeAllNavDropdowns(); setTab('settings')" id="nav-settings" class="nav-tab">Saat Ayarları</button>
         </nav>
 
-        <div class="flex items-center gap-1.5 shrink-0 py-1">
+        <div class="flex items-center gap-2 shrink-0 py-1">
+          <span id="firstScreenDateBadge" class="stamp-tag stamp-accent hidden md:inline-flex">Son Güncelleme: --</span>
           <button type="button" onclick="syncGarminData()" id="syncBtn" class="header-btn px-2.5 py-1 text-[11px]"
             style="min-block-size:1.95rem" title="Garmin Connect verilerini şimdi eşitle">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[var(--text-secondary)]" stroke-width="1.5"
@@ -147,11 +148,6 @@
 
     <!-- 1. GENEL BAKIŞ (3 ALT SEKME: 12 TEMEL GÖSTERGE / GÜNLÜK DURUM & KOTA / PERFORMANS & TREND) -->
     <div id="section-overview" class="single-screen-section gap-2.5">
-
-      <!-- Minimal Single-Row Status Strip for Overview -->
-      <div class="flex items-center justify-end gap-2 shrink-0">
-        <span id="firstScreenDateBadge" class="stamp-tag stamp-accent">Son Kayıt: --</span>
-      </div>
 
       <!-- OVERVIEW SUBPANE 1: 12 TEMEL GÖSTERGE -->
       <div data-subpane-group="overview" data-subpane="kpi12" class="single-screen-pane">

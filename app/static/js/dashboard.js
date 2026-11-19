@@ -74,7 +74,16 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
       : Number(val).toFixed(dec).replace('.', ',')
   );
 
-  setText('firstScreenDateBadge', `Son Kayıt: ${data.date || '--'}${data.is_partial_day ? ' (Kısmi Gün)' : ''}`);
+  const formatTrDateShort = (iso) => {
+    if (!iso || typeof iso !== 'string' || iso.length < 10) return '--';
+    const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+    const parts = iso.slice(0, 10).split('-');
+    if (parts.length !== 3) return iso;
+    const mIdx = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    return `${day} ${months[mIdx] || parts[1]} ${parts[0]}`;
+  };
+  setText('firstScreenDateBadge', `Son Güncelleme: ${formatTrDateShort(data.date)}${data.is_partial_day ? ' · Bugün' : ''}`);
   const tsText = (curLoad && curLoad.status_tr) || data.training_status || 'Form Korunuyor';
   const tsBadgeEl = document.getElementById('firstScreenTrainingStatusBadge');
   if (tsBadgeEl) {
