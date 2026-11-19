@@ -94,12 +94,12 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass, extraHtml 
         </p>
         <div class="space-y-1.5">
           ${remItems.map(item => {
-            const meta = item.target_pace || item.duration || '';
-            const detail = item.target_hr || item.exercises_summary || item.coaching_note || '';
-            const prioBadge = item.prioritized_from_last_week
-              ? `<span class="stamp-tag stamp-ochre">GEÇEN HAFTADAN ÖNCELİKLİ</span>`
-              : '';
-            return `<div class="w-full text-left tint-panel px-2 py-1.5">
+        const meta = item.target_pace || item.duration || '';
+        const detail = item.target_hr || item.exercises_summary || item.coaching_note || '';
+        const prioBadge = item.prioritized_from_last_week
+          ? `<span class="stamp-tag stamp-ochre">GEÇEN HAFTADAN ÖNCELİKLİ</span>`
+          : '';
+        return `<div class="w-full text-left tint-panel px-2 py-1.5">
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="stamp-tag stamp-accent">${escapeHtml(item.short_label || item.badge || item.type || 'Kalan')}</span>
@@ -109,7 +109,7 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass, extraHtml 
                 ${detail ? `<p class="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-snug whitespace-normal break-words">${escapeHtml(detail)}</p>` : ''}
               </div>
             </div>`;
-          }).join('')}
+      }).join('')}
         </div>
       </div>`
       : (!isDone && bucket.status_text
@@ -186,7 +186,7 @@ function selectProtocolDay(mode) {
   try {
     const p = Array.isArray(cachedDailyProtocols) ? cachedDailyProtocols[mode] : null;
     if (p && p.day_code) localStorage.setItem('garmin_active_protocol_code', p.day_code);
-  } catch (_) {}
+  } catch (_) { }
   renderDailyProtocols(cachedDailyProtocols);
 }
 
@@ -223,7 +223,7 @@ function renderDailyProtocols(protocols) {
     if (savedCode) {
       savedIdx = sortedIndices.find(idx => protocols[idx]?.day_code === savedCode) ?? -1;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   let activeIdx = (typeof selectedProtocolMode === 'number' && sortedIndices.includes(selectedProtocolMode))
     ? selectedProtocolMode
@@ -241,8 +241,14 @@ function renderDailyProtocols(protocols) {
   }).join('')}</div>`;
 
   const p = protocols[activeIdx];
+  const maxGymRows = Math.max(0, ...sortedIndices.map(idx => (protocols[idx]?.exercises || []).length));
   let exerciseHtml = '';
   if (p.category === 'gym') {
+    const exList = p.exercises || [];
+    const padCount = Math.max(0, maxGymRows - exList.length);
+    const padRows = padCount > 0
+      ? Array.from({ length: padCount }, () => `<tr aria-hidden="true" class="border-transparent"><td colspan="4" class="py-1 px-1.5"><span class="stamp-tag invisible">&nbsp;</span></td></tr>`).join('')
+      : '';
     exerciseHtml = `
 <div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region">
   <table class="w-full text-left text-[11px]">
@@ -260,7 +266,7 @@ function renderDailyProtocols(protocols) {
       </tr>
     </thead>
     <tbody class="divide-y divide-[var(--border-subtle)]">
-      ${(p.exercises || []).map(ex => `
+      ${exList.map(ex => `
         <tr class="hover:bg-[var(--bg-subtle)]">
           <td class="py-1 px-1.5 font-mono font-semibold text-[var(--text-muted)]">${ex.num}</td>
           <td class="py-1 px-1.5 font-semibold">${escapeHtml(ex.name)}</td>
@@ -270,7 +276,7 @@ function renderDailyProtocols(protocols) {
             ${ex.current_achieved ? `<span class="font-mono text-[11px] text-[var(--text-muted)] ml-1">Son: ${escapeHtml(ex.current_achieved)}</span>` : ''}
           </td>
         </tr>
-      `).join('')}
+      `).join('')}${padRows}
     </tbody>
   </table>
 </div>
