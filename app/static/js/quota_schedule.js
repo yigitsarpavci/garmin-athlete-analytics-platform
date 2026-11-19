@@ -341,25 +341,26 @@ function renderDailyProtocols(protocols) {
   if (!container || !protocols || !Array.isArray(protocols) || !protocols.length) return;
   cachedDailyProtocols = protocols;
 
-  const orderMap = { tuesday: 0, saturday: 1, thursday: 2, monday: 3, friday: 4, sunday: 5, wednesday: 6 };
-  const sortedIndices = protocols.map((_, idx) => idx).sort((a, b) => {
-    const oa = orderMap[protocols[a]?.day_code] ?? (10 + a);
-    const ob = orderMap[protocols[b]?.day_code] ?? (10 + b);
-    return oa - ob;
-  });
+  const orderMap = { tuesday: 0, saturday: 1, thursday: 2, monday: 3 };
+  const sortedIndices = protocols
+    .map((_, idx) => idx)
+    .filter(idx => Object.prototype.hasOwnProperty.call(orderMap, protocols[idx]?.day_code))
+    .sort((a, b) => orderMap[protocols[a].day_code] - orderMap[protocols[b].day_code]);
 
   let savedIdx = -1;
-  if (typeof selectedProtocolMode !== 'number') {
-    try {
-      const savedCode = localStorage.getItem('garmin_active_protocol_code');
-      if (savedCode) savedIdx = protocols.findIndex(p => p.day_code === savedCode);
-    } catch (_) {}
-  }
+  try {
+    const savedCode = localStorage.getItem('garmin_active_protocol_code');
+    if (savedCode && Object.prototype.hasOwnProperty.call(orderMap, savedCode)) {
+      savedIdx = protocols.findIndex(p => p.day_code === savedCode);
+    }
+  } catch (_) {}
 
-  let activeIdx = typeof selectedProtocolMode === 'number' && protocols[selectedProtocolMode]
+  let activeIdx = (typeof selectedProtocolMode === 'number' && sortedIndices.includes(selectedProtocolMode))
     ? selectedProtocolMode
-    : (savedIdx >= 0 ? savedIdx : (sortedIndices.find(idx => protocols[idx]?.quota_status === 'remaining') ?? sortedIndices[0]));
-  if (activeIdx < 0 || activeIdx >= protocols.length) activeIdx = sortedIndices[0] ?? 0;
+    : (sortedIndices.includes(savedIdx)
+      ? savedIdx
+      : (sortedIndices.find(idx => protocols[idx]?.quota_status === 'remaining') ?? sortedIndices[0] ?? 0));
+  if (!sortedIndices.includes(activeIdx)) activeIdx = sortedIndices[0] ?? 0;
   selectedProtocolMode = activeIdx;
 
   if (tabsEl) {
