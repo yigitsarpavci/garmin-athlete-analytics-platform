@@ -1,13 +1,5 @@
 /* Garmin Athlete IQ — Overview, Sports Guidance, Training Load & Dynamic Activity Log */
 
-function setCalcPreset(kg) {
-  const input = document.getElementById('calcTargetInput');
-  if (input) {
-    input.value = kg;
-    runCalculator();
-  }
-}
-
 function getDynamicSportLabel(sport, sportTr = null) {
   if (sportTr) return sportTr;
   const spNames = {
@@ -84,17 +76,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     return `${day} ${months[mIdx] || parts[1]} ${parts[0]}`;
   };
   setText('firstScreenDateBadge', `Son Güncelleme: ${formatTrDateShort(data.date)}${data.is_partial_day ? ' · Bugün' : ''}`);
-  const tsText = (curLoad && curLoad.status_tr) || data.training_status || 'Form Korunuyor';
-  const tsBadgeEl = document.getElementById('firstScreenTrainingStatusBadge');
-  if (tsBadgeEl) {
-    tsBadgeEl.textContent = `Training Status: ${tsText}`;
-    const tsLower = String(tsText).toLowerCase();
-    tsBadgeEl.className = 'stamp-tag ' + (
-      tsLower.includes('verimsiz') || tsLower.includes('unproductive') || tsLower.includes('detraining') || tsLower.includes('zorlan')
-        ? 'stamp-amber'
-        : 'stamp-moss'
-    );
-  }
 
   // 01. HRV (7 Günlük Bar Chart + 7G Ort Renk İndikatörü)
   const hrvVal = Number(data.overnight_hrv ?? 43);
@@ -104,7 +85,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     ? '#C96A5B'
     : ((hrvStLower.includes('düşük') || hrvStLower.includes('low') || hrvBase < 38) ? '#C99A49' : '#5E8F74');
   setText('fs-hrv-val', `${data.overnight_hrv !== undefined ? Math.round(data.overnight_hrv) : '--'} ms`);
-  setText('fs-hrv-badge', data.hrv_status || 'Dengeli');
   const hrvSubEl = document.getElementById('fs-hrv-sub');
   if (hrvSubEl) {
     hrvSubEl.innerHTML = `<span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:${hrvAvgColor};display:inline-block" aria-hidden="true"></span><span>7G Ort: <strong style="color:${hrvAvgColor}">${escapeHtml(String(data.hrv_7d ?? '--'))} ms</strong></span></span> · RHR (Günlük): ${escapeHtml(String(data.resting_hr ?? '--'))} bpm`;
@@ -156,7 +136,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     ? `${Number(vt.delta) > 0 ? '+' : ''}${fmtDec(vt.delta, 1)}`
     : '0,0';
   setText('fs-vo2-val', fmtDec(vo2, 1));
-  setText('fs-vo2-badge', `${vtArrow} ${vtLabel}`);
   setText('fs-vo2-sub', `Trend: ${vtArrow} ${vtDelta} (${fmtDec(vt.prev ?? vo2Num, 1)}→${fmtDec(vo2Num, 1)})`);
   _renderGarminGauge('fs-vo2-bar',
     [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }, { cls: 'seg-purple' }],
@@ -168,7 +147,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const scNum = sc ?? 80;
   const scActive = scNum < 60 ? 0 : (scNum < 80 ? 1 : (scNum < 90 ? 2 : 3));
   setText('fs-sleepscore-val', sc !== null ? `${sc} / 100` : '-- / 100');
-  setText('fs-sleepscore-badge', sc !== null ? (sc >= 80 ? 'İyi' : (sc >= 65 ? 'Orta' : 'Düşük')) : '--');
   setText('fs-sleepscore-sub', `7G Ort: ${fmtDec(data.sleep_score_7d, 1)}`);
   _renderGarminGauge('fs-sleepscore-bar',
     [{ cls: 'seg-red', flex: 1.5 }, { cls: 'seg-amber', flex: 1.3 }, { cls: 'seg-green', flex: 1.2 }, { cls: 'seg-blue', flex: 1 }],
@@ -180,7 +158,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const slpPct = ((slpH - 4.0) / (9.5 - 4.0)) * 100;
   const slpActive = slpH < 5.5 ? 0 : (slpH < 7.0 ? 1 : (slpH <= 9.0 ? 2 : 3));
   setText('fs-sleephours-val', formatHm(data.sleep_hours));
-  setText('fs-sleephours-badge', `${fmtDec(data.sleep_hours, 2)} sa`);
   setText('fs-sleephours-sub', `7G Ort: ${formatHm(data.sleep_hours_7d)} · 93G Ort: ${fmtDec(data.sleep_duration_hours, 2)} sa`);
   _renderGarminGauge('fs-sleephours-bar',
     [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.6 }, { cls: 'seg-blue', flex: 0.7 }],
@@ -195,7 +172,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const remBarPct = ((remNum - 8) / (30 - 8)) * 100;
   const remActive = remNum < 12 ? 0 : (remNum < 18 ? 1 : (remNum <= 25 ? 2 : 3));
   setText('fs-rem-val', `%${fmtDec(remPct, 1)}`);
-  setText('fs-rem-badge', formatHm(data.rem_hours));
   setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin (Günlük): %${fmtDec(data.deep_sleep_pct, 1)} (${fmtDec(data.deep_hours, 1)}s)`);
   _renderGarminGauge('fs-rem-bar',
     [{ cls: 'seg-red', flex: 0.9 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.5 }, { cls: 'seg-blue', flex: 0.9 }],
@@ -207,7 +183,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const stepGoal = Math.max(1, Number(data.step_goal ?? 10000));
   const stepPct = Math.max(0, Math.min(100, (stepCur / stepGoal) * 100));
   setText('fs-steps-val', formatTrInt(data.steps));
-  setText('fs-steps-badge', `7G Ort: ${formatTrInt(data.steps_7d_avg)}`);
   setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})`);
   const stepBarEl = document.getElementById('fs-steps-bar');
   if (stepBarEl) {
@@ -231,7 +206,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const acwrBarPct = ((acwrNum - 0.5) / (1.8 - 0.5)) * 100;
   const acwrActive = acwrNum < 0.8 ? 0 : (acwrNum <= 1.3 ? 1 : (acwrNum <= 1.5 ? 2 : 3));
   setText('fs-acuteload-val', formatTrInt(acuteVal));
-  setText('fs-acuteload-badge', `ACWR ${fmtDec(acwrNum, 2)}`);
   setText('fs-acuteload-sub', `Kronik (28G): ${formatTrInt(chronicVal)} · Tünel: ${tMin}–${tMax}`);
   _renderGarminGauge('fs-acuteload-bar',
     [{ cls: 'seg-amber', flex: 0.9 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }, { cls: 'seg-red', flex: 0.9 }],
@@ -243,9 +217,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const lowPct = Number(lf.low_aerobic_pct ?? (lf.aerobic_low && lf.aerobic_low.pct_of_target) ?? 0);
   const highPct = Number(lf.high_aerobic_pct ?? (lf.aerobic_high && lf.aerobic_high.pct_of_target) ?? 0);
   const anPct = Number(lf.anaerobic_pct ?? (lf.anaerobic && lf.anaerobic.pct_of_target) ?? 0);
-  const balMatch = String(lf.balance_phrase || 'Dengeli').match(/\(([^)]+)\)/);
   setText('fs-loadfocus-val', lf.recommended_focus_label || 'Anaerobik & Laktat İntervali');
-  setText('fs-loadfocus-badge', balMatch ? balMatch[1] : String(lf.balance_phrase || 'Dengeli').split(' ')[0]);
   setText('fs-loadfocus-sub', `Düşük %${fmtDec(lowPct, 0)} · Yüksek %${fmtDec(highPct, 0)} · Anaer %${fmtDec(anPct, 0)}`);
   const lfBarEl = document.getElementById('fs-loadfocus-bar');
   if (lfBarEl) {
@@ -272,7 +244,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const stNum = stressVal ?? 25;
   const stActive = stNum <= 25 ? 0 : (stNum <= 50 ? 1 : (stNum <= 75 ? 2 : 3));
   setText('fs-stress-val', stressVal !== null ? String(stressVal) : '--');
-  setText('fs-stress-badge', data.stress_status || '--');
   setText('fs-stress-sub', `7G Ort: ${fmtDec(data.stress_7d_avg, 1)} · Son Tam Gün: ${fmtDec(data.stress_prev_full_day, 0)}`);
   _renderGarminGauge('fs-stress-bar',
     [{ cls: 'seg-blue' }, { cls: 'seg-green' }, { cls: 'seg-amber' }, { cls: 'seg-red' }],
@@ -286,7 +257,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const recHVal = data.recovery_time_h !== undefined && data.recovery_time_h !== null ? Number(data.recovery_time_h) : 0;
   const recStr = recHVal <= 0.1 ? '0 sa' : `${fmtDec(recHVal, 1)} sa`;
   setText('fs-readiness-val', rdVal !== null ? `${rdVal} / 100` : '-- / 100');
-  setText('fs-readiness-badge', data.readiness_status || '--');
   setText('fs-readiness-sub', `7G Ort: ${fmtDec(data.readiness_7d_avg, 1)} · BB (Günlük): ${data.bb_wake ?? '--'} · Toparlanma: ${recStr}`);
   _renderGarminGauge('fs-readiness-bar',
     [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }],
@@ -297,7 +267,6 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const w7 = data.workouts_7d || {};
   const w7Cnt = Number(w7.count ?? 0);
   setText('fs-7d-workouts-val', `${w7Cnt} Seans · ${formatTrInt(w7.total_duration_min ?? 0)} dk`);
-  setText('fs-7d-workouts-badge', w7.breakdown_tr || '0 Seans');
   setText('fs-7d-workouts-sub', `Top: ${fmtDec(w7.total_distance_km ?? 0, 1)} km · ${formatTrInt(w7.total_calories ?? 0)} kcal · Yük: ${fmtDec(w7.total_load ?? 0, 0)}`);
   const w7El = document.getElementById('fs-7d-workouts-bar');
   if (w7El) {
@@ -323,12 +292,10 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   if (data.is_partial_day) {
     setText('fs-calories-title', 'Kalori · 7G Ort');
     setText('fs-calories-val', `${formatTrInt(data.kcal_7d_avg)} kcal`);
-    setText('fs-calories-badge', '7G Ort.');
     setText('fs-calories-sub', `Son Tam Gün: ${formatTrInt(data.prev_full_day_kcal)} (Aktif ${formatTrInt(data.prev_full_day_active_kcal)}) · Bugün: ${formatTrInt(data.total_kcal)}`);
   } else {
     setText('fs-calories-title', 'Kalori · Günlük');
     setText('fs-calories-val', `${formatTrInt(data.total_kcal)} kcal`);
-    setText('fs-calories-badge', `Aktif: ${formatTrInt(data.active_kcal)}`);
     setText('fs-calories-sub', `Bazal (Günlük): ${formatTrInt(data.bmr_kcal)} · 7G Ort: ${formatTrInt(data.kcal_7d_avg)} · Son Tam Gün: ${formatTrInt(data.prev_full_day_kcal)}`);
   }
   const calEl = document.getElementById('fs-calories-bar');
@@ -360,25 +327,6 @@ function renderOverview(data) {
 
   renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVal, acwrNum, tMin, tMax);
 
-  const ifsScore = document.getElementById('inFocusSleepScore');
-  if (ifsScore) ifsScore.textContent = data.sleep_score !== undefined ? Math.round(data.sleep_score) : '--';
-  const ifsHours = document.getElementById('inFocusSleepHours');
-  if (ifsHours && data.sleep_hours !== undefined) {
-    ifsHours.textContent = formatHm(data.sleep_hours);
-  }
-  const ifsQ = document.getElementById('inFocusSleepQuality');
-  if (ifsQ && data.sleep_score !== undefined) {
-    ifsQ.textContent = data.sleep_score >= 80 ? 'İyi' : (data.sleep_score >= 65 ? 'Orta' : 'Düşük');
-  }
-  const ifsStages = document.getElementById('inFocusSleepStages');
-  if (ifsStages) {
-    const deepStr = data.deep_hours !== undefined ? `${Number(data.deep_hours).toFixed(1)}s` : '--';
-    const deepPctStr = data.deep_sleep_pct !== undefined ? `${Math.round(Number(data.deep_sleep_pct))}` : '--';
-    const remStr = data.rem_hours !== undefined ? `${Number(data.rem_hours).toFixed(1)}s` : '--';
-    const remPctStr = data.rem_sleep_pct !== undefined ? `${Math.round(Number(data.rem_sleep_pct))}` : '--';
-    ifsStages.textContent = `Derin: ${deepStr} (%${deepPctStr}) · REM: %${remPctStr} (${remStr})`;
-  }
-
   const ifsStatus = document.getElementById('inFocusTrainingStatus');
   if (ifsStatus && (curLoad.status_tr || data.training_status)) {
     const rawSt = curLoad.status_tr || data.training_status;
@@ -393,36 +341,6 @@ function renderOverview(data) {
     const anP = lf.anaerobic_pct !== undefined ? Math.round(Number(lf.anaerobic_pct)) : '--';
     ifsSub.textContent = `ACWR ${acwrNum.toFixed(2)} · Düşük %${lowP} / Yüksek %${highP} / Anaer %${anP}`;
   }
-  const ifsVo2 = document.getElementById('inFocusVo2Max');
-  if (ifsVo2) ifsVo2.textContent = vo2;
-
-  const hrvWakeEl = document.getElementById('inFocusHrvWakeBb');
-  if (hrvWakeEl) {
-    const bb = data.bb_wake !== undefined ? data.bb_wake : '--';
-    const hrv = data.overnight_hrv !== undefined ? data.overnight_hrv : '--';
-    hrvWakeEl.textContent = `Sabah BB: ${bb} · ${hrv} ms`;
-  }
-  const stressRespEl = document.getElementById('inFocusStressResp');
-  if (stressRespEl) {
-    const st = data.stress !== undefined ? Math.round(data.stress) : '--';
-    const rsp = data.resp_sleep !== undefined ? data.resp_sleep : '--';
-    stressRespEl.textContent = `Stres: ${st} · Solunum: ${rsp} br/dk`;
-  }
-  const inFocusStepsEl = document.getElementById('inFocusSteps');
-  if (inFocusStepsEl) {
-    const recH = data.recovery_time_h !== undefined ? Number(data.recovery_time_h).toFixed(1).replace('.', ',') : '0,0';
-    inFocusStepsEl.textContent = `Adım: ${formatTrInt(data.steps)} (7G: ${formatTrInt(data.steps_7d_avg)}) · Toparlanma: ${recH} sa`;
-  }
-  const heroRecBadge = document.getElementById('heroRecoveryBadge');
-  if (heroRecBadge) {
-    const recH = data.recovery_time_h !== undefined ? Number(data.recovery_time_h) : 0;
-    heroRecBadge.textContent = recH <= 0.1 ? 'Toparlanma: 0 sa' : `Toparlanma: ${recH.toFixed(1).replace('.', ',')} sa`;
-  }
-  const heroStepsMeta = document.getElementById('heroStepsMeta');
-  if (heroStepsMeta) {
-    const tsLabel = (curLoad && curLoad.status_tr) || data.training_status || '--';
-    heroStepsMeta.textContent = `Adım: ${formatTrInt(data.steps)} / ${formatTrInt(data.step_goal)} · ${tsLabel}`;
-  }
 
   const kw = document.getElementById('kpi-weight');
   if (kw && data.weight !== undefined) kw.textContent = String(data.weight).replace('.', ',') + ' kg';
@@ -430,8 +348,6 @@ function renderOverview(data) {
   if (kwb && data.total_loss_kg !== undefined) kwb.textContent = `-${String(data.total_loss_kg).replace('.', ',')} kg`;
   const kwbmi = document.getElementById('kpi-weight-bmi');
   if (kwbmi && data.bmi !== undefined) kwbmi.innerHTML = `VKİ: <strong class="text-[var(--text-primary)] font-semibold">${data.bmi}</strong>`;
-  const kwtgt = document.getElementById('kpi-weight-target');
-  if (kwtgt && data.target_weight !== undefined) kwtgt.textContent = `Hedef: ${String(data.target_weight).replace('.', ',')} kg`;
   const kwbar = document.getElementById('kpi-weight-bar');
   if (kwbar && data.loss_pct !== undefined) {
     kwbar.style.width = `${Math.max(5, Math.min(100, Number(data.loss_pct)))}%`;
@@ -444,129 +360,12 @@ function renderOverview(data) {
     k5.textContent = parts[0] || '--:--';
     if (k5p && parts.length > 1) k5p.textContent = parts.slice(1).join(' ');
   }
-  const k5cad = document.getElementById('kpi-5k-cad');
-  if (k5cad && data.latest_cadence) k5cad.textContent = `${data.latest_cadence} spm`;
-
-  const ke = document.getElementById('kpi-ef');
-  const efVal = data.guidance && data.guidance.running && data.guidance.running.efficiency_factor ? data.guidance.running.efficiency_factor : '1.03';
-  if (ke) ke.textContent = efVal;
-  const kehrv = document.getElementById('kpi-ef-hrv');
-  if (kehrv) kehrv.innerHTML = `Gece HRV: <strong class="text-[var(--text-primary)] font-semibold">${data.overnight_hrv ?? '--'} ms</strong>`;
-  const kerhr = document.getElementById('kpi-ef-rhr');
-  if (kerhr) kerhr.textContent = `RHR: ${data.resting_hr ?? '--'} bpm`;
-
-  const kl = document.getElementById('kpi-load');
-  if (kl) kl.textContent = acuteVal;
-  const klb = document.getElementById('kpi-acwr-badge');
-  if (klb) klb.textContent = `ACWR ${acwrNum.toFixed(2)}`;
-  const klt = document.getElementById('kpi-tunnel-text');
-  if (klt) {
-    const inTunnel = acuteVal >= tMin && acuteVal <= tMax;
-    klt.innerHTML = `Tünel: ${tMin}–${tMax} (<strong class="${inTunnel ? 'moss-text' : 'ochre-text'} font-semibold">${inTunnel ? 'Optimal' : 'Takipte'}</strong>)`;
-  }
-  const klc = document.getElementById('kpi-chronic-text');
-  if (klc) klc.textContent = `Kronik: ${chronicVal}`;
-  const klbar = document.getElementById('kpi-load-bar');
-  if (klbar && tMax > 0) klbar.style.width = `${Math.max(10, Math.min(100, Math.round((acuteVal / tMax) * 100)))}%`;
-
-  const score = data.readiness_score || 77;
-  const heroVal = document.getElementById('heroReadinessVal');
-  if (heroVal) heroVal.textContent = score + "%";
-
-  const circle = document.getElementById('readinessSvgCircle');
-  if (circle) {
-    const circumference = 251.32;
-    circle.style.strokeDashoffset = (circumference - (circumference * score / 100)).toFixed(1);
-    if (score >= 70) {
-      circle.setAttribute('class', 'moss-text transition-all duration-1000');
-    } else if (score >= 40) {
-      circle.setAttribute('class', 'ochre-text transition-all duration-1000');
-    } else {
-      circle.setAttribute('class', 'crimson-text transition-all duration-1000');
-    }
-  }
-
-  if (data.recommendation) {
-    const db = document.getElementById('decisionBadge');
-    if (db) db.textContent = data.recommendation.status.toUpperCase();
-    const dt = document.getElementById('decisionTitle');
-    if (dt) dt.textContent = data.recommendation.summary;
-    const dd = document.getElementById('decisionDetail');
-    if (dd) dd.textContent = data.recommendation.suggestion;
-  }
-
-  const mBody = document.getElementById('overviewMilestonesBody');
-  if (mBody && data.milestones) {
-    mBody.innerHTML = '';
-    data.milestones.forEach(m => {
-      const tr = document.createElement('tr');
-      tr.className = "hover:bg-[var(--bg-subtle)] transition";
-      tr.innerHTML = `
-<td class="py-3 px-4 font-semibold">${escapeHtml(m.level)}</td>
-<td class="py-3 px-4 font-mono font-semibold accent-text tabular-nums">${m.target_kg} kg <span class="text-[var(--text-muted)] font-normal">(${m.target_bmi})</span></td>
-<td class="py-3 px-4 font-mono text-[var(--text-secondary)] tabular-nums">${m.diff_kg} kg</td>
-<td class="py-3 px-4 font-mono font-semibold tabular-nums">${m.days_current} Gün <span class="text-[var(--text-muted)] font-normal">(${escapeHtml(m.target_date_current)})</span></td>
-<td class="py-3 px-4 font-mono text-[var(--text-secondary)] tabular-nums">${m.days_optimal} Gün <span class="text-[var(--text-muted)]">(${escapeHtml(m.target_date_optimal)})</span></td>
-<td class="py-3 px-4 font-mono font-semibold moss-text tabular-nums">${escapeHtml(m.expected_5k)}</td>
-<td class="py-3 px-4 font-mono text-[var(--text-secondary)] tabular-nums">${escapeHtml(m.expected_vo2)}</td>
-      `;
-      mBody.appendChild(tr);
-    });
-  }
 
   if (data.biometrics_93d && typeof render93dBiometrics === 'function') {
     render93dBiometrics(data.biometrics_93d);
   }
-  const calcMaxLbl = document.getElementById('calcMaxWeightLabel');
-  const calcInputEl = document.getElementById('calcTargetInput');
-  if (data.weight !== undefined) {
-    if (calcMaxLbl) calcMaxLbl.textContent = `${Number(data.weight).toFixed(1)} kg`;
-    if (calcInputEl) calcInputEl.max = String(Number(data.weight).toFixed(1));
-  }
-  const runsBadge = document.getElementById('analyticsRunsBadge');
-  if (runsBadge && data.latest_5k) {
-    const m = String(data.latest_5k).match(/\(([^)]+)\)/);
-    runsBadge.textContent = `${m ? m[1] : data.latest_5k} · ${data.latest_cadence || 162} spm`;
-  }
-  const slpBadge = document.getElementById('analyticsSleepBadge');
-  if (slpBadge) {
-    const slpAvg = data.sleep_duration_hours !== undefined ? String(Number(data.sleep_duration_hours).toFixed(2)).replace('.', ',') : '--';
-    const slpSc = data.sleep_score !== undefined ? Math.round(data.sleep_score) : '--';
-    slpBadge.textContent = `Ort: ${slpAvg} sa · ${slpSc}`;
-  }
   renderWeeklyScheduleTable(data.schedule);
   if (data.weekly_quota) renderWeeklyQuotaPanels(data.weekly_quota);
-}
-
-async function runCalculator() {
-  const targetInput = document.getElementById('calcTargetInput');
-  const paceSelect = document.getElementById('calcPaceSelect');
-  if (!targetInput || !paceSelect) return;
-
-  const targetKg = parseFloat(targetInput.value);
-  const weeklyPace = parseFloat(paceSelect.value);
-
-  document.getElementById('calcTargetVal').textContent = targetKg.toFixed(1) + " kg";
-  document.getElementById('calcPaceVal').textContent = "-" + weeklyPace.toFixed(2) + " kg/hf";
-
-  try {
-    const res = await fetch('/api/calculator', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target_kg: targetKg, weekly_pace_kg: weeklyPace })
-    });
-    const resData = await res.json();
-
-    document.getElementById('calcDaysResult').textContent = resData.days_needed + " Gün";
-    document.getElementById('calcDateResult').textContent = "(" + resData.target_date + ")";
-    document.getElementById('calcDiffResult').textContent = "-" + resData.remaining_kg + " kg";
-    document.getElementById('calcBmiResult').textContent = resData.target_bmi;
-    document.getElementById('calc5kResult').textContent = resData.expected_5k.split(' ')[0];
-    document.getElementById('calcVo2Result').textContent = resData.expected_vo2.split(' ')[0];
-    document.getElementById('calcDeficitResult').textContent = "~" + Math.round(weeklyPace * 1000) + " kcal";
-  } catch (e) {
-    console.error(e);
-  }
 }
 
 function _renderBranchSummaryInto(containerId, sp, iconName) {
@@ -725,28 +524,6 @@ function renderGymHistory(gym) {
     });
   }
   if (typeof refreshIcons === 'function') refreshIcons();
-}
-
-function renderSameDaySequence(seqList) {
-  const sBody = document.getElementById('sameDayTableBody');
-  if (!sBody || !Array.isArray(seqList)) return;
-  sBody.innerHTML = '';
-  seqList.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.className = item.is_recommended
-      ? "hover:bg-[var(--bg-subtle)] transition"
-      : "bg-[var(--crimson-soft)] hover:bg-[var(--bg-subtle)] transition";
-    tr.innerHTML = `
-      <td class="py-3 px-4 font-mono font-medium">${escapeHtml(item.date)}</td>
-      <td class="py-3 px-4 font-semibold ${item.is_recommended ? 'accent-text' : 'crimson-text'}">${escapeHtml(item.sequence)}</td>
-      <td class="py-3 px-4 text-[var(--text-secondary)]">${escapeHtml(item.strength_info)}</td>
-      <td class="py-3 px-4 font-mono font-medium">${escapeHtml(item.run_info)}</td>
-      <td class="py-3 px-4 font-mono font-semibold ${item.is_recommended ? '' : 'crimson-text'}">${escapeHtml(item.run_hr)}</td>
-      <td class="py-3 px-4 font-mono font-semibold ${item.is_recommended ? 'moss-text' : 'crimson-text'}">${escapeHtml(item.z4_pct)}</td>
-      <td class="py-3 px-4 text-[var(--text-secondary)]">${escapeHtml(item.result)}</td>
-    `;
-    sBody.appendChild(tr);
-  });
 }
 
 function renderTrainingLoad(tl) {

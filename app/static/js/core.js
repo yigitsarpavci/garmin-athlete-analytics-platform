@@ -152,79 +152,54 @@ async function initApp() {
   try {
     initTheme();
 
-    globalOverview = await safeFetchJson('/api/overview');
-    if (globalOverview) {
+    const [
+      overview,
+      sports,
+      gymData,
+      tlData,
+      activities,
+      sleepData,
+      corrData,
+      setData,
+      progData,
+      protocolsData
+    ] = await Promise.all([
+      safeFetchJson('/api/overview'),
+      safeFetchJson('/api/sports'),
+      safeFetchJson('/api/gym-history'),
+      safeFetchJson('/api/training-load'),
+      safeFetchJson('/api/activities'),
+      safeFetchJson('/api/sleep-analysis'),
+      safeFetchJson('/api/correlations'),
+      safeFetchJson('/api/garmin-settings'),
+      safeFetchJson('/api/progression'),
+      safeFetchJson('/api/daily-protocols')
+    ]);
+
+    if (overview) {
+      globalOverview = overview;
       applyAthleteBranding(globalOverview);
       renderOverview(globalOverview);
     }
-
-    globalSports = await safeFetchJson('/api/sports');
-    if (globalSports) renderSports(globalSports);
-
-    const gymData = await safeFetchJson('/api/gym-history');
-    if (gymData) renderGymHistory(gymData);
-
-    const tlData = await safeFetchJson('/api/training-load');
-    if (tlData) renderTrainingLoad(tlData);
-
-    if (document.getElementById('sameDayTableBody')) {
-      const seqData = await safeFetchJson('/api/same-day-sequence');
-      if (seqData) renderSameDaySequence(seqData);
+    if (sports) {
+      globalSports = sports;
+      renderSports(globalSports);
     }
-
-    globalActivities = await safeFetchJson('/api/activities');
-    if (globalActivities) {
+    if (gymData) renderGymHistory(gymData);
+    if (tlData) renderTrainingLoad(tlData);
+    if (activities) {
+      globalActivities = activities;
       renderActivities(globalActivities);
       renderWeeklyStreak(globalActivities);
       renderLatestActivitySummary(globalActivities);
     }
-
-    const sleepData = await safeFetchJson('/api/sleep-analysis');
     if (sleepData) renderSleepAnalysis(sleepData);
-
-    const corrData = await safeFetchJson('/api/correlations');
     if (corrData) renderCorrelations(corrData);
-
-    if (document.getElementById('periodsContainer')) {
-      const periodsData = await safeFetchJson('/api/periods-weeks');
-      if (periodsData) renderPeriods(periodsData);
-    }
-
-    const setData = await safeFetchJson('/api/garmin-settings');
     if (setData) renderSettingsAndZones(setData);
-
-    if (document.getElementById('z2KpiGrid')) {
-      const z2Data = await safeFetchJson('/api/z2-tracker');
-      if (z2Data) renderZ2Tracker(z2Data);
-    }
-
-    if (document.getElementById('morphologyCardsContainer')) {
-      const morphData = await safeFetchJson('/api/physique-tracker');
-      if (morphData) renderPhysiqueTracker(morphData);
-    }
-
-    const healthScreenData = await safeFetchJson('/api/health-screening');
-    if (healthScreenData) renderHealthScreening(healthScreenData);
-
-    const fitAgeData = await safeFetchJson('/api/fitness-age');
-    if (fitAgeData) renderFitnessAge(fitAgeData);
-
-    const expData = await safeFetchJson('/api/garmin-expansion');
-    if (expData) renderGarminExpansion(expData);
-
-    const progData = await safeFetchJson('/api/progression');
     if (progData) renderProgressionAssessment(progData);
-
-    const protocolsData = await safeFetchJson('/api/daily-protocols');
     if (protocolsData) renderDailyProtocols(protocolsData);
 
     chartInstances = {};
-    const analyticsSec = document.getElementById('section-analytics');
-    if (analyticsSec && !analyticsSec.classList.contains('hidden') && document.getElementById('chart-hrv') && typeof renderCharts === 'function') {
-      renderCharts(true);
-    }
-
-    if (document.getElementById('calcTargetInput')) runCalculator();
     startGarminSessionKeepAlive();
     refreshIcons();
   } catch (err) {
