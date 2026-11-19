@@ -814,31 +814,25 @@ def _compute_plateau_score(
     # 5. Toparlanma baskısı bonusu
     if acwr > 1.35 or hrv_ratio < 0.85:
         score = min(100, score + 10)
-        reasons.append("Sistemik yorgunluk (ACWR/HRV) haftada 3 gün Squat yükünü zorlaştırıyor.")
+        reasons.append("Sistemik yorgunluk (ACWR/HRV) Squat yükünü zorlaştırıyor.")
 
     score = min(100, max(0, score))
 
+    # Program her zaman haftada 2 gün A/B (5x5); plato yalnızca yükleme stratejisini (mikro-yükleme/deload) etkiler.
+    recommended_split = "5x5_linear"
     if score >= 55:
-        recommended_split = select_program_split(score)
-        tier_label = {
-            "push_pull": "Orta Seviye Geçiş Eşiği (Push / Pull Aktif)",
-            "upper_lower": "İleri Orta Seviye (Upper / Lower Aktif)",
-            "ppl": "İleri Seviye (Push / Pull / Legs Aktif)",
-        }[recommended_split]
-        split_name = PROGRAM_SPLIT_CATALOG[recommended_split]["short_name"]
+        tier_label = "Plato Sinyali (5x5 A/B · Mikro-yükleme / Deload)"
         recommendation = (
-            "5x5 doğrusal yükleme sınırına yaklaşıldı. Her seans Squat yorgunluğunu azaltmak ve "
-            f"üst/alt hacmini artırmak için {split_name} programına geçiş önerilir."
+            "5x5 doğrusal yükleme sınırına yaklaşıldı. Haftalık 2 gün A/B düzeni değişmez; takılan hareketlerde "
+            "mikro-yükleme (+1.25 kg), tekrar/set varyasyonu veya deload uygula."
         )
     elif score >= 30:
-        recommended_split = "5x5_linear"
-        tier_label = "Geçişe Yaklaşıyor (5x5 Devam · İzlemede)"
+        tier_label = "İzlemede (5x5 A/B Devam)"
         recommendation = (
             "Doğrusal progresyon hâlâ çalışıyor; ancak takılma yaşayan hareketlerde konsolidasyon/deload "
-            "takip edilmeli. 1-2 deload sonrası Push / Pull'a geçilecek."
+            "takip edilmeli. Program A/B 5x5 olarak devam eder."
         )
     else:
-        recommended_split = "5x5_linear"
         tier_label = "Doğrusal İvme Aktif (5x5 Optimal)"
         recommendation = (
             "Tüm ana bileşiklerde e1RM eğimi güçlü. 5x5 doğrusal artış ile en hızlı kuvvet kazanımı devam ediyor."

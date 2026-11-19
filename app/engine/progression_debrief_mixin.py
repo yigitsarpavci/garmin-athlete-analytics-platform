@@ -46,54 +46,61 @@ class ProgressionDebriefMixin:
         latest_5k = metrics.get("latest_5k", "--")
         cadence = int(metrics.get("latest_cadence") or 159)
 
-        # 1. Gün Arttırma Analizi (Gerçek kuvvet temeli + yük dengesi kapısı)
-        strength_ready_for_5th_day = (
-            squat_pr >= round(cur_weight * 0.98, 1)
-            and bench_pr >= round(cur_weight * 0.78, 1)
-        )
-        acwr_ok = (0.85 <= acwr <= 1.25) and (rhr <= 56.0) and (stress < 42.0)
-        can_increase_days = bool(strength_ready_for_5th_day and acwr_ok)
-        if can_increase_days:
-            volume_verdict = "HAZIR (5. Gün Eklenebilir)"
+        # 1. Haftalık gün modeli: kuvvet DAİMA 2 gün (Workout A / B); koşu yalnızca 2 veya 3 gün (fitliğe göre)
+        dyn = self.compute_dynamic_weekly_targets()
+        base_runs = int(dyn.get("base_run_target") or 2)
+        chronic_now = float(cur_status.get("chronic_load") or 0.0)
+        tunnel_top = float(cur_status.get("tunnel_max") or 0.0)
+        acwr_ok = (0.85 <= acwr <= 1.25) and (stress < 48.0)
+        near_capacity = tunnel_top > 0 and chronic_now >= 0.8 * tunnel_top
+        can_increase_days = bool(base_runs < 3 and acwr_ok and near_capacity)
+        if base_runs >= 3:
+            volume_verdict = "3 KOŞU + 2 KUVVET (Kapasite Yeterli)"
             volume_advice = (
-                f"Kuvvet eşikleri (Squat {squat_pr:.0f} kg · Bench {bench_pr:.0f} kg), ACWR ({acwr:.2f}) ve "
-                f"dinlenik nabız ({rhr:.0f} bpm) 5. antrenman gününü destekliyor; programa hafif 30 dk ek koşu veya "
-                "3. kuvvet günü eklenebilir."
+                f"Kronik yük ({chronic_now:.0f}) Garmin tünelinin üst bandına ulaştı ve ACWR ({acwr:.2f}) uygun; "
+                "haftada 3 koşu taşınabilir. Kuvvet her zaman 2 gün (A/B) kalır."
             )
-            next_level_days = "3 Koşu + 2 Gym veya 2 Koşu + 3 Gym (Haftada 5 Seans)"
+            next_level_days = "Koşu 3 gün zaten aktif; kuvvet 2 gün sabit (A/B)"
+        elif can_increase_days:
+            volume_verdict = "3. KOŞU EKLENEBİLİR"
+            volume_advice = (
+                f"ACWR ({acwr:.2f}) dengede, kronik yük ({chronic_now:.0f}) tünel üst sınırının ({tunnel_top:.0f}) %80'ini geçti; "
+                "haftaya 1 hafif 30 dk koşu eklenebilir. Kuvvet 2 gün (A/B) olarak kalır."
+            )
+            next_level_days = "3 Koşu + 2 Kuvvet (A/B)"
         else:
-            volume_verdict = "4 GÜNDE KAL (Ek Gün Gerekmiyor)"
+            volume_verdict = "2 KOŞU + 2 KUVVET (Koru)"
             volume_advice = (
-                f"ACWR ({acwr:.2f}) ve dinlenik nabız ({rhr:.0f} bpm) iyi durumda; ancak Squat ({squat_pr:.0f} kg = {squat_ratio:.2f}x VA) "
-                f"ve Bench ({bench_pr:.0f} kg = {bench_ratio:.2f}x VA) henüz kendi vücut ağırlığının ({cur_weight:.0f} kg) altında "
-                "ve kalori açığındasın. Şu aşamada 5. günü eklemek ağırlık artışını yavaşlatır; haftalık 2 Koşu + 2 Kuvvet düzenini koru."
+                f"ACWR ({acwr:.2f}) ve kronik yük ({chronic_now:.0f}) henüz 3. koşuyu desteklemiyor; "
+                "haftalık 2 Koşu + 2 Kuvvet (A/B) düzenini koru. Kapasite arttıkça koşu 3 güne çıkabilir, kuvvet 2 gün sabit kalır."
             )
-            next_level_days = f"Şimdilik 4 Gün Korunur (Hedef: Squat ~{cur_weight:.0f} kg · 4/4 İstikrar)"
+            next_level_days = "Şimdilik 2 Koşu + 2 Kuvvet; kapasite artınca 3 Koşu + 2 Kuvvet"
 
-        # 2. Kuvvet Branşı Seviye & Stil Analizi
+        # 2. Kuvvet Branşı: program sabit A/B; ilerleme yük artışıyla gelir (split değişmez)
         if squat_pr >= 1.0 * cur_weight and bench_pr >= 0.8 * cur_weight:  # çerçeve eşiği: Squat ≥ 1.0x VA, Bench ≥ 0.8x VA
-            style_verdict = f"İLERİ BÖLÜNMEYE HAZIR ({squat_ratio:.2f}x VA)"
+            style_verdict = f"A/B 5x5 · İLERİ GÜÇ EŞİĞİ ({squat_ratio:.2f}x VA)"
             style_advice = (
                 f"Squat ({squat_pr:.0f} kg = {squat_ratio:.2f}x VA) ve Bench ({bench_pr:.0f} kg = {bench_ratio:.2f}x VA) "
-                "vücut ağırlığı eşiklerine ulaştı. Üst/Alt Vücut (Upper/Lower 4 Gün) veya PPL programına geçilebilir."
+                "vücut ağırlığı eşiklerine ulaştı. Program A/B (haftada 2 gün) olarak kalır; ilerleme için mikro-yükleme (+1.25 kg), "
+                "RPE/RIR takibi ve gerektiğinde deload kullan."
             )
         else:
-            style_verdict = f"BAŞLANGIÇ–ORTA GEÇİŞ ({squat_ratio:.2f}x VA · 5x5)"
+            style_verdict = f"A/B 5x5 · GELİŞİM ({squat_ratio:.2f}x VA)"
             style_advice = (
-                f"Vücut ağırlığının ({cur_weight:.0f} kg) üzerinde kaldırma kriteri ileri seviye içindir. Şu an "
-                f"Squat {squat_pr:.0f} kg ({squat_ratio:.2f}x VA), Deadlift {deadlift_pr:.0f} kg ({dl_ratio:.2f}x VA), "
+                f"Şu an Squat {squat_pr:.0f} kg ({squat_ratio:.2f}x VA), Deadlift {deadlift_pr:.0f} kg ({dl_ratio:.2f}x VA), "
                 f"Row {row_pr:.0f} kg ve Bench {bench_pr:.0f} kg ({bench_ratio:.2f}x VA) seviyesindesin. "
-                f"İlk hedef haftada 2 gün A/B 5x5 ile kendi vücut ağırlığına (~{cur_weight:.0f} kg Squat/Deadlift, ~{0.75 * cur_weight:.0f} kg Bench) ulaşmak."
+                f"Haftada 2 gün A/B 5x5 ile kendi vücut ağırlığına (~{cur_weight:.0f} kg Squat/Deadlift, ~{0.75 * cur_weight:.0f} kg Bench) ulaşmak hedef."
             )
 
         # 3. Koşu Branşı & Load Focus Yönlendirmesi
         low_pct = load_focus.get("aerobic_low", {}).get("pct_of_target") or 0.0
         high_pct = load_focus.get("aerobic_high", {}).get("pct_of_target") or 0.0
         an_pct = load_focus.get("anaerobic", {}).get("pct_of_target") or 0.0
+        focus_label = load_focus.get("recommended_focus_label") or "dengeli"
         running_style_advice = (
-            f"Firstbeat yük dengesinde Yüksek Aerobik (%{high_pct:.0f}) ve Düşük Aerobik (%{low_pct:.0f}) "
-            f"barın üst sınırına yakınken Anaerobik yük (%{an_pct:.0f}) daha düşük. Önce 5K hız intervalini (4x1000m @ Z4-5) uygula; "
-            "Zone 2 hızın [[Z2_HR_MID]] bpm'de 6:00 /km altına indiğinde haftalık 3. koşu veya tempo eklenebilir."
+            f"Firstbeat yük dengesi: Düşük Aerobik %{low_pct:.0f} · Yüksek Aerobik %{high_pct:.0f} · Anaerobik %{an_pct:.0f}. "
+            f"En eksik bar: {focus_label}; sıradaki koşuyu buna göre seç. "
+            "Zone 2 hızın [[Z2_HR_MID]] bpm'de 6:00 /km altına indiğinde ve kapasite uygunsa koşu 2'den 3 güne çıkarılabilir (kuvvet 2 gün sabit)."
         )
 
         # 4. Deload Analizi
@@ -110,22 +117,22 @@ class ProgressionDebriefMixin:
             "volume_progression": {
                 "verdict": volume_verdict,
                 "can_increase_days": can_increase_days,
-                "current_days": "2 Koşu + 2 Gym (Esnek 4 Seans)",
+                "current_days": f"{base_runs} Koşu + 2 Kuvvet (A/B)",
                 "next_level_days": next_level_days,
                 "advice": volume_advice,
             },
             "style_transition": {
                 "verdict": style_verdict,
                 "current_style": f"A/B Full Body 5x5 (Squat {squat_pr:.0f} kg · Bench {bench_pr:.0f} kg · DL {deadlift_pr:.0f} kg)",
-                "suggested_next_style": "Önce 5x5 ile 1.0x VA (~85 kg), Sonra Upper/Lower",
+                "suggested_next_style": f"A/B 5x5 sabit · Squat hedefi ~{cur_weight:.0f} kg (1.0x VA)",
                 "advice": style_advice,
                 "running_style_advice": running_style_advice,
             },
             "running_progression": {
-                "verdict": "ORTA SEVİYE (80/20 Koşu Planı)",
+                "verdict": f"{base_runs} GÜN KOŞU (80/20 Planı)",
                 "current_metrics": f"VO2 Max: {vo2max:.1f} · En İyi 5K: {latest_5k} · Kadans: {cadence} spm",
                 "load_balance": f"Düşük Aer: %{low_pct:.0f} · Yüksek Aer: %{high_pct:.0f} · Anaerobik: %{an_pct:.0f}",
-                "current_model": "Haftada 2 Koşu: 1x 5K Hız İntervali (4x1000m @ [[INT_PACE]]) + 1x Zone 2 Taban (45-50 dk @ [[Z2_HR]])",
+                "current_model": f"Haftada {base_runs} Koşu: en düşük Firstbeat barına göre Zone 2 Taban ([[Z2_HR]]) / Tempo / 5K Hız İntervali ([[INT_PACE]]) seçilir",
                 "next_milestone": f"Orta Vade: 5K < {self.get_goal_5k()['label']} ({self.get_goal_5k()['pace']}) · Zone 2 @ 6:00 /km altı",
                 "advice": running_style_advice,
             },

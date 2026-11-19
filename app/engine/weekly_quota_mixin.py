@@ -308,6 +308,7 @@ class WeeklyQuotaMixin:
         return {
             "athlete_level": athlete_level,
             "run_target": run_target,
+            "base_run_target": base_run_target,
             "gym_target": gym_target,
             "total_target": run_target + gym_target,
             "run_sequence": run_sequence,

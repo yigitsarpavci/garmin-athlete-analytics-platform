@@ -224,10 +224,11 @@ def build_athlete_principles(engine: Any) -> Dict[str, Any]:
 # 8. ÇOK SEVİYELİ SPORCU VE DİNAMİK GELİŞİM ÇERÇEVESİ (DOGMATİK OLMAMA İLKESİ)
 # ==============================================================================
 # Sporcu programları sabit kalıplar değildir. Seviyeye göre farklılaşır:
-# - Başlangıç: Koş-Yürü, Saf Z1-Z2, Vücut Ağırlığı & Dambıl (2 Koşu + 1 Gym)
+# Sabit kural: kuvvet HER seviyede haftada 2 gün (Workout A / Workout B); koşu yalnızca 2 veya 3 gün.
+# - Başlangıç: Koş-Yürü, Saf Z1-Z2, Tüm Vücut A/B (2 Koşu + 2 Gym)
 # - Orta: 80/20 Polarize Koşu, A/B 5x5 Bileşik Kuvvet (2 Koşu + 2 Gym)
-# - İleri: Piramidal / Eşik, Üst/Alt Vücut veya PPL Split (3-4 Koşu + 3-4 Gym)
-# - Elit: Blok Periyodizasyonu, Çift Seanslar, Pliometri (5-6 Koşu + 2 Gym)
+# - İleri: Piramidal / Eşik Koşu, A/B kuvvet + RPE/RIR takibi (3 Koşu + 2 Gym)
+# - Elit: Blok Periyodizasyonu, Pliometri (3 Koşu + 2 Gym)
 
 ATHLETE_LEVELS_FRAMEWORK: Dict[str, Dict[str, str]] = {
     "beginner": {
@@ -236,8 +237,8 @@ ATHLETE_LEVELS_FRAMEWORK: Dict[str, Dict[str, str]] = {
         "running_approach": "Koş-Yürü (Run/Walk - 2-3 dk koşu / 2 dk yürüyüş) veya Saf Zone 1-2 (Konuşma temposu). Yüksek şiddetli interval ASLA verilmez.",
         "running_frequency": "Haftada 2-3 gün (25-35 dk seanslar)",
         "strength_approach": "Vücut ağırlığı, direnç bantları ve hafif barbell/dambılla temel hareket kalıpları (Squat, Hinge, Push, Pull, Lunge, Core). 2-3 set x 10-15 tekrar veya hafif 5x5 adaptasyonu.",
-        "strength_frequency": "Haftada 1-2 gün (Tüm Vücut / Full Body)",
-        "recommended_split": "2 Koşu/Yürüyüş + 1 Kuvvet (3 gün dinlenme/toparlanma)",
+        "strength_frequency": "Haftada 2 gün (A / B Tüm Vücut)",
+        "recommended_split": "2 Koşu/Yürüyüş + 2 Kuvvet (3 gün dinlenme/toparlanma)",
         "progression_gate": "Kesintisiz 30 dk rahat koşabilmek; Squat/Deadlift'te ~0.60x–0.70x Vücut Ağırlığı, Bench'te ~0.50x VA ile 5x5 nizami form yakalamak."
     },
     "intermediate": {
@@ -254,20 +255,20 @@ ATHLETE_LEVELS_FRAMEWORK: Dict[str, Dict[str, str]] = {
         "level_tr": "İleri Seviye (Bölünmüş Rutinler & Eşik Dönemlemesi)",
         "target_audience": "Yıllık antrenman sürekliliği olan, daha yüksek hacmi tolere edebilen deneyimli sporcular",
         "running_approach": "Piramidal veya Eşik Odaklı Dönemleme (2x Zone 2 Taban, 1x Tempo/Laktat Eşik Koşusu, 1x VO2Max İntervali).",
-        "running_frequency": "Haftada 3-4 gün (Toplam 30-45 km/hafta)",
-        "strength_approach": "5x5'ten Üst/Alt Vücut (Upper/Lower Split - 4 Gün) veya İtiş-Çekiş-Bacak (PPL - 3-5 Gün) bölünmesine geçiş. RPE/RIR takibi ve dalgalı periyodizasyon.",
-        "strength_frequency": "Haftada 3-4 gün",
-        "recommended_split": "3 Koşu + 2 Gym veya 2 Koşu + 4 Gym (5-6 gün antrenman, 1-2 gün toparlanma)",
-        "progression_gate": "Squat ≥ 1.0x VA ve Bench ≥ 0.80x VA 5x5 lineer artışı tükendiğinde; 5K hedefine yaklaşıldığında ve haftalık 4/4 kota en az 4 hafta kesintisiz tamamlandığında geçilir."
+        "running_frequency": "Haftada 3 gün (Toplam 30-40 km/hafta)",
+        "strength_approach": "A/B Full Body düzeni korunur; 5x5 lineer artış tükenince RPE/RIR takibi, mikro-yükleme (+1.25 kg), tekrar/set varyasyonu ve dalgalı periyodizasyon. Gün sayısı ve program bölünmesi değişmez.",
+        "strength_frequency": "Haftada 2 gün (A ve B günleri)",
+        "recommended_split": "3 Koşu + 2 Gym (5 gün antrenman, 2 gün toparlanma)",
+        "progression_gate": "Squat ≥ 1.0x VA ve Bench ≥ 0.80x VA ulaşıldığında ve haftalık kota en az 4 hafta kesintisiz tamamlandığında koşu 3 güne çıkarılabilir; kuvvet 2 gün kalır."
     },
     "elite": {
         "level_tr": "Elit / Performans & Yarışmacı Seviyesi (Blok Dönemlemesi & Zirve)",
         "target_audience": "Yarış odaklı atletler, performans sporcuları",
         "running_approach": "Blok Periyodizasyonu, yarış temposu blokları, çift seanslar (Sabah toparlanma koşusu + Akşam eşik koşusu).",
-        "running_frequency": "Haftada 5-6 gün (Toplam 60-85+ km/hafta)",
-        "strength_approach": "Maksimal kuvvet blokları, pliometri, RFD (Kuvvet Üretim Hızı), patlayıcı güç ve sakatlık önleyici prehab.",
+        "running_frequency": "Haftada 3 gün (kaliteli seanslar, yüksek hacimli uzun koşu)",
+        "strength_approach": "A/B düzeninde maksimal kuvvet blokları, pliometri, RFD (Kuvvet Üretim Hızı), patlayıcı güç ve sakatlık önleyici prehab.",
         "strength_frequency": "Haftada 2 gün (Koşuyu bozmayacak patlayıcı/koruyucu mikro-dozlar)",
-        "recommended_split": "5 Koşu + 2 Patlayıcı Kuvvet (Çift seans modülleri)",
+        "recommended_split": "3 Koşu + 2 Kuvvet (patlayıcı/koruyucu mikro-dozlar)",
         "progression_gate": "Yarış zirveleme (Peaking & Tapering) takvimi."
     }
 }
@@ -276,21 +277,20 @@ DYNAMIC_PROGRESSION_TRIGGERS: Dict[str, Dict[str, Any]] = {
     "volume_increase": {
         "name": "Gün / Hacim Artırma Kriterleri",
         "criteria": [
-            "Mevcut 2 Koşu + 2 Kuvvet (4/4) kotasının en az 4 hafta kesintisiz ve plan sapmasız tamamlanması",
+            "Mevcut Koşu + 2 Kuvvet kotasının en az 4 hafta kesintisiz ve plan sapmasız tamamlanması",
             "Kuvvet temel gücünün vücut ağırlığı eşiğine ulaşması (Squat ≥ 1.0x VA, Bench ≥ 0.80x VA) veya Zone 2'nin ≤ 6:00 /km bandına oturması",
             "Son 4 haftalık ACWR (Akut/Kronik Yük Oranı) 0.90 - 1.20 arasında stabil ve toparlanma skorunun >75 kalması",
             "Kalori açığının kapanması veya ek yükte DOMS'un 24 saat içinde tamamen geçmesi"
         ],
-        "action": "Bu eşikler dolmadan 5. gün EKLENMEZ (2 Koşu + 2 Kuvvet korunur). Eşik sağlandığında haftaya 1 hafif 30 dk toparlanma koşusu veya 3. kuvvet günü eklenir."
+        "action": "Kuvvet DAİMA haftada 2 gün (A/B) kalır; ek gün olarak yalnızca koşu 2'den 3'e çıkabilir. Eşikler dolmadan 3. koşu eklenmez; dolduğunda haftaya 1 hafif 30 dk koşu eklenir."
     },
     "style_shift": {
         "name": "Antrenman Stili & Dönemleme Değiştirme Kriterleri",
         "criteria": [
             "5x5 lineer artışında aynı ağırlıkta 3 seans üst üste takılma ve deload sonrası da ilerleyememe (Lineer Plato)",
-            "Kuvvet antrenmanında estetik ve bölgesel hipertrofi odağının artması",
             "Zone 2 koşu temposunun 6:00 /km altına inmesi ve aerobik tabanın kemikleşmesi"
         ],
-        "action": "Kuvvette A/B 5x5'ten 'Üst/Alt Vücut (Upper/Lower)' veya 'PPL' sistemine geç; Koşuda saf polarizeden 1 gün 'Laktat Eşik / Tempo Koşusu' eklemeye geç."
+        "action": "Kuvvet A/B düzeninde kalır (mikro-yükleme, tekrar/set varyasyonu veya deload uygula); koşuda saf polarizeden 1 gün 'Laktat Eşik / Tempo Koşusu' eklemeye geç."
     },
     "deload_and_recovery": {
         "name": "Geri Adım Atma & Deload Kriterleri (Dogmatik Olmayan Esneklik)",

@@ -338,7 +338,7 @@ function renderGymHistory(gym) {
         <div class="space-y-0.5">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="font-mono text-[11px] uppercase tracking-wider font-semibold accent-text">Aktif Program: ${escapeHtml(splitInfo.name || splitInfo.short_name || '')}</span>
-            <span class="stamp-tag stamp-accent">Otomatik Seçildi</span>
+            <span class="stamp-tag stamp-accent">Haftada 2 Gün A/B</span>
             <span class="stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'}">Plato Skoru: ${pScore}/100</span>
           </div>
           <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(pa.tier_label || '')} · ${escapeHtml(pa.recommendation || '')}</p>

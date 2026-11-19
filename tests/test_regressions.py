@@ -16,7 +16,6 @@ from app.engine.telemetry_mixin import TelemetryMixin
 from app.engine.strength_progression import (
     compute_adaptive_progression,
     load_program_state,
-    select_program_split,
 )
 from app.garmin_engine import GarminAthleteEngine
 
@@ -80,13 +79,11 @@ class TestStrengthLogic(unittest.TestCase):
         res = compute_adaptive_progression(sessions, 87.0)
         self.assertEqual(res["plateau_analysis"]["total_deloads"], 1)
 
-    def test_recommendation_names_selected_split(self):
+    def test_plateau_never_recommends_leaving_ab_program(self):
         from app.engine.strength_progression import _compute_plateau_score
         out = _compute_plateau_score({}, 2, 3, [0.2], {"squat": 1.4, "bench": 1.1}, 1.0, 1.0)
-        self.assertEqual(select_program_split(out["plateau_score"]), out["recommended_split"])
-        if out["recommended_split"] != "5x5_linear":
-            from app.engine.strength_progression import PROGRAM_SPLIT_CATALOG
-            self.assertIn(PROGRAM_SPLIT_CATALOG[out["recommended_split"]]["short_name"], out["recommendation"])
+        self.assertEqual(out["recommended_split"], "5x5_linear")
+        self.assertIn("A/B", out["recommendation"])
 
 
 class TestNoWriteOnRead(unittest.TestCase):
@@ -693,3 +690,35 @@ class TestNanSafety(unittest.TestCase):
         self.assertIn("Derin: 1s 0dk (%14)", stages)
         stub.df = pd.DataFrame()
         self.assertEqual(stub._collect_24h_biometrics({})[3:5], (0.0, "Uyku evresi verisi yok"))
+
+
+class TestFixedTwoDayStrengthPolicy(unittest.TestCase):
+    """Kuvvet DAİMA haftada 2 gün (A/B), koşu yalnızca 2-3 gün; hiçbir Branşlar çıktısı bununla çelişmemeli."""
+
+    FORBIDDEN = ("upper/lower", "upper / lower", "push / pull", "push/pull", "ppl", "3. kuvvet", "5. gün", "3 gym", "haftada 5 seans")
+
+    def test_progression_and_plateau_texts_never_suggest_other_splits_or_extra_gym_days(self):
+        import json
+        eng = GarminAthleteEngine()
+        blob = json.dumps({
+            "prog": eng.get_athlete_progression_assessment(),
+            "plateau": eng.get_gym_exercise_history().get("plateau_analysis"),
+        }, ensure_ascii=False).lower()
+        # athlete_levels / triggers çerçevesi de aynı kuralı taşır
+        for token in self.FORBIDDEN:
+            self.assertNotIn(token, blob, token)
+
+    def test_every_athlete_level_has_two_strength_days_and_at_most_three_runs(self):
+        from app.athlete_principles import ATHLETE_LEVELS_FRAMEWORK
+        for key, lvl in ATHLETE_LEVELS_FRAMEWORK.items():
+            self.assertIn("Haftada 2 gün", lvl["strength_frequency"], key)
+            import re
+            nums = [int(n) for n in re.search(r"Haftada ([\d-]+) gün", lvl["running_frequency"]).group(1).split("-")]
+            self.assertLessEqual(max(nums), 3, key)
+
+    def test_dynamic_targets_always_two_gym_and_two_or_three_runs(self):
+        eng = GarminAthleteEngine()
+        dyn = eng.compute_dynamic_weekly_targets()
+        self.assertEqual(dyn["gym_target"], 2)
+        self.assertIn(dyn["base_run_target"], (2, 3))
+        self.assertEqual(eng.get_gym_exercise_history()["program_state"]["active_split"], "5x5_linear")
