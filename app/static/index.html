@@ -287,39 +287,10 @@
               <span
                 class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Günlük
                 Durum</span>
-              <span class="stamp-tag stamp-moss">HAZIRLIK</span>
-            </div>
-
-            <!-- Readiness Ring + Daily Decision Summary -->
-            <div class="flex items-center gap-4">
-              <div class="relative w-20 h-20 flex items-center justify-center shrink-0">
-                <svg class="w-full h-full readiness-ring" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="40" stroke="var(--bg-surface-elevated)" stroke-width="6"
-                    fill="transparent" />
-                  <circle id="readinessSvgCircle" cx="50" cy="50" r="40" stroke="currentColor" stroke-width="6"
-                    stroke-linecap="butt" class="moss-text transition-all duration-1000" fill="transparent"
-                    stroke-dasharray="251.32" stroke-dashoffset="57.8" />
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span class="font-mono text-xl font-bold tabular-nums tracking-tight" id="heroReadinessVal">77%</span>
-                  <span
-                    class="font-mono text-[8px] font-medium text-[var(--text-secondary)] uppercase tracking-widest">HAZIRLIK</span>
-                </div>
-              </div>
-              <div class="space-y-1 min-w-0">
-                <div class="flex flex-wrap items-center gap-1.5">
-                  <span class="stamp-tag stamp-moss" id="decisionBadge">YEŞİL IŞIK</span>
-                  <span class="stamp-tag stamp-accent" id="heroRecoveryBadge">Toparlanma: -- sa</span>
-                </div>
-                <h3 class="font-editorial text-base font-medium leading-snug" id="decisionTitle">Toparlanma iyi durumda,
-                  antrenman için uygun gün.</h3>
-                <p class="font-mono text-[10.5px] text-[var(--text-secondary)]" id="heroStepsMeta">Adım: -- · Durum: --
-                </p>
-              </div>
             </div>
 
             <!-- Weekly Streak Strip -->
-            <div class="pt-2.5 border-t border-[var(--border-subtle)] space-y-2">
+            <div class="space-y-2">
               <div class="flex items-center justify-between">
                 <span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Bu
                   Hafta</span>
@@ -331,10 +302,8 @@
               </div>
             </div>
 
-            <!-- Decision Guidance & Latest Activity Trigger -->
+            <!-- Latest Activity Trigger -->
             <div id="decisionCard" class="space-y-2 pt-2.5 border-t border-[var(--border-subtle)]">
-              <p class="text-xs text-[var(--text-secondary)] leading-relaxed" id="decisionDetail">Toparlanma ve yük
-                dengesi normal. Planlı antrenmanı uygulayabilirsin.</p>
               <div
                 onclick="if(window.globalActivities && globalActivities.length) openActivityModal(globalActivities[0]); else openDebriefModal(0);"
                 class="cursor-pointer group tint-panel p-2.5 hover:border-[var(--border-hover)] transition">
