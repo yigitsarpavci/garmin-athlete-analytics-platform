@@ -186,7 +186,7 @@ class TestApiEndpoints(unittest.TestCase):
     def test_daily_protocols_endpoint(self):
         """GET /api/daily-protocols detaylı antrenman reçetesini test eder."""
         data = self.get_json("/api/daily-protocols")
-        self.assertEqual(len(data), 7)
+        self.assertEqual(len(data), 8)
         # Salı Workout A kontrolü
         tue = data[0]
         self.assertEqual(tue["category"], "gym")

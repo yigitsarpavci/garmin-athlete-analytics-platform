@@ -100,7 +100,7 @@ class TestEngineCalculations(unittest.TestCase):
     def test_progressive_overload_rules(self):
         """A/B 5x5 Progressive Overload kurallarını ve sonraki hedefleri test eder."""
         proto = self.engine.get_detailed_daily_workout_protocols()
-        self.assertEqual(len(proto), 7)
+        self.assertEqual(len(proto), 8)
         # Salı Workout A
         tue = proto[0]
         self.assertEqual(tue["category"], "gym")

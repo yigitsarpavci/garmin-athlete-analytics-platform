@@ -683,8 +683,10 @@ class WorkoutProtocolsMixin:
         gym_a_done = "gym_a" in completed_gym_kinds
         gym_b_done = "gym_b" in completed_gym_kinds
         z2_done = "zone2" in completed_run_kinds
+        tempo_done = "tempo" in completed_run_kinds
         int_done = "interval" in completed_run_kinds
         z2_status = "completed" if z2_done else ("remaining" if ("zone2" in rem_run_kinds or (rem_runs > 0 and not z2_done)) else "optional")
+        tempo_status = "completed" if tempo_done else ("remaining" if "tempo" in rem_run_kinds else "optional")
         int_status = "completed" if int_done else ("remaining" if ("interval" in rem_run_kinds or (rem_runs > 0 and not int_done)) else "optional")
 
         def _quota_note(is_remaining: bool, done_count: int, rem_count: int, label_tr: str, next_hint: str) -> str:
@@ -704,6 +706,13 @@ class WorkoutProtocolsMixin:
         else:
             int_note = _quota_note(int_status == "remaining", runs_done, rem_runs, "Koşu", "Taze bacakla ve Anaerobik eksiği kapatmak için uygun günde uygula")
             z2_note = _quota_note(z2_status == "remaining", runs_done, rem_runs, "Koşu", "Bacakların taze olduğu herhangi bir günde uygula")
+
+        if tempo_done:
+            tempo_note = f"{runs_done}/2 Koşu Yapıldı · Bu hafta Yüksek Aerobik Tempo koşusu tamamlandı"
+        elif tempo_status == "remaining":
+            tempo_note = _quota_note(True, runs_done, rem_runs, "Koşu", "Yüksek Aerobik barını doldurmak için sabit eşik temposunda uygula")
+        else:
+            tempo_note = "Esnek Şablon • Yüksek Aerobik (Zone 3–4 Tempo) barı açıldığında uygulanır"
 
         prog = self.get_gym_exercise_history().get("progression", {})
         sq = prog.get("squat", {})
@@ -729,6 +738,7 @@ class WorkoutProtocolsMixin:
                 self._protocol_saturday_gym_b(_quota_note, dl, gym_b_done, gyms_done, lat, lr, ohp, prot_g, rem_gym_kinds, rem_gyms, sh, sq),
                 self._protocol_sunday_active_recovery(prot_g, total_rem),
                 self._protocol_monday_interval_run(int_note, int_status, prot_g),
+                self._protocol_tempo_run(tempo_note, tempo_status, prot_g),
         ]
         if active_split != "5x5_linear":
             slots = PROGRAM_SPLIT_CATALOG.get(active_split, {}).get("slots", ["push", "pull"])
@@ -865,6 +875,40 @@ class WorkoutProtocolsMixin:
                 "hr_range": "[[Z2_HR]] (Zone 2 Taban)",
                 "est_calories": "~2.950 kcal toplam harcama",
                 "nutrition": f"2.550 kcal alım | {prot_g}g Protein | 275g Karbonhidrat | 80g Yağ | 3.5 L Su",
+            },
+        }
+
+    def _protocol_tempo_run(self, tempo_note, tempo_status, prot_g) -> Dict[str, Any]:
+        """Yüksek Aerobik: Tempo / Eşik koşu reçetesi."""
+        mx = float(getattr(self, "max_hr_estimate", 0) or 200)
+        z3_lo = int(round(0.77 * mx))
+        z3_hi = int(round(0.84 * mx))
+        return {
+            "day_code": "tempo",
+            "slot_label": "Tempo",
+            "quota_status": tempo_status,
+            "day_title": "Koşu Reçetesi #3: Yüksek Aerobik Tempo (30-35 dk)",
+            "category": "running",
+            "badge": "Yüksek Aerobik",
+            "badge_color": "amber",
+            "status_note": tempo_note,
+            "objective": "Laktat eşiği altında sürekli tempo ile Yüksek Aerobik barını verimli doldurmak.",
+            "warmup": "10 dk kolay jog + dinamik kalça açma.",
+            "exercises": [
+                {
+                    "num": 1, "name": "Ana Koşu: Sürekli Tempo / Eşik Bloğu",
+                    "duration": "10 dk ısınma + 20 dk Tempo + 5 dk soğuma",
+                    "distance_est": "5.0 - 6.0 km",
+                    "target_hr": f"{z3_lo} - {z3_hi} bpm (Zone 3 - 4)",
+                    "cadence_target": "162 - 168 spm",
+                    "coaching_cue": "10 dk rahat ısınma sonrası 20 dk kontrollü ve akıcı eşik temposunu koruyun; sprinte kaçmadan Yüksek Aerobik yükü biriktirin.",
+                }
+            ],
+            "cooldown": "5 dk yürüyüş + baldır ve hamstring esnemesi.",
+            "telemetry_targets": {
+                "hr_range": f"{z3_lo} - {z3_hi} bpm (Zone 3-4 Tempo)",
+                "est_calories": "~3.000 kcal toplam harcama",
+                "nutrition": f"2.600 kcal alım | {prot_g}g Protein | 285g Karbonhidrat | 80g Yağ | 3.5 L Su",
             },
         }
 
