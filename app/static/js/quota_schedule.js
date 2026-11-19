@@ -456,11 +456,6 @@ function renderDailyProtocols(protocols) {
       </div>
 
       ${exerciseHtml}
-
-      <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-[var(--border-subtle)] text-[10.5px] text-[var(--text-secondary)] shrink-0">
-        <p><strong class="text-[var(--text-primary)]">Soğuma:</strong> ${escapeHtml(p.cooldown)}</p>
-        <p class="font-mono font-medium tint-panel px-2 py-0.5">${escapeHtml(p.telemetry_targets ? p.telemetry_targets.nutrition : '')}</p>
-      </div>
     </div>
   `;
   if (typeof refreshIcons === 'function') refreshIcons();
