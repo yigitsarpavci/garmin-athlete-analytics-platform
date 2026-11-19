@@ -56,17 +56,6 @@ _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
         "protocol_day_code": "monday",
         "coaching_note": "10 dk ısınma + 20 dk sabit eşik/tempo + 5 dk soğuma; Yüksek Aerobik barını doldurmak için uygula.",
     },
-    "gym_overflow": {
-        "category": "strength",
-        "type": "Ekstra Kuvvet",
-        "short_label": "Ekstra Kuvvet",
-        "title_prefix": "Ekstra Kuvvet (Yük Taşmasını Önle)",
-        "exercises_summary": "3 yük barı da %85+ dolu olduğu için koşu yerine düşük kardiyo yüklü kuvvet seansı önerildi.",
-        "duration": "55 dk",
-        "badge": "Dinamik Kuvvet",
-        "protocol_day_code": "tuesday",
-        "coaching_note": "Tüm koşu yük barları %85 üstünde olduğu için geçici olarak kuvvet eklendi; barlar düşünce otomatik koşuya döner.",
-    },
     "gym_a": {
         "category": "strength",
         "type": "Workout A",
@@ -96,7 +85,6 @@ _RUN_SHORT_LABELS: Dict[str, str] = {
     "interval": "İnterval",
     "zone2": "Zone 2",
     "tempo": "Tempo",
-    "gym_overflow": "Ekstra Kuvvet",
 }
 
 
@@ -120,9 +108,7 @@ class _WeekState:
     spontaneous_items: List[Dict[str, Any]] = field(default_factory=list)
     completed_run_kinds: List[str] = field(default_factory=list)
     completed_gym_kinds: List[str] = field(default_factory=list)
-    plan_deviations: List[Dict[str, Any]] = field(default_factory=list)
     run_cls_by_id: Dict[int, Dict[str, Any]] = field(default_factory=dict)
-    day_deviations: Dict[str, List[Dict[str, Any]]] = field(default_factory=dict)
     last_gym_type: Optional[str] = None
 
 
@@ -314,9 +300,8 @@ class WeeklyQuotaMixin:
 
         rec_meta = PROGRAM_SPLIT_CATALOG.get(recommended_split, split_meta)
         athlete_level = (
-            "İleri" if run_target >= 4
-            else ("Orta" if (run_target >= 3 or plateau_score >= 45)
-                  else "Temel / Gelişim")
+            "Orta" if (run_target >= 3 or plateau_score >= 45)
+            else "Temel / Gelişim"
         )
 
         return {
@@ -592,7 +577,6 @@ class WeeklyQuotaMixin:
             "needed_gyms": needed_gyms,
             "completed_run_kinds": st.completed_run_kinds,
             "completed_gym_kinds": st.completed_gym_kinds,
-            "plan_deviations": st.plan_deviations,
             "post_tempo_adapted": post_tempo_adapted,
             "adapted_recovery_day_idx": adapted_recovery_day_idx,
             "runs_completed_items": st.runs_completed_items,
@@ -618,8 +602,6 @@ class WeeklyQuotaMixin:
                     post_tempo_adapted = True
                     next_kind = st.planned_run_order[0] if st.planned_run_order[0] in ("zone2", "interval", "tempo") else "interval"
                     needed_runs = [(next_kind, runs_done + 1)]
-                elif st.planned_run_order[0] == "gym_overflow":
-                    needed_runs = [("gym_overflow", runs_done + 1)]
                 elif len(st.planned_run_order) >= 2 and st.planned_run_order[0] == st.planned_run_order[1]:
                     needed_runs = [(st.planned_run_order[1], runs_done + 1)]
                 elif "interval" in st.completed_run_kinds and "zone2" not in st.completed_run_kinds:
@@ -729,9 +711,6 @@ class WeeklyQuotaMixin:
         def _format_completed_day(matched: List[Dict[str, Any]], d_str: str, run_c: List[int], gym_c: List[int]) -> Dict[str, Any]:
             titles, details, hr_notes = [], [], []
             has_run = False
-            has_gym = False
-            devs_today = st.day_deviations.get(d_str, [])
-            dev_badge = devs_today[0]["badge"] if devs_today else None
             for act in matched:
                 sport_key = (act.get("sport") or (act.get("activityType") or {}).get("typeKey") or "").lower()
                 act_name = act.get("activityName") or "Antrenman"
@@ -763,7 +742,6 @@ class WeeklyQuotaMixin:
                     else:
                         details.append(f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm{te_txt})")
                 elif bucket == "strength":
-                    has_gym = True
                     gym_c[0] += 1
                     w_type = st.gym_type_by_date.get(d_str) or "Kuvvet"
                     titles.append(f"Kuvvet #{gym_c[0]} • {w_type} (5x5)")
@@ -774,15 +752,15 @@ class WeeklyQuotaMixin:
                     details.append(f"TAMAMLANDI ({act_time} • {dur_m} dk • {cal} kcal • {avg_hr} bpm)")
                 if avg_hr:
                     hr_notes.append(f"{avg_hr} bpm ort.")
-            est_cal = "~2.950 kcal" if has_run else ("~2.850 kcal" if has_gym else "~2.900 kcal")
-            macro_txt = "2.500 kcal (175g P / 265g K / 80g Y)" if has_run else "2.450 kcal (175g P / 250g K / 80g Y)"
+            nut = self.nutrition_texts("run" if has_run else "gym")
+            est_cal = nut["calories"]
+            macro_txt = nut["macro"]
             return {
                 "primary": " + ".join(titles),
                 "secondary": " • ".join(details),
                 "target": "Gerçekleşen: " + (", ".join(hr_notes) if hr_notes else "Kaydedildi"),
                 "calories": est_cal,
                 "macro": macro_txt,
-                "deviation_badge": dev_badge,
             }
         return _format_completed_day
 
@@ -807,17 +785,7 @@ class WeeklyQuotaMixin:
                     "primary": f"Kuvvet #{ordinal} · Kalan Kota{prio_hint} · {summary.split(' · Lateral')[0]}",
                     "secondary": f"Esnek Gün — Bu hafta geriye {rem_gyms} kuvvet kaldı ({quota_lbl}), istediğin uygun gün uygula • {summary}",
                     "target": "115-128 bpm (Zone 1)" if slot_kind == "gym_a" else "115-130 bpm (Zone 1)",
-                    "calories": "~2.850 kcal" if slot_kind == "gym_a" else "~2.900 kcal",
-                    "macro": "2.450 kcal (175g P / 250g K / 80g Y)" if slot_kind == "gym_a" else "2.500 kcal (180g P / 270g K / 80g Y)",
-                }
-            if slot_kind == "gym_overflow":
-                alt_gym = "gym_a" if st.last_gym_type and "Workout B" in st.last_gym_type else "gym_b"
-                return {
-                    "primary": f"Kuvvet (Dinamik Ek) · Koşu Yükü Dolu · {gym_summaries[alt_gym].split(' · Lateral')[0]}",
-                    "secondary": f"3 Firstbeat yük barı da %85+ dolu olduğu için bu koşu yerine ekstra kuvvet önerildi (bar düşünce otomatik koşuya döner) • {gym_summaries[alt_gym]}",
-                    "target": "115-130 bpm (Zone 1)",
-                    "calories": "~2.850 kcal",
-                    "macro": "2.450 kcal (175g P / 250g K / 80g Y)",
+                    **{k: v for k, v in self.nutrition_texts("gym").items() if k in ("calories", "macro")},
                 }
             if slot_kind == "tempo":
                 quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
@@ -825,8 +793,7 @@ class WeeklyQuotaMixin:
                     "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Yüksek Aerobik Tempo (30-35 dk)",
                     "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), Yüksek Aerobik barını doldurmak için uygula • 10 dk ısınma + 20 dk tempo",
                     "target": "Zone 3-4 Eşik/Tempo",
-                    "calories": "~2.950 kcal",
-                    "macro": "2.550 kcal (175g P / 275g K / 80g Y)",
+                    **{k: v for k, v in self.nutrition_texts("tempo").items() if k in ("calories", "macro")},
                 }
             if slot_kind == "zone2":
                 quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
@@ -834,8 +801,7 @@ class WeeklyQuotaMixin:
                     "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Zone 2 Rahat Taban (45-50 dk)",
                     "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), toparlanmana uygun günde uygula • 160+ kadans, burundan nefes",
                     "target": "[[Z2_HR]] ([[Z2_PACE]])",
-                    "calories": "~2.950 kcal",
-                    "macro": "2.550 kcal (175g P / 275g K / 80g Y)",
+                    **{k: v for k, v in self.nutrition_texts("run").items() if k in ("calories", "macro")},
                 }
             quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
             extra_tempo_note = (
@@ -846,8 +812,7 @@ class WeeklyQuotaMixin:
                 "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · 5K Hız İntervali (45 dk, 4x1.000m)",
                 "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), taze bacaklarla uygun günde uygula{extra_tempo_note} • [[INT_PACE]] tempo, 3 dk jog",
                 "target": "[[Z45_HR]] (Zone 4-5)",
-                "calories": "~3.050 kcal",
-                "macro": "2.650 kcal (175g P / 300g K / 80g Y)",
+                **{k: v for k, v in self.nutrition_texts("interval").items() if k in ("calories", "macro")},
             }
         return _build_planned_slot
 
@@ -878,8 +843,7 @@ class WeeklyQuotaMixin:
                     f"kalan {total_rem} seans dinlenmiş günlere kaydırıldı"
                 ),
                 "target": "<105 bpm (Aktif Dinlenme)",
-                "calories": "~2.450 kcal",
-                "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
+                **{k: v for k, v in self.nutrition_texts("rest").items() if k in ("calories", "macro")},
             }
         elif day.i == 6:
             slot_kind = "active_recovery"
@@ -893,8 +857,7 @@ class WeeklyQuotaMixin:
                 "primary": "Aktif Toparlanma / Mobilite & Esnek Yürüyüş",
                 "secondary": f"Esnek Gün — Hafif yürüyüş, esneme, nefes (NSDR) • {quota_note}",
                 "target": "<110 bpm (Zone 1)",
-                "calories": "~2.500 kcal",
-                "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
+                **{k: v for k, v in self.nutrition_texts("rest").items() if k in ("calories", "macro")},
             }
         else:
             slot_kind = "rest"
@@ -913,8 +876,7 @@ class WeeklyQuotaMixin:
                 "primary": "Esnek Toparlanma / Rejenerasyon Penceresi",
                 "secondary": sec_txt,
                 "target": "<100 bpm (Parasempatik gün)",
-                "calories": "~2.450 kcal",
-                "macro": "2.350 kcal (175g P / 220g K / 80g Y)",
+                **{k: v for k, v in self.nutrition_texts("rest").items() if k in ("calories", "macro")},
             }
         return day_label, row_data, slot_kind
 
@@ -991,24 +953,16 @@ class WeeklyQuotaMixin:
     @request_cached
     @zone_text
     def get_weekly_quota_summary(self, now: Optional[datetime] = None) -> Dict[str, Any]:
-        """Pazartesi sıfırlamalı esnek haftalık kota özetini, plan sapmalarını ve güncel yeniden planlamayı döner."""
+        """Pazartesi sıfırlamalı esnek haftalık kota özetini ve güncel yeniden planlamayı döner."""
         _, week_meta = self._build_weekly_schedule_entries(now=now)
         runs_done = week_meta["runs_done"]
         gyms_done = week_meta["gyms_done"]
         rem_runs = week_meta["rem_runs"]
         rem_gyms = week_meta["rem_gyms"]
         carry = week_meta["carryover"]
-        deviations = week_meta.get("plan_deviations") or []
         post_tempo_adapted = bool(week_meta.get("post_tempo_adapted"))
 
         def _run_reason(idx: int, kind: str) -> Optional[str]:
-            if idx == 0 and post_tempo_adapted:
-                tempo_dev = next((d for d in deviations if d.get("actual_kind") == "tempo"), None)
-                if tempo_dev:
-                    return (
-                        f"{tempo_dev['day_label']} yapılan {tempo_dev['actual_label']} haftalık koşu kotasını 1 düşürdü; "
-                        f"{tempo_dev['planned_label']} ise henüz yapılmadığı için haftanın kalan koşu kotası olarak ayrıldı."
-                    )
             if idx == 0 and kind == carry["run_order"][0]:
                 return carry["run_priority_reason"]
             return None
@@ -1040,7 +994,6 @@ class WeeklyQuotaMixin:
             "week_range": week_meta["week_range"],
             "headline": headline,
             "flexibility_note": "",
-            "plan_deviations": deviations,
             "post_tempo_adapted": post_tempo_adapted,
             "dynamic_targets": {
                 "athlete_level": dyn.get("athlete_level", "Temel / Gelişim"),

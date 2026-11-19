@@ -160,8 +160,8 @@ class ProgressionDebriefMixin:
 
         gym_prog = self._build_gym_volume_progression(act_date, sport)
 
-        status_code = cur_status.get("status_code", "MAINTAINING_3")
-        status_tr = cur_status.get("status_tr", "Form Korunuyor (Maintaining)")
+        status_code = cur_status.get("status_code", "NO_STATUS")
+        status_tr = cur_status.get("status_tr", "Durum Yok")
         session_load = round(act.get("load") or 0, 1)
         acute_load = cur_status.get("acute_load", 0)
         chronic_load = cur_status.get("chronic_load", 0)

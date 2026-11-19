@@ -37,12 +37,8 @@
             </button>
             <div class="nav-dropdown-menu" role="menu">
               <button type="button"
-                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym_branch&quot;, &quot;@event&quot;]]"
-                data-subtab-group="sports" data-subtab="gym_branch" class="nav-dropdown-item nav-dropdown-item-active">Kuvvet Branş
-                Özeti</button>
-              <button type="button"
                 data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym&quot;, &quot;@event&quot;]]"
-                data-subtab-group="sports" data-subtab="gym" class="nav-dropdown-item">5x5 Ağırlık Hedefleri</button>
+                data-subtab-group="sports" data-subtab="gym" class="nav-dropdown-item nav-dropdown-item-active">5x5 Ağırlık Hedefleri</button>
               <button type="button"
                 data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym_history&quot;, &quot;@event&quot;]]"
                 data-subtab-group="sports" data-subtab="gym_history" class="nav-dropdown-item">Salon Geçmişi</button>
@@ -53,7 +49,7 @@
           </div>
 
           <button type="button" data-calls="[[&quot;setTab&quot;, &quot;health&quot;]]" id="nav-health"
-            class="nav-tab">Analizler &amp; Geçmiş</button>
+            class="nav-tab"><span class="nav-full">Analizler &amp; Geçmiş</span><span class="nav-short">Analiz</span></button>
         </nav>
 
         <div class="flex items-center gap-2 shrink-0 py-1">
@@ -246,10 +242,9 @@
             <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)]">Antrenman
               Durumu</span>
             <span id="inFocusTrainingStatus"
-              class="font-editorial text-base font-medium moss-text tracking-tight block truncate">Form Korunuyor
-              (Maintaining)</span>
+              class="font-editorial text-base font-medium moss-text tracking-tight block truncate">--</span>
             <p id="inFocusStatusSub" class="font-mono text-[11px] text-[var(--text-secondary)] truncate">Kondisyon:
-              <span class="moss-text font-medium">Pozitif Trend</span>
+              <span class="moss-text font-medium">--</span>
             </p>
           </div>
 
@@ -300,15 +295,9 @@
       </section>
     </div>
 
-    <!-- 3. BRANŞLAR (4 ALT SEKME: KUVVET ÖZETİ / 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME) -->
+    <!-- 3. BRANŞLAR (ALT SEKMELER: 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME) -->
     <div id="section-sports" class="single-screen-section gap-2.5 hidden">
-      <div data-subpane-group="sports" data-subpane="gym_branch" class="single-screen-pane">
-        <section class="surface-card p-4 sm:p-5 flex flex-col overflow-hidden">
-          <div id="gymBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"></div>
-        </section>
-      </div>
-
-      <div data-subpane-group="sports" data-subpane="gym" class="single-screen-pane hidden">
+      <div data-subpane-group="sports" data-subpane="gym" class="single-screen-pane">
         <section class="surface-card p-4 sm:p-5 space-y-3.5 flex flex-col overflow-hidden" id="gymHistorySection">
           <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div class="flex items-center gap-2">
@@ -633,7 +622,7 @@
           <div class="flex items-center justify-between gap-2">
             <h4 class="font-mono text-[11px] font-semibold uppercase tracking-wider accent-text">2. Productive Durumu
             </h4>
-            <span id="debriefProductiveStatusBadge" class="stamp-tag stamp-accent">MAINTAINING</span>
+            <span id="debriefProductiveStatusBadge" class="stamp-tag stamp-accent">--</span>
           </div>
           <p id="debriefProductiveReason" class="text-xs text-[var(--text-secondary)] leading-relaxed"></p>
           <div class="p-3 surface-card text-[11px] text-[var(--text-secondary)] space-y-1">

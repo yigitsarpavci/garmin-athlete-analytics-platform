@@ -96,8 +96,8 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   setText('firstScreenDateBadge', `Son Güncelleme: ${formatTrDateShort(data.date)}${data.is_partial_day ? ' · Bugün' : ''}`);
 
   // 01. HRV (Garmin kişisel baseline aralığına göre son gün gauge barı)
-  const hrvVal = Number(data.overnight_hrv ?? 43);
-  const hrvBase = Number(data.hrv_7d ?? 46) || 46;
+  const hrvVal = Number(data.overnight_hrv ?? data.hrv_7d ?? 0);
+  const hrvBase = Number(data.hrv_7d ?? data.overnight_hrv ?? 0);
   const hrvHasBase = data.hrv_baseline_low != null && data.hrv_baseline_high != null;
   const hrvLow = hrvHasBase ? Number(data.hrv_baseline_low) : Math.round(hrvBase * 0.8);
   const hrvHigh = hrvHasBase ? Number(data.hrv_baseline_high) : Math.round(hrvBase * 1.25);
@@ -119,7 +119,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   _renderGarminGauge('fs-hrv-bar', hrvSegs, hrvActive, hrvPct, 'Zayıf', 'Dengeli', 'Yüksek');
 
   // 02. VO2 Max (+ Trend Yönü)
-  const vo2Num = Number(vo2) || 45.4;
+  const vo2Num = Number(vo2) || 0;
   const vo2Segs = [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }, { cls: 'seg-purple' }];
   const vo2Pct = _piecewiseGaugePct(vo2Num, [34, 38, 44, 50, 55, 60], vo2Segs);
   const vo2Active = vo2Num < 38 ? 0 : (vo2Num < 44 ? 1 : (vo2Num < 50 ? 2 : (vo2Num < 55 ? 3 : 4)));
@@ -135,7 +135,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
 
   // 03. Sleep Score
   const sc = data.sleep_score !== undefined ? Math.round(data.sleep_score) : null;
-  const scNum = sc ?? 80;
+  const scNum = Number(sc ?? 0);
   const scSegs = [{ cls: 'seg-red', flex: 1.5 }, { cls: 'seg-amber', flex: 1.3 }, { cls: 'seg-green', flex: 1.2 }, { cls: 'seg-blue', flex: 1 }];
   const scPct = _piecewiseGaugePct(scNum, [0, 60, 80, 90, 100], scSegs);
   const scActive = scNum < 60 ? 0 : (scNum < 80 ? 1 : (scNum < 90 ? 2 : 3));
@@ -144,7 +144,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   _renderGarminGauge('fs-sleepscore-bar', scSegs, scActive, scPct, '0', '80 İyi', '100');
 
   // 04. Sleep Süre
-  const slpH = Number(data.sleep_hours ?? 6.5);
+  const slpH = Number(data.sleep_hours ?? 0);
   const slpSegs = [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.6 }, { cls: 'seg-blue', flex: 0.7 }];
   const slpPct = _piecewiseGaugePct(slpH, [4.0, 5.5, 7.0, 9.0, 9.5], slpSegs);
   const slpActive = slpH < 5.5 ? 0 : (slpH < 7.0 ? 1 : (slpH <= 9.0 ? 2 : 3));
@@ -156,7 +156,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const remPct = data.rem_sleep_pct !== undefined
     ? data.rem_sleep_pct
     : (data.sleep_hours > 0 && data.rem_hours !== undefined ? (data.rem_hours / data.sleep_hours) * 100 : undefined);
-  const remNum = Number(remPct ?? 18);
+  const remNum = Number(remPct ?? 0);
   const remSegs = [{ cls: 'seg-red', flex: 0.9 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.5 }, { cls: 'seg-blue', flex: 0.9 }];
   const remBarPct = _piecewiseGaugePct(remNum, [8, 12, 18, 25, 30], remSegs);
   const remActive = remNum < 12 ? 0 : (remNum < 18 ? 1 : (remNum <= 25 ? 2 : 3));
@@ -166,7 +166,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
 
   // 06. Günlük Adım
   const stepCur = Number(data.steps ?? 0);
-  const stepGoal = Math.max(1, Number(data.step_goal ?? 10000));
+  const stepGoal = Math.max(1, Number(data.step_goal ?? 0));
   const stepPct = Math.max(0, Math.min(100, (stepCur / stepGoal) * 100));
   setText('fs-steps-val', formatTrInt(data.steps));
   setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})`);
@@ -247,22 +247,26 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
 function renderOverview(data) {
   if (!data) return;
   const curLoad = (data.training_load && data.training_load.current_status) || {};
-  const vo2 = data.training_load && data.training_load.vo2max_current ? data.training_load.vo2max_current : (curLoad.vo2max || data.vo2max || '45.4');
-  const acuteVal = curLoad.acute_load !== undefined ? curLoad.acute_load : (data.acute_load || 279);
-  const chronicVal = curLoad.chronic_load !== undefined ? curLoad.chronic_load : (data.chronic_load || 279);
+  const vo2 = data.training_load && data.training_load.vo2max_current ? data.training_load.vo2max_current : (curLoad.vo2max || data.vo2max || 0);
+  const acuteVal = curLoad.acute_load !== undefined ? curLoad.acute_load : (data.acute_load || 0);
+  const chronicVal = curLoad.chronic_load !== undefined ? curLoad.chronic_load : (data.chronic_load || 0);
   const acwrNum = curLoad.acwr !== undefined ? Number(curLoad.acwr) : Number(data.acwr || 1.0);
-  const tMin = curLoad.tunnel_min ? Math.round(curLoad.tunnel_min) : (data.tunnel_min || 223);
-  const tMax = curLoad.tunnel_max ? Math.round(curLoad.tunnel_max) : (data.tunnel_max || 419);
+  const tMin = curLoad.tunnel_min ? Math.round(curLoad.tunnel_min) : (data.tunnel_min || 0);
+  const tMax = curLoad.tunnel_max ? Math.round(curLoad.tunnel_max) : (data.tunnel_max || 0);
 
   renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVal, acwrNum, tMin, tMax);
 
   const ifsStatus = document.getElementById('inFocusTrainingStatus');
   if (ifsStatus && (curLoad.status_tr || data.training_status)) {
-    ifsStatus.textContent = curLoad.status_tr || data.training_status;
+    const trMon = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+    const asOf = curLoad.status_is_fallback && curLoad.status_as_of ? String(curLoad.status_as_of).split('-') : null;
+    const asOfTxt = asOf && asOf.length === 3 ? ` · ${Number(asOf[2])} ${trMon[Number(asOf[1]) - 1]} verisi` : '';
+    ifsStatus.textContent = (curLoad.status_tr || data.training_status) + asOfTxt;
+    ifsStatus.title = asOfTxt ? 'Garmin bugün için antrenman durumu döndürmedi; son bilinen durum gösteriliyor.' : '';
   }
   const ifsSub = document.getElementById('inFocusStatusSub');
   if (ifsSub) {
-    ifsSub.innerHTML = `Kondisyon: <span class="moss-text font-medium">Pozitif Trend</span> · ACWR ${acwrNum.toFixed(2)}`;
+    ifsSub.innerHTML = `Kondisyon: <span class="moss-text font-medium">${escapeHtml(curLoad.fitness_trend || '--')}</span> · ACWR ${acwrNum.toFixed(2)}`;
   }
 
   const kw = document.getElementById('kpi-weight');
@@ -282,98 +286,6 @@ function renderOverview(data) {
     render93dBiometrics(data.biometrics_93d);
   }
   if (data.weekly_quota) renderWeeklyQuotaPanels(data.weekly_quota);
-}
-
-function _renderBranchSummaryInto(containerId, sp, iconName, opts = {}) {
-  const container = document.getElementById(containerId);
-  if (!container || !sp) return;
-
-  const extraKpis = [];
-  if (sp.current_pace) extraKpis.push({ label: 'Mevcut 5K / Tempo', val: sp.current_pace });
-  if (sp.efficiency_factor !== undefined && sp.efficiency_factor !== null) extraKpis.push({ label: 'Verimlilik (EF)', val: `${sp.efficiency_factor} m/atım` });
-  if (sp.cadence) extraKpis.push({ label: 'Kadans Formu', val: sp.cadence });
-  if (sp.current_status) extraKpis.push({ label: 'Rutin Durumu', val: sp.current_status });
-  if (sp.goal) extraKpis.push({ label: 'Branş Hedefi', val: sp.goal });
-
-  const extraGridHtml = (extraKpis.length && !opts.hideInfoCards)
-    ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        ${extraKpis.map(k => `
-          <div class="tint-panel p-2.5">
-            <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] block">${escapeHtml(k.label)}</span>
-            <span class="text-xs font-semibold text-[var(--text-primary)] break-words">${escapeHtml(String(k.val))}</span>
-          </div>
-        `).join('')}
-      </div>`
-    : '';
-
-  const tipsHtml = ((sp.how_to_improve || []).length && !opts.hideInfoCards)
-    ? `<div class="text-[11px] text-[var(--text-secondary)] space-y-1 tint-panel p-2.5 leading-snug">
-        <p class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-0.5">Öneriler</p>
-        ${(sp.how_to_improve || []).map(item => `<p class="flex items-start gap-1.5"><span class="accent-text">·</span><span>${escapeHtml(item)}</span></p>`).join('')}
-      </div>`
-    : '';
-
-  const lastHtml = sp.last_workout
-    ? `<div class="text-[11px] tint-moss-panel p-2.5 space-y-1">
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <span class="font-semibold">${escapeHtml(sp.last_workout.date || '')}</span>
-          <span class="stamp-tag stamp-moss">${escapeHtml(sp.last_workout.title || '')}</span>
-        </div>
-        <p class="text-[11px] moss-text leading-snug">${sp.last_workout.exercises ? sp.last_workout.exercises.map(escapeHtml).join(' · ') : ''}</p>
-      </div>`
-    : '';
-
-  const upcomingList = Array.isArray(sp.upcoming_sessions) && sp.upcoming_sessions.length
-    ? sp.upcoming_sessions.map(sess => `
-        <div class="tint-panel p-2.5 text-[11px] space-y-0.5">
-          <div class="flex items-center justify-between gap-2 flex-wrap">
-            <span class="font-semibold">${escapeHtml(sess.day || '')}</span>
-            <span class="stamp-tag stamp-accent">${escapeHtml(sess.type || 'Seans')}</span>
-          </div>
-          <p class="font-medium text-xs">${escapeHtml(sess.title || '')} <span class="font-mono text-[12px] text-[var(--text-muted)]">(${escapeHtml(sess.duration || '')})</span></p>
-          ${(sess.target_hr || sess.target_pace) ? `<p class="font-mono text-[11px] accent-text">${[sess.target_hr, sess.target_pace].filter(Boolean).map(escapeHtml).join(' · ')}</p>` : ''}
-          <p class="text-[12px] text-[var(--text-secondary)] leading-snug">${escapeHtml(sess.details || '')}</p>
-        </div>
-      `).join('')
-    : (sp.next_workout ? `
-        <div class="text-[11px] tint-panel p-2.5">
-          <p class="font-semibold">${escapeHtml(sp.next_workout.day)}: ${escapeHtml(sp.next_workout.title)} <span class="font-mono text-[var(--text-muted)]">(${escapeHtml(sp.next_workout.duration || '')})</span></p>
-          <p class="text-[12px] text-[var(--text-secondary)] mt-0.5">${escapeHtml(sp.next_workout.details || (sp.next_workout.exercises ? sp.next_workout.exercises.join(', ') : ''))}</p>
-        </div>
-      ` : '');
-
-  container.innerHTML = `
-    <div class="space-y-2.5 min-w-0 flex flex-col justify-between">
-      <div class="space-y-1">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <div class="icon-box w-7 h-7 shrink-0">${lucideSvg(iconName, 'w-3.5 h-3.5')}</div>
-            <h4 class="font-editorial text-base font-medium tracking-tight leading-snug">${escapeHtml(sp.name || '')}</h4>
-          </div>
-          <span class="stamp-tag stamp-accent">${escapeHtml(sp.schedule_status || 'Aktif')}</span>
-        </div>
-        <p class="font-mono text-[12px] text-[var(--text-secondary)] leading-snug">${escapeHtml(sp.stats_summary || '')}</p>
-      </div>
-      ${extraGridHtml}
-      ${tipsHtml}
-      ${lastHtml}
-    </div>
-    ${upcomingList ? `<div class="space-y-2 min-w-0 lg:border-l lg:border-[var(--border-subtle)] lg:pl-4">
-      <p class="font-mono text-[11px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
-        ${lucideSvg('calendar', 'w-3.5 h-3.5 accent-text')}
-        <span>Bu Hafta Kalan / Sıradaki Seçenekler</span>
-      </p>
-      <div class="space-y-2">${upcomingList}</div>
-    </div>` : ''}
-  `;
-}
-
-function renderSports(sports) {
-  if (!sports) return;
-  if (sports.strength) {
-    _renderBranchSummaryInto('gymBranchSummaryContainer', sports.strength, 'dumbbell', { hideInfoCards: true });
-  }
-  if (typeof refreshIcons === 'function') refreshIcons();
 }
 
 function _decisionStamp(dec) {

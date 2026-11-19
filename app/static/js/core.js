@@ -1,6 +1,5 @@
 /* Garmin Athlete IQ — Core State, Theme, Navigation & Precision Helpers */
 let globalOverview = null;
-let globalSports = null;
 let globalActivities = null;
 let globalGymTypeByDate = {};
 let globalCharts = null;
@@ -213,7 +212,6 @@ async function initApp() {
 
     const [
       overview,
-      sports,
       gymData,
       tlData,
       activities,
@@ -222,7 +220,6 @@ async function initApp() {
       protocolsData
     ] = await Promise.all([
       safeFetchJson('/api/overview'),
-      safeFetchJson('/api/sports'),
       safeFetchJson('/api/gym-history'),
       safeFetchJson('/api/training-load'),
       safeFetchJson('/api/activities'),
@@ -236,10 +233,6 @@ async function initApp() {
       globalOverview = overview;
       applyAthleteBranding(globalOverview);
       renderOverview(globalOverview);
-    }
-    if (sports) {
-      globalSports = sports;
-      renderSports(globalSports);
     }
     if (gymData) {
       globalGymTypeByDate = {};

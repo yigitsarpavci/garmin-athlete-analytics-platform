@@ -692,8 +692,8 @@ class WorkoutProtocolsMixin:
             "cooldown": "5 dk hafif statik esneme (göğüs açış, kalça fleksör ve hamstring).",
             "telemetry_targets": {
                 "hr_range": "115 - 130 bpm (Zone 1)",
-                "est_calories": "~2.850 kcal toplam harcama",
-                "nutrition": f"2.450 kcal alım | {prot_g}g Protein | 250g Karbonhidrat | 80g Sağlıklı Yağ | 3.0 L Su",
+                "est_calories": self.nutrition_texts("gym").get("spend_line", "--"),
+                "nutrition": f"{self.nutrition_texts('gym')['line']} | 3.0 L Su",
             },
         }
 
@@ -722,8 +722,8 @@ class WorkoutProtocolsMixin:
             "cooldown": "00:30 öncesi uyku hazırlığı (8 saat tam toparlanma).",
             "telemetry_targets": {
                 "hr_range": "<100 bpm (Parasempatik Toparlanma)",
-                "est_calories": "~2.500 kcal toplam harcama",
-                "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 220g Karbonhidrat | 80g Sağlıklı Yağ | 2.5 - 3.0 L Su",
+                "est_calories": self.nutrition_texts("rest").get("spend_line", "--"),
+                "nutrition": f"{self.nutrition_texts('rest')['line']} | 2.5 - 3.0 L Su",
             },
         }
 
@@ -755,8 +755,8 @@ class WorkoutProtocolsMixin:
             "cooldown": "8 dk baldır, aşil ve kuadriseps statik esnemesi.",
             "telemetry_targets": {
                 "hr_range": "[[Z2_HR]] (Zone 2 Taban)",
-                "est_calories": "~2.950 kcal toplam harcama",
-                "nutrition": f"2.550 kcal alım | {prot_g}g Protein | 275g Karbonhidrat | 80g Yağ | 3.5 L Su",
+                "est_calories": self.nutrition_texts("run").get("spend_line", "--"),
+                "nutrition": f"{self.nutrition_texts('run')['line']} | 3.5 L Su",
             },
         }
 
@@ -789,8 +789,8 @@ class WorkoutProtocolsMixin:
             "cooldown": "5 dk yürüyüş + baldır ve hamstring esnemesi.",
             "telemetry_targets": {
                 "hr_range": f"{z3_lo} - {z3_hi} bpm (Zone 3-4 Tempo)",
-                "est_calories": "~3.000 kcal toplam harcama",
-                "nutrition": f"2.600 kcal alım | {prot_g}g Protein | 285g Karbonhidrat | 80g Yağ | 3.5 L Su",
+                "est_calories": self.nutrition_texts("tempo").get("spend_line", "--"),
+                "nutrition": f"{self.nutrition_texts('tempo')['line']} | 3.5 L Su",
             },
         }
 
@@ -819,8 +819,8 @@ class WorkoutProtocolsMixin:
             "cooldown": "Gece 00:30 öncesi yatış ve glikojen dengelemesi.",
             "telemetry_targets": {
                 "hr_range": "<100 bpm (Parasempatik Gün)",
-                "est_calories": "~2.450 kcal toplam harcama",
-                "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 230g Karbonhidrat | 80g Yağ | 3.0 L Su",
+                "est_calories": self.nutrition_texts("rest").get("spend_line", "--"),
+                "nutrition": f"{self.nutrition_texts('rest')['line']} | 3.0 L Su",
             },
         }
 
@@ -884,8 +884,8 @@ class WorkoutProtocolsMixin:
             "cooldown": "5 dk arka bacak ve sırt açma esnemesi.",
             "telemetry_targets": {
                 "hr_range": "115 - 130 bpm (Zone 1)",
-                "est_calories": "~2.900 kcal toplam harcama",
-                "nutrition": f"2.500 kcal alım | {prot_g}g Protein | 270g Karbonhidrat | 80g Yağ | 3.0 L Su",
+                "est_calories": self.nutrition_texts("gym").get("spend_line", "--"),
+                "nutrition": f"{self.nutrition_texts('gym')['line']} | 3.0 L Su",
             },
         }
 
@@ -919,8 +919,8 @@ class WorkoutProtocolsMixin:
             "cooldown": "Ekranlardan uzaklaşma.",
             "telemetry_targets": {
                 "hr_range": "<110 bpm (Zone 1)",
-                "est_calories": "~2.500 kcal toplam harcama",
-                "nutrition": f"2.350 kcal alım | {prot_g}g Protein | 220g Karbonhidrat | 80g Yağ | 2.5 - 3.0 L Su",
+                "est_calories": self.nutrition_texts("rest").get("spend_line", "--"),
+                "nutrition": f"{self.nutrition_texts('rest')['line']} | 2.5 - 3.0 L Su",
             },
         }
 
@@ -951,8 +951,8 @@ class WorkoutProtocolsMixin:
             "cooldown": "8-10 dk hafif toparlanma jogu + derin baldır esnemesi.",
             "telemetry_targets": {
                 "hr_range": "[[Z45_HR]] (Zirve Zone 4-5)",
-                "est_calories": "~3.050 kcal toplam harcama",
-                "nutrition": f"2.650 kcal alım | {prot_g}g Protein | 300g Karbonhidrat | 80g Yağ | 3.5 L Su + Elektrolit",
+                "est_calories": self.nutrition_texts("interval").get("spend_line", "--"),
+                "nutrition": f"{self.nutrition_texts('interval')['line']} | 3.5 L Su + Elektrolit",
             },
         }
 

@@ -35,7 +35,7 @@ function _build93dRowGauge(r) {
     <div class="space-y-0.5 w-full">
       <div class="flex items-baseline justify-between gap-2 font-mono text-[10px]">
         <span class="font-semibold sky-text">${escapeHtml(avgDisplay)}</span>
-        <span class="violet-text shrink-0">İdeal: ${escapeHtml(r.ideal_ref)}</span>
+        <span class="violet-text shrink-0">${r.ideal_source === 'personal' ? 'Kişisel' : 'İdeal'}: ${escapeHtml(r.ideal_ref)}</span>
       </div>
       <div class="garmin-gauge">
         <div class="garmin-gauge-track">

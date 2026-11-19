@@ -59,16 +59,16 @@ class TelemetryMixin:
 
         hrv_bl = self.get_hrv_baseline()
         hrv_id_lo, hrv_id_hi = (hrv_bl["low"], hrv_bl["high"]) if hrv_bl else (None, None)
-        hrv_ref_txt = f"{hrv_id_lo:.0f} – {hrv_id_hi:.0f} ms" if hrv_bl else "--"
+        hrv_ref_txt = f"{hrv_id_lo:.0f} – {hrv_id_hi:.0f} ms" if hrv_bl else None
         specs = [
-            ("Günlük Adım Sayısı", "steps", 0, "", "8.000 – 12.000", "Günlük fiziksel hareket hacmi", 8000.0, 12000.0, "higher_better"),
-            ("Günlük Mesafe", "dist_km", 2, " km", "7,0 – 12,0 km", "Koşu, yürüyüş ve diğer branş toplamı", 7.0, 12.0, "higher_better"),
-            ("Günlük Harcama", "total_kcal", 0, " kcal", "2.800 – 3.200", "Bazal + aktif toplam enerji tüketimi", 2800.0, 3200.0, "range"),
-            ("Dinlenik Nabız (RHR)", "rhr", 1, " bpm", "48 – 56 bpm", "Düşük RHR güçlü kardiyak rezervi gösterir", 48.0, 56.0, "lower_better"),
+            ("Günlük Adım Sayısı", "steps", 0, "", None, "Günlük fiziksel hareket hacmi", None, None, "higher_better"),
+            ("Günlük Mesafe", "dist_km", 2, " km", None, "Koşu, yürüyüş ve diğer branş toplamı", None, None, "higher_better"),
+            ("Günlük Harcama", "total_kcal", 0, " kcal", None, "Bazal + aktif toplam enerji tüketimi", None, None, "range"),
+            ("Dinlenik Nabız (RHR)", "rhr", 1, " bpm", None, "Düşük RHR güçlü kardiyak rezervi gösterir", None, None, "lower_better"),
             ("Gece HRV", "hrv_night", 1, " ms", hrv_ref_txt, "Parasempatik otonom denge göstergesi", hrv_id_lo, hrv_id_hi, "higher_better"),
-            ("Günlük Ort. Stres", "avg_stress", 1, "", "25 – 35", "Gün içi sempatik yük puanı", 25.0, 35.0, "lower_better"),
-            ("Sabah Body Battery", "bb_wake", 1, "", "75 – 100", "Gece uykusundan sonraki başlangıç rezervi", 75.0, 100.0, "higher_better"),
-            ("Akşam Dip Enerji", "bb_low", 1, "", "15 – 30", "Gün sonu rezerv dibi", 15.0, 30.0, "range"),
+            ("Günlük Ort. Stres", "avg_stress", 1, "", None, "Gün içi sempatik yük puanı", None, None, "lower_better"),
+            ("Sabah Body Battery", "bb_wake", 1, "", None, "Gece uykusundan sonraki başlangıç rezervi", None, None, "higher_better"),
+            ("Akşam Dip Enerji", "bb_low", 1, "", None, "Gün sonu rezerv dibi", None, None, "range"),
             ("Toplam Uyku Süresi", "sleep_h", 2, " sa", "7,5 – 8,5 sa", "Kas/sinir sistemi yenilenme süresi", 7.5, 8.5, "higher_better"),
             ("Derin Uyku Oranı", "deep_h", 1, "%", "%15 – %20", "Doku tamiri ve anabolik faz", 15.0, 20.0, "higher_better"),
             ("REM Uyku Oranı", "rem_h", 1, "%", "%20 – %25", "Bilişsel ve nörolojik toparlanma fazı", 20.0, 25.0, "higher_better"),
@@ -96,9 +96,21 @@ class TelemetryMixin:
             min_v = float(ser.min())
             max_v = float(ser.max())
             extra_note = note
-            if id_lo is None or id_hi is None:  # Garmin baseline'ı yok: sporcunun kendi çeyrekleri
+            ideal_source = "reference"
+            if id_lo is None or id_hi is None:  # Sabit norm yok: sporcunun KENDİ tipik bandı (çeyrekler) ve Garmin adım hedefi
                 id_lo, id_hi = float(ser.quantile(0.25)), float(ser.quantile(0.75))
-                ref_rng = f"{id_lo:.0f} – {id_hi:.0f}{sfx}"
+                if col == "steps" and "step_goal" in self.df.columns:
+                    goal = pd.to_numeric(self.df["step_goal"], errors="coerce").dropna()
+                    if not goal.empty and float(goal.median()) > 0:
+                        id_lo = float(goal.median())
+                        id_hi = max(id_hi, id_lo * 1.2)
+                if id_hi <= id_lo:
+                    id_hi = id_lo + max(1.0, abs(id_lo) * 0.1)
+                if dec == 0:
+                    ref_rng = f"{int(round(id_lo)):,} – {int(round(id_hi)):,}".replace(",", ".") + sfx
+                else:
+                    ref_rng = f"{_fmt(id_lo, dec)} – {_fmt(id_hi, dec)}{sfx}"
+                ideal_source = "personal"
             if col == "steps" and "step_goal" in self.df.columns:
                 goals = pd.to_numeric(self.df["step_goal"], errors="coerce").fillna(10000)
                 steps_num = pd.to_numeric(self.df["steps"], errors="coerce").fillna(0)
@@ -123,6 +135,7 @@ class TelemetryMixin:
                 "avg_median": avg_str,
                 "min_max": rng_str,
                 "ideal_ref": ref_rng,
+                "ideal_source": ideal_source,
                 "status": extra_note,
                 "avg_val": round(mean_v, 2),
                 "med_val": round(med_v, 2),
@@ -717,7 +730,7 @@ class TelemetryMixin:
         cur_acute = ac.get("dailyTrainingLoadAcute") or 0
         cur_chronic = ac.get("dailyTrainingLoadChronic") or 0
         cur_acwr_status = ac.get("acwrStatus") or "OPTIMAL"
-        cur_status_code = st.get("trainingStatusFeedbackPhrase", "MAINTAINING_3")
+        cur_status_code = st.get("trainingStatusFeedbackPhrase") or "NO_STATUS"
         cur_status_tr = status_tr_map.get(cur_status_code, cur_status_code)
 
         # Load Focus Hesaplaması — Gerçek bar doluluk oranına göre eksik sistemi seç.
@@ -766,6 +779,8 @@ class TelemetryMixin:
             "current_status": {
                 "status_code": cur_status_code,
                 "status_tr": cur_status_tr,
+                "status_as_of": getattr(self, "training_status_as_of", None),
+                "status_is_fallback": bool(getattr(self, "training_status_is_fallback", False)) or not st,
                 "vo2max": round(vo2_current, 1),
                 "fitness_trend": (
                     "Düşük Akut Yük" if cur_acwr < 0.8

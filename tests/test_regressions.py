@@ -647,3 +647,22 @@ class TestHrvBaselineFromGarmin(unittest.TestCase):
         self.assertIsNone(eng.get_hrv_baseline())
         eng.get_personal_baseline = lambda col, **k: {"reliable": True, "p25": 31.0, "p75": 49.0}
         self.assertEqual(eng.get_hrv_baseline(), {"low": 31.0, "high": 49.0, "source": "personal"})
+
+
+class TestPersonalNutritionAndStatus(unittest.TestCase):
+    def test_nutrition_is_derived_from_own_data_and_none_without_data(self):
+        import pandas as pd
+        eng = GarminAthleteEngine.__new__(GarminAthleteEngine)
+        eng.df = pd.DataFrame({"total_kcal": [2600.0] * 10 + [100.0], "bmr_kcal": [1800.0] * 11})
+        eng.get_current_weight = lambda: 80.0
+        eng.get_target_weight = lambda: 75.0
+        run = eng.get_day_nutrition("run")
+        rest = eng.get_day_nutrition("rest")
+        self.assertGreater(run["spend"], rest["spend"])
+        self.assertEqual(run["protein"], 160)
+        self.assertEqual(run["intake"], int(round((2600 * 1.02 - 500) / 50) * 50))
+        eng.get_target_weight = lambda: 80.0  # hedefte: açık yok
+        self.assertEqual(eng.get_day_nutrition("rest")["intake"], int(round(2600 * 0.88 / 50) * 50))
+        eng.df = pd.DataFrame()
+        self.assertIsNone(eng.get_day_nutrition("run"))
+        self.assertEqual(eng.nutrition_texts("run")["macro"], "--")

@@ -259,6 +259,46 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
             return {"low": round(pb["p25"], 1), "high": round(pb["p75"], 1), "source": "personal"}
         return None
 
+    _NUTRITION_DAY_FACTOR = {"rest": 0.88, "gym": 0.98, "run": 1.02, "tempo": 1.04, "interval": 1.05}
+
+    def get_day_nutrition(self, kind: str) -> Optional[Dict[str, int]]:
+        """
+        Gün tipine göre kişisel enerji/makro hedefi. Harcama tabanı sporcunun KENDİ son 28 günlük ortalama toplam harcaması (Garmin),
+        açık sadece hedef kilonun üstündeyse (~500 kcal); protein 2,0 g/kg, yağ 0,9 g/kg, kalan karbonhidrat. Veri yoksa None.
+        """
+        if self.df.empty or "total_kcal" not in self.df.columns:
+            return None
+        ser = pd.to_numeric(self.df["total_kcal"], errors="coerce")
+        ser = ser[ser > 0].iloc[:-1].tail(28)
+        if ser.empty:
+            return None
+        weight = float(self.get_current_weight() or 0)
+        if weight <= 0:
+            return None
+        spend = float(ser.mean()) * self._NUTRITION_DAY_FACTOR.get(kind, 1.0)
+        deficit = 500.0 if weight > float(self.get_target_weight()) + 0.5 else 0.0
+        bmr = pd.to_numeric(self.df.get("bmr_kcal"), errors="coerce").dropna()
+        floor = float(bmr.mean()) if not bmr.empty else 0.0
+        intake = max(spend - deficit, floor)
+        protein = round(weight * 2.0)
+        fat = round(weight * 0.9)
+        carbs = max(0, round((intake - 4 * protein - 9 * fat) / 4 / 5) * 5)
+        return {"spend": int(round(spend / 50) * 50), "intake": int(round(intake / 50) * 50),
+                "protein": int(protein), "carbs": int(carbs), "fat": int(fat)}
+
+    def nutrition_texts(self, kind: str) -> Dict[str, str]:
+        """Takvim satırı için kişisel 'calories' / 'macro' metinleri; veri yoksa '--'."""
+        n = self.get_day_nutrition(kind)
+        if not n:
+            return {"calories": "--", "macro": "--", "line": "--"}
+        f = lambda v: f"{v:,}".replace(",", ".")
+        return {
+            "calories": f"~{f(n['spend'])} kcal",
+            "macro": f"{f(n['intake'])} kcal ({n['protein']}g P / {n['carbs']}g K / {n['fat']}g Y)",
+            "line": f"{f(n['intake'])} kcal alım | {n['protein']}g Protein | {n['carbs']}g Karbonhidrat | {n['fat']}g Yağ",
+            "spend_line": f"~{f(n['spend'])} kcal toplam harcama",
+        }
+
     def get_physiology(self) -> Dict[str, Any]:
         """
         Sporcunun fizyolojik eşiklerini Garmin verisinden türetir (kişisel sabit yok):
@@ -298,8 +338,12 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
 
         weekly = self.training_status_weekly if isinstance(self.training_status_weekly, dict) else {}
         self.training_status_weekly = {k: v for k, v in weekly.items() if _has_data(v)}
+        self.training_status_as_of = None
+        self.training_status_is_fallback = False
         if not _has_data(self.training_status_latest) and self.training_status_weekly:
-            self.training_status_latest = self.training_status_weekly[max(self.training_status_weekly)]
+            self.training_status_as_of = max(self.training_status_weekly)
+            self.training_status_is_fallback = True
+            self.training_status_latest = self.training_status_weekly[self.training_status_as_of]
 
     def _load_data_locked(self) -> None:
         self._apply_profile()

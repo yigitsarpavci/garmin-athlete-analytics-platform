@@ -5,14 +5,11 @@ Mevcut Firstbeat 3 yük barı (Düşük Aerobik, Yüksek Aerobik, Anaerobik) üz
 sıradaki N (varsayılan 4) seansı kapalı çevrim simüle eder:
   1. 28 günlük pencereden her adımda düşecek (expire olacak) geçmiş antrenman
      yüklerini gerçek Garmin geçmişinden çıkarır.
-  2. Üç barın tamamı eşik üstündeyse (>= %85), koşu yerine dinamik olarak
-     ekstra Gym (Kuvvet) önerir; bir sonraki güncellemede barlardan biri düşerse
-     eklenen Gym otomatik kalkıp tekrar koşuya döner.
-  3. Barlardan en az biri < %85 ise en düşük doluluktaki barı hedefler:
+  2. En düşük doluluktaki barı hedefler:
      - Düşük Aerobik en düşükse -> Zone 2 (zone2)
-     - Yüksek Aerobik en düşükse -> Tempo (tempo)
+     - Yüksek Aerobik en düşükse -> Tempo (tempo; yalnızca Garmin hedef bantları varsa)
      - Anaerobik en düşükse -> Hız İntervali (interval)
-  4. Seçilen türün en son gerçek Garmin koşusunun EPOC/TE katkısını barlara ekler.
+  3. Seçilen türün en son gerçek Garmin koşusunun EPOC/TE katkısını barlara ekler.
 """
 
 from datetime import datetime, timedelta
@@ -74,11 +71,6 @@ def estimate_activity_load_contribution(act: Optional[Dict[str, Any]], kind: Opt
         "high_aerobic": high_add,
         "anaerobic": an_add,
     }
-
-
-def estimate_run_load_contribution(act: Optional[Dict[str, Any]], kind: str) -> Dict[str, float]:
-    """Geriye dönük uyumluluk için koşu katkısı sarmalayıcısı."""
-    return estimate_activity_load_contribution(act, kind=kind)
 
 
 def get_latest_run_profiles(activities_all: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
@@ -197,8 +189,7 @@ def predict_next_n_runs(
     """
     Mevcut Firstbeat yük barlarından başlayarak sıradaki n seansı simüle eder:
     - Her adımda 28 günlük pencereden düşecek geçmiş yükleri çıkarır.
-    - Tüm barlar overflow_threshold (%85) üstündeyse o koşu yerine dinamik Gym önerir.
-    - Aksi halde en düşük barı (zone2 / tempo / interval) seçip son gerçek koşunun katkısını ekler.
+    - Her adımda en düşük barı (zone2 / tempo / interval) seçip son gerçek koşunun katkısını ekler.
     """
     al = load_focus.get("aerobic_low") or {}
     ah = load_focus.get("aerobic_high") or {}
@@ -221,7 +212,6 @@ def predict_next_n_runs(
         "zone2": "Zone 2 Rahat Taban",
         "tempo": "Tempo Koşusu (Yüksek Aerobik)",
         "interval": "5K Hız İntervali (Z4-5)",
-        "gym_overflow": "Ekstra Kuvvet (Yük Taşmasını Önle)",
     }
 
     for step_idx in range(1, n + 1):
