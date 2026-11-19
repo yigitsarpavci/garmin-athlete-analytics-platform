@@ -369,9 +369,6 @@ function _renderBranchSummaryInto(containerId, sp, iconName, opts = {}) {
 
 function renderSports(sports) {
   if (!sports) return;
-  if (sports.running) {
-    _renderBranchSummaryInto('runningBranchSummaryContainer', sports.running, 'footprints');
-  }
   if (sports.strength) {
     _renderBranchSummaryInto('gymBranchSummaryContainer', sports.strength, 'dumbbell', { hideInfoCards: true });
   }

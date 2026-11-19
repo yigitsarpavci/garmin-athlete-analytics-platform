@@ -37,12 +37,8 @@
             </button>
             <div class="nav-dropdown-menu" role="menu">
               <button type="button"
-                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;run_branch&quot;, &quot;@event&quot;]]"
-                data-subtab-group="sports" data-subtab="run_branch"
-                class="nav-dropdown-item nav-dropdown-item-active">Koşu Branş Özeti</button>
-              <button type="button"
                 data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym_branch&quot;, &quot;@event&quot;]]"
-                data-subtab-group="sports" data-subtab="gym_branch" class="nav-dropdown-item">Kuvvet Branş
+                data-subtab-group="sports" data-subtab="gym_branch" class="nav-dropdown-item nav-dropdown-item-active">Kuvvet Branş
                 Özeti</button>
               <button type="button"
                 data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym&quot;, &quot;@event&quot;]]"
@@ -304,15 +300,9 @@
       </section>
     </div>
 
-    <!-- 3. BRANŞLAR (5 ALT SEKME: KOŞU ÖZETİ / KUVVET ÖZETİ / 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME) -->
+    <!-- 3. BRANŞLAR (4 ALT SEKME: KUVVET ÖZETİ / 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME) -->
     <div id="section-sports" class="single-screen-section gap-2.5 hidden">
-      <div data-subpane-group="sports" data-subpane="run_branch" class="single-screen-pane">
-        <section class="surface-card p-4 sm:p-5 flex flex-col overflow-hidden">
-          <div id="runningBranchSummaryContainer" class="grid grid-cols-1 gap-4 items-start"></div>
-        </section>
-      </div>
-
-      <div data-subpane-group="sports" data-subpane="gym_branch" class="single-screen-pane hidden">
+      <div data-subpane-group="sports" data-subpane="gym_branch" class="single-screen-pane">
         <section class="surface-card p-4 sm:p-5 flex flex-col overflow-hidden">
           <div id="gymBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"></div>
         </section>

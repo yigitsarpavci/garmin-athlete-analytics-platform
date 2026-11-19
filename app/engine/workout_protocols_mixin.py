@@ -13,7 +13,7 @@ from typing import Dict, List, Any
 
 try:
     from athlete_principles import build_athlete_principles
-    from engine.helpers import request_cached, zone_text, DATA_DIR, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from engine.helpers import request_cached, zone_text, DATA_DIR, format_sport_tr
     from engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
         build_projected_gym_summary,
@@ -28,7 +28,7 @@ try:
     )
 except ImportError:
     from app.athlete_principles import build_athlete_principles
-    from app.engine.helpers import request_cached, zone_text, DATA_DIR, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from app.engine.helpers import request_cached, zone_text, DATA_DIR, format_sport_tr
     from app.engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
         build_projected_gym_summary,
@@ -351,17 +351,11 @@ class WorkoutProtocolsMixin:
     @request_cached
     @zone_text
     def get_sports_guidance(self) -> Dict[str, Any]:
-        """Koşu, Kuvvet, Yelken, Basketbol ve Garmin'den gelen tüm preset dışı sporlar için dinamik rehberlik döner."""
+        """Kuvvet ve Garmin'den gelen tüm preset dışı sporlar için dinamik rehberlik döner."""
         weekly_quota = self.get_weekly_quota_summary()
-        runs_done = weekly_quota["running"]["completed"]
-        rem_runs = weekly_quota["running"]["remaining"]
         gyms_done = weekly_quota["strength"]["completed"]
         rem_gyms = weekly_quota["strength"]["remaining"]
-        metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
-        cur_w = metrics.get("weight") or self.get_current_weight()
         prog = self.get_gym_exercise_history().get("progression", {})
-
-        latest_cadence, latest_ef, run_cnt, run_hr, run_km = self._compute_running_stats()
 
         gym_cnt, gym_hours, gym_kcal = self._compute_strength_stats()
 
@@ -373,7 +367,7 @@ class WorkoutProtocolsMixin:
 
         gym_upcoming = self._build_gym_upcoming(active_split, gym_sessions, prog, split_slots, weekly_quota)
 
-        last_run_workout, last_workout = self._build_last_workouts(gym_sessions)
+        last_workout = self._build_last_workout(gym_sessions)
 
         sq_t = prog.get("squat", {}).get("next_target", "--")
         ohp_t = prog.get("ohp", {}).get("next_target", "--")
@@ -388,11 +382,6 @@ class WorkoutProtocolsMixin:
 
         extra_sports = self._collect_extra_sports_cards()
 
-        run_target = weekly_quota["running"]["target"]
-        run_sched_status = (
-            f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/{run_target} Tamamlandı · Kota Doldu)"
-            if rem_runs == 0 else f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/{run_target} Yapıldı · Kalan: {rem_runs})"
-        )
         gym_sched_status = (
             f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Tamamlandı · Kota Doldu)"
             if rem_gyms == 0 else f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Yapıldı · Kalan: {rem_gyms})"
@@ -401,22 +390,6 @@ class WorkoutProtocolsMixin:
         return {
             "weekly_quota": weekly_quota,
             "extra_sports": extra_sports,
-            "running": {
-                "name": "Koşu (Running)",
-                "schedule_status": run_sched_status,
-                "current_pace": metrics.get("latest_5k", "--"),
-                "target_pace": f"{self.get_goal_5k()['pace']} (5K: <{self.get_goal_5k()['label']})",
-                "efficiency_factor": latest_ef,
-                "cadence": f"{latest_cadence} spm (Harika Form ve Düşük Darbe)",
-                "stats_summary": f"{run_cnt} Koşu • {run_km} km Mesafe • {run_hr} bpm Ortalama Nabız",
-                "last_workout": last_run_workout,
-                "how_to_improve": [
-                    "80/20 Polarize Model: Haftalık 2 koşu kotasının 1'ini Zone 2 ([[Z2_HR]], konuşma temposu), 1'ini hız intervali (Anaerobik eksik kapatıcı) olarak uygulayın.",
-                    "Laktat Eşiği İntervali: 4x1.000m @ [[INT_PACE]] ([[INT_HR]]) ile yüksek hız toleransını ve anaerobik yük barını yukarı taşıyın.",
-                    f"{latest_cadence} spm Kadans Kontrolü: Kısa, elastik adımlarla diz/eklem darbesini minimumda tutun.",
-                    f"Kilo Adaptasyonu ({cur_w:.1f} -> {self.get_target_weight():.1f} kg): Her -1 kg hafifleme 5K süresini ~14 sn hızlandırır.",
-                ],
-            },
             "strength": {
                 "name": "Kuvvet Antrenmanı (Strength)",
                 "schedule_status": gym_sched_status,
@@ -438,27 +411,6 @@ class WorkoutProtocolsMixin:
                 },
             },
         }
-
-    def _compute_running_stats(self):
-        """Koşu sayısı, mesafe, ortalama nabız, kadans ve verimlilik faktörünü hesaplar."""
-        # Canlı koşu istatistikleri
-        run_cnt, run_km, run_hr, latest_cadence, latest_ef = 0, 0.0, 0, 0, 0.0
-        if hasattr(self, "adf") and not self.adf.empty:
-            r_df = self.adf_3m[self.adf_3m["sport"].str.contains("running", case=False, na=False)]
-            if not r_df.empty:
-                run_cnt = int(len(r_df))
-                run_km = round(float(r_df["dist_km"].sum()), 1)
-                valid_hr = r_df["avg_hr"].replace(0, float("nan")).dropna()
-                if not valid_hr.empty:
-                    run_hr = int(round(float(valid_hr.mean())))
-                valid_cad = r_df["cadence"].dropna()
-                if not valid_cad.empty:
-                    latest_cadence = int(round(float(valid_cad.iloc[0])))
-                valid_ef = r_df["ef_spd"].dropna()
-                if not valid_ef.empty:
-                    latest_ef = round(float(valid_ef.iloc[0]), 2)
-        return latest_cadence, latest_ef, run_cnt, run_hr, run_km
-
 
     def _compute_strength_stats(self):
         """Kuvvet seansı sayısını, toplam saati ve kaloriyi hesaplar."""
@@ -540,34 +492,8 @@ class WorkoutProtocolsMixin:
         return gym_upcoming
 
 
-    def _build_last_workouts(self, gym_sessions):
-        """Son koşu ve son kuvvet seansının özet kartlarını üretir."""
-        latest_run_act = None
-        for act in sorted(self.activities_all, key=lambda x: x.get("startTimeLocal") or "", reverse=True):
-            sp_k = (act.get("sport") or (act.get("activityType") or {}).get("typeKey") or "").lower()
-            if classify_sport_bucket(sp_k) == "running":
-                latest_run_act = act
-                break
-        if latest_run_act:
-            r_cls = classify_run_workout(latest_run_act)
-            r_dt = (latest_run_act.get("startTimeLocal") or "")[:10]
-            r_tm = (latest_run_act.get("startTimeLocal") or "")[11:16]
-            r_km = round((latest_run_act.get("distance") or 0) / 1000.0, 2)
-            r_dur = int(round((latest_run_act.get("duration") or 0) / 60.0))
-            r_hr = int(round(latest_run_act.get("averageHR") or 0))
-            dev_note = " · Plan Dışı Sapma" if not r_cls["is_planned_archetype"] else ""
-            last_run_workout = {
-                "date": f"{r_dt} ({r_tm})" if r_tm else r_dt,
-                "title": f"{r_cls['label_tr']}{dev_note}",
-                "exercises": [
-                    latest_run_act.get("activityName") or "Koşu",
-                    f"{r_km:.2f} km · {r_dur} dk",
-                    f"{r_hr} bpm ort.",
-                    f"TE: {r_cls['te_label']} · AnTE: {r_cls['an_te']}",
-                ],
-            }
-        else:
-            last_run_workout = None
+    def _build_last_workout(self, gym_sessions):
+        """Son kuvvet seansının özet kartını üretir."""
         if gym_sessions:
             latest_gym = gym_sessions[0]
             date_str = latest_gym.get("date", "")
@@ -586,7 +512,7 @@ class WorkoutProtocolsMixin:
                 "title": "Workout A (TAMAMLANDI)",
                 "exercises": ["Henüz Garmin'den kuvvet seansı alınmadı"],
             }
-        return last_run_workout, last_workout
+        return last_workout
 
 
     def _collect_extra_sports_cards(self):
