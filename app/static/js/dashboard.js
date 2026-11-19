@@ -381,8 +381,225 @@ function renderSports(sports) {
   if (typeof refreshIcons === 'function') refreshIcons();
 }
 
+let latestGymData = null;
+
+function _decisionStamp(dec) {
+  if (dec === 'CONSOLIDATE' || dec === 'READINESS_HOLD') {
+    return '<span class="stamp-tag stamp-ochre">KONSOLİDASYON</span>';
+  }
+  if (dec === 'DELOAD_10PCT' || dec === 'DETRAINING_RESET') {
+    return '<span class="stamp-tag stamp-crimson">%10 DELOAD</span>';
+  }
+  return '<span class="stamp-tag stamp-moss">ARTIŞ (+kg)</span>';
+}
+
+function renderGymLogControls(gym) {
+  const box = document.getElementById('gymLogActionContainer');
+  if (!box || !gym) return;
+  const p = gym.progression || {};
+  const activeSplit = (gym.program_state || {}).active_split || '5x5_linear';
+  const manualCount = gym.manual_log_count || 0;
+
+  const sq = (p.squat || {}).next_kg || 67.5;
+  const bp = (p.bench || {}).next_kg || 52.5;
+  const rw = (p.row || {}).next_kg || 62.5;
+  const ohp = (p.ohp || {}).next_kg || 40.0;
+  const dl = (p.deadlift || {}).next_kg || 65.0;
+
+  box.innerHTML = `
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="stamp-tag stamp-accent">DİNAMİK RE-PLANNER</span>
+        <span class="text-[11px] text-[var(--text-secondary)]">Seansı tamamladığında veya eksik tekrar yaptığında sonucu gir; tüm sonraki projeksiyonlar otomatik yeniden hesaplansın.</span>
+      </div>
+      <div class="flex items-center gap-2">
+        ${manualCount > 0 ? `<button type="button" onclick="resetManualGymLog()" class="px-2.5 py-1 text-[10.5px] font-mono border border-[var(--border-medium)] rounded-[3px] hover:bg-[var(--bg-subtle)]">Son Kaydı Geri Al (${manualCount})</button>` : ''}
+        <button type="button" onclick="toggleGymLoggerPanel()" class="px-3 py-1 text-[11px] font-mono font-semibold bg-[var(--accent)] text-black rounded-[3px] hover:opacity-90">+ Seans Sonucu Gir</button>
+      </div>
+    </div>
+    <div id="gymLoggerFormPanel" class="hidden mt-3 p-3 tint-panel space-y-2.5">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+        <div>
+          <label class="font-mono text-[10px] text-[var(--text-secondary)] block mb-1">Seans Türü</label>
+          <select id="gymLogTypeSelect" onchange="prefillGymLoggerInputs()" class="w-full bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-2 py-1 text-xs">
+            ${activeSplit === 'push_pull'
+              ? '<option value="Push">Push (İtme + Ön Bacak)</option><option value="Pull">Pull (Çekme + Arka Zincir)</option>'
+              : '<option value="Workout B">Workout B (Squat / OHP / Deadlift)</option><option value="Workout A">Workout A (Squat / Bench / Row)</option>'}
+          </select>
+        </div>
+        <div>
+          <label class="font-mono text-[10px] text-[var(--text-secondary)] block mb-1">Tarih</label>
+          <input id="gymLogDateInput" type="date" value="${new Date().toISOString().slice(0, 10)}" class="w-full bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-2 py-1 text-xs font-mono">
+        </div>
+        <div>
+          <label class="font-mono text-[10px] text-[var(--text-secondary)] block mb-1">Hızlı Senaryo</label>
+          <div class="flex gap-1">
+            <button type="button" onclick="applyGymPreset('clean')" class="flex-1 px-1.5 py-1 text-[10px] font-mono border border-[var(--border-medium)] rounded-[3px] hover:bg-[var(--bg-subtle)]">Tam (5x5)</button>
+            <button type="button" onclick="applyGymPreset('stall')" class="flex-1 px-1.5 py-1 text-[10px] font-mono border border-[var(--ochre)] ochre-text rounded-[3px] hover:bg-[var(--bg-subtle)]">Takılma (5,5,4,3,3)</button>
+            <button type="button" onclick="applyGymPreset('fail')" class="flex-1 px-1.5 py-1 text-[10px] font-mono border border-[var(--crimson)] crimson-text rounded-[3px] hover:bg-[var(--bg-subtle)]">Ağır Geldi</button>
+          </div>
+        </div>
+      </div>
+      <div id="gymLoggerRows" class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]"
+           data-sq="${sq}" data-bp="${bp}" data-rw="${rw}" data-ohp="${ohp}" data-dl="${dl}">
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button type="button" onclick="submitGymSessionLog()" class="px-3 py-1.5 text-[11px] font-mono font-semibold bg-[var(--moss)] text-black rounded-[3px] hover:opacity-90">Kaydet & Sonraki Seansları Planla</button>
+      </div>
+    </div>
+  `;
+  prefillGymLoggerInputs();
+}
+
+function toggleGymLoggerPanel() {
+  const el = document.getElementById('gymLoggerFormPanel');
+  if (el) el.classList.toggle('hidden');
+}
+
+function prefillGymLoggerInputs(preset = 'clean') {
+  const rowsEl = document.getElementById('gymLoggerRows');
+  const typeEl = document.getElementById('gymLogTypeSelect');
+  if (!rowsEl || !typeEl) return;
+  const wType = typeEl.value;
+  const sq = parseFloat(rowsEl.dataset.sq || '67.5');
+  const bp = parseFloat(rowsEl.dataset.bp || '52.5');
+  const rw = parseFloat(rowsEl.dataset.rw || '62.5');
+  const ohp = parseFloat(rowsEl.dataset.ohp || '40.0');
+  const dl = parseFloat(rowsEl.dataset.dl || '65.0');
+
+  const reps5 = preset === 'clean' ? '5,5,5,5,5' : (preset === 'stall' ? '5,5,4,3,3' : '4,3,3,2,2');
+  const reps1 = preset === 'clean' ? '5' : (preset === 'stall' ? '3' : '2');
+
+  let items = [];
+  if (wType.includes('Workout A')) {
+    items = [
+      { key: 'Back Squat', w: sq, reps: reps5 },
+      { key: 'Bench Press', w: bp, reps: reps5 },
+      { key: 'Barbell Row', w: rw, reps: reps5 },
+    ];
+  } else if (wType.includes('Workout B')) {
+    items = [
+      { key: 'Back Squat', w: sq, reps: reps5 },
+      { key: 'Overhead Press (OHP)', w: ohp, reps: reps5 },
+      { key: 'Barbell Deadlift', w: dl, reps: reps1 },
+    ];
+  } else if (wType.includes('Push')) {
+    items = [
+      { key: 'Back Squat', w: sq, reps: reps5 },
+      { key: 'Bench Press', w: bp, reps: reps5 },
+      { key: 'Overhead Press (OHP)', w: ohp, reps: reps5 },
+    ];
+  } else {
+    items = [
+      { key: 'Barbell Deadlift', w: dl, reps: reps1 },
+      { key: 'Barbell Row', w: rw, reps: reps5 },
+    ];
+  }
+
+  rowsEl.innerHTML = items.map((it, i) => `
+    <div class="p-2 bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-[3px] space-y-1">
+      <span class="font-semibold block">${escapeHtml(it.key)}</span>
+      <div class="flex gap-1.5">
+        <input type="number" step="2.5" id="gymLogW_${i}" data-ex="${escapeHtml(it.key)}" value="${it.w}" class="w-20 bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-[3px] px-1.5 py-0.5 font-mono text-xs" title="Ağırlık (kg)">
+        <input type="text" id="gymLogR_${i}" value="${it.reps}" class="flex-1 bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-[3px] px-1.5 py-0.5 font-mono text-xs" title="Set tekrarları (virgülle)">
+      </div>
+    </div>
+  `).join('');
+}
+
+function applyGymPreset(preset) {
+  prefillGymLoggerInputs(preset);
+}
+
+async function submitGymSessionLog() {
+  const typeEl = document.getElementById('gymLogTypeSelect');
+  const dateEl = document.getElementById('gymLogDateInput');
+  const rowsEl = document.getElementById('gymLoggerRows');
+  if (!typeEl || !rowsEl) return;
+
+  const wInputs = rowsEl.querySelectorAll('input[id^="gymLogW_"]');
+  const exercises = [];
+  wInputs.forEach((wEl, idx) => {
+    const rEl = document.getElementById(`gymLogR_${idx}`);
+    const weight = parseFloat(wEl.value || '0');
+    const repsArr = String(rEl ? rEl.value : '5').split(',').map(x => parseInt(x.trim(), 10)).filter(n => !isNaN(n) && n > 0);
+    if (weight > 0 && repsArr.length > 0) {
+      exercises.push({
+        name: wEl.dataset.ex,
+        sets: repsArr.map(r => ({ weight_kg: weight, reps: r })),
+      });
+    }
+  });
+
+  const resp = await fetch('/api/gym/log-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      workout_type: typeEl.value,
+      date: dateEl ? dateEl.value : '',
+      exercises,
+    }),
+  });
+  const data = await resp.json();
+  if (data.gym_history) renderGymHistory(data.gym_history);
+  if (data.sports) {
+    globalSports = data.sports;
+    renderSports(globalSports);
+  }
+  if (data.daily_protocols && typeof renderDailyProtocols === 'function') {
+    renderDailyProtocols(data.daily_protocols);
+  }
+}
+
+async function resetManualGymLog() {
+  const resp = await fetch('/api/gym/reset-logs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'last' }),
+  });
+  const data = await resp.json();
+  if (data.gym_history) renderGymHistory(data.gym_history);
+  if (data.sports) {
+    globalSports = data.sports;
+    renderSports(globalSports);
+  }
+  if (data.daily_protocols && typeof renderDailyProtocols === 'function') {
+    renderDailyProtocols(data.daily_protocols);
+  }
+}
+
+async function applyProgramTransition(askAi = false) {
+  const sel = document.getElementById('gymSplitSelect');
+  if (!sel) return;
+  const adviceEl = document.getElementById('gymProgramAiAdvice');
+  if (askAi && adviceEl) {
+    adviceEl.classList.remove('hidden');
+    adviceEl.innerHTML = '<span class="font-mono text-[10.5px] text-[var(--text-secondary)]">AI Koç plato verilerini analiz ediyor...</span>';
+  }
+  const resp = await fetch('/api/gym/program-transition', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ split: sel.value, ask_ai: askAi, source: askAi ? 'ai_coach' : 'manual' }),
+  });
+  const data = await resp.json();
+  if (data.gym_history) renderGymHistory(data.gym_history);
+  if (data.sports) {
+    globalSports = data.sports;
+    renderSports(globalSports);
+  }
+  if (data.daily_protocols && typeof renderDailyProtocols === 'function') {
+    renderDailyProtocols(data.daily_protocols);
+  }
+  if (data.ai_advice && adviceEl) {
+    adviceEl.classList.remove('hidden');
+    adviceEl.innerHTML = `<strong class="font-mono text-[10px] accent-text uppercase block mb-0.5">AI Koç Program Geçiş Analizi</strong><p class="text-[11px] leading-snug">${escapeHtml(data.ai_advice.answer || '')}</p>`;
+  }
+}
+
 function renderGymHistory(gym) {
   if (!gym) return;
+  latestGymData = gym;
+  renderGymLogControls(gym);
 
   const badgeRow = document.getElementById('gymHeaderBadges');
   if (badgeRow && gym.progression) {
@@ -398,6 +615,45 @@ function renderGymHistory(gym) {
     `;
   }
 
+  const activeSplit = (gym.program_state || {}).active_split || '5x5_linear';
+  const catalog = gym.split_catalog || {};
+  const splitInfo = catalog[activeSplit] || { short_name: '5x5 Doğrusal', name: 'StrongLifts 5x5' };
+  const activeBadge = document.getElementById('gymActiveSplitBadge');
+  if (activeBadge) activeBadge.textContent = (splitInfo.short_name || '5x5').toUpperCase();
+
+  const evoBar = document.getElementById('gymProgramEvolutionBar');
+  if (evoBar) {
+    const pa = gym.plateau_analysis || { plateau_score: 0, tier_label: 'Doğrusal İvme Aktif', recommendation: '', signals: [], recommended_split: '5x5_linear' };
+    const pScore = pa.plateau_score || 0;
+    const barColor = pScore >= 55 ? 'bg-[var(--ochre)]' : 'bg-[var(--moss)]';
+    const opts = Object.values(catalog).map(sp => `<option value="${escapeHtml(sp.id)}" ${sp.id === activeSplit ? 'selected' : ''}>${escapeHtml(sp.short_name)} (${escapeHtml(sp.target_tier)})</option>`).join('');
+    evoBar.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="space-y-0.5">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-mono text-[10px] uppercase tracking-wider font-semibold accent-text">Program Evrimi &amp; Plato Skoru: ${pScore}/100</span>
+            <span class="stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'}">${escapeHtml(pa.tier_label || '')}</span>
+          </div>
+          <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(pa.recommendation || '')}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <select id="gymSplitSelect" class="bg-[var(--bg-base)] border border-[var(--border-medium)] rounded-[3px] px-2 py-1 text-[11px] font-mono">
+            ${opts}
+          </select>
+          <button type="button" onclick="applyProgramTransition(false)" class="px-2.5 py-1 text-[10.5px] font-mono font-semibold border border-[var(--border-medium)] rounded-[3px] hover:bg-[var(--bg-subtle)]">Programı Uygula</button>
+          <button type="button" onclick="applyProgramTransition(true)" class="px-2.5 py-1 text-[10.5px] font-mono font-semibold bg-[var(--accent)] text-black rounded-[3px] hover:opacity-90">AI Koç ile Geçiş</button>
+        </div>
+      </div>
+      <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5">
+        <div class="${barColor} h-1.5" style="width: ${Math.max(4, Math.min(100, pScore))}%;"></div>
+      </div>
+      <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+        ${(pa.signals || []).map(s => `<span>• ${escapeHtml(s)}</span>`).join('')}
+      </div>
+      <div id="gymProgramAiAdvice" class="hidden p-2 bg-[var(--bg-base)] border-l-2 border-[var(--accent)]"></div>
+    `;
+  }
+
   const progGrid = document.getElementById('gymProgressionGrid');
   if (progGrid && gym.progression) {
     progGrid.innerHTML = '';
@@ -406,15 +662,26 @@ function renderGymHistory(gym) {
       const item = gym.progression[k];
       if (!item) return;
       const div = document.createElement('div');
-      div.className = "tint-panel p-3.5 space-y-1.5";
+      div.className = "tint-panel p-3.5 space-y-1.5 flex flex-col justify-between";
       const hist = Array.isArray(item.history) ? item.history : [];
+      const projList = Array.isArray(item.projected_weights) ? item.projected_weights.slice(0, 3).map(w => `${Number(w).toFixed(1)}`).join(' → ') : '';
       div.innerHTML = `
-<div class="flex flex-wrap items-center justify-between gap-1.5">
-  <span class="font-semibold text-xs">${escapeHtml(item.name)}</span>
-  <span class="stamp-tag stamp-accent">${escapeHtml(item.delta)}</span>
+<div class="space-y-1">
+  <div class="flex flex-wrap items-center justify-between gap-1.5">
+    <span class="font-semibold text-xs">${escapeHtml(item.name)}</span>
+    ${_decisionStamp(item.decision)}
+  </div>
+  <div class="flex flex-wrap items-center justify-between gap-1 font-mono text-[10px] text-[var(--text-secondary)]">
+    <span>e1RM: <strong class="text-[var(--text-primary)]">${item.e1rm_kg ?? '--'} kg</strong> (${item.bw_ratio ?? '--'}x BW)</span>
+    <span>${escapeHtml(item.delta)}</span>
+  </div>
+  <p class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug" title="${escapeHtml(hist.join(' → '))}">${escapeHtml(hist.slice(-2).join(' → '))}</p>
+  ${item.decision_reason ? `<p class="text-[10px] text-[var(--text-muted)] leading-snug">${escapeHtml(item.decision_reason)}</p>` : ''}
 </div>
-<p class="font-mono text-[11px] text-[var(--text-secondary)] leading-snug" title="${escapeHtml(hist.join(' → '))}">${escapeHtml(hist.slice(-2).join(' → '))}</p>
-<p class="font-mono text-[11px] font-medium moss-text pt-1.5 border-t border-[var(--border-subtle)] flex items-center gap-1">${lucideSvg('target', 'w-3 h-3 shrink-0')}<span>Hedef: ${escapeHtml(item.next_target)}</span></p>
+<div class="pt-1.5 border-t border-[var(--border-subtle)] space-y-0.5">
+  <p class="font-mono text-[11px] font-medium moss-text flex items-center gap-1">${lucideSvg('target', 'w-3 h-3 shrink-0')}<span>Hedef: ${escapeHtml(item.next_target)}</span></p>
+  ${projList ? `<p class="font-mono text-[10px] accent-text">Projeksiyon: ${escapeHtml(projList)} kg</p>` : ''}
+</div>
       `;
       progGrid.appendChild(div);
     });

@@ -17,6 +17,16 @@ try:
         ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
     )
     from engine.helpers import DATA_DIR, fmt_pace_sec, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from engine.strength_progression import (
+        PROGRAM_SPLIT_CATALOG,
+        build_projected_gym_summary,
+        compute_adaptive_progression,
+        load_logged_gym_sessions,
+        load_program_state,
+        reset_logged_gym_sessions,
+        save_logged_gym_session,
+        save_program_state,
+    )
 except ImportError:
     from app.athlete_principles import (
         ATHLETE_PROFILE, NUTRITION_PRINCIPLES, STRENGTH_PRINCIPLES,
@@ -25,6 +35,16 @@ except ImportError:
         ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
     )
     from app.engine.helpers import DATA_DIR, fmt_pace_sec, format_sport_tr, classify_sport_bucket, classify_run_workout
+    from app.engine.strength_progression import (
+        PROGRAM_SPLIT_CATALOG,
+        build_projected_gym_summary,
+        compute_adaptive_progression,
+        load_logged_gym_sessions,
+        load_program_state,
+        reset_logged_gym_sessions,
+        save_logged_gym_session,
+        save_program_state,
+    )
 
 
 _EXERCISE_NAME_MAP = {
@@ -66,15 +86,27 @@ class WorkoutProtocolsMixin:
 
     def get_gym_exercise_history(self) -> Dict[str, Any]:
         """Garmin kuvvet seanslarının tüm set, tekrar ve dinamik progression hedeflerini döner."""
-        gym_file = os.path.join(self.data_dir if hasattr(self, "data_dir") else DATA_DIR, "raw_gym_exercise_sets.json")
-        if not os.path.exists(gym_file):
-            return {"sessions": [], "progression": dict(_DEFAULT_PROGRESSION)}
+        data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
+        gym_file = os.path.join(data_dir, "raw_gym_exercise_sets.json")
+        raw_data: Dict[str, Any] = {}
+        if os.path.exists(gym_file):
+            try:
+                with open(gym_file, "r", encoding="utf-8") as f:
+                    raw_data = json.load(f)
+            except Exception:
+                raw_data = {}
 
-        try:
-            with open(gym_file, "r", encoding="utf-8") as f:
-                raw_data = json.load(f)
-        except Exception:
-            return {"sessions": [], "progression": dict(_DEFAULT_PROGRESSION)}
+        manual_sessions = load_logged_gym_sessions(data_dir)
+        program_state = load_program_state(data_dir)
+        if not raw_data and not manual_sessions:
+            return {
+                "sessions": [],
+                "progression": dict(_DEFAULT_PROGRESSION),
+                "plateau_analysis": {"plateau_score": 0, "recommended_split": "5x5_linear", "tier_label": "Doğrusal İvme Aktif", "recommendation": "Veri bekleniyor.", "signals": []},
+                "program_state": program_state,
+                "split_catalog": PROGRAM_SPLIT_CATALOG,
+                "manual_log_count": 0,
+            }
 
         act_meta_map = {}
         for a in self.activities_all:
@@ -140,43 +172,120 @@ class WorkoutProtocolsMixin:
                 "exercises": grouped_ex,
             })
 
-        sessions.sort(key=lambda x: x["date"], reverse=True)
+        for m in manual_sessions:
+            sessions.append({
+                "activity_id": m.get("activity_id") or f"manual_{m.get('date', '')}",
+                "date": m.get("date", ""),
+                "time": m.get("time", ""),
+                "workout_type": m.get("workout_type", "Workout A"),
+                "duration_min": m.get("duration_min", 55),
+                "calories": m.get("calories", 350),
+                "avg_hr": m.get("avg_hr"),
+                "total_volume_kg": m.get("total_volume_kg", 0.0),
+                "exercises": m.get("exercises", []),
+                "is_manual": True,
+            })
 
-        # Tüm hareket geçmişinden dinamik PR ve sonraki kilo artışlarını çıkar
-        progression: Dict[str, Any] = {}
-        chrono_sessions = sorted(sessions, key=lambda x: x["date"])
-        for key, label, match_name, step_kg, rep_suffix, fallback_next in _PROGRESSION_SPECS:
-            points: List[tuple] = []
-            for sess in chrono_sessions:
-                max_w = 0.0
-                for ex in sess.get("exercises", []):
-                    if ex.get("name") == match_name:
-                        for st in ex.get("sets", []):
-                            max_w = max(max_w, float(st.get("weight_kg") or 0.0))
-                if max_w > 0:
-                    d_lbl = sess.get("date", "")[5:]
-                    points.append((d_lbl, max_w))
+        sessions.sort(key=lambda x: (x.get("date", ""), x.get("time", "")), reverse=True)
 
-            if points:
-                first_w = points[0][1]
-                last_date, last_w = points[-1]
-                diff = round(last_w - first_w, 1)
-                history_strs = [f"{w:.1f} kg ({d})" for d, w in points[-5:]]
-                delta_str = f"+{diff:.1f} kg ({len(points)} seans)" if diff > 0 else f"Stabil {last_w:.1f} kg"
-                next_kg = round(last_w + step_kg, 1) if key not in ("ohp", "lateral_raise", "shrug") or last_w < fallback_next else last_w
-                progression[key] = {
-                    "name": label,
-                    "history": history_strs,
-                    "delta": delta_str,
-                    "max_kg": last_w,
-                    "last_date": last_date,
-                    "next_kg": next_kg,
-                    "next_target": f"{next_kg:.1f} kg {rep_suffix}",
-                }
-            else:
-                progression[key] = dict(_DEFAULT_PROGRESSION[key])
+        # Canlı biyometri ve Garmin yük durumu ile çok faktörlü progresyon hesapla
+        metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
+        bw_kg = float(metrics.get("weight") or 87.0)
+        hrv_val = float(metrics.get("hrv") or 45.0)
+        hrv_7d = float(metrics.get("hrv_7d_avg") or hrv_val or 45.0)
+        sleep_sc = float(metrics.get("sleep_score") or 80.0)
+        acwr_val = 1.0
+        if hasattr(self, "get_training_load_analysis"):
+            try:
+                tl = self.get_training_load_analysis() or {}
+                acwr_val = float((tl.get("current") or {}).get("acwr") or 1.0)
+            except Exception:
+                acwr_val = 1.0
 
-        return {"sessions": sessions, "progression": progression}
+        chrono_sessions = sorted(sessions, key=lambda x: (x.get("date", ""), x.get("time", "")))
+        ref_date = str(metrics.get("date") or "")[:10] or None
+        adaptive = compute_adaptive_progression(
+            chrono_sessions=chrono_sessions,
+            bodyweight_kg=bw_kg,
+            readiness_ctx={
+                "hrv_ratio": round(hrv_val / max(1.0, hrv_7d), 2),
+                "sleep_score": sleep_sc,
+                "acwr": acwr_val,
+            },
+            reference_date=ref_date,
+        )
+
+        return {
+            "sessions": sessions,
+            "progression": adaptive["progression"],
+            "plateau_analysis": adaptive["plateau_analysis"],
+            "readiness_note": adaptive["readiness_note"],
+            "stall_summary": adaptive["stall_summary"],
+            "program_state": program_state,
+            "split_catalog": PROGRAM_SPLIT_CATALOG,
+            "manual_log_count": len(manual_sessions),
+        }
+
+    def log_gym_session_result(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Kullanıcının tamamladığı/kısmi kaldığı kuvvet seansını kaydedip tüm progresyonu günceller."""
+        data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
+        date_str = str(payload.get("date") or "").strip()
+        if not date_str:
+            metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
+            date_str = str(metrics.get("date") or "2026-11-19")[:10]
+        workout_type = str(payload.get("workout_type") or "Workout A").strip()
+        exercises_in = payload.get("exercises") or []
+
+        normalized_ex: List[Dict[str, Any]] = []
+        total_vol = 0.0
+        for ex in exercises_in:
+            name = str(ex.get("name") or "").strip()
+            sets_in = ex.get("sets") or []
+            clean_sets = []
+            for s in sets_in:
+                w = round(float(s.get("weight_kg") or 0.0), 1)
+                r = int(s.get("reps") or 0)
+                if w > 0 and r > 0:
+                    clean_sets.append({"weight_kg": w, "reps": r})
+                    total_vol += (w * r)
+            if name and clean_sets:
+                normalized_ex.append({"name": name, "sets": clean_sets})
+
+        entry = {
+            "activity_id": f"manual_{date_str}_{workout_type.lower().replace(' ', '_')}",
+            "date": date_str,
+            "time": str(payload.get("time") or "18:00"),
+            "workout_type": workout_type,
+            "duration_min": float(payload.get("duration_min") or 55.0),
+            "calories": int(payload.get("calories") or 360),
+            "total_volume_kg": round(total_vol, 1),
+            "exercises": normalized_ex,
+        }
+        save_logged_gym_session(data_dir, entry)
+
+        # Otomatik plato kontrolü: eğer auto_transition açıksa ve skor >= 70 ise öneri/geçiş bilgisi dön
+        updated = self.get_gym_exercise_history()
+        return {
+            "status": "ok",
+            "logged_entry": entry,
+            "gym_history": updated,
+        }
+
+    def reset_manual_gym_logs(self, mode: str = "last") -> Dict[str, Any]:
+        """Manuel girilen son seansı veya tüm manuel seansları temizler."""
+        data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
+        reset_logged_gym_sessions(data_dir, mode=mode)
+        return {"status": "ok", "gym_history": self.get_gym_exercise_history()}
+
+    def switch_strength_program(self, new_split: str, reason: str = "", source: str = "manual") -> Dict[str, Any]:
+        """Kuvvet programını dinamik olarak günceller (örn. 5x5_linear -> push_pull)."""
+        data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
+        state = save_program_state(data_dir, new_split=new_split, reason=reason, source=source)
+        return {
+            "status": "ok",
+            "program_state": state,
+            "gym_history": self.get_gym_exercise_history(),
+        }
 
     def _build_dynamic_extra_sport_card(self, sport_key: str, rows_df) -> Dict[str, Any]:
         """Kayak, yüzme, bisiklet veya Garmin'den gelebilecek herhangi yeni spor için hazır rehber üretir."""
@@ -341,40 +450,70 @@ class WorkoutProtocolsMixin:
             })
             run_kinds_chain.append(next_kind)
 
-        gym_sessions = self.get_gym_exercise_history().get("sessions", [])
-        gym_upcoming: List[Dict[str, str]] = [
-            {
+        gym_hist_data = self.get_gym_exercise_history()
+        gym_sessions = gym_hist_data.get("sessions", [])
+        active_split = (gym_hist_data.get("program_state") or {}).get("active_split", "5x5_linear")
+        split_slots = PROGRAM_SPLIT_CATALOG.get(active_split, PROGRAM_SPLIT_CATALOG["5x5_linear"])["slots"]
+
+        gym_upcoming: List[Dict[str, str]] = []
+        for idx_rem, item in enumerate(weekly_quota["strength"]["remaining_items"]):
+            raw_kind = item.get("slot_kind", "gym_a")
+            eff_kind = split_slots[idx_rem % len(split_slots)] if active_split != "5x5_linear" else raw_kind
+            p_type, p_title, p_details = build_projected_gym_summary(
+                eff_kind, prog, step_idx=idx_rem, active_split=active_split
+            )
+            gym_upcoming.append({
                 "day": "Bu Hafta Kalan Kota (Esnek Gün)" + (" · Öncelikli" if item.get("is_prioritized") else ""),
-                "type": f"{item['type']} (Bu Hafta Kalan Kota)",
-                "title": item["title"],
+                "type": f"{p_type} (Bu Hafta Kalan Kota)",
+                "title": p_title if active_split != "5x5_linear" else item["title"],
                 "duration": item["duration"],
-                "details": item["exercises_summary"],
-            }
-            for item in weekly_quota["strength"]["remaining_items"]
+                "details": p_details,
+            })
+
+        gym_kinds_chain = [
+            (split_slots[i % len(split_slots)] if active_split != "5x5_linear" else item.get("slot_kind"))
+            for i, item in enumerate(weekly_quota["strength"]["remaining_items"])
+            if item.get("slot_kind")
         ]
-        gym_kinds_chain = [item.get("slot_kind") for item in weekly_quota["strength"]["remaining_items"] if item.get("slot_kind")]
         rem_gym_count = len(gym_upcoming)
         while len(gym_upcoming) < 3:
             if not gym_kinds_chain:
                 last_wt = (gym_sessions[0].get("workout_type", "") if gym_sessions else "")
-                next_cycle_kind = "gym_b" if "Workout A" in last_wt else "gym_a"
+                if active_split != "5x5_linear":
+                    next_cycle_kind = split_slots[0]
+                    if len(split_slots) > 1 and split_slots[0].lower() in last_wt.lower():
+                        next_cycle_kind = split_slots[1]
+                else:
+                    next_cycle_kind = "gym_b" if "Workout A" in last_wt else "gym_a"
                 prev_gym = None
             else:
                 prev_gym = gym_kinds_chain[-1]
-                next_cycle_kind = "gym_b" if prev_gym == "gym_a" else "gym_a"
+                if active_split != "5x5_linear":
+                    cur_i = split_slots.index(prev_gym) if prev_gym in split_slots else 0
+                    next_cycle_kind = split_slots[(cur_i + 1) % len(split_slots)]
+                else:
+                    next_cycle_kind = "gym_b" if prev_gym == "gym_a" else "gym_a"
+
+            step_idx = len(gym_upcoming)
             step_num = len(gym_upcoming) - rem_gym_count + 1
-            tpl_item = self._build_quota_remaining_item(next_cycle_kind, 1 if next_cycle_kind == "gym_a" else 2)
+            p_type, p_title, p_details = build_projected_gym_summary(
+                next_cycle_kind, prog, step_idx=step_idx, active_split=active_split
+            )
+            prev_label = (
+                "Workout A" if prev_gym == "gym_a"
+                else ("Workout B" if prev_gym == "gym_b" else (prev_gym or "").title())
+            )
             day_lbl = (
                 "Sıradaki Projeksiyon (Yeni Döngü #1)"
                 if step_num == 1
-                else f"{'Workout A' if prev_gym == 'gym_a' else 'Workout B'} Sonrası Projeksiyon (Yeni Döngü #{step_num})"
+                else f"{prev_label} Sonrası Projeksiyon (Yeni Döngü #{step_num})"
             )
             gym_upcoming.append({
                 "day": day_lbl,
-                "type": f"{tpl_item['type']} (Projeksiyon)",
-                "title": tpl_item["title"],
-                "duration": tpl_item["duration"],
-                "details": tpl_item["exercises_summary"],
+                "type": f"{p_type} (Projeksiyon)",
+                "title": p_title,
+                "duration": "55 dk",
+                "details": p_details,
             })
             gym_kinds_chain.append(next_cycle_kind)
 

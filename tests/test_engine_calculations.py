@@ -429,6 +429,71 @@ class TestEngineCalculations(unittest.TestCase):
         self.assertEqual(morph["stages"][1]["target_kg"], 81.0)
         self.assertGreater(morph["stages"][1]["days_remaining"], 0)
 
+    def test_adaptive_strength_progression_stall_deload_and_program_switch(self):
+        """Çok adımlı kilo progresyonu, takılma/deload yeniden planlaması ve Push/Pull geçişini doğrular."""
+        import tempfile, shutil
+        from unittest.mock import patch
+        # 1. Çok adımlı projeksiyonda Squat kilosunun artarak ilerlemesi (ör. 67.5 -> 70.0 -> 72.5)
+        sp = self.engine.get_sports_guidance()
+        upcoming = sp["strength"]["upcoming_sessions"]
+        self.assertGreaterEqual(len(upcoming), 3)
+        self.assertIn("67.5 kg", upcoming[0]["details"])
+        self.assertIn("70.0 kg", upcoming[1]["details"])
+        self.assertIn("72.5 kg", upcoming[2]["details"])
+
+        # 2. İzole geçici dizinde kısmi başarı (takılma) -> konsolidasyon -> 2. takılma -> %10 deload
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_gym = os.path.join(self.engine.data_dir, "raw_gym_exercise_sets.json")
+            if os.path.exists(src_gym):
+                shutil.copy2(src_gym, os.path.join(tmpdir, "raw_gym_exercise_sets.json"))
+            with patch.object(self.engine, "data_dir", tmpdir):
+                # 1. Takılma: Squat 67.5 kg'da 5/5/4/3/3 -> kilo 67.5 kg'da sabitlenmeli (CONSOLIDATE)
+                res1 = self.engine.log_gym_session_result({
+                    "date": "2026-11-20",
+                    "workout_type": "Workout B",
+                    "exercises": [{
+                        "name": "Back Squat",
+                        "sets": [
+                            {"weight_kg": 67.5, "reps": 5},
+                            {"weight_kg": 67.5, "reps": 5},
+                            {"weight_kg": 67.5, "reps": 4},
+                            {"weight_kg": 67.5, "reps": 3},
+                            {"weight_kg": 67.5, "reps": 3},
+                        ],
+                    }],
+                })
+                sq1 = res1["gym_history"]["progression"]["squat"]
+                self.assertEqual(sq1["decision"], "CONSOLIDATE")
+                self.assertEqual(sq1["next_kg"], 67.5)
+
+                # 2. Ardışık takılma: Squat 67.5 kg yine 5/4/4/3/2 -> %10 Deload (60.0 kg)
+                res2 = self.engine.log_gym_session_result({
+                    "date": "2026-11-23",
+                    "workout_type": "Workout A",
+                    "exercises": [{
+                        "name": "Back Squat",
+                        "sets": [
+                            {"weight_kg": 67.5, "reps": 5},
+                            {"weight_kg": 67.5, "reps": 4},
+                            {"weight_kg": 67.5, "reps": 4},
+                            {"weight_kg": 67.5, "reps": 3},
+                            {"weight_kg": 67.5, "reps": 2},
+                        ],
+                    }],
+                })
+                sq2 = res2["gym_history"]["progression"]["squat"]
+                self.assertEqual(sq2["decision"], "DELOAD_10PCT")
+                self.assertEqual(sq2["next_kg"], 60.0)
+                self.assertGreater(res2["gym_history"]["plateau_analysis"]["plateau_score"], 0)
+
+                # 3. Dinamik program geçişi: 5x5 -> Push / Pull
+                sw = self.engine.switch_strength_program("push_pull", reason="Test plato geçişi")
+                self.assertEqual(sw["program_state"]["active_split"], "push_pull")
+                sp_pp = self.engine.get_sports_guidance()
+                pp_details = " ".join(s["type"] for s in sp_pp["strength"]["upcoming_sessions"])
+                self.assertIn("Push", pp_details)
+                self.assertIn("Pull", pp_details)
+
 
 if __name__ == "__main__":
     unittest.main()

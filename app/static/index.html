@@ -313,8 +313,9 @@
       </div>
 
       <div data-subpane-group="sports" data-subpane="gym_branch" class="single-screen-pane hidden">
-        <section class="surface-card p-4 sm:p-5 flex flex-col overflow-hidden">
+        <section class="surface-card p-4 sm:p-5 space-y-3 flex flex-col overflow-hidden">
           <div id="gymBranchSummaryContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"></div>
+          <div id="gymLogActionContainer" class="border-t border-[var(--border-subtle)] pt-3"></div>
         </section>
       </div>
 
@@ -322,7 +323,7 @@
         <section class="surface-card p-4 sm:p-5 space-y-3.5 flex flex-col overflow-hidden" id="gymHistorySection">
           <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div class="flex items-center gap-2">
-              <span class="stamp-tag stamp-accent">5x5 PROGRESYON</span>
+              <span id="gymActiveSplitBadge" class="stamp-tag stamp-accent">5x5 PROGRESYON</span>
               <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Kuvvet Programı ve Sıradaki
                 Ağırlık Hedefleri</h3>
             </div>
@@ -332,6 +333,7 @@
               <span class="stamp-tag">Row --</span>
             </div>
           </div>
+          <div id="gymProgramEvolutionBar" class="tint-panel p-3 space-y-2 shrink-0"></div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 content-start" id="gymProgressionGrid"></div>
         </section>
       </div>
