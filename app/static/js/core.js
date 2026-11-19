@@ -5,7 +5,7 @@ let globalActivities = null;
 let globalCharts = null;
 let chartInstances = {};
 let currentActiveProfile = {
-  is_sarp: true,
+  is_current_athlete: true,
   athlete_name: "Athlete",
   profile_badge: "Garmin Telemetrisi",
   description: "Haftalık 2 Koşu + 2 Gym (A/B 5x5)"
@@ -131,6 +131,7 @@ function closeAllNavDropdowns() {
   document.querySelectorAll('.nav-dropdown.is-open').forEach(el => {
     el.classList.remove('is-open');
   });
+  document.querySelectorAll('.nav-dropdown > .nav-tab[aria-haspopup]').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
 }
 
 function toggleNavDropdown(tabId, ev) {
@@ -141,6 +142,8 @@ function toggleNavDropdown(tabId, ev) {
   setTab(tabId);
   if (wrap && !wasOpen) {
     wrap.classList.add('is-open');
+    const trigger = wrap.querySelector(':scope > .nav-tab');
+    if (trigger) trigger.setAttribute('aria-expanded', 'true');
   }
 }
 
@@ -160,7 +163,11 @@ document.addEventListener('click', (e) => {
   }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeAllNavDropdowns();
+  if (e.key !== 'Escape') return;
+  closeAllNavDropdowns();
+  // Açık <dialog> varsa tarayıcı Esc'i kendisi işler; yoksa AI koç paneli kapatılır ve odak tetikleyiciye döner
+  const flyout = document.getElementById('aiCoachFlyout');
+  if (flyout && !flyout.classList.contains('hidden') && !document.querySelector('dialog[open]')) toggleAICoach();
 });
 document.querySelectorAll('.nav-dropdown').forEach(wrap => {
   wrap.addEventListener('mouseenter', () => {
@@ -188,6 +195,26 @@ function setSubTab(group, paneKey, persist = true) {
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
   if (persist) saveActiveSubTab(group, paneKey);
+  if (group === 'health' && paneKey === 'trends' && typeof renderCharts === 'function') renderCharts();
+}
+
+/* Boş / hatalı durumlar için kullanıcıya ne yapacağını söyleyen şerit */
+function renderStatusBanner(overview) {
+  const el = document.getElementById('statusBanner');
+  if (!el) return;
+  const msgs = [];
+  if (!overview) {
+    msgs.push('Sunucuya ulaşılamadı. Uygulamanın çalıştığından emin olun (<code>make run</code>) ve sayfayı yenileyin.');
+  } else if (overview.weight === undefined || overview.weight === null) {
+    msgs.push('Henüz Garmin verisi yok. <code>make fetch</code> ile verilerinizi indirin veya <code>python3 app/server.py --demo</code> ile demo verisini deneyin.');
+  } else if (overview.data_is_stale) {
+    const hh = String(overview.data_as_of).slice(11, 16);
+    msgs.push('Garmin verileri ' + escapeHtml(hh) + ' itibarıyla (' + Math.round(overview.data_age_min / 60) + ' sa önce). Adım ve kalori, saatiniz telefondaki Garmin Connect ile eşitlendiğinde güncellenir: saati eşitleyin, sonra üstteki "Eşitle"ye basın.');
+  } else if (overview.athlete && Array.isArray(overview.athlete.profile_missing) && overview.athlete.profile_missing.length) {
+    msgs.push('Profiliniz eksik (' + overview.athlete.profile_missing.map(escapeHtml).join(', ') + '). <code>data/athlete_profile.json</code> dosyasını <code>athlete_profile.example.json</code> örneğine göre doldurun; yoksa tahmini varsayılanlar kullanılır.');
+  }
+  el.innerHTML = msgs.join(' ');
+  el.classList.toggle('hidden', msgs.length === 0);
 }
 
 async function initApp() {
@@ -201,7 +228,6 @@ async function initApp() {
       gymData,
       tlData,
       activities,
-      sleepData,
       corrData,
       progData,
       protocolsData
@@ -211,12 +237,12 @@ async function initApp() {
       safeFetchJson('/api/gym-history'),
       safeFetchJson('/api/training-load'),
       safeFetchJson('/api/activities'),
-      safeFetchJson('/api/sleep-analysis'),
       safeFetchJson('/api/correlations'),
       safeFetchJson('/api/progression'),
       safeFetchJson('/api/daily-protocols')
     ]);
 
+    renderStatusBanner(overview);
     if (overview) {
       globalOverview = overview;
       applyAthleteBranding(globalOverview);
@@ -234,41 +260,16 @@ async function initApp() {
       renderWeeklyStreak(globalActivities);
       renderLatestActivitySummary(globalActivities);
     }
-    if (sleepData) renderSleepAnalysis(sleepData);
     if (corrData) renderCorrelations(corrData);
     if (progData) renderProgressionAssessment(progData);
     if (protocolsData) renderDailyProtocols(protocolsData);
 
     chartInstances = {};
-    startGarminSessionKeepAlive();
+    // Garmin oturum keep-alive'ı sunucudaki arka plan döngüsü yönetir (server.py:_session_keepalive_loop).
     refreshIcons();
   } catch (err) {
     console.error("Yükleme hatası:", err);
   }
-}
-
-function startGarminSessionKeepAlive() {
-  if (window.__garminKeepAliveStarted) return;
-  window.__garminKeepAliveStarted = true;
-
-  const checkAndRefreshSession = async () => {
-    try {
-      const status = await safeFetchJson('/api/status');
-      const sess = status && status.session;
-      if (sess && sess.session_file_exists && typeof sess.jwt_remaining_sec === 'number' && sess.jwt_remaining_sec < 420) {
-        await fetch('/api/session/keepalive', { method: 'POST' });
-      }
-    } catch (_) {
-      // Arka plan oturum yenileme sessizce sürer
-    }
-  };
-
-  window.__garminKeepAliveTimer = setInterval(checkAndRefreshSession, 240000);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      checkAndRefreshSession();
-    }
-  });
 }
 
 async function syncGarminData() {
@@ -350,7 +351,7 @@ function renderLatestActivitySummary(activities) {
     <span class="font-medium truncate flex items-center gap-2">
       ${lucideSvg(iconName, 'w-3.5 h-3.5 accent-text shrink-0')}
       <span class="truncate">${a.name || a.sport_tr || a.sport || 'Antrenman'}</span>
-      <span class="font-mono text-[10px] text-[var(--text-muted)] font-normal">(${a.date})</span>
+      <span class="font-mono text-[11px] text-[var(--text-muted)] font-normal">(${a.date})</span>
     </span>
     <span class="font-mono text-[11px] text-[var(--text-secondary)] font-medium tabular-nums shrink-0 ml-2">${dur} · ${hr} · ${cal}</span>
   `;
@@ -409,7 +410,7 @@ function renderWeeklyStreak(activities) {
   });
 
   if (badge) {
-    badge.innerHTML = `${thisSessionCount} Seans <span class="text-[10px] font-normal text-[var(--text-secondary)] ml-1.5">· Geçen Hafta: ${prevSessionCount} Seans</span>`;
+    badge.innerHTML = `${thisSessionCount} Seans <span class="text-[11px] font-normal text-[var(--text-secondary)] ml-1.5">· Geçen Hafta: ${prevSessionCount} Seans</span>`;
   }
 
   const keys = Object.keys(dayMap).sort();
@@ -418,7 +419,7 @@ function renderWeeklyStreak(activities) {
     const lbl = dayNames[order[idx]];
     if (items.length > 1) {
       const tip = items.map(i => i.title).join(' · ').replace(/"/g, '&quot;');
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[#AB86D4] font-medium mb-1.5">${lbl}</span><span title="${tip}" class="w-7 h-7 rounded-[2px] bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] text-[#AB86D4] font-medium mb-1.5">${lbl}</span><span title="${tip}" class="w-7 h-7 rounded-[2px] bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
     }
     if (items.length === 1) {
       const info = items[0];
@@ -428,12 +429,12 @@ function renderWeeklyStreak(activities) {
         : (info.isGym
           ? 'bg-[rgba(201,154,73,0.16)] text-[#C99A49] border border-[rgba(201,154,73,0.45)]'
           : 'bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)]');
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] ${lblCls} font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] ${lblCls} font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
     }
     if (iso < todayIso) {
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[#6BA7D6] font-medium mb-1.5">${lbl}</span><span title="Dinlenme Günü" class="w-7 h-7 rounded-[2px] bg-[rgba(75,142,194,0.14)] text-[#6BA7D6] border border-[rgba(75,142,194,0.35)] flex items-center justify-center">${lucideSvg('bed', 'w-3.5 h-3.5')}</span></div>`;
+      return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] text-[#6BA7D6] font-medium mb-1.5">${lbl}</span><span title="Dinlenme Günü" class="w-7 h-7 rounded-[2px] bg-[rgba(75,142,194,0.14)] text-[#6BA7D6] border border-[rgba(75,142,194,0.35)] flex items-center justify-center">${lucideSvg('bed', 'w-3.5 h-3.5')}</span></div>`;
     }
-    return `<div class="flex flex-col items-center"><span class="font-mono text-[10px] text-[var(--text-muted)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
+    return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] text-[var(--text-muted)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
   }).join('');
   refreshIcons();
 }
@@ -445,6 +446,38 @@ function applyAthleteBranding(overview) {
   if (isDemo) {
     if (coachGreet) coachGreet.textContent = 'Merhaba! Ben sentetik Garmin Connect veritabanına bağlı yapay zeka spor koçunum. Bugünkü toparlanma';
   } else {
-    if (coachGreet) coachGreet.textContent = 'Merhaba Sarp! Ben 3 aylık Garmin Connect veritabanına bağlı kişisel spor koçunum. Bugünkü toparlanma';
+    if (coachGreet) coachGreet.textContent = (overview && overview.athlete && overview.athlete.name ? 'Merhaba ' + overview.athlete.name + '! ' : 'Merhaba! ') + 'Ben 3 aylık Garmin Connect veritabanına bağlı kişisel spor koçunum. Bugünkü toparlanma';
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// Olay yönlendirici: satır içi onclick/oninput/onkeydown yerine data-* öznitelikleri
+//   data-calls='[["setTab","plan"],["fn", "@event"]]'  -> sırayla window[fn](...args) çağrılır ("@event" = tarayıcı olayı)
+//   data-input-call="fn"                                -> input olayında fn(value)
+//   data-enter-call="fn"                                -> Enter tuşunda fn()
+// Böylece sıkı bir Content-Security-Policy (script-src 'self') kullanılabilir.
+// ---------------------------------------------------------------------------
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-calls]');
+  if (!el) return;
+  let calls;
+  try { calls = JSON.parse(el.dataset.calls); } catch (_) { return; }
+  calls.forEach(([name, ...args]) => {
+    const fn = window[name];
+    if (typeof fn === 'function') fn(...args.map(a => (a === '@event' ? e : a)));
+  });
+});
+document.addEventListener('input', (e) => {
+  const name = e.target && e.target.dataset && e.target.dataset.inputCall;
+  if (name && typeof window[name] === 'function') window[name](e.target.value);
+});
+document.addEventListener('keydown', (e) => {
+  const name = e.target && e.target.dataset && e.target.dataset.enterCall;
+  if (name && e.key === 'Enter' && typeof window[name] === 'function') window[name]();
+});
+
+function openLatestActivityOrDebrief() {
+  if (window.globalActivities && globalActivities.length) openActivityModal(globalActivities[0]);
+  else openDebriefModal(0);
 }

@@ -1,71 +1,5 @@
 /* Garmin Athlete IQ — Health, Sleep Architecture, 93d Biometrics, Morphology, Settings & Progression */
 
-function renderSleepAnalysis(sData) {
-  if (!sData) return;
-  const totalNights = Array.isArray(sData.bedtime_groups)
-    ? sData.bedtime_groups.reduce((acc, g) => acc + (g.count || 0), 0)
-    : 0;
-  const slpSub = document.getElementById('sleepBedtimeSubtitle');
-  if (slpSub && totalNights > 0) {
-    slpSub.textContent = `${totalNights} gecelik uyku kayıtlarının uykuya geçiş saatine göre 3 gruplu analizi:`;
-  }
-  const gBody = document.getElementById('bedtimeGroupsBody');
-  if (gBody && Array.isArray(sData.bedtime_groups)) {
-    gBody.innerHTML = '';
-    sData.bedtime_groups.forEach((g, idx) => {
-      const tr = document.createElement('tr');
-      tr.className = "hover:bg-[var(--bg-subtle)] transition";
-      const grpCls = idx === 0 ? 'moss-text' : (idx === 1 ? 'ochre-text' : 'crimson-text');
-      tr.innerHTML = `
-        <td class="py-3 px-4 font-semibold ${grpCls}">${escapeHtml(g.group)}</td>
-        <td class="py-3 px-4 font-mono text-[var(--text-secondary)]">${g.count} gece (%${g.pct})</td>
-        <td class="py-3 px-4 font-mono font-semibold sky-text">${g.sleep_h} saat</td>
-        <td class="py-3 px-4 font-mono">${g.deep_h} sa / <span class="font-semibold violet-text">${g.rem_h} sa</span></td>
-        <td class="py-3 px-4 font-mono font-semibold ochre-text">${g.score}</td>
-        <td class="py-3 px-4 font-mono font-semibold moss-text">${g.hrv} ms</td>
-        <td class="py-3 px-4 font-mono text-[var(--text-secondary)]">${g.rhr} bpm</td>
-        <td class="py-3 px-4 font-mono font-medium sky-text">${g.bb_wake} / ${g.readiness}</td>
-      `;
-      gBody.appendChild(tr);
-    });
-  }
-
-  const nBody = document.getElementById('sleepNightsBody');
-  if (nBody) {
-    nBody.innerHTML = '';
-    (sData.top_nights || []).forEach(n => {
-      const tr = document.createElement('tr');
-      tr.className = "bg-[var(--moss-soft)] hover:bg-[var(--bg-subtle)] transition";
-      tr.innerHTML = `
-        <td class="py-2.5 px-3 font-semibold moss-text">En İyi ${escapeHtml(n.rank)}</td>
-        <td class="py-2.5 px-3 font-mono font-medium">${escapeHtml(n.date)}</td>
-        <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(n.bed_time)}</td>
-        <td class="py-2.5 px-3 font-mono font-semibold moss-text">${n.score}</td>
-        <td class="py-2.5 px-3 font-mono">${n.sleep_h} sa</td>
-        <td class="py-2.5 px-3 font-mono">${escapeHtml(n.deep_rem)}</td>
-        <td class="py-2.5 px-3 font-mono font-semibold">${escapeHtml(n.hrv_rhr)}</td>
-        <td class="py-2.5 px-3 font-mono">${escapeHtml(n.bb_readiness)}</td>
-      `;
-      nBody.appendChild(tr);
-    });
-    (sData.worst_nights || []).forEach(n => {
-      const tr = document.createElement('tr');
-      tr.className = "bg-[var(--crimson-soft)] hover:bg-[var(--bg-subtle)] transition";
-      tr.innerHTML = `
-        <td class="py-2.5 px-3 font-semibold crimson-text">En Düşük ${escapeHtml(n.rank)}</td>
-        <td class="py-2.5 px-3 font-mono font-medium">${escapeHtml(n.date)}</td>
-        <td class="py-2.5 px-3 font-mono text-[var(--text-secondary)]">${escapeHtml(n.bed_time)}</td>
-        <td class="py-2.5 px-3 font-mono font-semibold crimson-text">${n.score}</td>
-        <td class="py-2.5 px-3 font-mono">${n.sleep_h} sa</td>
-        <td class="py-2.5 px-3 font-mono">${escapeHtml(n.deep_rem)}</td>
-        <td class="py-2.5 px-3 font-mono font-semibold">${escapeHtml(n.hrv_rhr)}</td>
-        <td class="py-2.5 px-3 font-mono">${escapeHtml(n.bb_readiness)}</td>
-      `;
-      nBody.appendChild(tr);
-    });
-  }
-}
-
 function render93dBiometrics(rows) {
   const tbody = document.getElementById('healthMetrics93dBody');
   if (!tbody || !Array.isArray(rows) || !rows.length) return;
@@ -92,12 +26,19 @@ function renderCorrelations(corrs) {
   const cBody = document.getElementById('correlationsBody');
   if (!cBody || !Array.isArray(corrs)) return;
   cBody.innerHTML = '';
+  if (!corrs.length) {
+    cBody.innerHTML = '<tr><td colspan="4" class="py-3 px-3 text-[var(--text-secondary)]">Korelasyon için yeterli günlük veri yok (en az 6 gün gerekir).</td></tr>';
+    return;
+  }
   corrs.forEach(c => {
     const tr = document.createElement('tr');
     tr.className = "hover:bg-[var(--bg-subtle)] transition";
-    const pairCls = Number(c.r) < 0 ? 'ochre-text' : 'sky-text';
+    const pairCls = c.significant ? (Number(c.r) < 0 ? 'ochre-text' : 'sky-text') : 'text-[var(--text-muted)]';
+    const rTxt = Number(c.r).toFixed(2).replace('.', ',');
     tr.innerHTML = `
       <td class="py-1.5 px-3 font-semibold ${pairCls}">${escapeHtml(c.pair)}</td>
+      <td class="py-1.5 px-3 font-mono whitespace-nowrap">${escapeHtml(rTxt)} <span class="text-[var(--text-muted)]">(${escapeHtml(c.strength || '')})</span></td>
+      <td class="py-1.5 px-3 font-mono whitespace-nowrap text-[var(--text-secondary)]">${escapeHtml(String(c.p))}</td>
       <td class="py-1.5 px-3 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
     `;
     cBody.appendChild(tr);
@@ -121,7 +62,7 @@ function renderProgressionAssessment(data) {
     grid.innerHTML = `
       <div class="tint-panel p-3 space-y-1.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">1. Haftalık Gün Sayısı</span>
+          <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">1. Haftalık Gün Sayısı</span>
           <span class="stamp-tag ${vp.can_increase_days ? 'stamp-moss' : 'stamp-ochre'}">${escapeHtml(vp.verdict || '--')}</span>
         </div>
         <p class="text-xs font-semibold">${escapeHtml(vp.current_days)} <span class="text-[var(--text-muted)]">→</span> <span class="${vp.can_increase_days ? 'moss-text' : 'ochre-text'}">${escapeHtml(vp.next_level_days)}</span></p>
@@ -130,7 +71,7 @@ function renderProgressionAssessment(data) {
 
       <div class="tint-panel p-3 space-y-1.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">2. Kuvvet: Mevcut Ağırlıklar ve Hedef</span>
+          <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">2. Kuvvet: Mevcut Ağırlıklar ve Hedef</span>
           <span class="stamp-tag stamp-accent">${escapeHtml(st.verdict || '--')}</span>
         </div>
         <p class="text-xs font-semibold">Mevcut: <span class="moss-text">${escapeHtml(st.current_style)}</span></p>
@@ -139,24 +80,24 @@ function renderProgressionAssessment(data) {
 
       <div class="tint-panel p-3 space-y-1.5 border-l-[3px] border-l-[var(--accent)]">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">3. Koşu: Mevcut Durum ve Hedef</span>
+          <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">3. Koşu: Mevcut Durum ve Hedef</span>
           <span class="stamp-tag stamp-moss">${escapeHtml(rp.verdict || '80/20 KOŞU PLANI')}</span>
         </div>
         <p class="font-mono text-[11px] font-semibold accent-text">${escapeHtml(rp.current_metrics || '')}</p>
         <p class="text-xs text-[var(--text-primary)] font-medium leading-snug">${escapeHtml(rp.current_model || '')}</p>
-        <p class="font-mono text-[10.5px] text-[var(--text-secondary)]">${escapeHtml(rp.load_balance || '')}</p>
+        <p class="font-mono text-[12px] text-[var(--text-secondary)]">${escapeHtml(rp.load_balance || '')}</p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(rp.advice || st.running_style_advice || '')}</p>
-        <p class="text-[10.5px] moss-text tint-moss-panel p-1.5 leading-snug"><strong class="font-semibold">Sıradaki Koşu Hedefleri:</strong> ${escapeHtml(rp.next_milestone || '')}</p>
+        <p class="text-[12px] moss-text tint-moss-panel p-1.5 leading-snug"><strong class="font-semibold">Sıradaki Koşu Hedefleri:</strong> ${escapeHtml(rp.next_milestone || '')}</p>
       </div>
 
       <div class="tint-panel p-3 space-y-1.5">
         <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">4. Yorgunluk ve Dinlenme</span>
+          <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">4. Yorgunluk ve Dinlenme</span>
           <span class="stamp-tag ${fd.needs_deload ? 'stamp-ochre' : 'stamp-moss'}">${escapeHtml(fd.status || '--')}</span>
         </div>
         <p class="text-xs font-semibold">${fd.needs_deload ? 'Hacmi %40 Düşür' : 'Normal Yükte Devam'}</p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(fd.note || '')}</p>
-        <p class="text-[10px] ochre-text tint-ochre-panel p-1.5 leading-snug"><strong class="font-semibold">Not:</strong> Yorgunluk yüksekse veya uyku düşükse antrenmanı hafif yürüyüşe çevirin.</p>
+        <p class="text-[11px] ochre-text tint-ochre-panel p-1.5 leading-snug"><strong class="font-semibold">Not:</strong> Yorgunluk yüksekse veya uyku düşükse antrenmanı hafif yürüyüşe çevirin.</p>
       </div>
     `;
   }
@@ -167,10 +108,10 @@ function renderProgressionAssessment(data) {
     tiersGrid.innerHTML = tiers.map(t => `
       <div class="surface-card p-3.5 space-y-2">
         <p class="font-semibold accent-text text-xs">${escapeHtml(t.level_tr.split('(')[0])}</p>
-        <p class="font-mono text-[10px] text-[var(--text-secondary)] font-medium">${escapeHtml(t.recommended_split)}</p>
+        <p class="font-mono text-[11px] text-[var(--text-secondary)] font-medium">${escapeHtml(t.recommended_split)}</p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-snug"><strong class="text-[var(--text-primary)]">Koşu:</strong> ${escapeHtml(t.running_approach)}</p>
         <p class="text-[11px] text-[var(--text-secondary)] leading-snug"><strong class="text-[var(--text-primary)]">Kuvvet:</strong> ${escapeHtml(t.strength_approach)}</p>
-        <p class="text-[10px] moss-text tint-moss-panel p-2 mt-1"><strong class="font-semibold">Geçiş Eşiği:</strong> ${escapeHtml(t.progression_gate)}</p>
+        <p class="text-[11px] moss-text tint-moss-panel p-2 mt-1"><strong class="font-semibold">Geçiş Eşiği:</strong> ${escapeHtml(t.progression_gate)}</p>
       </div>
     `).join('');
   }
