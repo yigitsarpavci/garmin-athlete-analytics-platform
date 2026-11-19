@@ -474,7 +474,7 @@ function renderWeeklyStreak(activities) {
   const keys = Object.keys(dayMap).sort();
   const prevKeys = Object.keys(prevDayMap).sort();
   const thisWeekRow = keys.map((iso, idx) => _renderStreakDayCell(dayNames[order[idx]], dayMap[iso] || [], iso, todayIso, true)).join('');
-  const prevDivider = `<div class="col-span-7 flex items-center justify-between pt-1.5 mt-0.5 border-t border-[var(--border-subtle)]"><span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Geçen Hafta</span><span class="font-mono text-[10px] text-[var(--text-secondary)] tabular-nums">${prevSessionCount} Seans</span></div>`;
+  const prevDivider = `<div style="grid-column: 1 / -1;" class="flex items-center justify-between pt-1.5 mt-0.5 border-t border-[var(--border-subtle)]"><span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Geçen Hafta</span><span class="font-mono text-[10px] text-[var(--text-secondary)] tabular-nums">${prevSessionCount} Seans</span></div>`;
   const prevWeekRow = prevKeys.map((iso, idx) => _renderStreakDayCell(dayNames[order[idx]], prevDayMap[iso] || [], iso, todayIso, false)).join('');
   strip.innerHTML = `${thisWeekRow}${prevDivider}${prevWeekRow}`;
   refreshIcons();
