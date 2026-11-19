@@ -177,7 +177,13 @@ class TelemetryMixin:
         total_loss = round(start_weight - current_weight, 1)
         loss_pct = (total_loss / start_weight) * 100.0 if start_weight > 0 else 0.0
 
-        deep_h, deep_pct, hrv_7d, hrv_night, rem_h, rem_sleep_pct, rhr, rhr_mean, sleep_h, sleep_h_mean, sleep_score = self._sleep_and_rhr_basics(latest)
+        # Gün başında bugünün uyku/HRV verisi henüz yoktur (NaN); en son uyku verisi olan günü kullan
+        sleep_row = latest
+        if {"sleep_h", "hrv_night"}.issubset(self.df.columns):
+            valid_sleep = self.df[pd.to_numeric(self.df["sleep_h"], errors="coerce").gt(0) & self.df["hrv_night"].notna()]
+            if not valid_sleep.empty:
+                sleep_row = valid_sleep.iloc[-1]
+        deep_h, deep_pct, hrv_7d, hrv_night, rem_h, rem_sleep_pct, rhr, rhr_mean, sleep_h, sleep_h_mean, sleep_score = self._sleep_and_rhr_basics(sleep_row)
 
         _num = self._num
         _tail_stat = self._tail_stat

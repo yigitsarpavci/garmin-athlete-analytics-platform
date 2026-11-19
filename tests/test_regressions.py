@@ -275,6 +275,18 @@ class TestSnapshotFreshness(unittest.TestCase):
         self.assertIsNone(eng._snapshot_freshness("1999-01-01")["data_as_of"])
 
 
+class TestEmptyTrainingStatusFallback(unittest.TestCase):
+    def test_null_today_status_falls_back_to_latest_filled_week(self):
+        eng = GarminAthleteEngine.__new__(GarminAthleteEngine)
+        good = {"mostRecentTrainingStatus": {"x": 1}, "mostRecentTrainingLoadBalance": {"y": 2}}
+        empty = {"userId": 1, "mostRecentTrainingStatus": None, "mostRecentTrainingLoadBalance": None}
+        eng.training_status_latest = dict(empty)
+        eng.training_status_weekly = {"2026-11-09": {"mostRecentTrainingStatus": {"x": 0}}, "2026-11-16": good, "2026-11-20": dict(empty)}
+        eng._repair_empty_training_status()
+        self.assertEqual(eng.training_status_latest, good)
+        self.assertNotIn("2026-11-20", eng.training_status_weekly)
+
+
 class TestRequestScope(unittest.TestCase):
     def test_scope_computes_once_and_returns_isolated_copies(self):
         eng = GarminAthleteEngine()

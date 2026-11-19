@@ -352,7 +352,12 @@ async function main() {
     const todayStr = formatDate(endDate);
     try {
       const aggLatest = await client.get(`metrics-service/metrics/trainingstatus/aggregated/${todayStr}`);
-      writeFileAtomic(path.join(DATA_DIR, "raw_training_status_latest.json"), JSON.stringify(aggLatest, null, 2));
+      // Gün başında Garmin boş (null) dönebilir; dolu eski kaydı bozmamak için yalnızca veri varsa yaz.
+      if (aggLatest && (aggLatest.mostRecentTrainingStatus || aggLatest.mostRecentTrainingLoadBalance)) {
+        writeFileAtomic(path.join(DATA_DIR, "raw_training_status_latest.json"), JSON.stringify(aggLatest, null, 2));
+      } else {
+        console.warn("Training status latest boş döndü; önceki kayıt korundu.");
+      }
     } catch (e) {
       console.warn("Training status latest çekilemedi:", e.message);
     }
@@ -385,7 +390,12 @@ async function main() {
         continue;
       }
       try {
-        weeklyStatus[dt] = await client.get(`metrics-service/metrics/trainingstatus/aggregated/${dt}`);
+        const fetched = await client.get(`metrics-service/metrics/trainingstatus/aggregated/${dt}`);
+        if (fetched && (fetched.mostRecentTrainingStatus || fetched.mostRecentTrainingLoadBalance)) {
+          weeklyStatus[dt] = fetched;
+        } else if (existingWeekly[dt] && Object.keys(existingWeekly[dt]).length) {
+          weeklyStatus[dt] = existingWeekly[dt];
+        }
       } catch (e) {
         console.warn(`Haftalık durum çekilemedi (${dt}):`, e.message);
       }

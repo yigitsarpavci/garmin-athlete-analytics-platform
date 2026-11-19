@@ -274,6 +274,17 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
             if self._req_cache is not None:
                 self._req_cache.clear()
 
+    def _repair_empty_training_status(self) -> None:
+        """Garmin gün başında (veya saat eşitlenmeden önce) 'bugün' için boş (null) Training Status döndürebilir.
+        Boş kayıtlar yük analizini 0'a düşürmesin diye en son dolu haftalık kayıt kullanılır."""
+        def _has_data(obj: Any) -> bool:
+            return isinstance(obj, dict) and bool(obj.get("mostRecentTrainingStatus") or obj.get("mostRecentTrainingLoadBalance"))
+
+        weekly = self.training_status_weekly if isinstance(self.training_status_weekly, dict) else {}
+        self.training_status_weekly = {k: v for k, v in weekly.items() if _has_data(v)}
+        if not _has_data(self.training_status_latest) and self.training_status_weekly:
+            self.training_status_latest = self.training_status_weekly[max(self.training_status_weekly)]
+
     def _load_data_locked(self) -> None:
         self._apply_profile()
         daily_path = os.path.join(self.data_dir, "raw_daily_93d.json")
@@ -289,6 +300,7 @@ class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocols
         self.activities_all = _read_json(acts_path, [])
         self.training_status_latest = _read_json(ts_latest_path, {})
         self.training_status_weekly = _read_json(ts_weekly_path, {})
+        self._repair_empty_training_status()
         self.vo2max_history = _read_json(vo2_path, [])
         self.weight_raw = _read_json(weight_path, {})
 
