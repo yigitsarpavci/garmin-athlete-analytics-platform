@@ -26,21 +26,8 @@
             id="nav-overview" aria-current="page" class="nav-tab nav-tab-active"><span class="nav-full">Genel
               Bakış</span><span class="nav-short">Genel</span></button>
 
-          <div class="nav-dropdown" data-nav-dropdown="sports">
-            <button type="button" data-calls="[[&quot;toggleNavDropdown&quot;, &quot;sports&quot;, &quot;@event&quot;]]"
-              id="nav-sports" aria-haspopup="true" aria-expanded="false" class="nav-tab">
-              <span>Branşlar</span>
-              <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
-            </button>
-            <div class="nav-dropdown-menu" role="menu">
-              <button type="button"
-                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;gym&quot;, &quot;@event&quot;]]"
-                data-subtab-group="sports" data-subtab="gym" class="nav-dropdown-item nav-dropdown-item-active">5x5 Ağırlık Hedefleri</button>
-              <button type="button"
-                data-calls="[[&quot;selectNavSubTab&quot;, &quot;sports&quot;, &quot;prog&quot;, &quot;@event&quot;]]"
-                data-subtab-group="sports" data-subtab="prog" class="nav-dropdown-item">Seviye &amp; İlerleme</button>
-            </div>
-          </div>
+          <button type="button" data-calls="[[&quot;closeAllNavDropdowns&quot;], [&quot;setTab&quot;, &quot;sports&quot;]]"
+            id="nav-sports" class="nav-tab">Branşlar</button>
 
           <button type="button" data-calls="[[&quot;setTab&quot;, &quot;history&quot;]]" id="nav-history"
             class="nav-tab">Geçmiş</button>
@@ -282,24 +269,21 @@
       </div>
     </div>
 
-    <!-- 2. BRANŞLAR (ALT SEKMELER: 5x5 HEDEFLERİ / SALON GEÇMİŞİ / SEVİYE & İLERLEME) -->
+    <!-- 2. BRANŞLAR (TEK SAYFA: 5x5 HEDEFLERİ + SEVİYE & İLERLEME + GYM A/B) -->
     <div id="section-sports" class="single-screen-section gap-2.5 hidden">
-      <div data-subpane-group="sports" data-subpane="gym" class="single-screen-pane">
-        <section class="surface-card p-4 sm:p-5 space-y-3.5 flex flex-col overflow-hidden" id="gymHistorySection">
-          <div id="gymProgramEvolutionBar" class="tint-panel p-3 space-y-2 shrink-0"></div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 content-start" id="gymProgressionGrid"></div>
+      <div class="single-screen-pane flex flex-col gap-2.5 overflow-hidden">
+        <section class="surface-card p-3 space-y-2 flex flex-col shrink-0" id="gymHistorySection">
+          <div id="gymProgramEvolutionBar" class="flex items-center"></div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 content-start" id="gymProgressionGrid"></div>
         </section>
-      </div>
 
-      <div data-subpane-group="sports" data-subpane="prog" class="single-screen-pane overflow-y-auto custom-scrollbar hidden">
-        <section class="surface-card p-3.5 sm:p-4 space-y-2 flex flex-col overflow-hidden"
-          id="progressionAssessmentSection">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 flex-1 content-start" id="progressionCardsGrid"></div>
+        <section class="surface-card p-3 flex flex-col shrink-0" id="progressionAssessmentSection">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 content-start" id="progressionCardsGrid"></div>
         </section>
-        <section class="surface-card p-3 sm:p-3.5 flex flex-col shrink-0 mt-2.5" id="dailyProtocolsSection">
+
+        <section class="surface-card p-3 flex flex-col shrink-0" id="dailyProtocolsSection">
           <div id="dailyProtocolsContainer"></div>
         </section>
-
       </div>
     </div>
 
