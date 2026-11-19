@@ -201,41 +201,6 @@ function buildQuotaLedgerHtml(quota) {
   const spont = quota.spontaneous || { count: 0, items: [], labels: [] };
   const weekRange = quota.week_range || 'Bu Hafta';
   const totalBadgeCls = total.is_complete ? 'stamp-moss' : 'stamp-accent';
-  const adapt = quota.last_week_adaptation || null;
-  const hasMissedCarry = adapt && Array.isArray(adapt.missed_sessions) && adapt.missed_sessions.length > 0;
-  const deviations = Array.isArray(quota.plan_deviations) ? quota.plan_deviations : [];
-
-  const deviationHtml = deviations.length
-    ? deviations.map(d => `
-      <div class="tint-ochre-panel px-2.5 py-1.5 text-[12px] space-y-1 min-w-0">
-        <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[11px] uppercase tracking-wider ochre-text font-semibold flex items-center gap-1">
-            ${lucideSvg('alert-triangle', 'w-3 h-3 shrink-0 ochre-text')}
-            <span>Kota Uyarlaması</span>
-          </span>
-          <span class="stamp-tag stamp-ochre">${escapeHtml(d.badge || 'Güncellendi')}</span>
-        </div>
-        <p class="ochre-text leading-snug">${escapeHtml(d.note || '')}</p>
-      </div>
-    `).join('')
-    : '';
-
-  const adaptHtml = adapt && adapt.adaptation_note
-    ? `<div class="${hasMissedCarry ? 'tint-ochre-panel' : 'tint-moss-panel'} px-2.5 py-1.5 text-[12px] space-y-1 min-w-0">
-        <div class="flex flex-wrap items-center justify-between gap-1.5">
-          <span class="font-mono text-[11px] uppercase tracking-wider ${hasMissedCarry ? 'ochre-text' : 'moss-text'} font-semibold flex items-center gap-1">
-            ${lucideSvg(hasMissedCarry ? 'refresh-cw' : 'check', `w-3 h-3 shrink-0 ${hasMissedCarry ? 'ochre-text' : 'moss-text'}`)}
-            <span>Haftalık Kota Geçişi</span>
-          </span>
-          ${adapt.monday_reset_enforced ? `<span class="font-mono text-[11px] text-[var(--text-secondary)] shrink-0">Pzt 0/${escapeHtml(run.target ?? 2)}</span>` : ''}
-        </div>
-        <p class="${hasMissedCarry ? 'ochre-text' : 'moss-text'} leading-snug">${escapeHtml(adapt.adaptation_note)}</p>
-      </div>`
-    : '';
-
-  const bannerRowHtml = (deviationHtml || adaptHtml)
-    ? `<div class="grid grid-cols-1 lg:grid-cols-2 gap-1.5">${deviationHtml}${adaptHtml}</div>`
-    : '';
 
   const restCount = Number((quota.rest_days || {}).count ?? ((quota.rest_days || {}).days || []).length ?? 0);
   const predSteps = Array.isArray((quota.next_4_runs_prediction || {}).steps) ? quota.next_4_runs_prediction.steps : [];
@@ -255,8 +220,6 @@ function buildQuotaLedgerHtml(quota) {
     : '';
 
   return `
-    ${bannerRowHtml}
-
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
       ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[#4B8EC2]', runProjectionHtml)}
       ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
