@@ -63,14 +63,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
     private func setupWindow() {
         let bgColor = NSColor(calibratedRed: 13.0 / 255.0, green: 19.0 / 255.0, blue: 15.0 / 255.0, alpha: 1.0)
+        let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1440, height: 900),
+            contentRect: screenFrame,
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         window.minSize = NSSize(width: 980, height: 680)
-        window.center()
+        window.setFrame(screenFrame, display: true)
         window.title = "Garmin Sporcu Paneli"
         window.appearance = NSAppearance(named: .darkAqua)
         window.backgroundColor = bgColor
