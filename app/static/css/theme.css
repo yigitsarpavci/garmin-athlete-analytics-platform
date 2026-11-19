@@ -739,6 +739,42 @@ html.dark .text-emerald-300 {
   width: 100%;
 }
 
+/* 7-Day HRV Mini Bar Chart inside 01. HRV card */
+.hrv-7d-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+.hrv-7d-bars {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  align-items: end;
+  height: 24px;
+  padding: 2px 0 0;
+}
+.hrv-7d-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 1px;
+}
+.hrv-7d-bar {
+  width: 100%;
+  min-height: 3px;
+  border-radius: 2px 2px 1px 1px;
+  transition: height 180ms ease;
+}
+.hrv-7d-lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
 /* Forced Colors / Windows High Contrast Safeguards */
 @media (forced-colors: active) {
   .surface-card,

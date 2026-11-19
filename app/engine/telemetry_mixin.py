@@ -338,6 +338,63 @@ class TelemetryMixin:
         else:
             rec_min = 0.0
 
+        # Son 7 günün gece HRV bar grafiği serisi
+        hrv_7d_series = []
+        for _, row in self.df.tail(7).iterrows():
+            v_hrv = row.get("hrv_night")
+            hrv_val = None if v_hrv is None or pd.isna(v_hrv) else round(float(v_hrv), 1)
+            v_st = row.get("hrv_status")
+            hrv_7d_series.append({
+                "date": str(row.get("date") or ""),
+                "hrv": hrv_val,
+                "status": None if v_st is None or pd.isna(v_st) else str(v_st),
+            })
+
+        # VO2 Max trend yönü (yukarı / aşağı / sabit)
+        vo2_vals = []
+        for item in (getattr(self, "vo2max_history", None) or []):
+            gen = item.get("generic") if isinstance(item, dict) else None
+            if isinstance(gen, dict):
+                v_num = gen.get("vo2MaxPreciseValue") if gen.get("vo2MaxPreciseValue") is not None else gen.get("vo2MaxValue")
+                if v_num is not None:
+                    vo2_vals.append((gen.get("calendarDate") or "", float(v_num)))
+        vo2_vals.sort(key=lambda x: x[0])
+        if len(vo2_vals) >= 2:
+            v_cur = vo2_vals[-1][1]
+            v_prev = vo2_vals[-2][1]
+            v_base = vo2_vals[max(0, len(vo2_vals) - 4)][1]
+            v_delta = round(v_cur - v_prev, 1)
+            v_span_delta = round(v_cur - v_base, 1)
+            if v_delta > 0.05 or (abs(v_delta) <= 0.05 and v_span_delta > 0.05):
+                v_dir, v_arrow, v_txt = "up", "↗", "Yükseliş"
+            elif v_delta < -0.05 or (abs(v_delta) <= 0.05 and v_span_delta < -0.05):
+                v_dir, v_arrow, v_txt = "down", "↘", "Düşüş"
+            else:
+                v_dir, v_arrow, v_txt = "flat", "→", "Sabit"
+            vo2max_trend = {
+                "direction": v_dir,
+                "arrow": v_arrow,
+                "label": v_txt,
+                "delta": v_delta,
+                "span_delta": v_span_delta,
+                "prev": round(v_prev, 1),
+                "current": round(v_cur, 1),
+                "prev_date": vo2_vals[-2][0],
+                "current_date": vo2_vals[-1][0],
+            }
+        else:
+            vo2max_trend = {
+                "direction": "flat",
+                "arrow": "→",
+                "label": "Sabit",
+                "delta": 0.0,
+                "span_delta": 0.0,
+                "prev": vo2_val,
+                "current": vo2_val,
+                "prev_date": None,
+                "current_date": None,
+            }
+
         return {
             "date": latest["date"],
             "weight": current_weight,
@@ -352,6 +409,7 @@ class TelemetryMixin:
             "overnight_hrv": hrv_night,
             "hrv_7d": hrv_7d,
             "hrv_status": hrv_status,
+            "hrv_7d_series": hrv_7d_series,
             "sleep_score": sleep_score,
             "sleep_score_7d": sleep_score_7d,
             "sleep_hours": round(sleep_h, 2),
@@ -389,6 +447,7 @@ class TelemetryMixin:
             "active_kcal_7d_avg": active_kcal_7d_avg,
             "bmr_kcal_7d_avg": bmr_kcal_7d_avg,
             "vo2max": vo2_val,
+            "vo2max_trend": vo2max_trend,
             "acute_load": acute_load,
             "chronic_load": chronic_load,
             "acwr": acwr_val,

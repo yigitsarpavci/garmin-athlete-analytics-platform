@@ -427,7 +427,7 @@ function renderDailyProtocols(protocols) {
     const runEx = (p.exercises || [])[0] || {};
     exerciseHtml = `
 <div class="tint-panel p-3.5 space-y-2.5 mt-1.5">
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
     <div>
       <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Süre / Mesafe</p>
       <p class="font-mono font-bold text-sm mt-0.5">${escapeHtml(runEx.duration || (runEx.sets + ' x ' + runEx.reps))}</p>
@@ -436,10 +436,6 @@ function renderDailyProtocols(protocols) {
     <div>
       <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Hedef Nabız</p>
       <p class="font-mono font-bold moss-text text-sm mt-0.5">${escapeHtml(runEx.target_hr)}</p>
-    </div>
-    <div>
-      <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Hedef Tempo</p>
-      <p class="font-mono font-bold accent-text text-sm mt-0.5">${escapeHtml(runEx.target_pace)}</p>
     </div>
     <div>
       <p class="font-mono text-[10px] text-[var(--text-secondary)] uppercase">Hedef Kadans</p>

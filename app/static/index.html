@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..500&family=IBM+Plex+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/theme.css?v=20261119a">
+  <link rel="stylesheet" href="/css/theme.css?v=20261119b">
 </head>
 
 <body class="h-screen overflow-hidden flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] antialiased">
@@ -72,7 +72,10 @@
           <button type="button" onclick="setSubTab('overview', 'quota_brief')" data-subtab-group="overview" data-subtab="quota_brief" class="subtab-btn">Günlük Durum &amp; Kota</button>
           <button type="button" onclick="setSubTab('overview', 'ledger')" data-subtab-group="overview" data-subtab="ledger" class="subtab-btn">Performans &amp; Trend</button>
         </div>
-        <span id="firstScreenDateBadge" class="stamp-tag stamp-accent">Son Kayıt: --</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="firstScreenTrainingStatusBadge" class="stamp-tag stamp-moss">Durum: --</span>
+          <span id="firstScreenDateBadge" class="stamp-tag stamp-accent">Son Kayıt: --</span>
+        </div>
       </div>
 
       <!-- OVERVIEW SUBPANE 1: 12 TEMEL GÖSTERGE -->
@@ -251,8 +254,12 @@
               </div>
             </div>
             <div class="space-y-1 min-w-0">
-              <span class="stamp-tag stamp-moss" id="decisionBadge">YEŞİL IŞIK</span>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="stamp-tag stamp-moss" id="decisionBadge">YEŞİL IŞIK</span>
+                <span class="stamp-tag stamp-accent" id="heroRecoveryBadge">Toparlanma: -- sa</span>
+              </div>
               <h3 class="font-editorial text-base font-medium leading-snug" id="decisionTitle">Toparlanma iyi durumda, antrenman için uygun gün.</h3>
+              <p class="font-mono text-[10.5px] text-[var(--text-secondary)]" id="heroStepsMeta">Adım: -- · Durum: --</p>
             </div>
           </div>
 
@@ -368,6 +375,7 @@
             <div class="py-1 min-w-0 space-y-1">
               <p id="inFocusHrvWakeBb" class="font-mono text-xl font-bold tabular-nums">Sabah BB: -- · -- ms</p>
               <p id="inFocusStressResp" class="font-mono text-[11px] text-[var(--text-secondary)] break-words">Stres: -- · Solunum: -- br/dk</p>
+              <p id="inFocusSteps" class="font-mono text-[11px] text-[var(--text-secondary)] break-words">Adım: -- · Toparlanma: -- sa</p>
             </div>
             <span class="font-mono text-[10px] accent-text font-semibold inline-flex items-center gap-1">
               <span>Sağlık Verileri</span>
@@ -1293,12 +1301,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js?v=20261119a"></script>
-  <script src="/js/quota_schedule.js?v=20261119a"></script>
-  <script src="/js/dashboard.js?v=20261119a"></script>
-  <script src="/js/health_analytics.js?v=20261119a"></script>
-  <script src="/js/charts.js?v=20261119a"></script>
-  <script src="/js/modals.js?v=20261119a"></script>
+  <script src="/js/core.js?v=20261119b"></script>
+  <script src="/js/quota_schedule.js?v=20261119b"></script>
+  <script src="/js/dashboard.js?v=20261119b"></script>
+  <script src="/js/health_analytics.js?v=20261119b"></script>
+  <script src="/js/charts.js?v=20261119b"></script>
+  <script src="/js/modals.js?v=20261119b"></script>
 </body>
 
 </html>

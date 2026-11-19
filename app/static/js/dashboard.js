@@ -75,28 +75,73 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   );
 
   setText('firstScreenDateBadge', `Son Kayıt: ${data.date || '--'}${data.is_partial_day ? ' (Kısmi Gün)' : ''}`);
+  const tsText = (curLoad && curLoad.status_tr) || data.training_status || 'Form Korunuyor';
+  const tsBadgeEl = document.getElementById('firstScreenTrainingStatusBadge');
+  if (tsBadgeEl) {
+    tsBadgeEl.textContent = `Training Status: ${tsText}`;
+    const tsLower = String(tsText).toLowerCase();
+    tsBadgeEl.className = 'stamp-tag ' + (
+      tsLower.includes('verimsiz') || tsLower.includes('unproductive') || tsLower.includes('detraining') || tsLower.includes('zorlan')
+        ? 'stamp-amber'
+        : 'stamp-moss'
+    );
+  }
 
-  // 01. HRV
+  // 01. HRV (7 Günlük Bar Chart + Durum)
   const hrvVal = Number(data.overnight_hrv ?? 43);
   const hrvBase = Number(data.hrv_7d ?? 46) || 46;
-  const hrvRatioPct = Math.max(8, Math.min(92, 50 + ((hrvVal - hrvBase) / Math.max(10, hrvBase * 0.4)) * 35));
-  const hrvSt = String(data.hrv_status || '').toLowerCase();
-  const hrvActive = hrvSt.includes('zayıf') || hrvSt.includes('poor') ? 0 : (hrvSt.includes('düşük') || hrvSt.includes('low') ? 1 : 2);
   setText('fs-hrv-val', `${data.overnight_hrv !== undefined ? Math.round(data.overnight_hrv) : '--'} ms`);
   setText('fs-hrv-badge', data.hrv_status || 'Dengeli');
   setText('fs-hrv-sub', `7G Ort: ${data.hrv_7d ?? '--'} ms · RHR: ${data.resting_hr ?? '--'} bpm`);
-  _renderGarminGauge('fs-hrv-bar',
-    [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }],
-    hrvActive, hrvRatioPct, 'Zayıf', 'Dengeli', 'Yüksek'
-  );
+  const hrvSeries = Array.isArray(data.hrv_7d_series) ? data.hrv_7d_series : [];
+  const hrvBarEl = document.getElementById('fs-hrv-bar');
+  if (hrvBarEl) {
+    if (hrvSeries.length) {
+      const vals = hrvSeries.map(d => Number(d.hrv) || 0).filter(v => v > 0);
+      const minV = vals.length ? Math.max(10, Math.min(...vals) - 6) : 25;
+      const maxV = vals.length ? Math.max(...vals, hrvBase + 5) : 65;
+      const span = Math.max(10, maxV - minV);
+      const barsHtml = hrvSeries.map((d, idx) => {
+        const v = Number(d.hrv) || 0;
+        const hPct = v > 0 ? Math.max(18, Math.min(100, ((v - minV) / span) * 100)) : 12;
+        const stLower = String(d.status || '').toLowerCase();
+        const cls = v <= 0
+          ? 'bg-[var(--border-medium)]'
+          : (stLower.includes('zayıf') || stLower.includes('poor') || v < hrvBase * 0.8
+            ? 'seg-red'
+            : (stLower.includes('düşük') || stLower.includes('low') || v < hrvBase * 0.92 ? 'seg-amber' : 'seg-green'));
+        const dayLbl = d.date ? String(d.date).slice(8, 10) : String(idx + 1);
+        const isLast = idx === hrvSeries.length - 1;
+        return `<div class="hrv-7d-col" title="${escapeHtml(d.date || '')}: ${v > 0 ? Math.round(v) + ' ms' : '--'}">
+          <div class="hrv-7d-bar ${cls}" style="height:${hPct.toFixed(0)}%;${isLast ? 'outline:1px solid #f0ede4;' : ''}"></div>
+          <span class="hrv-7d-lbl">${escapeHtml(dayLbl)}</span>
+        </div>`;
+      }).join('');
+      hrvBarEl.innerHTML = `<div class="hrv-7d-wrap"><div class="hrv-7d-bars">${barsHtml}</div></div>`;
+    } else {
+      const hrvRatioPct = Math.max(8, Math.min(92, 50 + ((hrvVal - hrvBase) / Math.max(10, hrvBase * 0.4)) * 35));
+      const hrvSt = String(data.hrv_status || '').toLowerCase();
+      const hrvActive = hrvSt.includes('zayıf') || hrvSt.includes('poor') ? 0 : (hrvSt.includes('düşük') || hrvSt.includes('low') ? 1 : 2);
+      _renderGarminGauge('fs-hrv-bar',
+        [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }],
+        hrvActive, hrvRatioPct, 'Zayıf', 'Dengeli', 'Yüksek'
+      );
+    }
+  }
 
-  // 02. VO2 Max
+  // 02. VO2 Max (+ Trend Yönü)
   const vo2Num = Number(vo2) || 45.4;
   const vo2Pct = ((vo2Num - 34) / (60 - 34)) * 100;
   const vo2Active = vo2Num < 38 ? 0 : (vo2Num < 44 ? 1 : (vo2Num < 50 ? 2 : (vo2Num < 55 ? 3 : 4)));
+  const vt = data.vo2max_trend || {};
+  const vtArrow = vt.arrow || '→';
+  const vtLabel = vt.label || 'Sabit';
+  const vtDelta = vt.delta !== undefined && vt.delta !== null
+    ? `${Number(vt.delta) > 0 ? '+' : ''}${fmtDec(vt.delta, 1)}`
+    : '0,0';
   setText('fs-vo2-val', fmtDec(vo2, 1));
-  setText('fs-vo2-badge', 'ml/kg/dk');
-  setText('fs-vo2-sub', 'Hedef: 50+');
+  setText('fs-vo2-badge', `${vtArrow} ${vtLabel}`);
+  setText('fs-vo2-sub', `Trend: ${vtArrow} ${vtDelta} (${fmtDec(vt.prev ?? vo2Num, 1)}→${fmtDec(vo2Num, 1)}) · Hedef: 50+`);
   _renderGarminGauge('fs-vo2-bar',
     [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }, { cls: 'seg-purple' }],
     vo2Active, vo2Pct, 'Zayıf', 'İyi', 'Üstün'
@@ -218,13 +263,15 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     stActive, stNum, '0 Dinlenme', '50', '100 Yüksek'
   );
 
-  // 10. Training Readiness
+  // 10. Training Readiness (+ Recovery Time)
   const rdVal = data.readiness_score !== undefined ? Math.round(data.readiness_score) : null;
   const rdNum = rdVal ?? 75;
   const rdActive = rdNum < 25 ? 0 : (rdNum < 50 ? 1 : (rdNum < 75 ? 2 : (rdNum < 95 ? 3 : 4)));
+  const recHVal = data.recovery_time_h !== undefined && data.recovery_time_h !== null ? Number(data.recovery_time_h) : 0;
+  const recStr = recHVal <= 0.1 ? '0 sa (Hazır)' : `${fmtDec(recHVal, 1)} sa`;
   setText('fs-readiness-val', rdVal !== null ? `${rdVal} / 100` : '-- / 100');
   setText('fs-readiness-badge', data.readiness_status || '--');
-  setText('fs-readiness-sub', `7G Ort: ${fmtDec(data.readiness_7d_avg, 1)} · Sabah BB: ${data.bb_wake ?? '--'}`);
+  setText('fs-readiness-sub', `7G Ort: ${fmtDec(data.readiness_7d_avg, 1)} · BB: ${data.bb_wake ?? '--'} · Toparlanma: ${recStr}`);
   _renderGarminGauge('fs-readiness-bar',
     [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }],
     rdActive, rdNum, '1 Düşük', '75 Hazır', '100'
@@ -342,6 +389,21 @@ function renderOverview(data) {
     const st = data.stress !== undefined ? Math.round(data.stress) : '--';
     const rsp = data.resp_sleep !== undefined ? data.resp_sleep : '--';
     stressRespEl.textContent = `Stres: ${st} · Solunum: ${rsp} br/dk`;
+  }
+  const inFocusStepsEl = document.getElementById('inFocusSteps');
+  if (inFocusStepsEl) {
+    const recH = data.recovery_time_h !== undefined ? Number(data.recovery_time_h).toFixed(1).replace('.', ',') : '0,0';
+    inFocusStepsEl.textContent = `Adım: ${formatTrInt(data.steps)} (7G: ${formatTrInt(data.steps_7d_avg)}) · Toparlanma: ${recH} sa`;
+  }
+  const heroRecBadge = document.getElementById('heroRecoveryBadge');
+  if (heroRecBadge) {
+    const recH = data.recovery_time_h !== undefined ? Number(data.recovery_time_h) : 0;
+    heroRecBadge.textContent = recH <= 0.1 ? 'Toparlanma: 0 sa' : `Toparlanma: ${recH.toFixed(1).replace('.', ',')} sa`;
+  }
+  const heroStepsMeta = document.getElementById('heroStepsMeta');
+  if (heroStepsMeta) {
+    const tsLabel = (curLoad && curLoad.status_tr) || data.training_status || '--';
+    heroStepsMeta.textContent = `Adım: ${formatTrInt(data.steps)} / ${formatTrInt(data.step_goal)} · ${tsLabel}`;
   }
 
   const kw = document.getElementById('kpi-weight');
@@ -495,7 +557,6 @@ function _renderBranchSummaryInto(containerId, sp, iconName) {
 
   const extraKpis = [];
   if (sp.current_pace) extraKpis.push({ label: 'Mevcut 5K / Tempo', val: sp.current_pace });
-  if (sp.target_pace) extraKpis.push({ label: 'Hedef Tempo', val: sp.target_pace });
   if (sp.efficiency_factor !== undefined && sp.efficiency_factor !== null) extraKpis.push({ label: 'Verimlilik (EF)', val: `${sp.efficiency_factor} m/atım` });
   if (sp.cadence) extraKpis.push({ label: 'Kadans Formu', val: sp.cadence });
   if (sp.current_status) extraKpis.push({ label: 'Rutin Durumu', val: sp.current_status });
