@@ -75,11 +75,9 @@
             </button>
             <div class="nav-dropdown-menu" role="menu">
               <button type="button" onclick="selectNavSubTab('health', 'sleep', event)" data-subtab-group="health"
-                data-subtab="sleep" class="nav-dropdown-item nav-dropdown-item-active">Uyku &amp; Yatış Saati</button>
+                data-subtab="sleep" class="nav-dropdown-item nav-dropdown-item-active">Uyku, Yatış Saati &amp; Korelasyonlar</button>
               <button type="button" onclick="selectNavSubTab('health', 'metrics', event)" data-subtab-group="health"
                 data-subtab="metrics" class="nav-dropdown-item">93G Ortalamalar</button>
-              <button type="button" onclick="selectNavSubTab('health', 'correlations', event)" data-subtab-group="health"
-                data-subtab="correlations" class="nav-dropdown-item">Korelasyonlar</button>
             </div>
           </div>
         </nav>
@@ -481,10 +479,10 @@
         </section>
     </div>
 
-    <!-- 5. SAĞLIK & UYKU (4 ALT SEKME: GENEL SAĞLIK & FİTNESS YAŞI / UYKU & YATIŞ SAATİ / 93G BİYOMETRİK ORTALAMALAR / KORELASYON MATRİSİ) -->
+    <!-- 5. SAĞLIK & UYKU (2 ALT SEKME: UYKU, YATIŞ SAATİ & KORELASYONLAR / 93G BİYOMETRİK ORTALAMALAR) -->
     <div id="section-health" class="single-screen-section gap-2.5 hidden">
-      <div data-subpane-group="health" data-subpane="sleep" class="single-screen-pane">
-        <section class="surface-card p-4 sm:p-5 space-y-3.5 flex flex-col overflow-hidden">
+      <div data-subpane-group="health" data-subpane="sleep" class="single-screen-pane gap-3 overflow-y-auto custom-scrollbar pr-0.5">
+        <section class="surface-card p-4 sm:p-5 space-y-3.5 flex flex-col shrink-0">
           <div class="shrink-0">
             <h3 class="font-editorial text-lg font-medium tracking-tight">Yatış Saatinin REM Uykusu ve Sabah Enerjisine
               Etkisi</h3>
@@ -492,7 +490,7 @@
               geçiş saatine göre 3 gruplu analizi:</p>
           </div>
           <div tabindex="0" role="region" aria-label="Yatış saati grupları tablosu"
-            class="table-scroll-region max-h-[calc(100vh-14rem)] overflow-y-auto">
+            class="table-scroll-region overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead>
                 <tr>
@@ -507,6 +505,22 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-subtle)]" id="bedtimeGroupsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="correlationsCard" class="surface-card p-4 sm:p-5 space-y-2.5 flex flex-col shrink-0">
+          <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight shrink-0">Korelasyonlar</h3>
+          <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi"
+            class="table-scroll-region overflow-x-auto">
+            <table class="w-full text-left text-[11.5px]">
+              <thead>
+                <tr>
+                  <th class="py-2 px-3">Değişken Çifti</th>
+                  <th class="py-2 px-3">Pratik Sporcu İçgörüsü</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
             </table>
           </div>
         </section>
@@ -533,24 +547,6 @@
                     göstergeler Garmin verilerinden hesaplanıyor...</td>
                 </tr>
               </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      <div data-subpane-group="health" data-subpane="correlations" class="single-screen-pane hidden">
-        <section id="correlationsCard" class="surface-card p-4 sm:p-5 space-y-2.5 flex flex-col overflow-hidden">
-          <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight shrink-0">Korelasyonlar</h3>
-          <div tabindex="0" role="region" aria-label="Pearson korelasyon matrisi"
-            class="table-scroll-region max-h-[calc(100vh-14rem)] overflow-y-auto">
-            <table class="w-full text-left text-[11.5px]">
-              <thead>
-                <tr>
-                  <th class="py-2 px-3">Değişken Çifti</th>
-                  <th class="py-2 px-3">Pratik Sporcu İçgörüsü</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="correlationsBody"></tbody>
             </table>
           </div>
         </section>
