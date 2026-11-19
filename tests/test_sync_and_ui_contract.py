@@ -210,6 +210,7 @@ class TestSyncResilience(unittest.TestCase):
             self.skipTest("node yok")
         script = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", "fetch_garmin_data.mjs")
         data_dir = os.path.join(os.path.dirname(script), "..", "data")
+        os.makedirs(data_dir, exist_ok=True)
         lock = os.path.join(data_dir, ".sync.lock")
         if os.path.exists(lock):
             self.skipTest("gerçek bir senkronizasyon çalışıyor olabilir")
