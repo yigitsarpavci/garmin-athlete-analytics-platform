@@ -409,21 +409,21 @@
       </div>
     </div>
 
-    <!-- 4. ANALİZLER (SOL: KORELASYONLAR, SAĞ: 93G ORTALAMALAR) -->
+    <!-- 4. ANALİZLER (SOL: KORELASYONLAR, SAĞ: 93G ORTALAMALAR · %50/%50) -->
     <div id="section-health" class="single-screen-section overflow-y-auto custom-scrollbar pr-0.5 hidden">
-      <section id="healthUnifiedCard" class="surface-card p-3 flex flex-col shrink-0">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-          <div class="lg:col-span-7 lg:border-r lg:border-[var(--border-subtle)] lg:pr-3 min-w-0 flex flex-col">
-            <div id="correlationsList" role="list" aria-label="Pearson korelasyonları" class="flex flex-col gap-1.5 h-full"></div>
+      <section id="healthUnifiedCard" class="surface-card p-3.5 flex flex-col flex-1 min-h-0">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch flex-1 min-h-0">
+          <div class="lg:border-r lg:border-[var(--border-subtle)] lg:pr-4 min-w-0 flex flex-col">
+            <div id="correlationsList" role="list" aria-label="Pearson korelasyonları" class="flex flex-col gap-2 h-full"></div>
           </div>
 
           <div tabindex="0" role="region" aria-label="93 günlük biyometrik özetler tablosu"
-            class="lg:col-span-5 table-scroll-region overflow-x-auto">
-            <table class="w-full text-left text-[11px] leading-snug">
+            class="table-scroll-region overflow-x-auto flex flex-col">
+            <table class="w-full h-full text-left text-xs leading-snug">
               <thead>
                 <tr>
-                  <th class="py-1.5 px-2 w-px whitespace-nowrap">Gösterge</th>
-                  <th class="py-1.5 px-2 w-full">93G Ortalama · Min–Maks · İdeal</th>
+                  <th class="py-1.5 px-2.5 w-px whitespace-nowrap">Gösterge</th>
+                  <th class="py-1.5 px-2.5 w-full">93G Ortalama · Min–Maks · İdeal</th>
                 </tr>
               </thead>
               <tbody id="healthMetrics93dBody" class="divide-y divide-[var(--border-subtle)] font-sans">

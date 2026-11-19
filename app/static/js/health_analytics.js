@@ -33,7 +33,7 @@ function _build93dRowGauge(r) {
 
   return `
     <div class="space-y-0.5 w-full">
-      <div class="flex items-baseline justify-between gap-2 font-mono text-[10px]">
+      <div class="flex items-baseline justify-between gap-2 font-mono text-[11px]">
         <span class="font-semibold sky-text">${escapeHtml(avgDisplay)}</span>
         <span class="violet-text shrink-0">${r.ideal_source === 'personal' ? 'Kişisel' : 'İdeal'}: ${escapeHtml(r.ideal_ref)}</span>
       </div>
@@ -56,8 +56,8 @@ function render93dBiometrics(rows) {
   if (!tbody || !Array.isArray(rows) || !rows.length) return;
   tbody.innerHTML = rows.map(r => `
       <tr class="hover:bg-[var(--bg-subtle)] transition">
-        <td class="py-1 px-2 font-medium whitespace-nowrap w-px pr-3">${escapeHtml(r.metric)}</td>
-        <td class="py-1 px-2 w-full">${_build93dRowGauge(r)}</td>
+        <td class="py-1.5 px-2.5 font-medium whitespace-nowrap w-px pr-3">${escapeHtml(r.metric)}</td>
+        <td class="py-1.5 px-2.5 w-full">${_build93dRowGauge(r)}</td>
       </tr>
     `).join('');
 }
@@ -66,7 +66,7 @@ function renderCorrelations(corrs) {
   const list = document.getElementById('correlationsList');
   if (!list || !Array.isArray(corrs)) return;
   if (!corrs.length) {
-    list.innerHTML = '<p class="py-3 px-3 text-[11px] text-[var(--text-secondary)]">Korelasyon için yeterli günlük veri yok (en az 6 gün gerekir).</p>';
+    list.innerHTML = '<p class="py-3 px-3 text-xs text-[var(--text-secondary)]">Korelasyon için yeterli günlük veri yok (en az 6 gün gerekir).</p>';
     return;
   }
   // Her satır eşit yükseklikte esner: liste, sağdaki 93G tablosunun yüksekliğini tam doldurur. Çubuk r değerini (−1…+1) merkezden gösterir.
@@ -79,18 +79,18 @@ function renderCorrelations(corrs) {
     const fill = neg ? `right:50%;width:${pct.toFixed(1)}%` : `left:50%;width:${pct.toFixed(1)}%`;
     const rTxt = (Number.isFinite(r) ? r.toFixed(2) : '--').replace('.', ',');
     return `
-      <div role="listitem" class="tint-panel px-2.5 py-1 grid grid-cols-[1fr_auto] gap-x-3 items-center" style="flex:1 1 0;min-height:0">
+      <div role="listitem" class="tint-panel px-3 py-1.5 grid grid-cols-[1fr_auto] gap-x-3 items-center" style="flex:1 1 0;min-height:0">
         <div class="min-w-0">
-          <p class="text-[11px] font-semibold leading-tight ${titleCls}">${escapeHtml(c.pair)}</p>
-          <p class="text-[10.5px] text-[var(--text-secondary)] leading-snug">${escapeHtml(c.insight)}</p>
+          <p class="text-xs font-semibold leading-tight ${titleCls}">${escapeHtml(c.pair)}</p>
+          <p class="text-[11px] text-[var(--text-secondary)] leading-snug">${escapeHtml(c.insight)}</p>
         </div>
-        <div class="w-44 shrink-0 text-right" title="${escapeHtml(`${c.strength || ''} ${c.direction || ''} · n=${c.n ?? '--'} · p ${c.p || ''}`)}">
+        <div class="w-48 shrink-0 text-right" title="${escapeHtml(`${c.strength || ''} ${c.direction || ''} · n=${c.n ?? '--'} · p ${c.p || ''}`)}">
           <div class="relative h-2 bg-[var(--bg-surface-elevated)] rounded-[1px]">
             <span class="absolute top-[-2px] bottom-[-2px] w-px bg-[var(--border-medium)]" style="left:50%"></span>
             <span class="absolute top-0 bottom-0 rounded-[1px]" style="${fill};background:${col}"></span>
           </div>
-          <span class="font-mono text-[10px] tabular-nums" style="color:${col}">r ${rTxt}</span>
-          <span class="font-mono text-[10px] text-[var(--text-muted)]"> · ${escapeHtml(c.strength || '')}</span>
+          <span class="font-mono text-[11px] tabular-nums" style="color:${col}">r ${rTxt}</span>
+          <span class="font-mono text-[11px] text-[var(--text-muted)]"> · ${escapeHtml(c.strength || '')}</span>
         </div>
       </div>`;
   }).join('');
