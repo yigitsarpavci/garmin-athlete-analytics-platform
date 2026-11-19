@@ -102,7 +102,7 @@
               <button type="button" onclick="selectNavSubTab('health', 'metrics', event)" data-subtab-group="health"
                 data-subtab="metrics" class="nav-dropdown-item">93G Ortalamalar</button>
               <button type="button" onclick="selectNavSubTab('health', 'correlations', event)" data-subtab-group="health"
-                data-subtab="correlations" class="nav-dropdown-item">Korelasyon Matrisi</button>
+                data-subtab="correlations" class="nav-dropdown-item">Korelasyonlar</button>
             </div>
           </div>
         </nav>
@@ -719,15 +719,7 @@
 
       <div data-subpane-group="health" data-subpane="metrics" class="single-screen-pane hidden">
         <section id="healthMetrics93dCard" class="surface-card p-4 sm:p-5 space-y-2.5 flex flex-col overflow-hidden">
-          <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
-            <div>
-              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">93 Günlük Temel Sağlık ve
-                Biyometrik Göstergeler</h3>
-              <p class="text-[11px] text-[var(--text-secondary)]">Ortalama, medyan, minimum–maksimum değerler ile ideal
-                referans aralıkları</p>
-            </div>
-            <span class="stamp-tag stamp-accent">14 Klinik Gösterge</span>
-          </div>
+          <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight shrink-0">93G Ortalamalar</h3>
           <div tabindex="0" role="region" aria-label="93 günlük biyometrik özetler tablosu"
             class="table-scroll-region max-h-[calc(100vh-14rem)] overflow-y-auto">
             <table class="w-full text-left text-[11.5px]">
