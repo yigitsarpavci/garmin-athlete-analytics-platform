@@ -60,13 +60,13 @@ async function safeFetchJson(url) {
 
 function setTab(tabId) {
   let targetTab = tabId;
-  if (tabId === 'activities') {
+  if (tabId === 'activities' || tabId === 'settings') {
     targetTab = 'training_load';
   } else if (tabId === 'analytics') {
     targetTab = 'health';
   }
 
-  const tabs = ['overview', 'plan', 'sports', 'training_load', 'health', 'settings'];
+  const tabs = ['overview', 'plan', 'sports', 'training_load', 'health'];
   tabs.forEach(t => {
     const sec = document.getElementById('section-' + t);
     const nav = document.getElementById('nav-' + t);
@@ -87,6 +87,8 @@ function setTab(tabId) {
 
   if (tabId === 'activities') {
     setSubTab('training_load', 'activities');
+  } else if (tabId === 'settings') {
+    setSubTab('training_load', 'hr_zones');
   } else if (tabId === 'analytics') {
     setSubTab('health', 'metrics');
   }
