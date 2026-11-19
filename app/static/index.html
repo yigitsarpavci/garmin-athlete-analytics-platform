@@ -231,7 +231,7 @@
 
         <!-- Kompakt Performans & Trend Şeridi -->
         <section aria-label="Performans & Trend Özeti"
-          class="surface-ledger mt-2.5 overflow-hidden grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
+          class="surface-ledger mt-2.5 overflow-hidden grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
           <!-- Antrenman Durumu -->
           <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
             <span class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)]">Antrenman
@@ -265,6 +265,16 @@
               <span id="kpi-5k-delta">Ağustos vs <strong class="moss-text">-1:46 /km</strong></span>
             </p>
           </div>
+
+          <!-- Ağırlık Plato Skoru -->
+          <div class="p-2.5 flex flex-col justify-between space-y-1 min-w-0">
+            <p class="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] truncate">Ağırlık Plato Skoru</p>
+            <div class="flex items-baseline gap-1.5">
+              <span class="font-mono text-base font-bold tabular-nums" id="kpi-plateau">-- / 100</span>
+              <span id="kpi-plateau-badge" class="stamp-tag stamp-moss tabular-nums">--</span>
+            </div>
+            <p id="kpi-plateau-sub" class="font-mono text-[11px] text-[var(--text-secondary)] truncate">--</p>
+          </div>
         </section>
       </div>
     </div>
@@ -272,8 +282,7 @@
     <!-- 2. BRANŞLAR (TEK SAYFA: 5x5 HEDEFLERİ + SEVİYE & İLERLEME + GYM A/B) -->
     <div id="section-sports" class="single-screen-section gap-2.5 hidden">
       <div class="single-screen-pane flex flex-col gap-2.5 overflow-hidden">
-        <section class="surface-card p-3 space-y-2 flex flex-col shrink-0" id="gymHistorySection">
-          <div id="gymProgramEvolutionBar" class="flex items-center"></div>
+        <section class="surface-card p-3 flex flex-col shrink-0" id="gymHistorySection">
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 content-start" id="gymProgressionGrid"></div>
         </section>
 

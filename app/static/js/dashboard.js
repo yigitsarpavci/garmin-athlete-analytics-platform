@@ -379,12 +379,17 @@ async function changeGymHistoryPage(delta) {
 function renderGymHistory(gym) {
   if (!gym) return;
 
-  const evoBar = document.getElementById('gymProgramEvolutionBar');
-  if (evoBar) {
-    const pa = gym.plateau_analysis || { plateau_score: 0 };
-    const pScore = pa.plateau_score || 0;
-    evoBar.innerHTML = `<span class="stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'}">Plato Skoru: ${pScore}/100</span>`;
+  const pa = gym.plateau_analysis || { plateau_score: 0, tier_label: '' };
+  const pScore = pa.plateau_score || 0;
+  const plateauVal = document.getElementById('kpi-plateau');
+  const plateauBadge = document.getElementById('kpi-plateau-badge');
+  const plateauSub = document.getElementById('kpi-plateau-sub');
+  if (plateauVal) plateauVal.textContent = `${pScore} / 100`;
+  if (plateauBadge) {
+    plateauBadge.className = `stamp-tag ${pScore >= 55 ? 'stamp-ochre' : 'stamp-moss'} tabular-nums`;
+    plateauBadge.textContent = pScore >= 55 ? 'Yüksek' : (pScore >= 25 ? 'İzlemede' : 'Düşük');
   }
+  if (plateauSub) plateauSub.textContent = pa.tier_label || '5x5 A/B';
 
   const progGrid = document.getElementById('gymProgressionGrid');
   if (progGrid && gym.progression) {
