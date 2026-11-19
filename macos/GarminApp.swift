@@ -72,7 +72,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         )
         window.minSize = NSSize(width: 980, height: 680)
         window.setFrame(screenFrame, display: true)
-        window.collectionBehavior = [.fullScreenPrimary]
         window.title = "Garmin Sporcu Paneli"
         window.appearance = NSAppearance(named: .darkAqua)
         window.titlebarAppearsTransparent = true
@@ -89,11 +88,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         window.contentView?.addSubview(webView)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        DispatchQueue.main.async {
-            if !self.window.styleMask.contains(.fullScreen) {
-                self.window.toggleFullScreen(nil)
-            }
-        }
     }
 
     private func resolveProjectDir() -> String {
