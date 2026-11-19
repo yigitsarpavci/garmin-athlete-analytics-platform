@@ -95,7 +95,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   };
   setText('firstScreenDateBadge', `Son Güncelleme: ${formatTrDateShort(data.date)}${data.is_partial_day ? ' · Bugün' : ''}`);
 
-  // 01. HRV (7 Günlük Bar Chart + 7G Ort Renk İndikatörü)
+  // 01. HRV (Kişisel Baseline'a Göre Son Gün Gauge Barı)
   const hrvVal = Number(data.overnight_hrv ?? 43);
   const hrvBase = Number(data.hrv_7d ?? 46) || 46;
   const hrvStLower = String(data.hrv_status || '').toLowerCase();
@@ -107,41 +107,13 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   if (hrvSubEl) {
     hrvSubEl.innerHTML = `<span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:${hrvAvgColor};display:inline-block" aria-hidden="true"></span><span>7G Ort: <strong style="color:${hrvAvgColor}">${escapeHtml(String(data.hrv_7d ?? '--'))} ms</strong></span></span> · RHR (Günlük): ${escapeHtml(String(data.resting_hr ?? '--'))} bpm`;
   }
-  const hrvSeries = Array.isArray(data.hrv_7d_series) ? data.hrv_7d_series : [];
-  const hrvBarEl = document.getElementById('fs-hrv-bar');
-  if (hrvBarEl) {
-    if (hrvSeries.length) {
-      const vals = hrvSeries.map(d => Number(d.hrv) || 0).filter(v => v > 0);
-      const minV = vals.length ? Math.max(10, Math.min(...vals) - 6) : 25;
-      const maxV = vals.length ? Math.max(...vals, hrvBase + 5) : 65;
-      const span = Math.max(10, maxV - minV);
-      const barsHtml = hrvSeries.map((d, idx) => {
-        const v = Number(d.hrv) || 0;
-        const hPct = v > 0 ? Math.max(18, Math.min(100, ((v - minV) / span) * 100)) : 12;
-        const stLower = String(d.status || '').toLowerCase();
-        const cls = v <= 0
-          ? 'bg-[var(--border-medium)]'
-          : (stLower.includes('zayıf') || stLower.includes('poor') || v < hrvBase * 0.8
-            ? 'seg-red'
-            : (stLower.includes('düşük') || stLower.includes('low') || v < hrvBase * 0.92 ? 'seg-amber' : 'seg-green'));
-        const dayLbl = d.date ? String(d.date).slice(8, 10) : String(idx + 1);
-        const isLast = idx === hrvSeries.length - 1;
-        return `<div class="hrv-7d-col" title="${escapeHtml(d.date || '')}: ${v > 0 ? Math.round(v) + ' ms' : '--'}">
-          <div class="hrv-7d-bar ${cls}" style="height:${hPct.toFixed(0)}%;${isLast ? 'outline:1px solid #f0ede4;' : ''}"></div>
-          <span class="hrv-7d-lbl">${escapeHtml(dayLbl)}</span>
-        </div>`;
-      }).join('');
-      hrvBarEl.innerHTML = `<div class="hrv-7d-wrap"><div class="hrv-7d-bars">${barsHtml}</div></div>`;
-    } else {
-      const hrvRatioPct = Math.max(8, Math.min(92, 50 + ((hrvVal - hrvBase) / Math.max(10, hrvBase * 0.4)) * 35));
-      const hrvSt = String(data.hrv_status || '').toLowerCase();
-      const hrvActive = hrvSt.includes('zayıf') || hrvSt.includes('poor') ? 0 : (hrvSt.includes('düşük') || hrvSt.includes('low') ? 1 : 2);
-      _renderGarminGauge('fs-hrv-bar',
-        [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }],
-        hrvActive, hrvRatioPct, 'Zayıf', 'Dengeli', 'Yüksek'
-      );
-    }
-  }
+  const hrvSegs = [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }];
+  const hrvThresholds = [0.55 * hrvBase, 0.72 * hrvBase, 0.88 * hrvBase, 1.14 * hrvBase, 1.32 * hrvBase];
+  const hrvPct = _piecewiseGaugePct(hrvVal, hrvThresholds, hrvSegs);
+  const hrvActive = hrvVal < hrvThresholds[1]
+    ? 0
+    : (hrvVal < hrvThresholds[2] ? 1 : (hrvVal <= hrvThresholds[3] ? 2 : 3));
+  _renderGarminGauge('fs-hrv-bar', hrvSegs, hrvActive, hrvPct, 'Zayıf', 'Dengeli', 'Yüksek');
 
   // 02. VO2 Max (+ Trend Yönü)
   const vo2Num = Number(vo2) || 45.4;
