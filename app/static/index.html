@@ -50,8 +50,6 @@
             <div class="nav-dropdown-menu" role="menu">
               <button type="button" onclick="selectNavSubTab('plan', 'quota', event)" data-subtab-group="plan"
                 data-subtab="quota" class="nav-dropdown-item nav-dropdown-item-active">Haftalık Kota Özeti</button>
-              <button type="button" onclick="selectNavSubTab('plan', 'schedule', event)" data-subtab-group="plan"
-                data-subtab="schedule" class="nav-dropdown-item">7 Günlük Esnek Takvim</button>
               <button type="button" onclick="selectNavSubTab('plan', 'protocols', event)" data-subtab-group="plan"
                 data-subtab="protocols" class="nav-dropdown-item">Antrenman İçerikleri</button>
             </div>
@@ -347,35 +345,6 @@
             <span class="stamp-tag stamp-accent">Yükleniyor...</span>
           </div>
           <p class="text-xs text-[var(--text-secondary)]">Haftalık kota özeti hazırlanıyor...</p>
-        </section>
-      </div>
-
-      <div data-subpane-group="plan" data-subpane="schedule" class="single-screen-pane hidden">
-        <section class="surface-card p-3.5 sm:p-4 space-y-2 flex flex-col overflow-hidden">
-          <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
-            <div>
-              <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Haftalık Takip &amp; Esnek
-                Kalan Kotalar (Hedef İdeal Kilo: 81,0 kg)</h3>
-              <p class="text-[11px] text-[var(--text-secondary)]">Sabit gün zorunluluğu olmadan tamamlananlar düşülür,
-                kalan kotalara tıklayarak reçeteye geçebilirsiniz.</p>
-            </div>
-            <span class="stamp-tag stamp-moss">Esnek 2 Koşu + 2 Kuvvet</span>
-          </div>
-          <div tabindex="0" role="region" aria-label="Haftalık takip ve esnek kota tablosu"
-            class="table-scroll-region max-h-[calc(100vh-13rem)] overflow-y-auto">
-            <table class="table-fixed w-full text-left text-xs">
-              <thead>
-                <tr>
-                  <th class="w-[20%] py-1.5 px-2">Gün / Esnek Slot</th>
-                  <th class="w-[27%] py-1.5 px-2">Seans Türü &amp; Kota</th>
-                  <th class="w-[25%] py-1.5 px-2">Durum &amp; Esnek Planlama</th>
-                  <th class="w-[13%] py-1.5 px-2">Hedef Nabız</th>
-                  <th class="w-[15%] py-1.5 px-2">Kalori &amp; Makro</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--border-subtle)]" id="overviewScheduleBody"></tbody>
-            </table>
-          </div>
         </section>
       </div>
 

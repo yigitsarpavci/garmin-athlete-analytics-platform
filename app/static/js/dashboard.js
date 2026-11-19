@@ -364,7 +364,6 @@ function renderOverview(data) {
   if (data.biometrics_93d && typeof render93dBiometrics === 'function') {
     render93dBiometrics(data.biometrics_93d);
   }
-  renderWeeklyScheduleTable(data.schedule);
   if (data.weekly_quota) renderWeeklyQuotaPanels(data.weekly_quota);
 }
 

@@ -269,67 +269,6 @@ function renderWeeklyQuotaPanels(quota) {
   if (typeof refreshIcons === 'function') refreshIcons();
 }
 
-function renderWeeklyScheduleTable(scheduleList) {
-  const sBody = document.getElementById('overviewScheduleBody');
-  if (!sBody || !scheduleList) return;
-  sBody.innerHTML = '';
-  scheduleList.forEach((s, idx) => {
-    const tr = document.createElement('tr');
-    tr.className = "transition";
-    const isDone = Boolean(s.is_completed) || (s.secondary || '').includes('TAMAMLANDI');
-    const slotKind = s.slot_kind || '';
-    const isQuotaSlot = !isDone && (
-      ['zone2', 'interval', 'tempo', 'gym_a', 'gym_b', 'gym', 'run'].includes(slotKind)
-      || (s.primary || '').startsWith('Koşu #')
-      || (s.primary || '').startsWith('Kuvvet #')
-    );
-    const devBadge = isDone && s.deviation_badge
-      ? `<span class="stamp-tag stamp-ochre">${escapeHtml(s.deviation_badge)}</span>`
-      : '';
-    const slotBadge = isDone
-      ? `<span class="stamp-tag stamp-moss">TAMAMLANDI</span>`
-      : (isQuotaSlot
-        ? '<span class="stamp-tag stamp-accent">ESNEK KOTA</span>'
-        : '<span class="stamp-tag">REJENERASYON</span>');
-
-    const rawDay = String(s.day || '');
-    const dParen = rawDay.indexOf('(');
-    const dayMain = dParen >= 0 ? rawDay.slice(0, dParen).trim() : rawDay.trim();
-    const daySub = dParen >= 0 ? rawDay.slice(dParen + 1).replace(/\)\s*$/, '').trim() : '';
-
-    const rawMacro = String(s.macro || '');
-    const mParen = rawMacro.indexOf('(');
-    const macroKcal = mParen >= 0 ? rawMacro.slice(0, mParen).trim() : rawMacro.trim();
-    const macroSplit = mParen >= 0 ? rawMacro.slice(mParen).trim() : '';
-
-    tr.innerHTML = `
-      <td class="py-1 px-2 text-[11px] leading-tight group-hover:text-[var(--accent)] transition align-top">
-        <div class="flex flex-wrap items-center gap-1">
-          <span class="font-semibold text-[var(--text-primary)] whitespace-nowrap">${escapeHtml(dayMain)}</span>
-          ${slotBadge}
-          ${devBadge}
-          ${lucideSvg('arrow-right', 'w-3 h-3 accent-text opacity-0 group-hover:opacity-100 transition shrink-0 ml-auto')}
-        </div>
-        ${daySub ? `<p class="text-[10px] text-[var(--text-secondary)] leading-tight mt-0.5">${escapeHtml(daySub)}</p>` : ''}
-      </td>
-      <td class="py-1 px-2 text-[11px] leading-snug font-medium align-top">
-        <p class="line-clamp-2 text-[var(--text-primary)]" title="${escapeHtml(s.primary)}">${escapeHtml(s.primary)}</p>
-      </td>
-      <td class="py-1 px-2 text-[10.5px] leading-snug align-top ${isDone ? 'font-mono moss-text font-semibold' : 'text-[var(--text-secondary)]'}">
-        <p class="line-clamp-2" title="${escapeHtml(s.secondary)}">${escapeHtml(s.secondary)}</p>
-      </td>
-      <td class="py-1 px-2 font-mono text-[10.5px] leading-snug font-medium accent-text align-top">${escapeHtml(s.target)}</td>
-      <td class="py-1 px-2 font-mono text-[10.5px] leading-tight align-top">
-        <span class="font-semibold text-[var(--text-primary)]">${escapeHtml(macroKcal)}</span>
-        ${s.calories ? `<span class="text-[9.5px] text-[var(--text-muted)]"> (${escapeHtml(s.calories)})</span>` : ''}
-        ${macroSplit ? `<span class="block text-[9.5px] text-[var(--text-secondary)] mt-0.5">${escapeHtml(macroSplit)}</span>` : ''}
-      </td>
-    `;
-    sBody.appendChild(tr);
-  });
-  if (typeof refreshIcons === 'function') refreshIcons();
-}
-
 let cachedDailyProtocols = [];
 let selectedProtocolMode = 0;
 
