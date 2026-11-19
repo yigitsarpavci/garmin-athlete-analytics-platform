@@ -249,7 +249,6 @@ function buildQuotaLedgerHtml(quota) {
     </div>
 
     ${bannerRowHtml}
-    ${quota.flexibility_note ? `<p class="text-[10.5px] text-[var(--text-secondary)] leading-snug">${escapeHtml(quota.flexibility_note)}</p>` : ''}
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
       ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[var(--accent)]')}

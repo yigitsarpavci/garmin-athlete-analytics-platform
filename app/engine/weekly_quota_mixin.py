@@ -836,9 +836,7 @@ class WeeklyQuotaMixin:
         return {
             "week_range": week_meta["week_range"],
             "headline": headline,
-            "flexibility_note": (
-                "Sabit gün zorunluluğu yok — Pazartesi kota 0/2 temiz sıfırlanır; planlanandan farklı seans yapılırsa gerçek tür işlenir ve kalan hafta yeniden planlanır."
-            ),
+            "flexibility_note": "",
             "plan_deviations": deviations,
             "post_tempo_adapted": post_tempo_adapted,
             "last_week_adaptation": {
