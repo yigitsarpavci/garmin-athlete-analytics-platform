@@ -744,8 +744,8 @@ class WorkoutProtocolsMixin:
             slots = PROGRAM_SPLIT_CATALOG.get(active_split, {}).get("slots", ["push", "pull"])
             gym_idx = 0
             for proto in protocols:
-                if proto.get("category") == "gym":
-                    slot_k = slots[min(gym_idx, len(slots) - 1)]
+                if proto.get("category") == "gym" and gym_idx < len(slots):
+                    slot_k = slots[gym_idx]
                     sp_proto = build_split_protocol(slot_k, prog, active_split)
                     if sp_proto:
                         proto["slot_label"] = sp_proto["badge"]
@@ -755,6 +755,23 @@ class WorkoutProtocolsMixin:
                         proto["warmup"] = sp_proto["warmup"]
                         proto["exercises"] = sp_proto["exercises"]
                     gym_idx += 1
+            while gym_idx < len(slots):
+                slot_k = slots[gym_idx]
+                sp_proto = build_split_protocol(slot_k, prog, active_split)
+                if sp_proto:
+                    protocols.append({
+                        "day_code": f"gym_{slot_k}",
+                        "slot_label": sp_proto["badge"],
+                        "quota_status": "remaining",
+                        "day_title": sp_proto["day_title"],
+                        "category": "gym",
+                        "badge": sp_proto["badge"],
+                        "objective": sp_proto["objective"],
+                        "warmup": sp_proto["warmup"],
+                        "exercises": sp_proto["exercises"],
+                        "status_note": "",
+                    })
+                gym_idx += 1
         return protocols
 
     def _protocol_tuesday_gym_a(self, _quota_note, bp, gym_a_done, gyms_done, lr, prot_g, rem_gym_kinds, rem_gyms, rw, sh, sq) -> Dict[str, Any]:

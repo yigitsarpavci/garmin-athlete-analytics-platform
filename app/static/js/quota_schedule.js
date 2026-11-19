@@ -294,17 +294,15 @@ function renderDailyProtocols(protocols) {
   if (!container || !protocols || !Array.isArray(protocols) || !protocols.length) return;
   cachedDailyProtocols = protocols;
 
-  const orderMap = { tuesday: 0, saturday: 1 };
   const sortedIndices = protocols
     .map((_, idx) => idx)
-    .filter(idx => Object.prototype.hasOwnProperty.call(orderMap, protocols[idx]?.day_code))
-    .sort((a, b) => orderMap[protocols[a].day_code] - orderMap[protocols[b].day_code]);
+    .filter(idx => protocols[idx]?.category === 'gym');
 
   let savedIdx = -1;
   try {
     const savedCode = localStorage.getItem('garmin_active_protocol_code');
-    if (savedCode && Object.prototype.hasOwnProperty.call(orderMap, savedCode)) {
-      savedIdx = protocols.findIndex(p => p.day_code === savedCode);
+    if (savedCode) {
+      savedIdx = sortedIndices.find(idx => protocols[idx]?.day_code === savedCode) ?? -1;
     }
   } catch (_) {}
 
