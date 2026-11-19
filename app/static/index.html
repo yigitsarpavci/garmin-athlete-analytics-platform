@@ -99,10 +99,8 @@
               <i data-lucide="chevron-down" class="nav-dropdown-chevron" aria-hidden="true"></i>
             </button>
             <div class="nav-dropdown-menu" role="menu">
-              <button type="button" onclick="selectNavSubTab('health', 'clinic', event)" data-subtab-group="health"
-                data-subtab="clinic" class="nav-dropdown-item nav-dropdown-item-active">Genel Sağlık &amp; Fitness Yaşı</button>
               <button type="button" onclick="selectNavSubTab('health', 'sleep', event)" data-subtab-group="health"
-                data-subtab="sleep" class="nav-dropdown-item">Uyku &amp; Yatış Saati</button>
+                data-subtab="sleep" class="nav-dropdown-item nav-dropdown-item-active">Uyku &amp; Yatış Saati</button>
               <button type="button" onclick="selectNavSubTab('health', 'metrics', event)" data-subtab-group="health"
                 data-subtab="metrics" class="nav-dropdown-item">93G Ortalamalar</button>
               <button type="button" onclick="selectNavSubTab('health', 'correlations', event)" data-subtab-group="health"
@@ -767,72 +765,12 @@
         <div class="flex items-baseline gap-3">
           <h2 class="section-heading text-xl sm:text-2xl">Sağlık &amp; Uyku</h2>
           <span
-            class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden lg:inline">Klinik
-            Özet · Uyku · 93G · Korelasyon</span>
+            class="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)] hidden lg:inline">Uyku
+            · 93G · Korelasyon</span>
         </div>
       </div>
 
-      <div data-subpane-group="health" data-subpane="clinic" class="single-screen-pane">
-        <section class="surface-card p-4 sm:p-5 space-y-3 flex flex-col overflow-hidden">
-          <div
-            class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-2.5 shrink-0">
-            <div class="flex items-center gap-3">
-              <div class="icon-box w-8 h-8"><i data-lucide="heart-pulse" class="w-4 h-4" stroke-width="1.5"
-                  aria-hidden="true"></i></div>
-              <div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <h3 class="font-editorial text-base sm:text-lg font-medium tracking-tight">Genel Sağlık Özeti</h3>
-                  <span class="stamp-tag stamp-moss">Özet</span>
-                </div>
-                <p class="text-[11px] text-[var(--text-secondary)]">Nabız, HRV, kilo, solunum ve uyku verilerine göre
-                  genel durum</p>
-              </div>
-            </div>
-
-            <div class="tint-moss-panel px-3 py-1.5 text-right shrink-0">
-              <p class="font-mono text-[9.5px] uppercase tracking-wider text-[var(--text-secondary)]">Genel Durum</p>
-              <p class="text-xs font-bold moss-text" id="doctorVerdictTitle">Normal Sınırlar İçinde</p>
-            </div>
-          </div>
-
-          <p class="text-xs text-[var(--text-secondary)] leading-snug tint-panel p-2.5 shrink-0" id="doctorSummaryText">
-            Yükleniyor...</p>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 flex-1 min-h-0 content-start"
-            id="healthPillarsGrid"></div>
-
-          <div class="field-dossier p-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <div class="flex items-center gap-3">
-              <div class="icon-box w-8 h-8"><i data-lucide="dna" class="w-4 h-4" stroke-width="1.5"
-                  aria-hidden="true"></i></div>
-              <div>
-                <p class="font-mono text-[9.5px] font-semibold accent-text uppercase tracking-wider">Garmin Biyolojik
-                  Sağlık Yaşı (Fitness Age)</p>
-                <div class="flex items-baseline gap-2 mt-0.5">
-                  <span class="font-mono text-xl font-bold" id="fitnessAgeValue">-- Yaş</span>
-                  <span id="fitnessAgeAdvantageBadge" class="stamp-tag stamp-moss">-- Avantaj</span>
-                  <span id="fitnessAgeChronoText" class="font-mono text-xs text-[var(--text-secondary)]">(Kronolojik:
-                    22)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-4 text-xs">
-              <div class="text-right">
-                <p class="font-mono text-[9.5px] text-[var(--text-secondary)]">En Düşük Sınır</p>
-                <p id="fitnessAgeMinVal" class="font-mono text-sm font-bold moss-text">18,0 Yaş</p>
-              </div>
-              <div class="h-7 w-px bg-[var(--border-subtle)]"></div>
-              <div class="text-left text-[11px] text-[var(--text-secondary)]">
-                <p id="fitnessAgeRoadmapText" class="moss-text font-medium">Hedef vücut ağırlığına inildikçe biyolojik
-                  yaş sınırı açılır.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div data-subpane-group="health" data-subpane="sleep" class="single-screen-pane hidden">
+      <div data-subpane-group="health" data-subpane="sleep" class="single-screen-pane">
         <section class="surface-card p-4 sm:p-5 space-y-3.5 flex flex-col overflow-hidden">
           <div class="shrink-0">
             <h3 class="font-editorial text-lg font-medium tracking-tight">Yatış Saatinin REM Uykusu ve Sabah Enerjisine
