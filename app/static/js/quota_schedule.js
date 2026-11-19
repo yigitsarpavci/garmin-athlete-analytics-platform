@@ -219,13 +219,23 @@ function buildQuotaLedgerHtml(quota) {
       </div>`
     : '';
 
+  const spontItems = Array.isArray(spont.items) ? spont.items : [];
+  const spontDays = spontItems.length
+    ? (new Set(spontItems.map(s => s.date).filter(Boolean)).size || spontItems.length)
+    : Number(spont.count ?? 0);
+  const spontTip = spontItems.length
+    ? spontItems.map(s => s.sport_tr || s.title || 'Spontane').join(', ')
+    : 'Sabit kota kaplamayan branşlar';
+
   return `
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
       ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[#4B8EC2]', runProjectionHtml)}
       ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
-      ${buildSpontaneousCard(spont, restCount)}
     </div>
-
+    <div class="flex items-center justify-end gap-4 pt-1.5 font-mono text-[11px] text-[var(--text-secondary)]">
+      <span class="inline-flex items-center gap-1" title="${escapeHtml(spontTip)}">${lucideSvg('compass', 'w-3 h-3 violet-text shrink-0')}Spontane branş: <strong class="text-[var(--text-primary)] tabular-nums">${spontDays} gün</strong></span>
+      <span class="inline-flex items-center gap-1">${lucideSvg('moon', 'w-3 h-3 sky-text shrink-0')}Dinlenme: <strong class="text-[var(--text-primary)] tabular-nums">${restCount} gün</strong></span>
+    </div>
   `;
 }
 
