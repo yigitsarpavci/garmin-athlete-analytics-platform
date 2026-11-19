@@ -366,8 +366,6 @@ class WorkoutProtocolsMixin:
         gym_cnt, gym_hours, gym_kcal = self._compute_strength_stats()
 
 
-        running_upcoming = self._build_running_upcoming(weekly_quota)
-
         gym_hist_data = self.get_gym_exercise_history()
         gym_sessions = gym_hist_data.get("sessions", [])
         active_split = (gym_hist_data.get("program_state") or {}).get("active_split", "5x5_linear")
@@ -390,9 +388,10 @@ class WorkoutProtocolsMixin:
 
         extra_sports = self._collect_extra_sports_cards()
 
+        run_target = weekly_quota["running"]["target"]
         run_sched_status = (
-            f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/2 Tamamlandı · Kota Doldu)"
-            if rem_runs == 0 else f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/2 Yapıldı · Kalan: {rem_runs})"
+            f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/{run_target} Tamamlandı · Kota Doldu)"
+            if rem_runs == 0 else f"Esnek Haftalık Kota (Bu Hafta: {runs_done}/{run_target} Yapıldı · Kalan: {rem_runs})"
         )
         gym_sched_status = (
             f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Tamamlandı · Kota Doldu)"
@@ -417,8 +416,6 @@ class WorkoutProtocolsMixin:
                     f"{latest_cadence} spm Kadans Kontrolü: Kısa, elastik adımlarla diz/eklem darbesini minimumda tutun.",
                     f"Kilo Adaptasyonu ({cur_w:.1f} -> {self.get_target_weight():.1f} kg): Her -1 kg hafifleme 5K süresini ~14 sn hızlandırır.",
                 ],
-                "upcoming_sessions": running_upcoming,
-                "next_workout": running_upcoming[0],
             },
             "strength": {
                 "name": "Kuvvet Antrenmanı (Strength)",
@@ -474,64 +471,6 @@ class WorkoutProtocolsMixin:
                 gym_hours = round(float(g_df["dur_m"].sum()) / 60.0, 1)
                 gym_kcal = int(round(float(g_df["cal"].sum())))
         return gym_cnt, gym_hours, gym_kcal
-
-
-    def _build_running_upcoming(self, weekly_quota):
-        """Kalan koşu kotası ve sonraki döngü projeksiyonlarını üretir (en az 3 öğe)."""
-        running_upcoming: List[Dict[str, str]] = [
-            {
-                "day": "Bu Hafta Kalan Kota (Esnek Gün)" + (" · Öncelikli" if item.get("is_prioritized") else ""),
-                "type": item["type"],
-                "title": item["title"],
-                "duration": item["duration"],
-                "target_hr": item["target_hr"],
-                "target_pace": item["target_pace"],
-                "details": item["coaching_note"],
-            }
-            for item in weekly_quota["running"]["remaining_items"]
-        ]
-        run_kinds_chain = [item.get("slot_kind") for item in weekly_quota["running"]["remaining_items"] if item.get("slot_kind")]
-        rem_run_count = len(running_upcoming)
-        while len(running_upcoming) < 3:
-            if not run_kinds_chain:
-                comp_kinds = weekly_quota["running"].get("completed_kinds", [])
-                if "interval" not in comp_kinds:
-                    next_kind = "interval"
-                elif "zone2" not in comp_kinds:
-                    next_kind = "zone2"
-                else:
-                    next_kind = "zone2" if comp_kinds[-1] == "interval" else "interval"
-                prev_kind = None
-            else:
-                prev_kind = run_kinds_chain[-1]
-                next_kind = "zone2" if prev_kind == "interval" else "interval"
-
-            step_num = len(running_upcoming) - rem_run_count + 1
-            tpl_item = self._build_quota_remaining_item(next_kind, 1 if next_kind == "zone2" else 2)
-            if step_num == 1:
-                day_lbl = "Sıradaki Projeksiyon (Yeni Döngü #1)"
-                prefix_note = (
-                    "Bu haftanın kalan koşusu tamamlandıktan sonraki döngü adımı"
-                    if rem_run_count > 0
-                    else "Bu haftanın koşu kotası tamamlandı; yeni döngü ilk koşu önerisi"
-                )
-            else:
-                prev_name = "Zone 2" if prev_kind == "zone2" else "İnterval"
-                day_lbl = f"{prev_name} Sonrası Projeksiyon (Yeni Döngü #{step_num})"
-                prefix_note = (
-                    f"{prev_name} seansı sonrası 80/20 polarize rotasyon gereği sıradaki koşu"
-                )
-            running_upcoming.append({
-                "day": day_lbl,
-                "type": f"{tpl_item['type']} (Projeksiyon)",
-                "title": tpl_item["title"],
-                "duration": tpl_item["duration"],
-                "target_hr": tpl_item["target_hr"],
-                "target_pace": tpl_item["target_pace"],
-                "details": f"{prefix_note}: {tpl_item['coaching_note']}",
-            })
-            run_kinds_chain.append(next_kind)
-        return running_upcoming
 
 
     def _build_gym_upcoming(self, active_split, gym_sessions, prog, split_slots, weekly_quota):

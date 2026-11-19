@@ -357,13 +357,13 @@ function _renderBranchSummaryInto(containerId, sp, iconName, opts = {}) {
       ${tipsHtml}
       ${lastHtml}
     </div>
-    <div class="space-y-2 min-w-0 lg:border-l lg:border-[var(--border-subtle)] lg:pl-4">
+    ${upcomingList ? `<div class="space-y-2 min-w-0 lg:border-l lg:border-[var(--border-subtle)] lg:pl-4">
       <p class="font-mono text-[11px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
         ${lucideSvg('calendar', 'w-3.5 h-3.5 accent-text')}
         <span>Bu Hafta Kalan / Sıradaki Seçenekler</span>
       </p>
       <div class="space-y-2">${upcomingList}</div>
-    </div>
+    </div>` : ''}
   `;
 }
 
