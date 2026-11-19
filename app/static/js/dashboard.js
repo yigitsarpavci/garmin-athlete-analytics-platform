@@ -684,10 +684,6 @@ function renderActivities(acts, rebuildFilters = true, resetPage = true) {
   if (resetPage) currentActivityPage = 1;
 
   updateActivityStatsSummary(fullList);
-  if (currentSportFilter === 'all' && (!document.getElementById('actSearchInput') || !document.getElementById('actSearchInput').value.trim())) {
-    const titleEl = document.getElementById('activitiesSectionTitle');
-    if (titleEl && fullList) titleEl.textContent = `Aktivite Telemetri Günlüğü (${fullList.length} Seans)`;
-  }
 
   const totalPages = Math.max(1, Math.ceil(fullList.length / ACT_PAGE_SIZE));
   currentActivityPage = Math.max(1, Math.min(totalPages, currentActivityPage));
