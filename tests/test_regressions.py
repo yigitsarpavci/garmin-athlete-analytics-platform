@@ -504,7 +504,7 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
         self.assertEqual(dyn0["run_target"], 0)
         self.assertIn("0 Koşu", dyn0["run_plan_summary"])
 
-        # Önümüzdeki 7 günde 28G pencereden düşecek eski bir interval barı %85 altına indiriyorsa 1 koruma koşusu verir (4'ten 1'e düşer)
+        # Önümüzdeki günlerde 28G pencereden düşecek eski bir interval barı %85 altına indiriyorsa gelecek koşu yükünü tahmin edip erken eksiltmez (fitlik hedefi 3 korunur)
         exp_date = (now - timedelta(days=25)).strftime("%Y-%m-%d 10:00:00")
         stub.activities_all.append({
             "sport": "running", "startTimeLocal": exp_date, "duration": 2700, "distance": 7000,
@@ -516,13 +516,11 @@ class TestDynamicWeeklyQuota(unittest.TestCase):
                 "targets_available": True,
                 "aerobic_low": {"actual": 370.0, "target_max": 400.0},
                 "aerobic_high": {"actual": 465.0, "target_max": 500.0},
-                "anaerobic": {"actual": 245.0, "target_max": 260.0},  # %94.2 -> düşüşle ~%80'e iner, 1 interval >=%85 korur
+                "anaerobic": {"actual": 245.0, "target_max": 260.0},  # %94.2 -> düşüşle ~%80'e iner, koşu gerekir -> fitlik hedefi 3 kalır
             },
         }
         dyn1 = stub.compute_dynamic_weekly_targets(now=now)
-        self.assertGreaterEqual(dyn1["run_target"], 1)
-        self.assertLess(dyn1["run_target"], 3)
-        self.assertIn("%85+ koruma", dyn1["run_plan_summary"])
+        self.assertEqual(dyn1["run_target"], 3)
 
     def test_advanced_runner_scales_run_target_and_projection_horizon(self):
         stub, now = self._make_stub(split="push_pull", plateau=58, chronic=480.0, vo2max=53.0, runs_28d=15, gyms_28d=10)
