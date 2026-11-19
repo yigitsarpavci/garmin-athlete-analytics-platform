@@ -362,20 +362,6 @@ async function loadMoreGymHistory() {
 function renderGymHistory(gym) {
   if (!gym) return;
 
-  const badgeRow = document.getElementById('gymHeaderBadges');
-  if (badgeRow && gym.progression) {
-    const p = gym.progression;
-    const shortDelta = (d) => String(d || '').split('(')[0].trim();
-    const sq = p.squat ? `Squat ${p.squat.max_kg} kg (${shortDelta(p.squat.delta)})` : 'Squat --';
-    const bn = p.bench ? `Bench ${p.bench.max_kg} kg` : 'Bench --';
-    const rw = p.row ? `Row ${p.row.max_kg} kg` : 'Row --';
-    badgeRow.innerHTML = `
-      <span class="stamp-tag stamp-moss">${escapeHtml(sq)}</span>
-      <span class="stamp-tag stamp-accent">${escapeHtml(bn)}</span>
-      <span class="stamp-tag">${escapeHtml(rw)}</span>
-    `;
-  }
-
   const activeSplit = (gym.program_state || {}).active_split || '5x5_linear';
   const catalog = gym.split_catalog || {};
   const splitInfo = catalog[activeSplit] || { short_name: '5x5 Doğrusal', name: 'StrongLifts 5x5' };

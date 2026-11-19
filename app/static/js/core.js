@@ -74,6 +74,37 @@ function restoreSavedNavigation() {
   } catch (_) {}
 }
 
+/* Genel Bakış tek ekrana sığar: içerik kaydırma yerine, ekran yüksekliğine göre otomatik küçültülür (zoom). Çok küçülmesi gerekirse (<0.7) kaydırmaya döner. */
+const OVERVIEW_MIN_ZOOM = 0.7;
+let _overviewFitBusy = false;
+function fitOverviewToScreen() {
+  const sec = document.getElementById('section-overview');
+  const pane = document.querySelector('[data-subpane-group="overview"][data-subpane="kpi12"]');
+  if (!sec || !pane || sec.classList.contains('hidden') || _overviewFitBusy) return;
+  _overviewFitBusy = true;
+  try {
+    pane.style.zoom = '';
+    if (window.innerWidth < 640) return; // mobilde normal kaydırma + alt menü
+    const avail = sec.clientHeight;
+    if (!avail) return;
+    let z = 1;
+    while (z > OVERVIEW_MIN_ZOOM && pane.getBoundingClientRect().height > avail) {
+      z = Math.max(OVERVIEW_MIN_ZOOM, +(z - 0.03).toFixed(2));
+      pane.style.zoom = String(z);
+    }
+    sec.style.overflowY = pane.getBoundingClientRect().height > avail + 1 ? 'auto' : 'hidden';
+  } finally {
+    _overviewFitBusy = false;
+  }
+}
+let _overviewFitTimer = null;
+function scheduleOverviewFit() {
+  clearTimeout(_overviewFitTimer);
+  _overviewFitTimer = setTimeout(fitOverviewToScreen, 60);
+}
+window.addEventListener('resize', scheduleOverviewFit);
+window.addEventListener('DOMContentLoaded', scheduleOverviewFit);
+
 function setTab(tabId, persist = true) {
   let targetTab = tabId;
   if (tabId === 'activities' || tabId === 'settings' || tabId === 'training_load' || tabId === 'analytics') {
@@ -102,6 +133,7 @@ function setTab(tabId, persist = true) {
   if (persist) {
     try { localStorage.setItem(STORAGE_TAB_KEY, targetTab); } catch (_) {}
   }
+  if (targetTab === 'overview') scheduleOverviewFit();
 
   if (tabId === 'activities') {
     setSubTab('training_load', 'activities', persist);
@@ -243,6 +275,7 @@ async function initApp() {
 
     // Garmin oturum keep-alive'ı sunucudaki arka plan döngüsü yönetir (server.py:_session_keepalive_loop).
     refreshIcons();
+    scheduleOverviewFit();
   } catch (err) {
     console.error("Yükleme hatası:", err);
   }
