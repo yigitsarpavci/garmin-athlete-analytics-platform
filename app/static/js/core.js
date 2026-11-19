@@ -379,6 +379,13 @@ function renderWeeklyStreak(activities) {
     dayMap[iso] = null;
   }
 
+  const prevDays = new Set();
+  for (let i = -7; i < 0; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    prevDays.add(d.toISOString().slice(0, 10));
+  }
+  const prevActiveDays = new Set();
   activities.forEach(a => {
     const d = (a.date || a.startTimeLocal || '').slice(0, 10);
     if (d in dayMap && !dayMap[d]) {
@@ -388,10 +395,14 @@ function renderWeeklyStreak(activities) {
         icon: getSportLucideIcon(a.sport || a.sport_tr || a.name)
       };
     }
+    if (prevDays.has(d)) prevActiveDays.add(d);
   });
 
   const activeCount = Object.values(dayMap).filter(Boolean).length;
-  if (badge) badge.textContent = `${activeCount}/7 Gün`;
+  const prevActiveCount = prevActiveDays.size;
+  if (badge) {
+    badge.innerHTML = `${activeCount}/7 Gün <span class="text-[10px] font-normal text-[var(--text-secondary)] ml-1.5">· Geçen Hafta: ${prevActiveCount}/7</span>`;
+  }
 
   const keys = Object.keys(dayMap).sort();
   strip.innerHTML = keys.map((iso, idx) => {
