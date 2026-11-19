@@ -27,18 +27,15 @@ function renderCorrelations(corrs) {
   if (!cBody || !Array.isArray(corrs)) return;
   cBody.innerHTML = '';
   if (!corrs.length) {
-    cBody.innerHTML = '<tr><td colspan="4" class="py-3 px-3 text-[var(--text-secondary)]">Korelasyon için yeterli günlük veri yok (en az 6 gün gerekir).</td></tr>';
+    cBody.innerHTML = '<tr><td colspan="2" class="py-3 px-3 text-[var(--text-secondary)]">Korelasyon için yeterli günlük veri yok (en az 6 gün gerekir).</td></tr>';
     return;
   }
   corrs.forEach(c => {
     const tr = document.createElement('tr');
     tr.className = "hover:bg-[var(--bg-subtle)] transition";
     const pairCls = c.significant ? (Number(c.r) < 0 ? 'ochre-text' : 'sky-text') : 'text-[var(--text-muted)]';
-    const rTxt = Number(c.r).toFixed(2).replace('.', ',');
     tr.innerHTML = `
       <td class="py-1.5 px-3 font-semibold ${pairCls}">${escapeHtml(c.pair)}</td>
-      <td class="py-1.5 px-3 font-mono whitespace-nowrap">${escapeHtml(rTxt)} <span class="text-[var(--text-muted)]">(${escapeHtml(c.strength || '')})</span></td>
-      <td class="py-1.5 px-3 font-mono whitespace-nowrap text-[var(--text-secondary)]">${escapeHtml(String(c.p))}</td>
       <td class="py-1.5 px-3 text-[var(--text-secondary)]">${escapeHtml(c.insight)}</td>
     `;
     cBody.appendChild(tr);
