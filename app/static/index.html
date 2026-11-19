@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..500&family=IBM+Plex+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/theme.css?v=20261118l">
+  <link rel="stylesheet" href="/css/theme.css?v=20261119a">
 </head>
 
 <body class="h-screen overflow-hidden flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] antialiased">
@@ -87,6 +87,7 @@
               <span id="fs-hrv-badge" class="stamp-tag stamp-moss shrink-0">--</span>
             </div>
             <p id="fs-hrv-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- ms</p>
+            <div id="fs-hrv-bar"></div>
             <p id="fs-hrv-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · RHR: --</p>
           </div>
 
@@ -97,6 +98,7 @@
               <span id="fs-vo2-badge" class="stamp-tag stamp-accent shrink-0">ml/kg/dk</span>
             </div>
             <p id="fs-vo2-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+            <div id="fs-vo2-bar"></div>
             <p id="fs-vo2-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Hedef: 50+</p>
           </div>
 
@@ -107,6 +109,7 @@
               <span id="fs-sleepscore-badge" class="stamp-tag stamp-moss shrink-0">--</span>
             </div>
             <p id="fs-sleepscore-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
+            <div id="fs-sleepscore-bar"></div>
             <p id="fs-sleepscore-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Solunum: --</p>
           </div>
 
@@ -117,6 +120,7 @@
               <span id="fs-sleephours-badge" class="stamp-tag shrink-0">-- sa</span>
             </div>
             <p id="fs-sleephours-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--s --dk</p>
+            <div id="fs-sleephours-bar"></div>
             <p id="fs-sleephours-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · 93G: --</p>
           </div>
 
@@ -127,6 +131,7 @@
               <span id="fs-rem-badge" class="stamp-tag stamp-accent shrink-0">-- dk</span>
             </div>
             <p id="fs-rem-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">%--</p>
+            <div id="fs-rem-bar"></div>
             <p id="fs-rem-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G REM: %-- · Derin: %--</p>
           </div>
 
@@ -137,6 +142,7 @@
               <span id="fs-steps-badge" class="stamp-tag shrink-0">7G Ort: --</span>
             </div>
             <p id="fs-steps-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+            <div id="fs-steps-bar"></div>
             <p id="fs-steps-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- · Hedef: --</p>
           </div>
 
@@ -147,6 +153,7 @@
               <span id="fs-acuteload-badge" class="stamp-tag stamp-accent shrink-0">ACWR --</span>
             </div>
             <p id="fs-acuteload-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+            <div id="fs-acuteload-bar"></div>
             <p id="fs-acuteload-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Kronik: -- · Tünel: --</p>
           </div>
 
@@ -157,6 +164,7 @@
               <span id="fs-loadfocus-badge" class="stamp-tag stamp-moss shrink-0">--</span>
             </div>
             <p id="fs-loadfocus-val" class="font-mono text-sm sm:text-base font-bold tracking-tight truncate">--</p>
+            <div id="fs-loadfocus-bar"></div>
             <p id="fs-loadfocus-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Düşük -- · Yüksek -- · Anaer --</p>
           </div>
 
@@ -167,6 +175,7 @@
               <span id="fs-stress-badge" class="stamp-tag stamp-moss shrink-0">--</span>
             </div>
             <p id="fs-stress-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">--</p>
+            <div id="fs-stress-bar"></div>
             <p id="fs-stress-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Son Tam Gün: --</p>
           </div>
 
@@ -177,6 +186,7 @@
               <span id="fs-readiness-badge" class="stamp-tag stamp-moss shrink-0">--</span>
             </div>
             <p id="fs-readiness-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- / 100</p>
+            <div id="fs-readiness-bar"></div>
             <p id="fs-readiness-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">7G Ort: -- · Sabah BB: --</p>
           </div>
 
@@ -187,6 +197,7 @@
               <span id="fs-7d-workouts-badge" class="stamp-tag stamp-accent shrink-0">-- Seans</span>
             </div>
             <p id="fs-7d-workouts-val" class="font-mono text-base sm:text-lg font-bold tabular-nums tracking-tight truncate">-- Seans · -- dk</p>
+            <div id="fs-7d-workouts-bar"></div>
             <p id="fs-7d-workouts-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Top: -- km · -- kcal · Yük: --</p>
           </div>
 
@@ -197,6 +208,7 @@
               <span id="fs-calories-badge" class="stamp-tag shrink-0">--</span>
             </div>
             <p id="fs-calories-val" class="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">-- kcal</p>
+            <div id="fs-calories-bar"></div>
             <p id="fs-calories-sub" class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-snug break-words">Son Tam Gün: -- · Bugün: --</p>
           </div>
         </div>
@@ -1281,12 +1293,12 @@
     </div>
   </div>
 
-  <script src="/js/core.js?v=20261118l"></script>
-  <script src="/js/quota_schedule.js?v=20261118l"></script>
-  <script src="/js/dashboard.js?v=20261118l"></script>
-  <script src="/js/health_analytics.js?v=20261118l"></script>
-  <script src="/js/charts.js?v=20261118l"></script>
-  <script src="/js/modals.js?v=20261118l"></script>
+  <script src="/js/core.js?v=20261119a"></script>
+  <script src="/js/quota_schedule.js?v=20261119a"></script>
+  <script src="/js/dashboard.js?v=20261119a"></script>
+  <script src="/js/health_analytics.js?v=20261119a"></script>
+  <script src="/js/charts.js?v=20261119a"></script>
+  <script src="/js/modals.js?v=20261119a"></script>
 </body>
 
 </html>

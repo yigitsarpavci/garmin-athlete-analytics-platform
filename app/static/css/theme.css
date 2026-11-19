@@ -671,6 +671,74 @@ html.dark .text-emerald-300 {
   transform-origin: 50% 50%;
 }
 
+/* Garmin Connect Style Multi-Segment Status & Range Bars */
+.garmin-gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.garmin-gauge-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 6px;
+  width: 100%;
+}
+.garmin-seg {
+  height: 100%;
+  border-radius: 2px;
+  opacity: 0.28;
+  transition: opacity 220ms ease;
+}
+.garmin-seg.active {
+  opacity: 1;
+}
+.seg-red { background-color: #EF5350; }
+.seg-amber { background-color: #E9B44C; }
+.seg-green { background-color: #52B788; }
+.seg-blue { background-color: #38BDF8; }
+.seg-purple { background-color: #A855F7; }
+.garmin-gauge-pin {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background-color: #ECF4EE;
+  border: 2px solid #0B1510;
+  box-shadow: 0 0 0 1px rgba(236, 244, 238, 0.5);
+  z-index: 2;
+  pointer-events: none;
+}
+.garmin-gauge-scale {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.1;
+  color: var(--text-muted);
+}
+.garmin-fill-track {
+  position: relative;
+  height: 6px;
+  width: 100%;
+  background-color: var(--bg-surface-elevated);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  gap: 1px;
+}
+.garmin-focus-mini {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
 /* Forced Colors / Windows High Contrast Safeguards */
 @media (forced-colors: active) {
   .surface-card,

@@ -44,6 +44,25 @@ function formatHm(hoursFloat) {
   return `${h}s ${String(m).padStart(2, '0')}dk`;
 }
 
+function _renderGarminGauge(containerId, segments, activeIdx, markerPct, leftLbl, midLbl, rightLbl) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const clamped = Math.max(3, Math.min(97, Number(markerPct) || 0));
+  el.innerHTML = `
+    <div class="garmin-gauge">
+      <div class="garmin-gauge-track">
+        ${segments.map((s, idx) => `<div class="garmin-seg ${s.cls} ${idx === activeIdx ? 'active' : ''}" style="flex:${s.flex ?? 1}"></div>`).join('')}
+        <span class="garmin-gauge-pin" style="left:${clamped}%"></span>
+      </div>
+      <div class="garmin-gauge-scale">
+        <span>${escapeHtml(leftLbl)}</span>
+        ${midLbl ? `<span>${escapeHtml(midLbl)}</span>` : ''}
+        <span>${escapeHtml(rightLbl)}</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVal, acwrNum, tMin, tMax) {
   const setText = (id, txt) => {
     const el = document.getElementById(id);
@@ -58,73 +77,186 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   setText('firstScreenDateBadge', `Son Kayıt: ${data.date || '--'}${data.is_partial_day ? ' (Kısmi Gün)' : ''}`);
 
   // 01. HRV
+  const hrvVal = Number(data.overnight_hrv ?? 43);
+  const hrvBase = Number(data.hrv_7d ?? 46) || 46;
+  const hrvRatioPct = Math.max(8, Math.min(92, 50 + ((hrvVal - hrvBase) / Math.max(10, hrvBase * 0.4)) * 35));
+  const hrvSt = String(data.hrv_status || '').toLowerCase();
+  const hrvActive = hrvSt.includes('zayıf') || hrvSt.includes('poor') ? 0 : (hrvSt.includes('düşük') || hrvSt.includes('low') ? 1 : 2);
   setText('fs-hrv-val', `${data.overnight_hrv !== undefined ? Math.round(data.overnight_hrv) : '--'} ms`);
   setText('fs-hrv-badge', data.hrv_status || 'Dengeli');
   setText('fs-hrv-sub', `7G Ort: ${data.hrv_7d ?? '--'} ms · RHR: ${data.resting_hr ?? '--'} bpm`);
+  _renderGarminGauge('fs-hrv-bar',
+    [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }],
+    hrvActive, hrvRatioPct, 'Zayıf', 'Dengeli', 'Yüksek'
+  );
 
   // 02. VO2 Max
+  const vo2Num = Number(vo2) || 45.4;
+  const vo2Pct = ((vo2Num - 34) / (60 - 34)) * 100;
+  const vo2Active = vo2Num < 38 ? 0 : (vo2Num < 44 ? 1 : (vo2Num < 50 ? 2 : (vo2Num < 55 ? 3 : 4)));
   setText('fs-vo2-val', fmtDec(vo2, 1));
   setText('fs-vo2-badge', 'ml/kg/dk');
   setText('fs-vo2-sub', 'Hedef: 50+');
+  _renderGarminGauge('fs-vo2-bar',
+    [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }, { cls: 'seg-purple' }],
+    vo2Active, vo2Pct, 'Zayıf', 'İyi', 'Üstün'
+  );
 
   // 03. Sleep Score
   const sc = data.sleep_score !== undefined ? Math.round(data.sleep_score) : null;
+  const scNum = sc ?? 80;
+  const scActive = scNum < 60 ? 0 : (scNum < 80 ? 1 : (scNum < 90 ? 2 : 3));
   setText('fs-sleepscore-val', sc !== null ? `${sc} / 100` : '-- / 100');
   setText('fs-sleepscore-badge', sc !== null ? (sc >= 80 ? 'İyi' : (sc >= 65 ? 'Orta' : 'Düşük')) : '--');
   setText('fs-sleepscore-sub', `7G Ort: ${fmtDec(data.sleep_score_7d, 1)} · Solunum: ${fmtDec(data.resp_sleep, 1)} br/dk`);
+  _renderGarminGauge('fs-sleepscore-bar',
+    [{ cls: 'seg-red', flex: 1.5 }, { cls: 'seg-amber', flex: 1.3 }, { cls: 'seg-green', flex: 1.2 }, { cls: 'seg-blue', flex: 1 }],
+    scActive, scNum, '0', '80 İyi', '100'
+  );
 
   // 04. Sleep Süre
+  const slpH = Number(data.sleep_hours ?? 6.5);
+  const slpPct = ((slpH - 4.0) / (9.5 - 4.0)) * 100;
+  const slpActive = slpH < 5.5 ? 0 : (slpH < 7.0 ? 1 : (slpH <= 9.0 ? 2 : 3));
   setText('fs-sleephours-val', formatHm(data.sleep_hours));
   setText('fs-sleephours-badge', `${fmtDec(data.sleep_hours, 2)} sa`);
   setText('fs-sleephours-sub', `7G Ort: ${formatHm(data.sleep_hours_7d)} · 93G: ${fmtDec(data.sleep_duration_hours, 1)} sa`);
+  _renderGarminGauge('fs-sleephours-bar',
+    [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.6 }, { cls: 'seg-blue', flex: 0.7 }],
+    slpActive, slpPct, '<5.5s', '7–9s Optimal', '9.5s'
+  );
 
   // 05. REM Oranı
   const remPct = data.rem_sleep_pct !== undefined
     ? data.rem_sleep_pct
     : (data.sleep_hours > 0 && data.rem_hours !== undefined ? (data.rem_hours / data.sleep_hours) * 100 : undefined);
+  const remNum = Number(remPct ?? 18);
+  const remBarPct = ((remNum - 8) / (30 - 8)) * 100;
+  const remActive = remNum < 12 ? 0 : (remNum < 18 ? 1 : (remNum <= 25 ? 2 : 3));
   setText('fs-rem-val', `%${fmtDec(remPct, 1)}`);
   setText('fs-rem-badge', formatHm(data.rem_hours));
   setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin: %${fmtDec(data.deep_sleep_pct, 1)} (${fmtDec(data.deep_hours, 1)}s)`);
+  _renderGarminGauge('fs-rem-bar',
+    [{ cls: 'seg-red', flex: 0.9 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.5 }, { cls: 'seg-blue', flex: 0.9 }],
+    remActive, remBarPct, '%10', '%20–25 Optimal', '%30'
+  );
 
   // 06. Günlük Adım
+  const stepCur = Number(data.steps ?? 0);
+  const stepGoal = Math.max(1, Number(data.step_goal ?? 10000));
+  const stepPct = Math.max(0, Math.min(100, (stepCur / stepGoal) * 100));
+  const stepAvgPct = Math.max(0, Math.min(100, (Number(data.steps_7d_avg ?? 0) / stepGoal) * 100));
   setText('fs-steps-val', formatTrInt(data.steps));
   setText('fs-steps-badge', `7G Ort: ${formatTrInt(data.steps_7d_avg)}`);
   setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})`);
+  const stepBarEl = document.getElementById('fs-steps-bar');
+  if (stepBarEl) {
+    stepBarEl.innerHTML = `
+      <div class="garmin-gauge">
+        <div class="garmin-fill-track">
+          <div class="seg-green h-full rounded-[2px]" style="width:${stepPct.toFixed(0)}%"></div>
+          <span class="garmin-gauge-pin" style="left:${Math.max(3, Math.min(97, stepAvgPct)).toFixed(0)}%" title="7G Ortalama"></span>
+        </div>
+        <div class="garmin-gauge-scale">
+          <span>0</span>
+          <span>Bugün %${Math.round(stepPct)}</span>
+          <span>${formatTrInt(stepGoal)}</span>
+        </div>
+      </div>
+    `;
+  }
 
   // 07. Acute Load
+  const acwrBarPct = ((acwrNum - 0.5) / (1.8 - 0.5)) * 100;
+  const acwrActive = acwrNum < 0.8 ? 0 : (acwrNum <= 1.3 ? 1 : (acwrNum <= 1.5 ? 2 : 3));
   setText('fs-acuteload-val', formatTrInt(acuteVal));
   setText('fs-acuteload-badge', `ACWR ${fmtDec(acwrNum, 2)}`);
   setText('fs-acuteload-sub', `Kronik: ${formatTrInt(chronicVal)} · Tünel: ${tMin}–${tMax}`);
+  _renderGarminGauge('fs-acuteload-bar',
+    [{ cls: 'seg-amber', flex: 0.9 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }, { cls: 'seg-red', flex: 0.9 }],
+    acwrActive, acwrBarPct, '<0.8', '0.8–1.3 Optimal', '>1.5'
+  );
 
   // 08. Load Focus
   const lf = data.load_focus_summary || (data.training_load && data.training_load.load_focus) || {};
-  const lowPct = lf.low_aerobic_pct ?? (lf.aerobic_low && lf.aerobic_low.pct_of_target);
-  const highPct = lf.high_aerobic_pct ?? (lf.aerobic_high && lf.aerobic_high.pct_of_target);
-  const anPct = lf.anaerobic_pct ?? (lf.anaerobic && lf.anaerobic.pct_of_target);
+  const lowPct = Number(lf.low_aerobic_pct ?? (lf.aerobic_low && lf.aerobic_low.pct_of_target) ?? 0);
+  const highPct = Number(lf.high_aerobic_pct ?? (lf.aerobic_high && lf.aerobic_high.pct_of_target) ?? 0);
+  const anPct = Number(lf.anaerobic_pct ?? (lf.anaerobic && lf.anaerobic.pct_of_target) ?? 0);
   const balMatch = String(lf.balance_phrase || 'Dengeli').match(/\(([^)]+)\)/);
   setText('fs-loadfocus-val', lf.recommended_focus_label || 'Anaerobik & Laktat İntervali');
   setText('fs-loadfocus-badge', balMatch ? balMatch[1] : String(lf.balance_phrase || 'Dengeli').split(' ')[0]);
   setText('fs-loadfocus-sub', `Düşük %${fmtDec(lowPct, 0)} · Yüksek %${fmtDec(highPct, 0)} · Anaer %${fmtDec(anPct, 0)}`);
+  const lfBarEl = document.getElementById('fs-loadfocus-bar');
+  if (lfBarEl) {
+    lfBarEl.innerHTML = `
+      <div class="garmin-focus-mini">
+        <div>
+          <div class="garmin-fill-track"><div class="seg-blue h-full" style="width:${Math.min(100, Math.max(6, lowPct))}%"></div></div>
+          <div class="garmin-gauge-scale mt-0.5"><span>Düşük</span><span>%${Math.round(lowPct)}</span></div>
+        </div>
+        <div>
+          <div class="garmin-fill-track"><div class="seg-amber h-full" style="width:${Math.min(100, Math.max(6, highPct))}%"></div></div>
+          <div class="garmin-gauge-scale mt-0.5"><span>Yüksek</span><span>%${Math.round(highPct)}</span></div>
+        </div>
+        <div>
+          <div class="garmin-fill-track"><div class="seg-purple h-full" style="width:${Math.min(100, Math.max(6, anPct))}%"></div></div>
+          <div class="garmin-gauge-scale mt-0.5"><span>Anaer</span><span>%${Math.round(anPct)}</span></div>
+        </div>
+      </div>
+    `;
+  }
 
   // 09. Günlük Stres
   const stressVal = data.stress !== undefined ? Math.round(data.stress) : null;
+  const stNum = stressVal ?? 25;
+  const stActive = stNum <= 25 ? 0 : (stNum <= 50 ? 1 : (stNum <= 75 ? 2 : 3));
   setText('fs-stress-val', stressVal !== null ? String(stressVal) : '--');
   setText('fs-stress-badge', data.stress_status || '--');
   setText('fs-stress-sub', `7G Ort: ${fmtDec(data.stress_7d_avg, 1)} · Son Tam Gün: ${fmtDec(data.stress_prev_full_day, 0)}`);
+  _renderGarminGauge('fs-stress-bar',
+    [{ cls: 'seg-blue' }, { cls: 'seg-green' }, { cls: 'seg-amber' }, { cls: 'seg-red' }],
+    stActive, stNum, '0 Dinlenme', '50', '100 Yüksek'
+  );
 
   // 10. Training Readiness
   const rdVal = data.readiness_score !== undefined ? Math.round(data.readiness_score) : null;
+  const rdNum = rdVal ?? 75;
+  const rdActive = rdNum < 25 ? 0 : (rdNum < 50 ? 1 : (rdNum < 75 ? 2 : (rdNum < 95 ? 3 : 4)));
   setText('fs-readiness-val', rdVal !== null ? `${rdVal} / 100` : '-- / 100');
   setText('fs-readiness-badge', data.readiness_status || '--');
   setText('fs-readiness-sub', `7G Ort: ${fmtDec(data.readiness_7d_avg, 1)} · Sabah BB: ${data.bb_wake ?? '--'}`);
+  _renderGarminGauge('fs-readiness-bar',
+    [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }],
+    rdActive, rdNum, '1 Düşük', '75 Hazır', '100'
+  );
 
   // 11. 7 Gün Antrenman
   const w7 = data.workouts_7d || {};
-  setText('fs-7d-workouts-val', `${w7.count ?? 0} Seans · ${formatTrInt(w7.total_duration_min ?? 0)} dk`);
+  const w7Cnt = Number(w7.count ?? 0);
+  setText('fs-7d-workouts-val', `${w7Cnt} Seans · ${formatTrInt(w7.total_duration_min ?? 0)} dk`);
   setText('fs-7d-workouts-badge', w7.breakdown_tr || '0 Seans');
   setText('fs-7d-workouts-sub', `Top: ${fmtDec(w7.total_distance_km ?? 0, 1)} km · ${formatTrInt(w7.total_calories ?? 0)} kcal · Yük: ${fmtDec(w7.total_load ?? 0, 0)}`);
+  const w7El = document.getElementById('fs-7d-workouts-bar');
+  if (w7El) {
+    const segs = [0, 1, 2, 3].map(i => `<div class="garmin-seg ${i < w7Cnt ? 'seg-green active' : 'seg-amber'}" style="flex:1"></div>`).join('');
+    w7El.innerHTML = `
+      <div class="garmin-gauge">
+        <div class="garmin-gauge-track">${segs}</div>
+        <div class="garmin-gauge-scale">
+          <span>0</span>
+          <span>${Math.min(w7Cnt, 4)} / 4 Haftalık Kota</span>
+          <span>4+</span>
+        </div>
+      </div>
+    `;
+  }
 
   // 12. Günlük Kalori
+  const basalK = Number(data.bmr_kcal ?? 1900);
+  const activeK = Number(data.is_partial_day ? (data.prev_full_day_active_kcal ?? 600) : (data.active_kcal ?? 600));
+  const totalK = Math.max(1, basalK + activeK);
+  const basalShare = Math.round((basalK / totalK) * 100);
+  const activeShare = 100 - basalShare;
   if (data.is_partial_day) {
     setText('fs-calories-val', `${formatTrInt(data.kcal_7d_avg)} kcal`);
     setText('fs-calories-badge', '7G Ort.');
@@ -133,6 +265,21 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     setText('fs-calories-val', `${formatTrInt(data.total_kcal)} kcal`);
     setText('fs-calories-badge', `Aktif: ${formatTrInt(data.active_kcal)}`);
     setText('fs-calories-sub', `Bazal: ${formatTrInt(data.bmr_kcal)} · 7G Ort: ${formatTrInt(data.kcal_7d_avg)} · Son Tam: ${formatTrInt(data.prev_full_day_kcal)}`);
+  }
+  const calEl = document.getElementById('fs-calories-bar');
+  if (calEl) {
+    calEl.innerHTML = `
+      <div class="garmin-gauge">
+        <div class="garmin-fill-track">
+          <div class="seg-green h-full" style="width:${basalShare}%; opacity:0.65"></div>
+          <div class="seg-amber h-full" style="width:${activeShare}%"></div>
+        </div>
+        <div class="garmin-gauge-scale">
+          <span>Bazal %${basalShare}</span>
+          <span>Aktif %${activeShare}</span>
+        </div>
+      </div>
+    `;
   }
 }
 
