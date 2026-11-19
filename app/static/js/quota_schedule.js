@@ -247,7 +247,7 @@ function renderDailyProtocols(protocols) {
     const exList = p.exercises || [];
     const padCount = Math.max(0, maxGymRows - exList.length);
     const padRows = padCount > 0
-      ? Array.from({ length: padCount }, () => `<tr aria-hidden="true" class="border-transparent"><td colspan="4" class="py-1 px-1.5"><span class="stamp-tag invisible">&nbsp;</span></td></tr>`).join('')
+      ? Array.from({ length: padCount }, () => `<tr aria-hidden="true" style="border-color:transparent"><td colspan="4" class="py-1 px-1.5"><span style="display:inline-block;padding:0.22rem 0;font-size:0.6875rem;line-height:1.2;border:1px solid transparent">&nbsp;</span></td></tr>`).join('')
       : '';
     exerciseHtml = `
 <div tabindex="0" role="region" aria-label="${escapeHtml(p.day_title)} egzersiz tablosu" class="table-scroll-region">
