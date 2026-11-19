@@ -787,6 +787,26 @@ html.dark .text-emerald-300 {
 .seg-green { background-color: #4A7C63; }
 .seg-blue { background-color: #38BDF8; }
 .seg-purple { background-color: #A855F7; }
+.garmin-gauge-pin.garmin-gauge-pin-alt {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background-color: #E2B05B;
+  border: 2px solid #0B1510;
+  box-shadow: 0 0 0 1px rgba(226, 176, 91, 0.6);
+  z-index: 1;
+}
+.rem-7d-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 0.15rem;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  background-color: #E2B05B;
+  vertical-align: middle;
+}
 .garmin-gauge-pin {
   position: absolute;
   top: 50%;

@@ -400,8 +400,8 @@ function _getGymKindLogo(kind) {
   const map = {
     workout_a: {
       label: 'Workout A',
-      lblCls: 'ochre-text',
-      boxCls: 'bg-[rgba(201,154,73,0.16)] text-[#E0A954] border border-[rgba(201,154,73,0.48)]',
+      lblCls: 'text-[#4FBFB3]',
+      boxCls: 'bg-[rgba(79,191,179,0.16)] text-[#4FBFB3] border border-[rgba(79,191,179,0.5)]',
       svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5L12 5l3.5 9.5M9.7 11.5h4.6"/><line x1="4" y1="19" x2="20" y2="19"/><line x1="6" y1="17" x2="6" y2="21"/><line x1="18" y1="17" x2="18" y2="21"/></svg>`
     },
     workout_b: {
@@ -412,8 +412,8 @@ function _getGymKindLogo(kind) {
     },
     push: {
       label: 'Push',
-      lblCls: 'ochre-text',
-      boxCls: 'bg-[rgba(201,154,73,0.16)] text-[#E0A954] border border-[rgba(201,154,73,0.48)]',
+      lblCls: 'text-[#D98FB5]',
+      boxCls: 'bg-[rgba(217,143,181,0.16)] text-[#D98FB5] border border-[rgba(217,143,181,0.5)]',
       svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M8 8l4-4 4 4"/><line x1="4" y1="20" x2="20" y2="20"/><line x1="6" y1="18" x2="6" y2="22"/><line x1="18" y1="18" x2="18" y2="22"/></svg>`
     },
     pull: {
@@ -424,8 +424,8 @@ function _getGymKindLogo(kind) {
     },
     upper: {
       label: 'Upper',
-      lblCls: 'ochre-text',
-      boxCls: 'bg-[rgba(201,154,73,0.16)] text-[#E0A954] border border-[rgba(201,154,73,0.48)]',
+      lblCls: 'text-[#D98FB5]',
+      boxCls: 'bg-[rgba(217,143,181,0.16)] text-[#D98FB5] border border-[rgba(217,143,181,0.5)]',
       svg: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6"/><rect x="7" y="13" width="10" height="6" rx="1"/></svg>`
     },
     lower: {
@@ -469,7 +469,7 @@ function _renderStreakDayCell(lbl, items, iso, todayIso, showLabel = true) {
     : '';
   if (items.length > 1) {
     const tip = items.map(i => i.title).join(' · ').replace(/"/g, '&quot;');
-    return `<div class="flex flex-col items-center">${mkLbl('text-[#AB86D4]')}<span title="${tip}" class="w-7 h-7 rounded-[2px] bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
+    return `<div class="flex flex-col items-center">${mkLbl('text-[#C9D3CC]')}<span title="${tip}" class="w-7 h-7 rounded-[2px] bg-[rgba(201,211,204,0.12)] text-[#E3EAE5] border border-[rgba(201,211,204,0.4)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
   }
   if (items.length === 1) {
     const info = items[0];
@@ -479,10 +479,10 @@ function _renderStreakDayCell(lbl, items, iso, todayIso, showLabel = true) {
     if (info.isGym && info.gymLogo) {
       return `<div class="flex flex-col items-center">${mkLbl(info.gymLogo.lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${info.gymLogo.boxCls} flex items-center justify-center">${info.gymLogo.svg}</span></div>`;
     }
-    const lblCls = info.isGym ? 'ochre-text' : 'text-[#AB86D4]';
+    const lblCls = info.isGym ? 'text-[#D98FB5]' : 'text-[#C9D3CC]';
     const boxCls = info.isGym
-      ? 'bg-[rgba(201,154,73,0.16)] text-[#C99A49] border border-[rgba(201,154,73,0.45)]'
-      : 'bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)]';
+      ? 'bg-[rgba(217,143,181,0.16)] text-[#D98FB5] border border-[rgba(217,143,181,0.45)]'
+      : 'bg-[rgba(201,211,204,0.12)] text-[#E3EAE5] border border-[rgba(201,211,204,0.4)]';
     return `<div class="flex flex-col items-center">${mkLbl(lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
   }
   if (iso < todayIso) {

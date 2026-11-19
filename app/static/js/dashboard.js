@@ -54,7 +54,7 @@ function _piecewiseGaugePct(val, breaks, segments) {
   return 0;
 }
 
-function _renderGarminGauge(containerId, segments, activeIdx, markerPct, leftLbl, midLbl, rightLbl) {
+function _renderGarminGauge(containerId, segments, activeIdx, markerPct, leftLbl, midLbl, rightLbl, secondMarkerPct = null, secondTitle = '') {
   const el = document.getElementById(containerId);
   if (!el) return;
   const clamped = Math.max(3, Math.min(97, Number(markerPct) || 0));
@@ -62,6 +62,7 @@ function _renderGarminGauge(containerId, segments, activeIdx, markerPct, leftLbl
     <div class="garmin-gauge">
       <div class="garmin-gauge-track">
         ${segments.map((s, idx) => `<div class="garmin-seg ${s.cls} ${idx === activeIdx ? 'active' : ''}" style="flex:${s.flex ?? 1}"></div>`).join('')}
+        ${secondMarkerPct === null ? '' : `<span class="garmin-gauge-pin garmin-gauge-pin-alt" style="left:${Math.max(3, Math.min(97, Number(secondMarkerPct) || 0))}%" title="${escapeHtml(secondTitle)}"></span>`}
         <span class="garmin-gauge-pin" style="left:${clamped}%"></span>
       </div>
       <div class="garmin-gauge-scale">
@@ -160,9 +161,15 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const remSegs = [{ cls: 'seg-red', flex: 0.9 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.5 }, { cls: 'seg-blue', flex: 0.9 }];
   const remBarPct = _piecewiseGaugePct(remNum, [8, 12, 18, 25, 30], remSegs);
   const remActive = remNum < 12 ? 0 : (remNum < 18 ? 1 : (remNum <= 25 ? 2 : 3));
-  setText('fs-rem-val', `%${fmtDec(remPct, 1)}`);
-  setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin (Günlük): %${fmtDec(data.deep_sleep_pct, 1)} · 7G Derin: %${fmtDec(data.deep_sleep_pct_7d, 1)}`);
-  _renderGarminGauge('fs-rem-bar', remSegs, remActive, remBarPct, '%10', '%20–25 Optimal', '%30');
+  const rem7 = Number(data.rem_sleep_pct_7d);
+  const rem7Pct = Number.isFinite(rem7) ? _piecewiseGaugePct(rem7, [8, 12, 18, 25, 30], remSegs) : null;
+  const remValEl = document.getElementById('fs-rem-val');
+  if (remValEl) {
+    remValEl.innerHTML = `%${escapeHtml(fmtDec(remPct, 1))} <span class="text-[11px] font-medium text-[var(--text-secondary)]">Günlük</span>`
+      + ` <span class="rem-7d-dot" aria-hidden="true"></span> <span class="text-[13px]">%${escapeHtml(fmtDec(data.rem_sleep_pct_7d, 1))}</span> <span class="text-[11px] font-medium text-[var(--text-secondary)]">7G</span>`;
+  }
+  setText('fs-rem-sub', `Derin (Günlük): %${fmtDec(data.deep_sleep_pct, 1)} · 7G Derin: %${fmtDec(data.deep_sleep_pct_7d, 1)}`);
+  _renderGarminGauge('fs-rem-bar', remSegs, remActive, remBarPct, '%10', '%20–25 Optimal', '%30', rem7Pct, '7 günlük ortalama REM');
 
   // 06. Günlük Adım
   const stepCur = Number(data.steps ?? 0);
