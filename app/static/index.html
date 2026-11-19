@@ -364,46 +364,11 @@
         <!-- RULED ARCHITECTURAL TELEMETRY LEDGER (Replaces Symmetrical Bubble-Card Grid) -->
         <section aria-label="Temel Telemetri Göstergeleri"
           class="surface-ledger overflow-hidden h-full grid grid-rows-2">
-          <!-- Upper 12-Col Ledger Row: Sleep + Training Status + Quick Ratio -->
+          <!-- Upper 12-Col Ledger Row: Training Status + Autonomic Reserve -->
           <div
             class="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border-subtle)] border-b border-[var(--border-subtle)] min-h-0">
-            <!-- Sleep Architecture Cell (4 Cols) -->
-            <div class="lg:col-span-4 p-6 flex flex-col justify-between space-y-4">
-              <div class="flex items-center justify-between">
-                <span
-                  class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)] flex items-center gap-2">
-                  <i data-lucide="moon" class="w-3.5 h-3.5 accent-text" stroke-width="1.5" aria-hidden="true"></i>
-                  <span>Uyku Skoru</span>
-                </span>
-                <span id="inFocusSleepQuality" class="font-mono text-[10px] font-semibold moss-text">İyi</span>
-              </div>
-              <div class="flex items-baseline gap-3">
-                <span id="inFocusSleepScore" class="font-mono text-3xl font-bold tracking-tight tabular-nums">--</span>
-                <span class="font-mono text-xs text-[var(--text-secondary)]">Süre: <strong id="inFocusSleepHours"
-                    class="text-[var(--text-primary)] font-semibold">--</strong></span>
-              </div>
-              <div>
-                <div class="flex items-end gap-1 h-7">
-                  <div class="flex-1 bg-[var(--accent)] opacity-75 h-4"></div>
-                  <div class="flex-1 bg-[var(--border-medium)] h-3"></div>
-                  <div class="flex-1 bg-[var(--accent)] opacity-85 h-5"></div>
-                  <div class="flex-1 bg-[var(--border-medium)] h-3.5"></div>
-                  <div class="flex-1 bg-[var(--accent)] h-7"></div>
-                  <div class="flex-1 bg-[var(--border-medium)] h-4"></div>
-                  <div class="flex-1 bg-[var(--accent)] opacity-80 h-5"></div>
-                  <div class="flex-1 bg-[var(--accent)] h-7"></div>
-                  <div class="flex-1 bg-[var(--border-medium)] h-2.5"></div>
-                  <div class="flex-1 bg-[var(--accent)] h-6"></div>
-                </div>
-                <div class="flex justify-between font-mono text-[10px] text-[var(--text-muted)] mt-2">
-                  <span id="inFocusSleepStages">Derin: -- · REM: --</span>
-                  <span>Uyku Evreleri</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Training Status Cell (5 Cols) -->
-            <div class="lg:col-span-5 p-6 flex flex-col space-y-4">
+            <!-- Training Status Cell (6 Cols) -->
+            <div class="lg:col-span-6 p-6 flex flex-col space-y-4">
               <div class="flex items-center justify-between">
                 <span
                   class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)] flex items-center gap-2">
@@ -420,8 +385,8 @@
               </div>
             </div>
 
-            <!-- Autonomic Reserve & Recovery Cell (3 Cols - No Duplicate Quota) -->
-            <div class="lg:col-span-3 p-6 flex flex-col justify-between space-y-3">
+            <!-- Autonomic Reserve & Recovery Cell (6 Cols) -->
+            <div class="lg:col-span-6 p-6 flex flex-col justify-between space-y-3">
               <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">Toparlanma &amp; Rezerv</span>
               <div class="py-1 min-w-0 space-y-1">
                 <p id="inFocusHrvWakeBb" class="font-mono text-xl font-bold tabular-nums">Sabah BB: -- · -- ms</p>
