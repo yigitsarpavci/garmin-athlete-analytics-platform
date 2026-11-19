@@ -211,10 +211,12 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   setText('fs-steps-sub', `Son Tam Gün: ${formatTrInt(data.steps_prev_full_day)} · Hedef: ${formatTrInt(data.step_goal)} (%${fmtDec(data.steps_pct, 0)})`);
   const stepBarEl = document.getElementById('fs-steps-bar');
   if (stepBarEl) {
+    const pinLeft = Math.max(2, Math.min(98, stepPct));
     stepBarEl.innerHTML = `
       <div class="garmin-gauge">
-        <div class="garmin-fill-track">
-          <div class="seg-green h-full rounded-[2px]" style="width:${stepPct.toFixed(0)}%"></div>
+        <div class="garmin-fill-track" style="overflow:visible">
+          <div class="seg-green h-full rounded-[2px]" style="width:${stepPct.toFixed(1)}%"></div>
+          <span class="garmin-gauge-pin" style="left:${pinLeft.toFixed(1)}%" title="Bugün: ${formatTrInt(stepCur)} adım (%${Math.round(stepPct)})"></span>
         </div>
         <div class="garmin-gauge-scale">
           <span>0</span>
