@@ -259,6 +259,36 @@ async function initApp() {
   }
 }
 
+/* Veri izleyici: sunucu diskte yeni Garmin verisi görünce (otomatik sync veya elle make fetch) data_version değişir; sayfa kendiliğinden yenilenir */
+let _lastDataVersion = null;
+let _dataWatchBusy = false;
+async function checkDataVersion() {
+  if (_dataWatchBusy || document.hidden) return;
+  _dataWatchBusy = true;
+  try {
+    const res = await fetch('/api/status', { cache: 'no-store' });
+    if (!res.ok) return;
+    const st = await res.json();
+    const ver = st && st.data_version;
+    if (!ver) return;
+    if (_lastDataVersion !== null && ver !== _lastDataVersion) {
+      _lastDataVersion = ver;
+      await initApp();
+    } else {
+      _lastDataVersion = ver;
+    }
+  } catch (_) {
+    /* sunucuya geçici ulaşılamadı: bir sonraki turda tekrar denenir */
+  } finally {
+    _dataWatchBusy = false;
+  }
+}
+window.addEventListener('DOMContentLoaded', () => {
+  checkDataVersion();
+  setInterval(checkDataVersion, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDataVersion(); });
+});
+
 async function syncGarminData() {
   const btn = document.getElementById('syncBtn');
   let syncedOk = false;

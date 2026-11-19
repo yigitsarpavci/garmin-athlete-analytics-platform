@@ -164,3 +164,60 @@ class TestUiJsContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSyncResilience(unittest.TestCase):
+    """Senkron sorunları kalıcı çözüm: dış güncellemeyi algılama, eksik veride hızlı yeniden deneme, çift çekim kilidi."""
+
+    def test_data_signature_tracks_raw_files_but_not_program_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for name in ("raw_daily_93d.json", "training_program_state.json"):
+                with open(os.path.join(tmp, name), "w") as fh:
+                    fh.write("{}")
+            with patch.object(server.engine, "data_dir", tmp):
+                base = server._data_signature()
+                with open(os.path.join(tmp, "training_program_state.json"), "w") as fh:
+                    fh.write('{"a": 1}')
+                self.assertEqual(server._data_signature(), base)  # sunucunun kendi yazdığı dosya yeniden yüklemeyi tetiklemez
+                with open(os.path.join(tmp, "raw_daily_93d.json"), "w") as fh:
+                    fh.write('{"summaries": {}}')
+                self.assertNotEqual(server._data_signature(), base)
+
+    def test_refresh_reloads_engine_only_when_signature_changed(self):
+        with patch.object(server, "IS_DEMO_MODE", False), \
+                patch.object(server, "_data_signature", side_effect=["new", "new", "new"]), \
+                patch.object(server, "DATA_SIGNATURE", "old"), \
+                patch.object(server, "_reload_engine") as reload_mock:
+            server.refresh_if_data_changed()
+            reload_mock.assert_called_once()
+        with patch.object(server, "IS_DEMO_MODE", False), \
+                patch.object(server, "_data_signature", return_value="same"), \
+                patch.object(server, "DATA_SIGNATURE", "same"), \
+                patch.object(server, "_reload_engine") as reload_mock:
+            server.refresh_if_data_changed()
+            reload_mock.assert_not_called()
+
+    def test_sync_incomplete_when_training_status_is_fallback_or_missing(self):
+        with patch.object(server.engine, "training_status_is_fallback", True, create=True):
+            self.assertFalse(server._sync_is_complete())
+        with patch.object(server.engine, "training_status_is_fallback", False, create=True), \
+                patch.object(server.engine, "training_status_latest", {"mostRecentTrainingStatus": {"x": 1}}, create=True):
+            self.assertTrue(server._sync_is_complete())
+
+    def test_fetch_script_exits_3_when_another_sync_holds_the_lock(self):
+        import shutil
+        if not shutil.which("node"):
+            self.skipTest("node yok")
+        script = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", "fetch_garmin_data.mjs")
+        data_dir = os.path.join(os.path.dirname(script), "..", "data")
+        lock = os.path.join(data_dir, ".sync.lock")
+        if os.path.exists(lock):
+            self.skipTest("gerçek bir senkronizasyon çalışıyor olabilir")
+        with open(lock, "w") as fh:
+            json.dump({"pid": os.getpid(), "at": int(time.time() * 1000)}, fh)
+        try:
+            res = subprocess.run(["node", script], capture_output=True, text=True, timeout=60)
+        finally:
+            os.remove(lock)
+        self.assertEqual(res.returncode, 3)
+        self.assertIn('"already_running":true', res.stdout)

@@ -215,8 +215,38 @@ async function attemptSilentSsoRefresh(client) {
   }
 }
 
+const LOCK_FILE = path.join(DATA_DIR, ".sync.lock");
+const LOCK_MAX_AGE_MS = 15 * 60 * 1000;
+
+/** Aynı anda yalnızca tek bir çekim çalışsın (sunucu otomatik sync'i + elle `make fetch` veri dosyalarını bozmasın). */
+function acquireSyncLock() {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      fs.writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, at: Date.now() }), { flag: "wx" });
+      const release = () => { try { fs.unlinkSync(LOCK_FILE); } catch {} };
+      process.on("exit", release);
+      for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => { release(); process.exit(130); });
+      return true;
+    } catch (e) {
+      if (e.code !== "EEXIST") return true; // kilit dosyası yazılamıyorsa engelleme
+      let holder = {};
+      try { holder = JSON.parse(fs.readFileSync(LOCK_FILE, "utf8")); } catch {}
+      let alive = false;
+      try { process.kill(holder.pid, 0); alive = true; } catch {}
+      if (alive && Date.now() - (holder.at || 0) < LOCK_MAX_AGE_MS) return false;
+      try { fs.unlinkSync(LOCK_FILE); } catch {}
+    }
+  }
+  return false;
+}
+
 async function main() {
   const isKeepaliveOnly = process.argv.includes("--keepalive");
+  if (!isKeepaliveOnly && !acquireSyncLock()) {
+    console.log(JSON.stringify({ already_running: true }));
+    process.exitCode = 3;
+    return;
+  }
   const clientPath = findGarminClientPath();
   const { GarminClient } = await import(clientPath);
   const client = new GarminClient();

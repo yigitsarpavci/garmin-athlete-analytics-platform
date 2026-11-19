@@ -46,6 +46,7 @@ import sys
 import json
 import math
 import time
+import hashlib
 import logging
 import threading
 import subprocess
@@ -74,8 +75,11 @@ logger = logging.getLogger("garmin.server")
 engine = GarminAthleteEngine()
 coach = AthleteAICoach(engine)
 
-# Otomatik eşitleme aralığı (sn). Varsayılan 60 dk; artımlı çekme sayesinde her eşitleme birkaç istektir.
-AUTO_SYNC_INTERVAL_SEC = max(300, int(os.environ.get("GARMIN_SYNC_INTERVAL_SEC", "3600")))
+# Otomatik eşitleme aralığı (sn). Varsayılan 15 dk; artımlı çekme sayesinde her eşitleme birkaç istektir.
+AUTO_SYNC_INTERVAL_SEC = max(300, int(os.environ.get("GARMIN_SYNC_INTERVAL_SEC", "900")))
+# Garmin Connect'te veri eksik/boş döndüyse (saat henüz eşitlenmedi) tam aralığı beklemeden kısa aralıkla yeniden dene
+QUICK_RETRY_SEC = 300
+QUICK_RETRY_MAX = 8
 
 SYNC_STATE: Dict[str, Any] = {
     "last_sync_at": None,
@@ -140,15 +144,54 @@ def _mark_garmin_contact() -> None:
     _LAST_GARMIN_CONTACT_TS = time.time()
 
 
+_RELOAD_LOCK = threading.RLock()
+
+
+def _data_signature() -> str:
+    """Ham telemetri dosyalarının (raw_*.json, athlete_profile.json) ad+değişim zamanı+boyut özeti; dışarıdan (make fetch) yapılan güncellemeyi yakalar."""
+    d = engine.data_dir
+    parts = []
+    try:
+        for name in sorted(os.listdir(d)):
+            if (name.startswith("raw_") and name.endswith(".json")) or name == "athlete_profile.json":
+                st = os.stat(os.path.join(d, name))
+                parts.append(f"{name}:{st.st_mtime_ns}:{st.st_size}")
+    except OSError:
+        return "unavailable"
+    return hashlib.md5("|".join(parts).encode()).hexdigest()[:12]
+
+
+DATA_SIGNATURE: Optional[str] = _data_signature()
+
+
 def _reload_engine() -> None:
     """Yeni telemetriyi kilit altında yükler ve plato kaynaklı program geçişini kalıcılaştırır."""
-    with engine.lock:
-        engine.load_data()
-        if not IS_DEMO_MODE:
-            try:
-                engine.persist_program_state()
-            except Exception as exc:
-                sys.stderr.write(f"Program durumu kaydedilemedi: {exc}\n")
+    global DATA_SIGNATURE
+    with _RELOAD_LOCK:
+        with engine.lock:
+            engine.load_data()
+            if not IS_DEMO_MODE:
+                try:
+                    engine.persist_program_state()
+                except Exception as exc:
+                    sys.stderr.write(f"Program durumu kaydedilemedi: {exc}\n")
+        DATA_SIGNATURE = _data_signature()
+
+
+def refresh_if_data_changed() -> None:
+    """Diskteki veri, bellekteki motordan farklıysa (ör. elle `make fetch` veya başka süreç) motoru otomatik yeniler."""
+    if IS_DEMO_MODE:
+        return
+    if _data_signature() != DATA_SIGNATURE:
+        with _RELOAD_LOCK:
+            if _data_signature() != DATA_SIGNATURE:
+                logger.info("Diskte yeni Garmin verisi algılandı; motor yeniden yükleniyor.")
+                _reload_engine()
+
+
+def _sync_is_complete() -> bool:
+    """Eşitleme sonrası veri tam mı? Garmin bugünün antrenman durumunu henüz üretmediyse (saat eşitlenmedi) False."""
+    return not bool(getattr(engine, "training_status_is_fallback", False)) and bool(getattr(engine, "training_status_latest", None))
 
 
 def sync_garmin_live() -> Dict[str, Any]:
@@ -169,7 +212,7 @@ def sync_garmin_live() -> Dict[str, Any]:
 
     with _SYNC_LOCK:
         try:
-            res = subprocess.run(["node", fetch_script], capture_output=True, text=True, timeout=180)
+            res = subprocess.run(["node", fetch_script], capture_output=True, text=True, timeout=420)
             output = (res.stdout or "") + "\n" + (res.stderr or "")
             _reload_engine()
             now_iso = datetime.now().isoformat(timespec="seconds")
@@ -190,6 +233,13 @@ def sync_garmin_live() -> Dict[str, Any]:
                     "session_expired": True,
                     "last_sync_at": SYNC_STATE["last_sync_at"],
                     "message": SYNC_STATE["last_error"],
+                }
+            if res.returncode == 3 or '"already_running":true' in output:
+                return {
+                    "success": True,
+                    "session_expired": False,
+                    "last_sync_at": SYNC_STATE["last_sync_at"],
+                    "message": "Başka bir senkronizasyon zaten çalışıyor; bittiğinde veri otomatik yüklenir.",
                 }
             if res.returncode != 0:
                 SYNC_STATE["session_valid"] = True
@@ -347,9 +397,21 @@ def _auto_sync_loop(interval_sec: int = 3600) -> None:
             sync_garmin_live()
     except Exception:
         logger.warning("_auto_sync_loop: yedek davranış uygulandı", exc_info=True)
+    retries = 0
     while True:
-        time.sleep(interval_sec)
-        sync_garmin_live()
+        # Veri eksikse (Garmin bugünün durumunu henüz üretmedi) kısa aralıkla tekrar dene; tamamsa normal aralık
+        if not _sync_is_complete() and retries < QUICK_RETRY_MAX:
+            retries += 1
+            wait = min(QUICK_RETRY_SEC, interval_sec)
+        else:
+            retries = 0
+            wait = interval_sec
+        time.sleep(wait)
+        try:
+            sync_garmin_live()
+        except Exception:
+            logger.warning("_auto_sync_loop: eşitleme istisnası", exc_info=True)
+
 
 class AthleteAppHandler(SimpleHTTPRequestHandler):
     """Garmin Sporcu Platformu HTTP İstek İşleyicisi."""
@@ -403,6 +465,11 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
         if not self._guard():
             return
         path = urllib.parse.urlparse(self.path).path
+        if path.startswith("/api/"):
+            try:
+                refresh_if_data_changed()
+            except Exception:
+                logger.warning("refresh_if_data_changed başarısız", exc_info=True)
         if self._in_engine_scope(path):
             with engine.request_scope():
                 return self._route_get()
@@ -532,6 +599,8 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
                 "version": "2.0.0",
                 "is_demo": IS_DEMO_MODE,
                 "session": sess_info,
+                "data_version": DATA_SIGNATURE,
+                "training_status_is_fallback": bool(getattr(engine, "training_status_is_fallback", False)),
             })
         elif path == "/api/session/keepalive":
             # GET yan etkisizdir (Garmin'e bağlanmaz); yenileme yalnızca POST ile tetiklenir.
