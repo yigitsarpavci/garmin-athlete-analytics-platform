@@ -98,10 +98,12 @@ class ProgressionDebriefMixin:
         high_pct = load_focus.get("aerobic_high", {}).get("pct_of_target") or 0.0
         an_pct = load_focus.get("anaerobic", {}).get("pct_of_target") or 0.0
         focus_label = load_focus.get("recommended_focus_label") or "dengeli"
-        focus_short = {"anaerobic": "ANAEROBİK", "aerobic_low": "DÜŞÜK AEROBİK", "aerobic_high": "YÜKSEK AEROBİK"}.get(load_focus.get("primary_deficit"), "DENGELİ")
+        focus_short = {"anaerobic": "ANAEROBİK", "aerobic_low": "DÜŞÜK AEROBİK", "aerobic_high": "YÜKSEK AEROBİK", "deload": "YOK · DELOAD"}.get(load_focus.get("primary_deficit"), "DENGELİ")
         next_run = ((dyn.get("run_prediction") or {}).get("steps") or [None])[0]
         run_names = {"zone2": "Zone 2 Taban ([[Z2_HR]])", "tempo": "Tempo / Eşik", "interval": "5K Hız İntervali ([[INT_PACE]])"}
         next_run_txt = run_names.get((next_run or {}).get("kind"), "en eksik bara göre seçilir")
+        if load_focus.get("primary_deficit") == "deload":
+            next_run_txt = "yok; tüm barlar dolu ve düşmüyor, hafta sonuna kadar deload"
         running_style_advice = (
             f"Firstbeat yük dengesi: Düşük Aerobik %{low_pct:.0f} · Yüksek Aerobik %{high_pct:.0f} · Anaerobik %{an_pct:.0f}. "
             f"En eksik bar: {focus_label}; sıradaki koşuyu buna göre seç. "

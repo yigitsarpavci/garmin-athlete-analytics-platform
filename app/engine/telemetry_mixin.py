@@ -14,8 +14,10 @@ import pandas as pd
 
 try:
     from engine.helpers import fnum, request_cached, zone_text, format_sport_tr, classify_sport_bucket
+    from engine.run_load_predictor import compute_weekly_bar_drift
 except ImportError:
     from app.engine.helpers import fnum, request_cached, zone_text, format_sport_tr, classify_sport_bucket
+    from app.engine.run_load_predictor import compute_weekly_bar_drift
 
 
 logger = logging.getLogger(__name__)
@@ -221,11 +223,6 @@ class TelemetryMixin:
         tunnel_min = int(round(_num(cur_st.get("tunnel_min"), 0)))
         tunnel_max = int(round(_num(cur_st.get("tunnel_max"), 0)))
         vo2_val = float(tl.get("vo2max_current") or 0.0)
-
-        try:
-            from engine.run_load_predictor import compute_weekly_bar_drift
-        except ImportError:
-            from app.engine.run_load_predictor import compute_weekly_bar_drift
 
         load_focus_summary = {
             "targets_available": bool(load_focus.get("targets_available", True)),
@@ -765,15 +762,37 @@ class TelemetryMixin:
                 return f"ORTA BANT · GELİŞİME AÇIK (%{pct:.0f})"
             return f"ÜST BANT · OPTİMAL (%{pct:.0f})"
 
+        deload_info = None
         if targets_available and min(low_pct, high_pct, an_pct) >= 85.0:
-            lowest_zone = "gym_overflow"
+            # Tüm barlar dolu: ekstra kuvvet ÖNERİLMEZ. Barlar Pazar'a kadar da %85 üstünde kalıyorsa (28G pencereden düşüş yetmiyorsa)
+            # hafta sonuna kadar deload; bir bar Pazar'dan önce %85 altına inecekse en düşük bara koşu önerisine devam edilir.
+            try:
+                drift = compute_weekly_bar_drift(
+                    {
+                        "targets_available": True,
+                        "aerobic_low": {"actual": low_act, "target_max": low_max},
+                        "aerobic_high": {"actual": high_act, "target_max": high_max},
+                        "anaerobic": {"actual": an_act, "target_max": an_max},
+                    },
+                    getattr(self, "activities_all", []) or [],
+                )
+                week_end = {k: drift[k]["week_end_pct"] for k in ("low_aerobic", "high_aerobic", "anaerobic")}
+            except Exception:
+                logger.warning("load_focus deload drift hesaplanamadı", exc_info=True)
+                week_end = {"low_aerobic": low_pct, "high_aerobic": high_pct, "anaerobic": an_pct}
+            if min(week_end.values()) >= 85.0:
+                lowest_zone = "deload"
+                deload_info = week_end
+            else:
+                fill_map = {"aerobic_low": low_pct, "aerobic_high": high_pct, "anaerobic": an_pct}
+                lowest_zone = min(fill_map, key=fill_map.get)
         elif targets_available:
             fill_map = {"aerobic_low": low_pct, "aerobic_high": high_pct, "anaerobic": an_pct}
             lowest_zone = min(fill_map, key=fill_map.get)
         else:
             lowest_zone = "aerobic_low" if low_pct < an_pct else "anaerobic"
 
-        prio_label, rec_workout = self._pick_load_focus(an_act, an_max, an_pct, high_pct, low_pct, lowest_zone)
+        prio_label, rec_workout = self._pick_load_focus(an_act, an_max, an_pct, high_pct, low_pct, lowest_zone, deload_info)
 
         raw_bal_phrase = lb.get("trainingBalanceFeedbackPhrase", "BALANCED")
         return {
@@ -897,14 +916,16 @@ class TelemetryMixin:
         return vo2_current, vo2_points
 
 
-    def _pick_load_focus(self, an_act, an_max, an_pct, high_pct, low_pct, lowest_zone):
-        """En boş yük barına (veya tüm barlar %85+ doluysa dinamik Kuvvet'e) göre odak seçer."""
-        if lowest_zone == "gym_overflow":
-            prio_label = "Ekstra Kuvvet (Yük Barları Dolu)"
+    def _pick_load_focus(self, an_act, an_max, an_pct, high_pct, low_pct, lowest_zone, deload_info=None):
+        """En boş yük barına göre koşu odağı seçer; tüm barlar dolu ve düşmüyorsa hafta sonuna kadar deload (ekstra kuvvet önerilmez)."""
+        if lowest_zone == "deload":
+            we = deload_info or {}
+            prio_label = "Deload (Yük Barları Dolu)"
             rec_workout = (
-                "Üç yük barı da (Düşük %{:.0f} · Yüksek %{:.0f} · Anaer %{:.0f}) %85 üstünde olduğu için "
-                "koşu yerine ekstra Kuvvet önerilir; barlardan biri düşünce otomatik koşuya döner."
-            ).format(low_pct, high_pct, an_pct)
+                "Üç yük barı da (Düşük %{:.0f} · Yüksek %{:.0f} · Anaer %{:.0f}) %85 üstünde ve Pazar'a kadar da düşmüyor "
+                "(Pazar tahmini: %{:.0f} / %{:.0f} / %{:.0f}). Ekstra antrenman ekleme; hafta sonuna kadar deload: "
+                "koşu yok, planlı kuvvet seanslarını hafif tut (hacim ~%40 düşür), yürüyüş ve mobilite ile toparlan."
+            ).format(low_pct, high_pct, an_pct, we.get("low_aerobic", 0), we.get("high_aerobic", 0), we.get("anaerobic", 0))
         elif lowest_zone == "aerobic_low":
             prio_label = "Düşük Aerobik (Zone 2 Taban)"
             rec_workout = (

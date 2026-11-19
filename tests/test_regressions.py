@@ -669,3 +669,32 @@ class TestGymRawCache(unittest.TestCase):
                 _json.dump({"1": {"meta": {}}, "2": {"meta": {}}}, fh)
             self.assertEqual(len(_read_gym_raw(path)), 2)  # değişince yeniden okunur
             self.assertEqual(_read_gym_raw(os.path.join(tmp, "yok.json")), {})
+
+
+class TestFullBarsDeloadInsteadOfExtraGym(unittest.TestCase):
+    """Tüm yük barları doluyken ekstra kuvvet önerilmez: Pazar'a kadar düşmüyorsa deload, düşecekse en düşük bara koşu."""
+
+    def _engine_with_full_bars(self, activities):
+        eng = GarminAthleteEngine(os.path.join(BASE_DIR, "sample_data"))
+        dto = list(eng.training_status_latest["mostRecentTrainingLoadBalance"]["metricsTrainingLoadBalanceDTOMap"].values())[0]
+        dto.update(monthlyLoadAerobicLowTargetMax=400, monthlyLoadAerobicHighTargetMax=500, monthlyLoadAnaerobicTargetMax=250,
+                   monthlyLoadAerobicLowTargetMin=100, monthlyLoadAerobicHighTargetMin=100, monthlyLoadAnaerobicTargetMin=0,
+                   monthlyLoadAerobicLow=380, monthlyLoadAerobicHigh=475, monthlyLoadAnaerobic=237)
+        if activities is not None:
+            eng.activities_all = activities
+        return eng
+
+    def test_full_bars_that_do_not_decay_give_deload_and_never_gym(self):
+        lf = self._engine_with_full_bars([]).get_training_load_analytics()["load_focus"]
+        self.assertEqual(lf["primary_deficit"], "deload")
+        self.assertIn("deload", lf["recommended_workout"].lower())
+        self.assertNotIn("kuvvet önerilir", lf["recommended_workout"].lower())
+        self.assertNotIn("gym", lf["primary_deficit"])
+
+    def test_full_bars_that_will_decay_below_85_recommend_lowest_bar_run(self):
+        from datetime import datetime, timedelta
+        old = (datetime.now() - timedelta(days=27)).strftime("%Y-%m-%d 08:00:00")
+        acts = [{"sport": "running", "startTimeLocal": old, "duration": 3000, "distance": 8000, "averageHR": 150,
+                 "activityTrainingLoad": 400, "aerobicTrainingEffect": 4.0, "anaerobicTrainingEffect": 3.0}]
+        lf = self._engine_with_full_bars(acts).get_training_load_analytics()["load_focus"]
+        self.assertIn(lf["primary_deficit"], ("aerobic_low", "aerobic_high", "anaerobic"))
