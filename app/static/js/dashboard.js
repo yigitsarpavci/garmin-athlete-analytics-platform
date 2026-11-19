@@ -36,6 +36,24 @@ function formatHm(hoursFloat) {
   return `${h}s ${String(m).padStart(2, '0')}dk`;
 }
 
+function _piecewiseGaugePct(val, breaks, segments) {
+  const num = Number(val);
+  if (Number.isNaN(num)) return 0;
+  const totalFlex = segments.reduce((acc, s) => acc + (s.flex ?? 1), 0) || 1;
+  let startPct = 0;
+  for (let i = 0; i < segments.length; i++) {
+    const segPct = ((segments[i].flex ?? 1) / totalFlex) * 100;
+    const lo = breaks[i];
+    const hi = breaks[i + 1];
+    if (num <= hi || i === segments.length - 1) {
+      const ratio = hi > lo ? Math.max(0, Math.min(1, (num - lo) / (hi - lo))) : 0;
+      return startPct + ratio * segPct;
+    }
+    startPct += segPct;
+  }
+  return 0;
+}
+
 function _renderGarminGauge(containerId, segments, activeIdx, markerPct, leftLbl, midLbl, rightLbl) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -127,7 +145,8 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
 
   // 02. VO2 Max (+ Trend Yönü)
   const vo2Num = Number(vo2) || 45.4;
-  const vo2Pct = ((vo2Num - 34) / (60 - 34)) * 100;
+  const vo2Segs = [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }, { cls: 'seg-purple' }];
+  const vo2Pct = _piecewiseGaugePct(vo2Num, [34, 38, 44, 50, 55, 60], vo2Segs);
   const vo2Active = vo2Num < 38 ? 0 : (vo2Num < 44 ? 1 : (vo2Num < 50 ? 2 : (vo2Num < 55 ? 3 : 4)));
   const vt = data.vo2max_trend || {};
   const vtArrow = vt.arrow || '→';
@@ -137,46 +156,38 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     : '0,0';
   setText('fs-vo2-val', fmtDec(vo2, 1));
   setText('fs-vo2-sub', `Trend: ${vtArrow} ${vtDelta} (${fmtDec(vt.prev ?? vo2Num, 1)}→${fmtDec(vo2Num, 1)})`);
-  _renderGarminGauge('fs-vo2-bar',
-    [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }, { cls: 'seg-purple' }],
-    vo2Active, vo2Pct, 'Zayıf', 'İyi', 'Üstün'
-  );
+  _renderGarminGauge('fs-vo2-bar', vo2Segs, vo2Active, vo2Pct, 'Zayıf', 'İyi', 'Üstün');
 
   // 03. Sleep Score
   const sc = data.sleep_score !== undefined ? Math.round(data.sleep_score) : null;
   const scNum = sc ?? 80;
+  const scSegs = [{ cls: 'seg-red', flex: 1.5 }, { cls: 'seg-amber', flex: 1.3 }, { cls: 'seg-green', flex: 1.2 }, { cls: 'seg-blue', flex: 1 }];
+  const scPct = _piecewiseGaugePct(scNum, [0, 60, 80, 90, 100], scSegs);
   const scActive = scNum < 60 ? 0 : (scNum < 80 ? 1 : (scNum < 90 ? 2 : 3));
   setText('fs-sleepscore-val', sc !== null ? `${sc} / 100` : '-- / 100');
   setText('fs-sleepscore-sub', `7G Ort: ${fmtDec(data.sleep_score_7d, 1)}`);
-  _renderGarminGauge('fs-sleepscore-bar',
-    [{ cls: 'seg-red', flex: 1.5 }, { cls: 'seg-amber', flex: 1.3 }, { cls: 'seg-green', flex: 1.2 }, { cls: 'seg-blue', flex: 1 }],
-    scActive, scNum, '0', '80 İyi', '100'
-  );
+  _renderGarminGauge('fs-sleepscore-bar', scSegs, scActive, scPct, '0', '80 İyi', '100');
 
   // 04. Sleep Süre
   const slpH = Number(data.sleep_hours ?? 6.5);
-  const slpPct = ((slpH - 4.0) / (9.5 - 4.0)) * 100;
+  const slpSegs = [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.6 }, { cls: 'seg-blue', flex: 0.7 }];
+  const slpPct = _piecewiseGaugePct(slpH, [4.0, 5.5, 7.0, 9.0, 9.5], slpSegs);
   const slpActive = slpH < 5.5 ? 0 : (slpH < 7.0 ? 1 : (slpH <= 9.0 ? 2 : 3));
   setText('fs-sleephours-val', formatHm(data.sleep_hours));
   setText('fs-sleephours-sub', `7G Ort: ${formatHm(data.sleep_hours_7d)} · 93G Ort: ${fmtDec(data.sleep_duration_hours, 2)} sa`);
-  _renderGarminGauge('fs-sleephours-bar',
-    [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.6 }, { cls: 'seg-blue', flex: 0.7 }],
-    slpActive, slpPct, '<5.5s', '7–9s Optimal', '9.5s'
-  );
+  _renderGarminGauge('fs-sleephours-bar', slpSegs, slpActive, slpPct, '<5.5s', '7–9s Optimal', '9.5s');
 
   // 05. REM Oranı
   const remPct = data.rem_sleep_pct !== undefined
     ? data.rem_sleep_pct
     : (data.sleep_hours > 0 && data.rem_hours !== undefined ? (data.rem_hours / data.sleep_hours) * 100 : undefined);
   const remNum = Number(remPct ?? 18);
-  const remBarPct = ((remNum - 8) / (30 - 8)) * 100;
+  const remSegs = [{ cls: 'seg-red', flex: 0.9 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.5 }, { cls: 'seg-blue', flex: 0.9 }];
+  const remBarPct = _piecewiseGaugePct(remNum, [8, 12, 18, 25, 30], remSegs);
   const remActive = remNum < 12 ? 0 : (remNum < 18 ? 1 : (remNum <= 25 ? 2 : 3));
   setText('fs-rem-val', `%${fmtDec(remPct, 1)}`);
   setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin (Günlük): %${fmtDec(data.deep_sleep_pct, 1)} (${fmtDec(data.deep_hours, 1)}s)`);
-  _renderGarminGauge('fs-rem-bar',
-    [{ cls: 'seg-red', flex: 0.9 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.5 }, { cls: 'seg-blue', flex: 0.9 }],
-    remActive, remBarPct, '%10', '%20–25 Optimal', '%30'
-  );
+  _renderGarminGauge('fs-rem-bar', remSegs, remActive, remBarPct, '%10', '%20–25 Optimal', '%30');
 
   // 06. Günlük Adım
   const stepCur = Number(data.steps ?? 0);
@@ -206,14 +217,12 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   }
 
   // 07. Acute Load
-  const acwrBarPct = ((acwrNum - 0.5) / (1.8 - 0.5)) * 100;
+  const acwrSegs = [{ cls: 'seg-amber', flex: 0.9 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }, { cls: 'seg-red', flex: 0.9 }];
+  const acwrBarPct = _piecewiseGaugePct(acwrNum, [0.5, 0.8, 1.3, 1.5, 1.8], acwrSegs);
   const acwrActive = acwrNum < 0.8 ? 0 : (acwrNum <= 1.3 ? 1 : (acwrNum <= 1.5 ? 2 : 3));
   setText('fs-acuteload-val', formatTrInt(acuteVal));
   setText('fs-acuteload-sub', `Kronik (28G): ${formatTrInt(chronicVal)} · Tünel: ${tMin}–${tMax}`);
-  _renderGarminGauge('fs-acuteload-bar',
-    [{ cls: 'seg-amber', flex: 0.9 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }, { cls: 'seg-red', flex: 0.9 }],
-    acwrActive, acwrBarPct, '<0.8', '0.8–1.3 Optimal', '>1.5'
-  );
+  _renderGarminGauge('fs-acuteload-bar', acwrSegs, acwrActive, acwrBarPct, '<0.8', '0.8–1.3 Optimal', '>1.5');
 
   // 08. Load Focus
   const lf = data.load_focus_summary || (data.training_load && data.training_load.load_focus) || {};
