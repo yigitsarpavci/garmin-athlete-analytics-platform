@@ -383,6 +383,45 @@ function _getRunKindLogo(kind) {
   };
 }
 
+function _buildStreakActivityEntry(a) {
+  const sp = (a.sport || '').toLowerCase();
+  const isRun = sp.includes('run') || sp.includes('koş');
+  const runKind = isRun ? _classifyRunLogoKind(a) : null;
+  const runLogo = runKind ? _getRunKindLogo(runKind) : null;
+  return {
+    isRun,
+    runLogo,
+    isGym: sp.includes('strength') || sp.includes('kuvvet') || sp.includes('gym'),
+    icon: getSportLucideIcon(a.sport || a.sport_tr || a.name),
+    title: `${runLogo ? runLogo.label + ' · ' : ''}${a.name || a.sport_tr || a.sport || 'Antrenman'}${a.dur_m ? ` (${Math.round(a.dur_m)} dk)` : ''}`
+  };
+}
+
+function _renderStreakDayCell(lbl, items, iso, todayIso, showLabel = true) {
+  const mkLbl = (cls) => showLabel
+    ? `<span class="font-mono text-[11px] ${cls} font-medium mb-1.5">${lbl}</span>`
+    : '';
+  if (items.length > 1) {
+    const tip = items.map(i => i.title).join(' · ').replace(/"/g, '&quot;');
+    return `<div class="flex flex-col items-center">${mkLbl('text-[#AB86D4]')}<span title="${tip}" class="w-7 h-7 rounded-[2px] bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
+  }
+  if (items.length === 1) {
+    const info = items[0];
+    if (info.isRun && info.runLogo) {
+      return `<div class="flex flex-col items-center">${mkLbl(info.runLogo.lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${info.runLogo.boxCls} flex items-center justify-center">${info.runLogo.svg}</span></div>`;
+    }
+    const lblCls = info.isGym ? 'ochre-text' : 'text-[#AB86D4]';
+    const boxCls = info.isGym
+      ? 'bg-[rgba(201,154,73,0.16)] text-[#C99A49] border border-[rgba(201,154,73,0.45)]'
+      : 'bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)]';
+    return `<div class="flex flex-col items-center">${mkLbl(lblCls)}<span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
+  }
+  if (iso < todayIso) {
+    return `<div class="flex flex-col items-center">${mkLbl('text-[#6BA7D6]')}<span title="Dinlenme Günü" class="w-7 h-7 rounded-[2px] bg-[rgba(75,142,194,0.14)] text-[#6BA7D6] border border-[rgba(75,142,194,0.35)] flex items-center justify-center">${lucideSvg('bed', 'w-3.5 h-3.5')}</span></div>`;
+  }
+  return `<div class="flex flex-col items-center">${mkLbl('text-[var(--text-muted)]')}<span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
+}
+
 function renderWeeklyStreak(activities) {
   const strip = document.getElementById('weeklyStreakStrip');
   const badge = document.getElementById('weeklyStreakBadge');
@@ -405,35 +444,25 @@ function renderWeeklyStreak(activities) {
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const iso = d.toISOString().slice(0, 10);
-    dayMap[iso] = [];
+    dayMap[d.toISOString().slice(0, 10)] = [];
   }
 
-  const prevDays = new Set();
+  const prevDayMap = {};
   for (let i = -7; i < 0; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    prevDays.add(d.toISOString().slice(0, 10));
+    prevDayMap[d.toISOString().slice(0, 10)] = [];
   }
   let thisSessionCount = 0;
   let prevSessionCount = 0;
   activities.forEach(a => {
     const d = (a.date || a.startTimeLocal || '').slice(0, 10);
     if (d in dayMap) {
-      const sp = (a.sport || '').toLowerCase();
-      const isRun = sp.includes('run') || sp.includes('koş');
-      const runKind = isRun ? _classifyRunLogoKind(a) : null;
-      const runLogo = runKind ? _getRunKindLogo(runKind) : null;
-      dayMap[d].push({
-        isRun,
-        runLogo,
-        isGym: sp.includes('strength') || sp.includes('kuvvet') || sp.includes('gym'),
-        icon: getSportLucideIcon(a.sport || a.sport_tr || a.name),
-        title: `${runLogo ? runLogo.label + ' · ' : ''}${a.name || a.sport_tr || a.sport || 'Antrenman'}${a.dur_m ? ` (${Math.round(a.dur_m)} dk)` : ''}`
-      });
+      dayMap[d].push(_buildStreakActivityEntry(a));
       thisSessionCount += 1;
     }
-    if (prevDays.has(d)) {
+    if (d in prevDayMap) {
+      prevDayMap[d].push(_buildStreakActivityEntry(a));
       prevSessionCount += 1;
     }
   });
@@ -443,29 +472,11 @@ function renderWeeklyStreak(activities) {
   }
 
   const keys = Object.keys(dayMap).sort();
-  strip.innerHTML = keys.map((iso, idx) => {
-    const items = dayMap[iso] || [];
-    const lbl = dayNames[order[idx]];
-    if (items.length > 1) {
-      const tip = items.map(i => i.title).join(' · ').replace(/"/g, '&quot;');
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] text-[#AB86D4] font-medium mb-1.5">${lbl}</span><span title="${tip}" class="w-7 h-7 rounded-[2px] bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)] font-mono text-xs font-bold flex items-center justify-center tabular-nums">${items.length}</span></div>`;
-    }
-    if (items.length === 1) {
-      const info = items[0];
-      if (info.isRun && info.runLogo) {
-        return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] ${info.runLogo.lblCls} font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${info.runLogo.boxCls} flex items-center justify-center">${info.runLogo.svg}</span></div>`;
-      }
-      const lblCls = info.isGym ? 'ochre-text' : 'text-[#AB86D4]';
-      const boxCls = info.isGym
-        ? 'bg-[rgba(201,154,73,0.16)] text-[#C99A49] border border-[rgba(201,154,73,0.45)]'
-        : 'bg-[rgba(140,98,184,0.18)] text-[#AB86D4] border border-[rgba(140,98,184,0.45)]';
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] ${lblCls} font-medium mb-1.5">${lbl}</span><span title="${String(info.title).replace(/"/g, '&quot;')}" class="w-7 h-7 rounded-[2px] ${boxCls} flex items-center justify-center">${lucideSvg(info.icon, 'w-3.5 h-3.5')}</span></div>`;
-    }
-    if (iso < todayIso) {
-      return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] text-[#6BA7D6] font-medium mb-1.5">${lbl}</span><span title="Dinlenme Günü" class="w-7 h-7 rounded-[2px] bg-[rgba(75,142,194,0.14)] text-[#6BA7D6] border border-[rgba(75,142,194,0.35)] flex items-center justify-center">${lucideSvg('bed', 'w-3.5 h-3.5')}</span></div>`;
-    }
-    return `<div class="flex flex-col items-center"><span class="font-mono text-[11px] text-[var(--text-muted)] font-medium mb-1.5">${lbl}</span><span class="w-7 h-7 rounded-[2px] bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono text-xs flex items-center justify-center">·</span></div>`;
-  }).join('');
+  const prevKeys = Object.keys(prevDayMap).sort();
+  const thisWeekRow = keys.map((iso, idx) => _renderStreakDayCell(dayNames[order[idx]], dayMap[iso] || [], iso, todayIso, true)).join('');
+  const prevDivider = `<div class="col-span-7 flex items-center justify-between pt-1.5 mt-0.5 border-t border-[var(--border-subtle)]"><span class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Geçen Hafta</span><span class="font-mono text-[10px] text-[var(--text-secondary)] tabular-nums">${prevSessionCount} Seans</span></div>`;
+  const prevWeekRow = prevKeys.map((iso, idx) => _renderStreakDayCell(dayNames[order[idx]], prevDayMap[iso] || [], iso, todayIso, false)).join('');
+  strip.innerHTML = `${thisWeekRow}${prevDivider}${prevWeekRow}`;
   refreshIcons();
 }
 
