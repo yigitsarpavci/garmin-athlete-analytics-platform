@@ -107,7 +107,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   setText('fs-hrv-badge', data.hrv_status || 'Dengeli');
   const hrvSubEl = document.getElementById('fs-hrv-sub');
   if (hrvSubEl) {
-    hrvSubEl.innerHTML = `<span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:${hrvAvgColor};display:inline-block" aria-hidden="true"></span><span>7G Ort: <strong style="color:${hrvAvgColor}">${escapeHtml(String(data.hrv_7d ?? '--'))} ms</strong></span></span> · RHR: ${escapeHtml(String(data.resting_hr ?? '--'))} bpm`;
+    hrvSubEl.innerHTML = `<span class="inline-flex items-center gap-1"><span style="width:6px;height:6px;border-radius:9999px;background:${hrvAvgColor};display:inline-block" aria-hidden="true"></span><span>7G Ort: <strong style="color:${hrvAvgColor}">${escapeHtml(String(data.hrv_7d ?? '--'))} ms</strong></span></span> · RHR (Günlük): ${escapeHtml(String(data.resting_hr ?? '--'))} bpm`;
   }
   const hrvSeries = Array.isArray(data.hrv_7d_series) ? data.hrv_7d_series : [];
   const hrvBarEl = document.getElementById('fs-hrv-bar');
@@ -181,7 +181,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const slpActive = slpH < 5.5 ? 0 : (slpH < 7.0 ? 1 : (slpH <= 9.0 ? 2 : 3));
   setText('fs-sleephours-val', formatHm(data.sleep_hours));
   setText('fs-sleephours-badge', `${fmtDec(data.sleep_hours, 2)} sa`);
-  setText('fs-sleephours-sub', `7G Ort: ${formatHm(data.sleep_hours_7d)} · 93G: ${fmtDec(data.sleep_duration_hours, 1)} sa`);
+  setText('fs-sleephours-sub', `7G Ort: ${formatHm(data.sleep_hours_7d)} · 93G Ort: ${fmtDec(data.sleep_duration_hours, 2)} sa`);
   _renderGarminGauge('fs-sleephours-bar',
     [{ cls: 'seg-red', flex: 1 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.6 }, { cls: 'seg-blue', flex: 0.7 }],
     slpActive, slpPct, '<5.5s', '7–9s Optimal', '9.5s'
@@ -196,7 +196,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const remActive = remNum < 12 ? 0 : (remNum < 18 ? 1 : (remNum <= 25 ? 2 : 3));
   setText('fs-rem-val', `%${fmtDec(remPct, 1)}`);
   setText('fs-rem-badge', formatHm(data.rem_hours));
-  setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin: %${fmtDec(data.deep_sleep_pct, 1)} (${fmtDec(data.deep_hours, 1)}s)`);
+  setText('fs-rem-sub', `7G REM: %${fmtDec(data.rem_sleep_pct_7d, 1)} · Derin (Günlük): %${fmtDec(data.deep_sleep_pct, 1)} (${fmtDec(data.deep_hours, 1)}s)`);
   _renderGarminGauge('fs-rem-bar',
     [{ cls: 'seg-red', flex: 0.9 }, { cls: 'seg-amber', flex: 1.2 }, { cls: 'seg-green', flex: 1.5 }, { cls: 'seg-blue', flex: 0.9 }],
     remActive, remBarPct, '%10', '%20–25 Optimal', '%30'
@@ -232,7 +232,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const acwrActive = acwrNum < 0.8 ? 0 : (acwrNum <= 1.3 ? 1 : (acwrNum <= 1.5 ? 2 : 3));
   setText('fs-acuteload-val', formatTrInt(acuteVal));
   setText('fs-acuteload-badge', `ACWR ${fmtDec(acwrNum, 2)}`);
-  setText('fs-acuteload-sub', `Kronik: ${formatTrInt(chronicVal)} · Tünel: ${tMin}–${tMax}`);
+  setText('fs-acuteload-sub', `Kronik (28G): ${formatTrInt(chronicVal)} · Tünel: ${tMin}–${tMax}`);
   _renderGarminGauge('fs-acuteload-bar',
     [{ cls: 'seg-amber', flex: 0.9 }, { cls: 'seg-green', flex: 1.8 }, { cls: 'seg-amber', flex: 0.8 }, { cls: 'seg-red', flex: 0.9 }],
     acwrActive, acwrBarPct, '<0.8', '0.8–1.3 Optimal', '>1.5'
@@ -287,7 +287,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const recStr = recHVal <= 0.1 ? '0 sa' : `${fmtDec(recHVal, 1)} sa`;
   setText('fs-readiness-val', rdVal !== null ? `${rdVal} / 100` : '-- / 100');
   setText('fs-readiness-badge', data.readiness_status || '--');
-  setText('fs-readiness-sub', `7G Ort: ${fmtDec(data.readiness_7d_avg, 1)} · BB: ${data.bb_wake ?? '--'} · Toparlanma: ${recStr}`);
+  setText('fs-readiness-sub', `7G Ort: ${fmtDec(data.readiness_7d_avg, 1)} · BB (Günlük): ${data.bb_wake ?? '--'} · Toparlanma: ${recStr}`);
   _renderGarminGauge('fs-readiness-bar',
     [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }],
     rdActive, rdNum, '1 Düşük', '75 Hazır', '100'
@@ -321,13 +321,15 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
   const basalShare = Math.round((basalK / totalK) * 100);
   const activeShare = 100 - basalShare;
   if (data.is_partial_day) {
+    setText('fs-calories-title', 'Kalori · 7G Ort');
     setText('fs-calories-val', `${formatTrInt(data.kcal_7d_avg)} kcal`);
     setText('fs-calories-badge', '7G Ort.');
-    setText('fs-calories-sub', `Son Tam: ${formatTrInt(data.prev_full_day_kcal)} (Aktif ${formatTrInt(data.prev_full_day_active_kcal)}) · Bugün: ${formatTrInt(data.total_kcal)}`);
+    setText('fs-calories-sub', `Son Tam Gün: ${formatTrInt(data.prev_full_day_kcal)} (Aktif ${formatTrInt(data.prev_full_day_active_kcal)}) · Bugün: ${formatTrInt(data.total_kcal)}`);
   } else {
+    setText('fs-calories-title', 'Kalori · Günlük');
     setText('fs-calories-val', `${formatTrInt(data.total_kcal)} kcal`);
     setText('fs-calories-badge', `Aktif: ${formatTrInt(data.active_kcal)}`);
-    setText('fs-calories-sub', `Bazal: ${formatTrInt(data.bmr_kcal)} · 7G Ort: ${formatTrInt(data.kcal_7d_avg)} · Son Tam: ${formatTrInt(data.prev_full_day_kcal)}`);
+    setText('fs-calories-sub', `Bazal (Günlük): ${formatTrInt(data.bmr_kcal)} · 7G Ort: ${formatTrInt(data.kcal_7d_avg)} · Son Tam Gün: ${formatTrInt(data.prev_full_day_kcal)}`);
   }
   const calEl = document.getElementById('fs-calories-bar');
   if (calEl) {
