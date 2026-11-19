@@ -8,40 +8,26 @@ Tüm egzersiz hedefleri ve branş istatistikleri canlı Garmin telemetrisinden d
 import logging
 import json
 import os
-from datetime import datetime
 from typing import Dict, List, Any
 
 try:
-    from athlete_principles import build_athlete_principles
-    from engine.helpers import fnum, request_cached, zone_text, DATA_DIR, format_sport_tr
+    from engine.helpers import fnum, request_cached, zone_text, DATA_DIR
     from engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
-        build_projected_gym_summary,
-        build_split_protocol,
         compute_adaptive_progression,
-        load_logged_gym_sessions,
-        load_program_state,
-        save_logged_gym_session,
-        save_program_state,
-        inject_split_derived_lifts,
     )
 except ImportError:
-    from app.athlete_principles import build_athlete_principles
-    from app.engine.helpers import fnum, request_cached, zone_text, DATA_DIR, format_sport_tr
+    from app.engine.helpers import fnum, request_cached, zone_text, DATA_DIR
     from app.engine.strength_progression import (
         PROGRAM_SPLIT_CATALOG,
-        build_projected_gym_summary,
-        build_split_protocol,
         compute_adaptive_progression,
-        load_logged_gym_sessions,
-        load_program_state,
-        save_logged_gym_session,
-        save_program_state,
-        inject_split_derived_lifts,
     )
 
 
 logger = logging.getLogger(__name__)
+
+# Kuvvet programı sabit: haftada 2 gün Workout A / Workout B (5x5 doğrusal). Plato analizi yalnızca öneri üretir, programı değiştirmez.
+PROGRAM_STATE = {"active_split": "5x5_linear"}
 
 
 _EXERCISE_NAME_MAP = {
@@ -72,17 +58,14 @@ class WorkoutProtocolsMixin:
                 logger.warning("get_gym_exercise_history: yedek davranış uygulandı", exc_info=True)
                 raw_data = {}
 
-        manual_sessions = load_logged_gym_sessions(data_dir)
-        program_state = load_program_state(data_dir)
-        if not raw_data and not manual_sessions:
+        if not raw_data:
             baseline = compute_adaptive_progression([], bodyweight_kg=self.get_current_weight())
             return {
                 "sessions": [],
                 "progression": baseline["progression"],
                 "plateau_analysis": {"plateau_score": 0, "recommended_split": "5x5_linear", "tier_label": "Doğrusal İvme Aktif", "recommendation": "Veri bekleniyor.", "signals": []},
-                "program_state": program_state,
+                "program_state": PROGRAM_STATE,
                 "split_catalog": PROGRAM_SPLIT_CATALOG,
-                "manual_log_count": 0,
             }
 
         act_meta_map = {}
@@ -146,20 +129,6 @@ class WorkoutProtocolsMixin:
                 "exercises": grouped_ex,
             })
 
-        for m in manual_sessions:
-            sessions.append({
-                "activity_id": m.get("activity_id") or f"manual_{m.get('date', '')}",
-                "date": m.get("date", ""),
-                "time": m.get("time", ""),
-                "workout_type": m.get("workout_type", "Workout A"),
-                "duration_min": m.get("duration_min", 55),
-                "calories": m.get("calories", 350),
-                "avg_hr": m.get("avg_hr"),
-                "total_volume_kg": m.get("total_volume_kg", 0.0),
-                "exercises": m.get("exercises", []),
-                "is_manual": True,
-            })
-
         sessions.sort(key=lambda x: (x.get("date", ""), x.get("time", "")), reverse=True)
 
         # Canlı biyometri ve Garmin yük durumu ile çok faktörlü progresyon hesapla
@@ -183,347 +152,15 @@ class WorkoutProtocolsMixin:
             reference_date=ref_date,
         )
 
-        # Kuvvet programı sabit: haftada 2 gün Workout A / Workout B (5x5 doğrusal). Plato analizi yalnızca ÖNERİ üretir
-        # (plateau_analysis.recommended_split); programı kendiliğinden Push/Pull, Upper/Lower veya PPL'e çevirmez.
-        auto_split = "5x5_linear"
-        program_state = {
-            **program_state,
-            "active_split": auto_split,
-            "persisted_split": program_state.get("active_split"),
-        }
-
-        inject_split_derived_lifts(adaptive["progression"], auto_split, bodyweight_kg=bw_kg)
-
         return {
             "sessions": sessions,
             "progression": adaptive["progression"],
             "plateau_analysis": adaptive["plateau_analysis"],
             "readiness_note": adaptive["readiness_note"],
             "stall_summary": adaptive["stall_summary"],
-            "program_state": program_state,
+            "program_state": PROGRAM_STATE,
             "split_catalog": PROGRAM_SPLIT_CATALOG,
-            "manual_log_count": len(manual_sessions),
         }
-
-    def log_gym_session_result(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Kullanıcının tamamladığı/kısmi kaldığı kuvvet seansını kaydedip tüm progresyonu günceller."""
-        data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
-        date_str = str(payload.get("date") or "").strip()
-        if not date_str:
-            metrics = self.get_latest_metrics() if hasattr(self, "get_latest_metrics") else {}
-            date_str = str(metrics.get("date") or datetime.now().strftime("%Y-%m-%d"))[:10]
-        workout_type = str(payload.get("workout_type") or "Workout A").strip()
-        exercises_in = payload.get("exercises") or []
-
-        normalized_ex: List[Dict[str, Any]] = []
-        total_vol = 0.0
-        for ex in exercises_in:
-            name = str(ex.get("name") or "").strip()
-            sets_in = ex.get("sets") or []
-            clean_sets = []
-            for s in sets_in:
-                w = round(float(s.get("weight_kg") or 0.0), 1)
-                r = int(s.get("reps") or 0)
-                if w > 0 and r > 0:
-                    clean_sets.append({"weight_kg": w, "reps": r})
-                    total_vol += (w * r)
-            if name and clean_sets:
-                normalized_ex.append({"name": name, "sets": clean_sets})
-
-        entry = {
-            "activity_id": f"manual_{date_str}_{workout_type.lower().replace(' ', '_')}",
-            "date": date_str,
-            "time": str(payload.get("time") or "18:00"),
-            "workout_type": workout_type,
-            "duration_min": fnum(payload.get("duration_min"), 55.0),
-            "calories": int(payload.get("calories") or 360),
-            "total_volume_kg": round(total_vol, 1),
-            "exercises": normalized_ex,
-        }
-        save_logged_gym_session(data_dir, entry)
-
-        # Yeni seans verisi plato skorunu değiştirmiş olabilir; program geçişini kalıcılaştır
-        if getattr(self, "_req_cache", None) is not None:
-            self._req_cache.clear()
-        self.persist_program_state()
-        updated = self.get_gym_exercise_history()
-        return {
-            "status": "ok",
-            "logged_entry": entry,
-            "gym_history": updated,
-        }
-
-    def persist_program_state(self) -> Dict[str, Any]:
-        """
-        Plato analizinin seçtiği programı, diskteki kayıttan farklıysa training_program_state.json'a yazar.
-        Yalnızca veri değiştiğinde (Garmin sync, manuel seans kaydı/silme) çağrılır; GET istekleri yazmaz.
-        """
-        data_dir = self.data_dir if hasattr(self, "data_dir") else DATA_DIR
-        gh = self.get_gym_exercise_history()
-        auto_split = (gh.get("program_state") or {}).get("active_split", "5x5_linear")
-        stored = load_program_state(data_dir)
-        if stored.get("active_split") == auto_split:
-            return stored
-        score = (gh.get("plateau_analysis") or {}).get("plateau_score", 0)
-        try:
-            return save_program_state(
-                data_dir,
-                new_split=auto_split,
-                reason=f"Plato skoru {score}/100 -> otomatik program seçimi",
-                source="auto",
-            )
-        except (OSError, ValueError):
-            logger.warning("persist_program_state: yedek davranış uygulandı", exc_info=True)
-            return stored
-
-
-    def _build_dynamic_extra_sport_card(self, sport_key: str, rows_df) -> Dict[str, Any]:
-        """Kayak, yüzme, bisiklet veya Garmin'den gelebilecek herhangi yeni spor için hazır rehber üretir."""
-        label = format_sport_tr(sport_key, sport_key)
-        cnt = int(len(rows_df))
-        tot_h = round(float(rows_df["dur_m"].sum()) / 60.0, 1)
-        tot_kcal = int(round(float(rows_df["cal"].sum())))
-        avg_hr = int(round(float(rows_df["avg_hr"].replace(0, float("nan")).mean()))) if rows_df["avg_hr"].replace(0, float("nan")).notna().any() else 0
-        tot_load = round(float(rows_df["load"].sum()), 1)
-
-        low = sport_key.lower()
-        if "ski" in low or "snow" in low or "winter" in low:
-            goal = "Yüksek rakımda eksantrik kuadriseps dayanıklılığı ve soğuk havada hidrasyon/glikojen korunumu"
-            tips = [
-                "Eksantrik Kuadriseps Yükü: Kayak inişleri yoğun eksantrik bacak gerilimi yaratır; dönüş gününde ağır Squat yerine hafif mobilite/yürüyüş seçin.",
-                "Soğuk & İrtifa Sıvı Kaybı: Kuru soğuk havada susama hissi baskılanır; saat başı 400-500 mL sıvı ve sodyum alımını sürdürün.",
-                "Anaerobik & Yüksek Aerobik Katkısı: Kayak sprint inişleri haftalık kotadan yer çalmayan ekstra yük üretir; ertesi gün ACWR ve HRV puanını izleyin.",
-            ]
-            upcoming = {"day": "Spontane Kış Branşı", "type": f"{label} Seansı", "title": f"{label} Pist / İrtifa Günü", "duration": "2 - 5 saat", "details": "Saat başı sıvı + kompleks karbonhidrat desteği; seans sonrası 10 dk kalça fleksör ve kuadriseps esnemesi."}
-        elif "swim" in low:
-            goal = "Sıfır eklem darbesiyle üst vücut/lat dayanıklılığı ve aktif kardiyovasküler toparlanma"
-            tips = [
-                "Aktif Toparlanma Sinergisi: Koşu ve Squat sonrası eklem yükünü sıfırlayarak kan akışını hızlandırır.",
-                "Omuz & Sırt Dengesi: Lat Pulldown ve OHP ile birlikte omuz kuşağı hareket açıklığını korur.",
-            ]
-            upcoming = {"day": "Spontane Su Branşı", "type": label, "title": f"{label} Seansı", "duration": "30 - 50 dk", "details": "Rahat ritimde sürekli aerobik yüzme; ekstra bacak yorgunluğu oluşturmaz."}
-        elif "sail" in low:
-            water_l = round(float(rows_df["water_ml"].sum()) / 1000.0, 1)
-            goal = "Uzun seanslarda core/önkol dayanıklılığı ve sıvı-elektrolit dengesi"
-            tips = [
-                "İzometrik Tutuş Gücü: Farmer's Walk ve Dead Hang, halat/kol yorgunluğunu önler.",
-                f"Sıvı & Elektrolit Protokolü: {water_l} L toplam tahmini ter kaybı gözlendi; saat başı 500-600 mL su + sodyum tüketin.",
-                "Glikojen Ön-Yüklemesi: 3 saat üzeri seanslardan 90 dk önce 70-80g kompleks karbonhidrat alın.",
-            ]
-            upcoming = {"day": "Spontane Seans (Çıktıkça İşlenir)", "type": f"{label} Seansı", "title": f"Uzun {label} Antrenmanı", "duration": "2,5 - 4 saat", "details": "2 x 750 mL matara (su + 500-800 mg sodyum). Saat başı düzenli yudumlayın."}
-        elif any(k in low for k in ("basket", "football", "soccer", "tennis", "padel", "squash", "volley", "handball")):
-            goal = "Patlayıcı hızlanma, yön değiştirme ve anaerobik dayanıklılık"
-            tips = [
-                "Doğal HIIT Katkısı: Anaerobik yük eksiğini kapatmaya doğal destek sağlar.",
-                "Yük Çakışması Kuralı: Maç günü ağır bacak (Squat/Deadlift) yerine üst vücut veya dinlenme tercih edin.",
-                "Maç Öncesi & Sonrası: 10 dk dinamik ayak bileği ısınması + 10 dk statik hamstring esnemesi.",
-            ]
-            upcoming = {"day": "Spontane Maç (Çıktıkça İşlenir)", "type": f"{label} (İsteğe Bağlı)", "title": f"{label} Maçı", "duration": "60 - 90 dk", "details": "Maç öncesi 10 dk dinamik bacak ısınması; maç sonrası 10 dk esneme."}
-        elif "cycl" in low or "bik" in low:
-            goal = "Düşük darbeli Zone 2 aerobik kapasite artışı ve kuadriseps oksidatif verimliliği"
-            tips = [
-                "Yüksek Kadans Koruyun (85-95 rpm): Düşük viteste yüksek devir bacakları ağırlaştırmadan kalp atım hacmini geliştirir.",
-                "ACWR Takibi: Uzun sürüşler sonrası haftalık yük artışına göre koşu temposunu esnek ayarlayın.",
-            ]
-            upcoming = {"day": "Spontane Dayanıklılık", "type": label, "title": f"{label} Aerobik Sürüş", "duration": "45 - 90 dk", "details": "Zone 2 nabız koridorunu koruyarak eklemlere darbe bindirmeden aerobik hacim ekler."}
-        else:
-            goal = f"{label} aktivitelerini Garmin sensörlerinden otomatik algılayarak haftalık ACWR yük dengesine entegre etmek"
-            tips = [
-                f"Otomatik Algılama Hazır: {label} Garmin'den yüklendiğinde kota dengesini bozmadan Spontane Branşlar ve Antrenman Yükü analizine dahil edilir.",
-                "Ertesi Gün Toparlanma Kuralı: Yüksek EPOC veya bacak yorgunluğu oluşturan seanslar sonrasında kalan haftalık kotadaki yoğun günü ileri kaydırın.",
-            ]
-            upcoming = {"day": "Spontane Branş", "type": label, "title": f"{label} Seansı", "duration": "Değişken", "details": f"Garmin saat üzerinden kaydedildiğinde kalp atımı, kalori ve yük puanı ({tot_load} toplam) otomatik işlenir."}
-
-        return {
-            "name": label,
-            "sport_key": sport_key,
-            "is_dynamic_extra": True,
-            "schedule_status": "Spontane / Otomatik Algılanan Branş (Garmin Hazır)",
-            "current_status": f"{cnt} seans ({tot_h} saat · {tot_load} yük · {avg_hr} bpm ort.)",
-            "goal": goal,
-            "stats_summary": f"{cnt} Seans • {tot_h} Saat • {tot_load} Yük • {tot_kcal} kcal (Kotadan düşmez; saat yükledikçe otomatik analiz edilir)",
-            "how_to_improve": tips,
-            "upcoming_sessions": [upcoming],
-        }
-
-    @request_cached
-    @zone_text
-    def get_sports_guidance(self) -> Dict[str, Any]:
-        """Kuvvet ve Garmin'den gelen tüm preset dışı sporlar için dinamik rehberlik döner."""
-        weekly_quota = self.get_weekly_quota_summary()
-        gyms_done = weekly_quota["strength"]["completed"]
-        rem_gyms = weekly_quota["strength"]["remaining"]
-        prog = self.get_gym_exercise_history().get("progression", {})
-
-        gym_cnt, gym_hours, gym_kcal = self._compute_strength_stats()
-
-
-        gym_hist_data = self.get_gym_exercise_history()
-        gym_sessions = gym_hist_data.get("sessions", [])
-        active_split = (gym_hist_data.get("program_state") or {}).get("active_split", "5x5_linear")
-        split_slots = PROGRAM_SPLIT_CATALOG.get(active_split, PROGRAM_SPLIT_CATALOG["5x5_linear"])["slots"]
-
-        gym_upcoming = self._build_gym_upcoming(active_split, gym_sessions, prog, split_slots, weekly_quota)
-
-        last_workout = self._build_last_workout(gym_sessions)
-
-        sq_t = prog.get("squat", {}).get("next_target", "--")
-        ohp_t = prog.get("ohp", {}).get("next_target", "--")
-        dl_t = prog.get("deadlift", {}).get("next_target", "--")
-        lat_t = prog.get("lat_pulldown", {}).get("next_target", "--")
-        lr_t = prog.get("lateral_raise", {}).get("next_target", "--")
-        sh_t = prog.get("shrug", {}).get("next_target", "--")
-
-        sq_pr = prog.get("squat", {}).get("max_kg", 0.0)
-        bp_pr = prog.get("bench", {}).get("max_kg", 0.0)
-        rw_pr = prog.get("row", {}).get("max_kg", 0.0)
-
-        extra_sports = self._collect_extra_sports_cards()
-
-        gym_sched_status = (
-            f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Tamamlandı · Kota Doldu)"
-            if rem_gyms == 0 else f"Esnek Haftalık Kota (A/B 5x5 • Bu Hafta: {gyms_done}/2 Yapıldı · Kalan: {rem_gyms})"
-        )
-
-        return {
-            "weekly_quota": weekly_quota,
-            "extra_sports": extra_sports,
-            "strength": {
-                "name": "Kuvvet Antrenmanı (Strength)",
-                "schedule_status": gym_sched_status,
-                "current_status": f"A/B Bölünmüş Rutin ({gym_cnt} seans tamamlandı)",
-                "goal": "Yağ yakımı döneminde kas kütlesini ve omurga/omuz gücünü korumak (Progressive Overload)",
-                "stats_summary": f"{gym_cnt} Seans • {gym_hours} Saat • {gym_kcal:,} kcal • Squat: {sq_pr:.0f}kg • Bench: {bp_pr:.0f}kg • Row: {rw_pr:.0f}kg",
-                "how_to_improve": [
-                    "Bileşik 5x5 Odaklanması: Workout A ve B ile tüm büyük kas gruplarında mekanik gerilim sağlar.",
-                    "Lineer Progressive Overload: Temiz tamamlanan her 5x5 sonrası üst vücuda +2.5 kg, bacağa +2.5–5.0 kg ekleyin.",
-                    "Aynı Gün Sıralama Kuralı: Koşu ile aynı gün yapılacaksa ÖNCE KOŞU, SONRA KUVVET veya araya ≥6 saat koyun.",
-                ],
-                "last_workout": last_workout,
-                "upcoming_sessions": gym_upcoming,
-                "next_workout": {
-                    "day": gym_upcoming[0]["day"],
-                    "title": gym_upcoming[0]["title"],
-                    "duration": gym_upcoming[0]["duration"],
-                    "exercises": [sq_t, ohp_t, dl_t, lat_t, lr_t, sh_t],
-                },
-            },
-        }
-
-    def _compute_strength_stats(self):
-        """Kuvvet seansı sayısını, toplam saati ve kaloriyi hesaplar."""
-        # Canlı kuvvet istatistikleri
-        gym_cnt, gym_hours, gym_kcal = 0, 0.0, 0
-        if hasattr(self, "adf") and not self.adf.empty:
-            g_df = self.adf_3m[self.adf_3m["sport"].str.contains("strength|fitness_equipment", case=False, na=False)]
-            if not g_df.empty:
-                gym_cnt = int(len(g_df))
-                gym_hours = round(float(g_df["dur_m"].sum()) / 60.0, 1)
-                gym_kcal = int(round(float(g_df["cal"].sum())))
-        return gym_cnt, gym_hours, gym_kcal
-
-
-    def _build_gym_upcoming(self, active_split, gym_sessions, prog, split_slots, weekly_quota):
-        """Kalan kuvvet kotası ve sonraki döngü projeksiyonlarını (aktif split'e göre) üretir."""
-        ex_counts: Dict[str, int] = {}
-        gym_upcoming: List[Dict[str, str]] = []
-        for idx_rem, item in enumerate(weekly_quota["strength"]["remaining_items"]):
-            raw_kind = item.get("slot_kind", "gym_a")
-            eff_kind = split_slots[idx_rem % len(split_slots)] if active_split != "5x5_linear" else raw_kind
-            p_type, p_title, p_details = build_projected_gym_summary(
-                eff_kind, prog, step_idx=idx_rem, active_split=active_split, ex_counts=ex_counts
-            )
-            gym_upcoming.append({
-                "day": "Bu Hafta Kalan Kota (Esnek Gün)" + (" · Öncelikli" if item.get("is_prioritized") else ""),
-                "type": f"{p_type} · Kalan",
-                "title": p_title if active_split != "5x5_linear" else item["title"],
-                "duration": item["duration"],
-                "details": p_details,
-            })
-
-        gym_kinds_chain = [
-            (split_slots[i % len(split_slots)] if active_split != "5x5_linear" else item.get("slot_kind"))
-            for i, item in enumerate(weekly_quota["strength"]["remaining_items"])
-            if item.get("slot_kind")
-        ]
-        rem_gym_count = len(gym_upcoming)
-        while len(gym_upcoming) < 3:
-            if not gym_kinds_chain:
-                last_wt = (gym_sessions[0].get("workout_type", "") if gym_sessions else "")
-                if active_split != "5x5_linear":
-                    next_cycle_kind = split_slots[0]
-                    if len(split_slots) > 1 and split_slots[0].lower() in last_wt.lower():
-                        next_cycle_kind = split_slots[1]
-                else:
-                    next_cycle_kind = "gym_b" if "Workout A" in last_wt else "gym_a"
-                prev_gym = None
-            else:
-                prev_gym = gym_kinds_chain[-1]
-                if active_split != "5x5_linear":
-                    cur_i = split_slots.index(prev_gym) if prev_gym in split_slots else 0
-                    next_cycle_kind = split_slots[(cur_i + 1) % len(split_slots)]
-                else:
-                    next_cycle_kind = "gym_b" if prev_gym == "gym_a" else "gym_a"
-
-            step_idx = len(gym_upcoming)
-            step_num = len(gym_upcoming) - rem_gym_count + 1
-            p_type, p_title, p_details = build_projected_gym_summary(
-                next_cycle_kind, prog, step_idx=step_idx, active_split=active_split, ex_counts=ex_counts
-            )
-            prev_label = (
-                "Workout A" if prev_gym == "gym_a"
-                else ("Workout B" if prev_gym == "gym_b" else (prev_gym or "").title())
-            )
-            day_lbl = (
-                "Sıradaki Projeksiyon (Yeni Döngü #1)"
-                if step_num == 1
-                else f"{prev_label} Sonrası Projeksiyon (Yeni Döngü #{step_num})"
-            )
-            gym_upcoming.append({
-                "day": day_lbl,
-                "type": f"{p_type} · Projeksiyon",
-                "title": p_title,
-                "duration": "55 dk",
-                "details": p_details,
-            })
-            gym_kinds_chain.append(next_cycle_kind)
-        return gym_upcoming
-
-
-    def _build_last_workout(self, gym_sessions):
-        """Son kuvvet seansının özet kartını üretir."""
-        if gym_sessions:
-            latest_gym = gym_sessions[0]
-            date_str = latest_gym.get("date", "")
-            time_str = latest_gym.get("time", "")
-            last_workout = {
-                "date": f"{date_str} ({time_str})" if time_str else date_str,
-                "title": f"{latest_gym.get('workout_type', 'Workout A')} (TAMAMLANDI)",
-                "exercises": [
-                    f"{ex['name']}: " + ", ".join(f"{s['weight_kg']}kg x {s['reps']}" for s in ex.get("sets", [])[-2:])
-                    for ex in latest_gym.get("exercises", [])
-                ],
-            }
-        else:
-            last_workout = {
-                "date": "Son Kuvvet Seansı",
-                "title": "Workout A (TAMAMLANDI)",
-                "exercises": ["Henüz Garmin'den kuvvet seansı alınmadı"],
-            }
-        return last_workout
-
-
-    def _collect_extra_sports_cards(self):
-        """Preset dışı (Kayak, Yüzme, Bisiklet vb.) sporları otomatik bulup rehber kartlarını üretir."""
-        # Bilinmeyen / Preset dışı sporları otomatik tara (Kayak, Yüzme, Bisiklet vb.)
-        extra_sports: List[Dict[str, Any]] = []
-        known_core = {"running", "strength_training"}
-        if hasattr(self, "adf_3m") and not self.adf_3m.empty:
-            for sp_key, grp in self.adf_3m.groupby("sport"):
-                if str(sp_key).lower() not in known_core:
-                    extra_sports.append(self._build_dynamic_extra_sport_card(str(sp_key), grp))
-        return extra_sports
-
 
     @request_cached
     @zone_text
@@ -591,8 +228,6 @@ class WorkoutProtocolsMixin:
         cur_w = float(metrics.get("weight") or self.get_current_weight())
         prot_g = round(cur_w * 2.0)
 
-        gym_hist_full = self.get_gym_exercise_history()
-        active_split = (gym_hist_full.get("program_state") or {}).get("active_split", "5x5_linear")
         protocols = [
                 self._protocol_tuesday_gym_a(_quota_note, bp, gym_a_done, gyms_done, lr, prot_g, rem_gym_kinds, rem_gyms, rw, sh, sq),
                 self._protocol_wednesday_rest(gyms_done, prot_g, runs_done, total_done, total_rem),
@@ -603,38 +238,6 @@ class WorkoutProtocolsMixin:
                 self._protocol_monday_interval_run(int_note, int_status, prot_g),
                 self._protocol_tempo_run(tempo_note, tempo_status, prot_g),
         ]
-        if active_split != "5x5_linear":
-            slots = PROGRAM_SPLIT_CATALOG.get(active_split, {}).get("slots", ["push", "pull"])
-            gym_idx = 0
-            for proto in protocols:
-                if proto.get("category") == "gym" and gym_idx < len(slots):
-                    slot_k = slots[gym_idx]
-                    sp_proto = build_split_protocol(slot_k, prog, active_split)
-                    if sp_proto:
-                        proto["slot_label"] = sp_proto["badge"]
-                        proto["badge"] = sp_proto["badge"]
-                        proto["day_title"] = sp_proto["day_title"]
-                        proto["objective"] = sp_proto["objective"]
-                        proto["warmup"] = sp_proto["warmup"]
-                        proto["exercises"] = sp_proto["exercises"]
-                    gym_idx += 1
-            while gym_idx < len(slots):
-                slot_k = slots[gym_idx]
-                sp_proto = build_split_protocol(slot_k, prog, active_split)
-                if sp_proto:
-                    protocols.append({
-                        "day_code": f"gym_{slot_k}",
-                        "slot_label": sp_proto["badge"],
-                        "quota_status": "remaining",
-                        "day_title": sp_proto["day_title"],
-                        "category": "gym",
-                        "badge": sp_proto["badge"],
-                        "objective": sp_proto["objective"],
-                        "warmup": sp_proto["warmup"],
-                        "exercises": sp_proto["exercises"],
-                        "status_note": "",
-                    })
-                gym_idx += 1
         return protocols
 
     def _protocol_tuesday_gym_a(self, _quota_note, bp, gym_a_done, gyms_done, lr, prot_g, rem_gym_kinds, rem_gyms, rw, sh, sq) -> Dict[str, Any]:
@@ -953,8 +556,3 @@ class WorkoutProtocolsMixin:
                 "nutrition": f"{self.nutrition_texts('interval')['line']} | 3.5 L Su + Elektrolit",
             },
         }
-
-    @request_cached
-    def get_athlete_principles(self) -> Dict[str, Any]:
-        """Genel antrenman çerçeveleri + sporcunun kendi profilinden ve Garmin verisinden türetilen ilkeler."""
-        return build_athlete_principles(self)

@@ -13,10 +13,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from app.engine.telemetry_mixin import TelemetryMixin
-from app.engine.strength_progression import (
-    compute_adaptive_progression,
-    load_program_state,
-)
+from app.engine.strength_progression import compute_adaptive_progression
 from app.garmin_engine import GarminAthleteEngine
 
 
@@ -87,47 +84,18 @@ class TestStrengthLogic(unittest.TestCase):
 
 
 class TestNoWriteOnRead(unittest.TestCase):
-    def test_get_gym_history_does_not_touch_program_state(self):
-        eng = GarminAthleteEngine()
-        path = os.path.join(eng.data_dir, "training_program_state.json")
-        before = os.path.getmtime(path) if os.path.exists(path) else None
+    def test_get_gym_history_never_writes_program_files(self):
+        """Program sabit (A/B): okuma yolu diske hiçbir program/durum dosyası yazmaz."""
+        eng = GarminAthleteEngine(os.path.join(BASE_DIR, "sample_data"))
+        before = sorted(os.listdir(eng.data_dir))
         for _ in range(3):
             eng.get_gym_exercise_history()
-        after = os.path.getmtime(path) if os.path.exists(path) else None
-        self.assertEqual(before, after)
-
-    def test_persist_writes_only_on_change(self):
-        from unittest.mock import patch
-        eng = GarminAthleteEngine()
-        with tempfile.TemporaryDirectory() as tmp, patch.object(eng, "data_dir", tmp):
-            eng.persist_program_state()
-            first = load_program_state(tmp)
-            eng.persist_program_state()
-            second = load_program_state(tmp)
-        self.assertEqual(first.get("transition_history"), second.get("transition_history"))
-
-
-class TestPeriodLabels(unittest.TestCase):
-    def test_current_period_end_label_is_readable_date(self):
-        """Son dönem bitiş etiketi '19 Kas' gibi olmalı ('11-19' yedek biçimine düşmemeli)."""
-        eng = GarminAthleteEngine(os.path.join(BASE_DIR, "sample_data"))
-        current = eng.get_periods_and_weeks()["periods"][-1]["dates"]
-        self.assertRegex(current, r"- \d{2} \D{3} \(Mevcut Dönem\)")
+        self.assertEqual(sorted(os.listdir(eng.data_dir)), before)
+        self.assertFalse(os.path.exists(os.path.join(eng.data_dir, "training_program_state.json")))
 
 
 class TestCalendarIsDataDriven(unittest.TestCase):
     """Takvim ve hedef yapıları sporcunun kendi veri aralığından / profilinden türetilir; sabit tarih yoktur."""
-
-    def test_macro_periods_cover_the_athletes_own_date_range(self):
-        eng = GarminAthleteEngine(os.path.join(BASE_DIR, "sample_data"))
-        res = eng.get_periods_and_weeks()
-        self.assertEqual(len(res["periods"]), 4)
-        first_lbl = res["periods"][0]["dates"].split(" - ")[0]
-        d0 = eng.dates[0]
-        self.assertTrue(first_lbl.startswith(d0[8:10]), (first_lbl, d0))
-        blob = " ".join(p["period"] + p["summary"] for p in res["periods"])
-        for stale in ("Su Sporları", "Seyahat", "Basketbol & Yelken"):
-            self.assertNotIn(stale, blob)
 
     def test_activity_window_starts_before_first_daily_record(self):
         from datetime import datetime, timedelta
@@ -144,19 +112,6 @@ class TestCalendarIsDataDriven(unittest.TestCase):
         self.assertEqual(tr["target_pace"], "5:30 /km")
         self.assertIn("2030", tr["target_date"])
         self.assertFalse(tr["goal_auto_advanced"])
-
-    def test_guest_plan_heart_rates_scale_with_age(self):
-        eng = GarminAthleteEngine(os.path.join(BASE_DIR, "sample_data"))
-        young = eng.generate_custom_plan({"name": "A", "age": 20, "running_days": 2, "gym_days": 2})
-        older = eng.generate_custom_plan({"name": "B", "age": 60, "running_days": 2, "gym_days": 2})
-        hr = lambda plan: int(__import__("re").search(r"(\d+)-\d+ bpm", plan["quota_summary"]["remaining_items"][0]["target_hr"]).group(1))
-        self.assertGreater(hr(young), hr(older))
-
-    def test_sports_guidance_has_no_fixed_sailing_or_basketball_cards(self):
-        eng = GarminAthleteEngine(os.path.join(BASE_DIR, "sample_data"))
-        sp = eng.get_sports_guidance()
-        self.assertNotIn("sailing", sp)
-        self.assertNotIn("basketball", sp)
 
 
 class TestDataDrivenAnalytics(unittest.TestCase):
@@ -205,13 +160,6 @@ class TestDataDrivenAnalytics(unittest.TestCase):
         tiny = self.engine.get_personal_baseline("hrv_night", days=5, min_points=10)
         self.assertFalse(tiny["reliable"])
 
-    def test_channel_status_is_honest_about_derived_data(self):
-        from app.engine.morphology_health_mixin import MorphologyHealthMixin as M
-        self.assertEqual(M._channel_status(0, 0), "VERİ YOK")
-        self.assertTrue(M._channel_status(5, 0).startswith("AKTİF"))
-        self.assertTrue(M._channel_status(0, 5).startswith("TÜRETİLMİŞ"))
-        self.assertTrue(M._channel_status(3, 2).startswith("KISMİ"))
-
     def test_write_json_if_changed_skips_identical_content(self):
         from app.engine.fit_stream_parser import _write_json_if_changed
         with tempfile.TemporaryDirectory() as tmp:
@@ -235,15 +183,6 @@ class TestDataDrivenAnalytics(unittest.TestCase):
             time.sleep(0.05)
             load_and_parse_high_res_streams(dst, persist_real_fit=True)
             self.assertEqual(os.path.getmtime(f), before)
-
-    def test_principles_endpoint_data_is_request_cached(self):
-        eng = GarminAthleteEngine(os.path.join(BASE_DIR, "sample_data"))
-        with eng.request_scope():
-            a = eng.get_athlete_principles()
-            b = eng.get_athlete_principles()
-        self.assertEqual(a, b)
-        self.assertIsNot(a, b)  # önbellekten derin kopya döner
-
 
 class TestWeekStateRefactor(unittest.TestCase):
     def test_week_helpers_take_a_state_object_not_fifteen_parameters(self):
@@ -707,14 +646,6 @@ class TestFixedTwoDayStrengthPolicy(unittest.TestCase):
         # athlete_levels / triggers çerçevesi de aynı kuralı taşır
         for token in self.FORBIDDEN:
             self.assertNotIn(token, blob, token)
-
-    def test_every_athlete_level_has_two_strength_days_and_at_most_three_runs(self):
-        from app.athlete_principles import ATHLETE_LEVELS_FRAMEWORK
-        for key, lvl in ATHLETE_LEVELS_FRAMEWORK.items():
-            self.assertIn("Haftada 2 gün", lvl["strength_frequency"], key)
-            import re
-            nums = [int(n) for n in re.search(r"Haftada ([\d-]+) gün", lvl["running_frequency"]).group(1).split("-")]
-            self.assertLessEqual(max(nums), 3, key)
 
     def test_dynamic_targets_always_two_gym_and_two_or_three_runs(self):
         eng = GarminAthleteEngine()

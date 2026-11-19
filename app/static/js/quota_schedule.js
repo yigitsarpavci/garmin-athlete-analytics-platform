@@ -61,13 +61,6 @@ function resolveProtocolIndex(slotKind, dayCode, fallbackText = '', fallbackIdx 
   return fallbackIdx;
 }
 
-function openQuotaItemRecipe(slotKind, dayCode) {
-  if (typeof setTab === 'function') setTab('plan');
-  if (typeof setSubTab === 'function') setSubTab('plan', 'protocols');
-  const targetIdx = resolveProtocolIndex(slotKind, dayCode, '', 0);
-  if (typeof selectProtocolDay === 'function') selectProtocolDay(targetIdx);
-}
-
 function buildQuotaBucketCard(label, iconName, bucket, barColorClass, extraHtml = '') {
   const isRunCard = iconName === 'footprints';
   const target = bucket.target ?? 0;
@@ -145,60 +138,6 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass, extraHtml 
   `;
 }
 
-function buildSpontaneousCard(spont, restCount = 0) {
-  const count = spont.count ?? 0;
-  const items = Array.isArray(spont.items) ? spont.items : [];
-  const labels = Array.isArray(spont.labels) ? spont.labels : [];
-  const sportTrLookup = {
-    sailing: 'Yelken', basketball: 'Basketbol', swimming: 'Yüzme',
-    cycling: 'Bisiklet', tennis: 'Tenis', pilates: 'Pilates / Mobilite',
-    resort_skiing: 'Kayak', hiking: 'Doğa Yürüyüşü', walking: 'Yürüyüş'
-  };
-
-  let bodyHtml = `<p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(spont.status_text || 'Bu hafta henüz spontane branş kaydı yok.')}</p>`;
-  if (items.length > 0) {
-    bodyHtml = `
-      <div class="space-y-1.5">
-        ${items.map(it => `
-          <div class="surface-card p-2.5 text-[11px] space-y-0.5">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-semibold text-[var(--text-primary)] truncate">${escapeHtml(it.sport_tr || sportTrLookup[it.sport] || 'Ek Branş')} · ${escapeHtml(it.title || '')}</span>
-              <span class="font-mono text-[11px] moss-text shrink-0">${escapeHtml(it.day_label || it.date || '')}</span>
-            </div>
-            <p class="font-mono text-[11px] text-[var(--text-secondary)]">${it.duration_min ? `${it.duration_min} dk` : ''}${it.avg_hr ? ` · ${it.avg_hr} bpm` : ''}${it.calories ? ` · ${it.calories} kcal` : ''}</p>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  } else if (labels.length > 0) {
-    bodyHtml = `
-      <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">${escapeHtml(spont.status_text || '')}</p>
-      <div class="flex flex-wrap gap-1.5 pt-1">
-        ${labels.map(l => `<span class="stamp-tag">${escapeHtml(sportTrLookup[l] || l)}</span>`).join('')}
-      </div>
-    `;
-  }
-
-  return `
-    <div class="tint-panel p-2.5 space-y-1.5 flex flex-col justify-between min-w-0">
-      <div class="space-y-1.5">
-        <div class="flex items-center justify-between gap-1.5 flex-wrap">
-          <span class="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-            ${lucideSvg('compass', 'w-3.5 h-3.5 violet-text shrink-0')}
-            <span>Spontane Branşlar</span>
-          </span>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <span class="font-mono text-[10.5px] text-[var(--text-muted)] tabular-nums inline-flex items-center gap-1" title="Bu hafta gerçekleşen dinlenme günü">${lucideSvg('moon', 'w-3 h-3 sky-text shrink-0')}${restCount}g dinlenme</span>
-            <span class="stamp-tag stamp-violet tabular-nums">${count} Seans</span>
-          </div>
-        </div>
-        ${bodyHtml}
-      </div>
-      <p class="font-mono text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-subtle)] leading-tight">Yelken, Basketbol, Kayak vb. sabit kota kaplamaz.</p>
-    </div>
-  `;
-}
-
 function buildQuotaLedgerHtml(quota) {
   const total = quota.total || { target: 4, completed: 0, remaining: 4, progress_pct: 0, is_complete: false };
   const run = quota.running || { target: 2, completed: 0, remaining: 2, progress_pct: 0, completed_labels: [], remaining_items: [] };
@@ -270,12 +209,6 @@ function getProtocolTabLabel(p) {
   };
   if (p.day_code && byCode[p.day_code]) return byCode[p.day_code];
   return p.slot_label || p.badge || 'Reçete';
-}
-
-function getQuotaStatusStamp(quotaStatus) {
-  if (quotaStatus === 'remaining') return '<span class="stamp-tag stamp-accent">KALAN KOTA</span>';
-  if (quotaStatus === 'completed') return '<span class="stamp-tag stamp-moss">TAMAMLANDI</span>';
-  return '<span class="stamp-tag">ESNEK ŞABLON</span>';
 }
 
 function renderDailyProtocols(protocols) {

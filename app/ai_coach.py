@@ -65,25 +65,6 @@ class AthleteAICoach:
         scope = getattr(self.engine, "request_scope", None)
         return scope() if callable(scope) else contextlib.nullcontext()
 
-    def describe_providers(self) -> Dict[str, Any]:
-        """Bu makinede gerçekten kullanılabilir AI sağlayıcılarını (öncelik sırasıyla) raporlar."""
-        providers = []
-        if HAS_GOOGLE_GENAI and os.environ.get("GEMINI_API_KEY"):
-            providers.append({"id": "google_genai", "model": "gemini-2.5-flash"})
-        if HAS_OPENAI and os.environ.get("OPENAI_API_KEY"):
-            providers.append({"id": "openai", "model": "gpt-4o-mini"})
-        has_agy = bool(self.agy_path) and os.path.exists(self.agy_path)
-        if has_agy:
-            providers.append({"id": "agy_cli", "model": self.default_model})
-        return {
-            "active_provider": providers[0]["id"] if providers else "fallback_rules",
-            "providers": providers,
-            "default_model": self.default_model,
-            "is_real_ai_available": bool(providers),
-            # Model seçimi yalnızca Antigravity CLI sağlayıcısında etkilidir
-            "available_models": self.AGY_CLI_MODELS if has_agy else [],
-        }
-
     def _get_weekly_quota_snapshot(self) -> Dict[str, Any]:
         """
         Motorun haftalık esnek kota özetini (`get_weekly_quota_summary`) güvenli şekilde çeker.
@@ -375,10 +356,9 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
 
         return "\n".join(lines)
 
-    def answer_query(self, user_question: str, model: Optional[str] = None, history: Optional[List[Dict[str, str]]] = None, custom_profile: Optional[dict] = None) -> dict:
+    def answer_query(self, user_question: str, model: Optional[str] = None, history: Optional[List[Dict[str, str]]] = None) -> dict:
         """
         Kullanıcı sorusunu gerçek AI motoruna iletir ve yanıtı döner.
-        Eğer custom_profile verilmişse (başka bir sporcu için), yanıtı o sporcunun tercihlerine göre uyarlar.
         """
         selected_model = model or self.default_model
         # Motor verisi yalnızca bağlam kurulurken kilitlenir; LLM çağrıları kilit dışında yapılır.
@@ -386,36 +366,6 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
             system_context = self.build_system_context()
 
         # Başka bir sporcu için soruluyorsa sistem bağlamına sporcu profilini ekle
-        profile_instruction = ""
-        if custom_profile and not custom_profile.get("is_current_athlete", False):
-            c_name = custom_profile.get("athlete_name") or custom_profile.get("name") or "Misafir Sporcu"
-            metrics = custom_profile.get("metrics", {})
-            c_age = metrics.get("age") or custom_profile.get("age", 25)
-            c_w = metrics.get("current_weight_kg") or custom_profile.get("current_weight_kg", 80)
-            c_tw = metrics.get("target_weight_kg") or custom_profile.get("target_weight_kg", 75)
-            c_r = metrics.get("weekly_running_days") or custom_profile.get("running_days", 2)
-            c_g = metrics.get("weekly_gym_days") or custom_profile.get("gym_days", 2)
-            c_routine = custom_profile.get("gym_routine", "Tüm Vücut")
-            c_style = custom_profile.get("running_style", "Polarize")
-            c_kcal = metrics.get("target_calories_kcal", 2400)
-            c_p = metrics.get("protein_g", 160)
-            c_quota = custom_profile.get("quota_summary") or custom_profile.get("weekly_quota") or {}
-            c_rem_items = c_quota.get("remaining_items") or []
-            c_rem_txt = (
-                "\n".join(f"  * {self._format_remaining_item_line(item)}" for item in c_rem_items)
-                if c_rem_items else f"  * {c_r} Koşu + {c_g} Kuvvet (Esnek hafta içi/sonu dağılımı)"
-            )
-            profile_instruction = (
-                f"\n=================== DİKKAT: AKTİF SPORCU PROFİLİ ({c_name}) ===================\n"
-                f"Kullanıcı şu an Garmin hesabının sahibi olan ana sporcu için DEĞİL, kendi belirlediği tercihlere sahip {c_name} isimli bir sporcu için soru sormaktadır:\n"
-                f"• Biyometri: {c_age} yaş, {c_w} kg (Hedef: {c_tw} kg)\n"
-                f"• Haftalık Esnek Antrenman Kotası: {c_r} Koşu + {c_g} Kuvvet (Sabit gün dayatması yok!)\n"
-                f"• Planlanan Kota Seansları:\n{c_rem_txt}\n"
-                f"• Program Tercihi: Salon Rutini: {c_routine}, Koşu Tarzı: {c_style}\n"
-                f"• Beslenme Hedefi: Günlük {c_kcal} kcal, {c_p}g protein\n"
-                f"Tüm antrenman, tempo, set/tekrar ve gelişim tavsiyelerini doğrudan {c_name}'in bu esnek kotasına ve tercihlerine göre ver; asla sabit takvim günü dikte etme!\n"
-            )
-
         # Önceki sohbet geçmişi varsa ekle
         conversation_context = ""
         if history and isinstance(history, list):
@@ -427,7 +377,6 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
 
         full_prompt = (
             f"{system_context}\n\n"
-            f"{profile_instruction}\n\n"
             f"{conversation_context}\n"
             f"Sporcunun Yeni Sorusu: {user_question}\n\n"
             f"AI Koç Yanıtı (Sporcu dilinde, esnek kota odaklı, net ve eyleme yönelik):"
@@ -457,7 +406,7 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
         if HAS_OPENAI and openai_api_key and not reply_text:
             try:
                 client = openai.OpenAI(api_key=openai_api_key)
-                sys_msg = f"{system_context}\n{profile_instruction}".strip()
+                sys_msg = system_context.strip()
                 usr_msg = f"{conversation_context}\n{user_question}".strip()
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
@@ -501,7 +450,7 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
         # 4. YÖNTEM: Eğer hiçbir AI servisi yanıt vermezse acil durum akıllı spor bilimi motoru
         if not reply_text:
             with self._engine_scope():
-                reply_text = self._fallback_response(user_question, custom_profile=custom_profile)
+                reply_text = self._fallback_response(user_question)
             provider_used = "Kişiselleştirilmiş Garmin Kural Motoru (Fallback)"
 
         elapsed = time.time() - start_time
@@ -514,47 +463,31 @@ Aşağıda sporcunun Garmin saatinden ve canlı sensör telemetrisinden çekilen
             "is_real_ai": "Kural Motoru" not in provider_used
         }
 
-    def _fallback_response(self, user_question: str, custom_profile: Optional[dict] = None) -> str:
+    def _fallback_response(self, user_question: str) -> str:
         """
         Dış AI API'larına veya LLM servislerine ulaşılamadığında çalışan deterministik spor bilimi yanıtlayıcısı.
         Sabit takvim günü dayatmadan haftalık kota ilerlemesini (completed/target) ve kalan seans türlerini sunar.
 
         Args:
             user_question (str): Kullanıcının ilettiği soru metni.
-            custom_profile (Optional[dict]): Varsa özel sporcu profili.
 
         Returns:
             str: Esnek haftalık kota ve sporcu telemetrisine dayalı rehberlik yanıtı.
         """
         q = (user_question or "").lower()
 
-        is_custom = bool(
-            custom_profile
-            and not custom_profile.get("is_current_athlete", False)
-        )
-        if is_custom:
-            quota = custom_profile.get("quota_summary") or custom_profile.get("weekly_quota") or {}
-            athlete_label = custom_profile.get("athlete_name") or custom_profile.get("name") or "Misafir Sporcu"
-            metrics = custom_profile.get("metrics") or {}
-            kcal_txt = f"{metrics.get('target_calories_kcal', 2400)} kcal"
-            prot_txt = f"{metrics.get('protein_g', 160)}g protein"
-            z2_cur = "--"
-            z2_tgt = "--"
-            z2_date = "Hedef Tarih"
-            gym_prog = {}
-        else:
-            quota = self._get_weekly_quota_snapshot()
-            athlete_label = self.engine.profile.get("name") or "Sporcu"
-            latest_m = self.engine.get_latest_metrics() if hasattr(self.engine, "get_latest_metrics") else {}
-            cur_w = float(latest_m.get("weight") or self.engine.get_current_weight())
-            kcal_txt = f"{round(cur_w * 28)} kcal (~500 kcal açık)"
-            prot_txt = f"~{round(cur_w * 2.0)}g protein"
-            z2_tr = self.engine.get_z2_pace_5min_tracker() if hasattr(self.engine, "get_z2_pace_5min_tracker") else {}
-            z2_cur = z2_tr.get("current_pace", "--")
-            z2_tgt = z2_tr.get("target_pace", "--")
-            z2_date = z2_tr.get("target_date", "--")
-            gym_hist = self.engine.get_gym_exercise_history() if hasattr(self.engine, "get_gym_exercise_history") else {}
-            gym_prog = gym_hist.get("progression", {}) if isinstance(gym_hist, dict) else {}
+        quota = self._get_weekly_quota_snapshot()
+        athlete_label = self.engine.profile.get("name") or "Sporcu"
+        latest_m = self.engine.get_latest_metrics() if hasattr(self.engine, "get_latest_metrics") else {}
+        cur_w = float(latest_m.get("weight") or self.engine.get_current_weight())
+        kcal_txt = f"{round(cur_w * 28)} kcal (~500 kcal açık)"
+        prot_txt = f"~{round(cur_w * 2.0)}g protein"
+        z2_tr = self.engine.get_z2_pace_5min_tracker() if hasattr(self.engine, "get_z2_pace_5min_tracker") else {}
+        z2_cur = z2_tr.get("current_pace", "--")
+        z2_tgt = z2_tr.get("target_pace", "--")
+        z2_date = z2_tr.get("target_date", "--")
+        gym_hist = self.engine.get_gym_exercise_history() if hasattr(self.engine, "get_gym_exercise_history") else {}
+        gym_prog = gym_hist.get("progression", {}) if isinstance(gym_hist, dict) else {}
 
         q_run = quota.get("running", {})
         q_str = quota.get("strength", {})

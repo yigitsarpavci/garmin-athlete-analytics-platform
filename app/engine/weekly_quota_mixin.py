@@ -191,21 +191,11 @@ class WeeklyQuotaMixin:
         haftalık kuvvet/koşu gün sayılarını ve 4-6 seanslık koşu projeksiyonunu hesaplar.
         """
         ref_dt = now or datetime.now()
-        try:
-            from engine.strength_progression import PROGRAM_SPLIT_CATALOG
-        except ImportError:
-            from app.engine.strength_progression import PROGRAM_SPLIT_CATALOG
-
-        active_split = "5x5_linear"
-        recommended_split = "5x5_linear"
         plateau_score = 0
         if hasattr(self, "get_gym_exercise_history"):
             try:
                 gh = self.get_gym_exercise_history() or {}
-                active_split = (gh.get("program_state") or {}).get("active_split", "5x5_linear")
-                pa = gh.get("plateau_analysis") or {}
-                recommended_split = pa.get("recommended_split", active_split)
-                plateau_score = int(pa.get("plateau_score") or 0)
+                plateau_score = int((gh.get("plateau_analysis") or {}).get("plateau_score") or 0)
             except Exception:
                 logger.warning("compute_dynamic_weekly_targets gym_history fallback", exc_info=True)
 
@@ -295,11 +285,8 @@ class WeeklyQuotaMixin:
             run_plan_summary = f"Bu hafta {run_target} Koşu · En eksiği Quick Workout'tan yap{suffix}"
 
         # Kuvvet program özeti (her zaman 2 günlük A/B)
-        split_meta = PROGRAM_SPLIT_CATALOG.get("5x5_linear", {})
-        split_short = split_meta.get("short_name", "5x5 Doğrusal (A/B)")
-        gym_plan_summary = f"Bu hafta 2 Kuvvet (1x A + 1x B) · {split_short}"
+        gym_plan_summary = "Bu hafta 2 Kuvvet (1x A + 1x B) · 5x5 Doğrusal (A/B)"
 
-        rec_meta = PROGRAM_SPLIT_CATALOG.get(recommended_split, split_meta)
         athlete_level = (
             "Orta" if (run_target >= 3 or plateau_score >= 45)
             else "Temel / Gelişim"
@@ -317,10 +304,6 @@ class WeeklyQuotaMixin:
             "run_prediction": run_prediction,
             "run_plan_summary": run_plan_summary,
             "gym_plan_summary": gym_plan_summary,
-            "active_split": "5x5_linear",
-            "active_split_name": split_short,
-            "recommended_split": recommended_split,
-            "recommended_split_name": rec_meta.get("short_name", recommended_split),
             "plateau_score": plateau_score,
             "runs_28d_per_wk": round(runs_per_wk, 2),
             "gyms_28d_per_wk": round(gyms_per_wk, 2),
@@ -999,10 +982,6 @@ class WeeklyQuotaMixin:
             "post_tempo_adapted": post_tempo_adapted,
             "dynamic_targets": {
                 "athlete_level": dyn.get("athlete_level", "Temel / Gelişim"),
-                "active_split": dyn.get("active_split", "5x5_linear"),
-                "active_split_name": dyn.get("active_split_name", "5x5 Doğrusal (A/B)"),
-                "recommended_split": dyn.get("recommended_split", "5x5_linear"),
-                "recommended_split_name": dyn.get("recommended_split_name", "5x5 Doğrusal (A/B)"),
                 "plateau_score": dyn.get("plateau_score", 0),
                 "run_target": run_target,
                 "gym_target": gym_target,

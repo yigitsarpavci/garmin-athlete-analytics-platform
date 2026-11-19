@@ -2,13 +2,6 @@
 let globalOverview = null;
 let globalActivities = null;
 let globalGymTypeByDate = {};
-let globalCharts = null;
-let currentActiveProfile = {
-  is_current_athlete: true,
-  athlete_name: "Athlete",
-  profile_badge: "Garmin Telemetrisi",
-  description: "Haftalık 2 Koşu + 2 Gym (A/B 5x5)"
-};
 
 function refreshIcons() {
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -33,10 +26,6 @@ function applyTheme() {
   document.documentElement.classList.remove('light');
   localStorage.setItem('garmin_app_theme', 'dark');
   refreshIcons();
-}
-
-function toggleTheme() {
-  applyTheme(true);
 }
 
 initTheme();
@@ -288,59 +277,6 @@ window.addEventListener('DOMContentLoaded', () => {
   setInterval(checkDataVersion, 60000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDataVersion(); });
 });
-
-async function syncGarminData() {
-  const btn = document.getElementById('syncBtn');
-  let syncedOk = false;
-  let sessionExpired = false;
-  let errMsg = '';
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 animate-spin accent-text')}<span class="hidden sm:inline">Eşitleniyor...</span>`;
-    refreshIcons();
-  }
-  try {
-    const res = await fetch('/api/sync', { method: 'POST' });
-    const resData = await res.json().catch(() => ({}));
-    await initApp();
-    if (res.ok && resData.success !== false) {
-      syncedOk = true;
-    } else {
-      sessionExpired = Boolean(resData.session_expired || res.status === 401);
-      errMsg = resData.message || (sessionExpired ? 'Garmin oturum süresi doldu.' : 'Senkronizasyon başarısız.');
-    }
-  } catch (e) {
-    errMsg = e?.message || 'Bağlantı hatası';
-    console.warn('Senkronizasyon uyarısı:', e);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      if (syncedOk) {
-        btn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-emerald-400')}<span class="hidden sm:inline text-emerald-400">✓ Eşitlendi</span>`;
-        refreshIcons();
-        setTimeout(() => {
-          const currentBtn = document.getElementById('syncBtn');
-          if (currentBtn) {
-            currentBtn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden sm:inline">Eşitle</span>`;
-            refreshIcons();
-          }
-        }, 2500);
-      } else {
-        const label = sessionExpired ? 'Oturum Doldu' : 'Eşitleme Hatası';
-        btn.title = errMsg;
-        btn.innerHTML = `${lucideSvg('alert-triangle', 'w-3.5 h-3.5 text-amber-400')}<span class="hidden sm:inline text-amber-400">${label}</span>`;
-        refreshIcons();
-        setTimeout(() => {
-          const currentBtn = document.getElementById('syncBtn');
-          if (currentBtn) {
-            currentBtn.innerHTML = `${lucideSvg('refresh-cw', 'w-3.5 h-3.5 text-[var(--text-secondary)]')}<span class="hidden sm:inline">Eşitle</span>`;
-            refreshIcons();
-          }
-        }, 4500);
-      }
-    }
-  }
-}
 
 function getSportLucideIcon(sportStr) {
   const sp = (sportStr || '').toLowerCase();

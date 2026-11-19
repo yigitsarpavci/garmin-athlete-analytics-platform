@@ -9,10 +9,8 @@ import pandas as pd
 from typing import Dict, Any
 
 try:
-    from athlete_principles import ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
     from engine.helpers import fnum, zone_text, format_sport_tr, classify_run_workout
 except ImportError:
-    from app.athlete_principles import ATHLETE_LEVELS_FRAMEWORK, DYNAMIC_PROGRESSION_TRIGGERS
     from app.engine.helpers import fnum, zone_text, format_sport_tr, classify_run_workout
 
 
@@ -141,8 +139,6 @@ class ProgressionDebriefMixin:
                 "needs_deload": needs_deload,
                 "note": deload_note,
             },
-            "athlete_levels": ATHLETE_LEVELS_FRAMEWORK,
-            "triggers": DYNAMIC_PROGRESSION_TRIGGERS,
         }
 
     @zone_text

@@ -284,8 +284,7 @@ async function sendCoachMessage() {
       body: JSON.stringify({
         question: text,
         model: selectedModel,
-        history: chatHistory,
-        custom_profile: (!currentActiveProfile.is_current_athlete) ? currentActiveProfile : null
+        history: chatHistory
       })
     });
     const data = await res.json();

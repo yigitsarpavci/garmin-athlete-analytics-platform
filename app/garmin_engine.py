@@ -21,16 +21,20 @@ try:
     from engine.fit_stream_parser import load_and_parse_high_res_streams
     from engine.telemetry_mixin import TelemetryMixin
     from engine.sleep_analytics_mixin import SleepAnalyticsMixin
-    from engine.training_protocols_mixin import TrainingProtocolsMixin
-    from engine.simulation_health_mixin import SimulationHealthMixin
+    from engine.weekly_quota_mixin import WeeklyQuotaMixin
+    from engine.workout_protocols_mixin import WorkoutProtocolsMixin
+    from engine.progression_debrief_mixin import ProgressionDebriefMixin
+    from engine.morphology_health_mixin import MorphologyHealthMixin
 except ImportError:
     from app.athlete_profile import load_athlete_profile
     from app.engine.helpers import fmt_pace_sec, DATA_DIR, IS_DEMO_MODE, format_sport_tr, classify_sport_bucket
     from app.engine.fit_stream_parser import load_and_parse_high_res_streams
     from app.engine.telemetry_mixin import TelemetryMixin
     from app.engine.sleep_analytics_mixin import SleepAnalyticsMixin
-    from app.engine.training_protocols_mixin import TrainingProtocolsMixin
-    from app.engine.simulation_health_mixin import SimulationHealthMixin
+    from app.engine.weekly_quota_mixin import WeeklyQuotaMixin
+    from app.engine.workout_protocols_mixin import WorkoutProtocolsMixin
+    from app.engine.progression_debrief_mixin import ProgressionDebriefMixin
+    from app.engine.morphology_health_mixin import MorphologyHealthMixin
 
 
 logger = logging.getLogger(__name__)
@@ -47,7 +51,9 @@ def _read_json(path: str, default: Any) -> Any:
         return default
 
 
-class GarminAthleteEngine(TelemetryMixin, SleepAnalyticsMixin, TrainingProtocolsMixin, SimulationHealthMixin):
+class GarminAthleteEngine(
+    TelemetryMixin, SleepAnalyticsMixin, WeeklyQuotaMixin, WorkoutProtocolsMixin, ProgressionDebriefMixin, MorphologyHealthMixin
+):
     """Garmin Çoklu Spor Biyometrik ve Telemetri Hesaplama Motoru."""
 
     def __init__(self, data_dir: str = DATA_DIR) -> None:

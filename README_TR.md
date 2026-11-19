@@ -74,7 +74,6 @@ garmin-athlete-analytics-platform/
 ├── app/                              # Web Uygulaması, Motor & Arayüz
 │   ├── server.py                     # REST API ve HTTP Sunucusu
 │   ├── garmin_engine.py              # Performans, ACWR ve Progresyon Motoru
-│   ├── athlete_principles.py         # Sporcu İlkeleri (Single Source of Truth)
 │   ├── ai_coach.py                   # Gerçek AI Entegrasyonlu Koçluk Modülü
 │   ├── engine/                       # Modüler telemetri, kota, morfoloji katmanları
 │   └── static/                       # Karanlık mod modüler Web Paneli
@@ -87,7 +86,6 @@ garmin-athlete-analytics-platform/
 ├── tests/                            # Otomatik Test Süiti
 │   ├── run_tests.py
 │   ├── test_engine_calculations.py
-│   ├── test_athlete_principles.py
 │   ├── test_api_endpoints.py
 │   └── test_data_integrity.py
 ├── Makefile                          # Kısayol komutları (run, test, fetch)
@@ -101,20 +99,11 @@ garmin-athlete-analytics-platform/
 
 | Uç Nokta | Metot | Açıklama |
 | :--- | :--- | :--- |
-| `/api/overview` | `GET` | Sporcu temel KPI'ları, bugünkü antrenman durumu ve haftalık takvim. |
+| `/api/overview` | `GET` | Sporcu temel KPI'ları, bugünkü antrenman durumu ve haftalık kota. |
 | `/api/training-load` | `GET` | Firstbeat akut yük, kronik yük, ACWR oranı ve yük odak dengesi. |
-| `/api/sports` | `GET` | 4 branş (Koşu, Gym, Yelken, Basketbol) gelişim stratejileri. |
 | `/api/gym-history` | `GET` | Kasım ayı 5 salon seansının tüm set, tekrar ve ağırlık dökümü. |
 | `/api/daily-protocols` | `GET` | 7 günlük derinlemesine egzersiz, set, tekrar, kilo hedefi ve beslenme reçetesi. |
 | `/api/progression` | `GET` | Dogmatik olmayan seviye atlama, gün artırma ve stil geçiş analizi. |
-| `/api/z2-tracker` | `GET` | 145 bpm nabızda 5:00 /km pace'e ulaşmak için geri sayım ve seans sayacı. |
-| `/api/physique-tracker` | `GET` | 87 kg'dan 81 kg'a geçişte morfoloji, yağ oranı ve anatomik dönüşüm. |
-| `/api/health-screening` | `GET` | Klinik egzersiz fizyoloğu ve spor hekimi check-up raporu. |
-| `/api/fitness-age` | `GET` | Garmin Sağlık Yaşı (Fitness Age: 19.5 yaş) ve biyolojik gençleşme analizi. |
-| `/api/garmin-expansion` | `GET` | Garmin ekosisteminden daha fazla veri çekme stratejisi. |
-| `/api/custom-profile/presets` | `GET` | Farklı seviye ve sporcular için hazır antrenman profili şablonları. |
-| `/api/custom-profile/plan` | `POST` | Özel biyometrik ve antrenman tercihlerine göre dinamik plan üretici. |
-| `/api/calculator` | `POST` | Özel forma girme süresi, kalori açığı, 5K ve VO2Max projeksiyonu. |
 | `/api/chat` | `POST` | Gerçek yapay zeka (Gemini 3.8 / 4 Hydrogen) spor danışmanı sohbeti. |
 | `/api/status` | `GET` | Sunucu sağlık durumu, demo/canlı modu ve yuvarlanan oturum bilgisi. |
 | `/api/session/keepalive` | `GET` / `POST` | Adaptif 4 dk Garmin Connect oturum koruma ve kira yenileme nabzı. |

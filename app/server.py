@@ -10,32 +10,19 @@ http.server) bir HTTP sunucusudur. Sporcu telemetrisini, Firstbeat antrenman yü
 analitiklerini, makro projeksiyonlarını ve interaktif AI koçunu REST API uç
 noktaları üzerinden sunar.
 
-Uç Noktalar (Endpoints):
------------------------
-- GET  /api/overview            : Güncel metrikler, ACWR, haftalık mikro-döngü ve öneriler.
+Uç Noktalar (Endpoints) — yalnızca arayüzün kullandıkları:
+-----------------------------------------------------------
+- GET  /api/overview            : Güncel metrikler, ACWR, haftalık kota ve yük özeti.
 - GET  /api/training-load       : Firstbeat ATL, CTL, ACWR ve yük dağılımı (Düşük/Yüksek/Anaerobik).
-- GET  /api/sports              : Branş bazında (Koşu, Gym, Yelken, Basketbol) telemetri ve rehberlik.
-- GET  /api/gym-history         : Salon setleri, tekrarlar, ağırlıklar (raw_gym_exercise_sets.json).
+- GET  /api/gym-history         : Salon setleri, tekrarlar, ağırlıklar ve 5x5 progresyonu.
 - GET  /api/activities          : Kayıtlı tüm Garmin antrenmanları (spor filtresi destekli).
-- GET  /api/sleep-analysis      : En iyi / en düşük uyku geceleri (evreler, HRV, hazırlık).
-- GET  /api/correlations        : Parametrik Pearson korelasyon matrisi ve p anlamlılık değerleri.
-- GET  /api/periods-weeks       : 4 Makro dönem ve 14 ISO haftası analizi.
-- GET  /api/same-day-sequence   : Aynı gün kuvvet + koşu sıralamasının nabız ve zon etkisi.
-- GET  /api/garmin-settings     : Saatte düzeltilmesi gereken 8 ayar ve nabız/güç zonları.
-- GET  /api/principles          : Sporcu ilkeleri ve sistem hafızası (SSOT).
-- GET  /api/health-screening    : Spor hekimi klinik sağlık taraması ve kardiyak risk analizi.
-- GET  /api/fitness-age         : Garmin Sağlık Yaşı (Fitness Age) ve gençleşme potansiyeli.
-- GET  /api/physique-tracker    : Fiziksel değişim, yağ oranı projeksiyonu ve estetik morfoloji.
-- GET  /api/z2-tracker          : Zone 2 5:00 /km temposuna kalan seans/gün dinamik sayacı.
-- GET  /api/garmin-expansion    : Garmin veri derinliğini artırma mimarisi ve rehberi.
-- GET  /api/custom-profile/presets: Ana sporcu ve diğer sporcu seviyeleri için hazır profil şablonları.
-- GET  /api/progression         : Dogmatik olmayan seviye atlama, gün artırma ve deload analizi.
-- GET  /api/daily-protocols     : 7 günlük derin egzersiz, set, tekrar, ağırlık ve beslenme reçetesi.
-- GET  /api/charts              : Web arayüzü grafikleri için 93 günlük zaman serisi verileri.
-- GET  /api/status              : Sunucu sağlık durumu ve profil kimliği.
-- POST /api/chat                : Gerçek LLM sağlayıcılı interaktif sporcu koçluğu sohbeti.
-- POST /api/calculator          : Hedef kilo ve haftalık hıza göre gün/tarih projeksiyonu.
-- POST /api/custom-profile/plan : Özel sporcu tercihleri için dinamik 7 günlük antrenman üretimi.
+- GET  /api/correlations        : Pearson korelasyon matrisi ve p anlamlılık değerleri.
+- GET  /api/progression         : Haftalık gün modeli (2 kuvvet + 2-3 koşu), seviye ve deload analizi.
+- GET  /api/daily-protocols     : Derin egzersiz, set, tekrar, ağırlık ve beslenme reçetesi.
+- GET  /api/post-workout-debrief: Antrenman sonrası 5 maddelik debrief (?idx=).
+- GET  /api/status              : Sunucu durumu, oturum ve veri sürümü (data_version).
+- GET  /api/session/keepalive   : Oturum özeti (POST ile Garmin oturumu yenilenir).
+- POST /api/chat                : İnteraktif AI koç sohbeti.
 - POST /api/sync                : Garmin Connect ile veri senkronizasyonu tetikleme.
 """
 
@@ -165,16 +152,11 @@ DATA_SIGNATURE: Optional[str] = _data_signature()
 
 
 def _reload_engine() -> None:
-    """Yeni telemetriyi kilit altında yükler ve plato kaynaklı program geçişini kalıcılaştırır."""
+    """Yeni telemetriyi kilit altında yükler."""
     global DATA_SIGNATURE
     with _RELOAD_LOCK:
         with engine.lock:
             engine.load_data()
-            if not IS_DEMO_MODE:
-                try:
-                    engine.persist_program_state()
-                except Exception as exc:
-                    sys.stderr.write(f"Program durumu kaydedilemedi: {exc}\n")
         DATA_SIGNATURE = _data_signature()
 
 
@@ -498,7 +480,7 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             return
 
         # 1. Genel Bakış & Metrikler
-        if path == "/api/overview" or path == "/api/metrics":
+        if path == "/api/overview":
             self.send_json(200, {
                 **engine.get_latest_metrics(),
                 "is_demo": IS_DEMO_MODE,
@@ -508,18 +490,12 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
                     "profile_missing": engine.profile.get("missing"),
                     "target_weight_kg": engine.get_target_weight(),
                 },
-                "schedule": engine.get_weekly_schedule(),
                 "weekly_quota": engine.get_weekly_quota_summary(),
-                "settings": engine.get_garmin_settings_to_fix(),
-                "guidance": engine.get_sports_guidance(),
                 "training_load": engine.get_training_load_analytics()
             })
         # 2. Antrenman Yükü & ACWR (Firstbeat)
         elif path == "/api/training-load":
             self.send_json(200, engine.get_training_load_analytics())
-        # 3. Branşlar ve Gelişim
-        elif path == "/api/sports":
-            self.send_json(200, engine.get_sports_guidance())
         # 3.1. Kuvvet & Spor Salonu Hareket/Set/Ağırlık Geçmişi
         elif path == "/api/gym-history":
             self.send_json(200, engine.get_gym_exercise_history())
@@ -530,45 +506,9 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             if sport_filter and sport_filter != "all":
                 acts = [a for a in acts if a.get("sport") == sport_filter]
             self.send_json(200, acts)
-        # 4. Uyku ve Yatış Saati Analizi
-        elif path == "/api/sleep-analysis":
-            self.send_json(200, engine.get_sleep_analysis())
         # 5. İstatistiksel Korelasyonlar
         elif path == "/api/correlations":
             self.send_json(200, engine.get_correlations())
-        # 6. Dönemler ve 14 Hafta
-        elif path == "/api/periods-weeks":
-            self.send_json(200, engine.get_periods_and_weeks())
-        # 7. Aynı Gün Kuvvet ve Koşu Sıralaması
-        elif path == "/api/same-day-sequence":
-            self.send_json(200, engine.get_same_day_sequence())
-        # 8. Garmin Ayarları ve Nabız Zonları
-        elif path == "/api/garmin-settings":
-            self.send_json(200, {
-                "settings": engine.get_garmin_settings_to_fix(),
-                "zones": engine.get_hr_power_zones()
-            })
-        # 8.1. Temel Sporcu İlkeleri ve Sistem Hafızası
-        elif path == "/api/principles":
-            self.send_json(200, engine.get_athlete_principles())
-        # 8.2. Klinik Genel Sağlık Taraması & Doktor Özeti
-        elif path == "/api/health-screening":
-            self.send_json(200, engine.get_health_screening())
-        # 8.3. Sağlık Yaşı (Fitness Age) Analizi
-        elif path == "/api/fitness-age":
-            self.send_json(200, engine.get_fitness_age_analysis())
-        # 8.4. Fiziksel Değişim, Yağ Oranı ve Morfoloji Takibi
-        elif path == "/api/physique-tracker":
-            self.send_json(200, engine.get_physique_morphology_tracker())
-        # 8.5. Zone 2 @ 5:00 /km Pace Geri Sayım ve Antrenman Sayacı
-        elif path == "/api/z2-tracker":
-            self.send_json(200, engine.get_z2_pace_5min_tracker())
-        # 8.6. Garmin Veri Derinliğini Artırma Rehberi
-        elif path == "/api/garmin-expansion":
-            self.send_json(200, engine.get_garmin_data_expansion_guide())
-        # 8.7. Ana sporcu ve başkaları için hazır profil şablonları (Presets)
-        elif path == "/api/custom-profile/presets":
-            self.send_json(200, engine.get_profile_presets())
         # 8.8. Dogmatik Olmayan Gelişim & Seviye Atlama / Gün Artırma Analizi
         elif path == "/api/progression":
             self.send_json(200, engine.get_athlete_progression_assessment())
@@ -586,11 +526,6 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
                     except (ValueError, TypeError):
                         idx = 0
             self.send_json(200, engine.get_post_workout_debrief(activity_idx=idx))
-        elif path == "/api/ai-models":
-            self.send_json(200, coach.describe_providers())
-        # 9. Zaman Serisi Grafikleri
-        elif path == "/api/charts":
-            self.send_json(200, engine.get_chart_data())
         elif path == "/api/status":
             sess_info = {**SYNC_STATE, **_inspect_session_jwt()}
             self.send_json(200, {
@@ -635,19 +570,8 @@ class AthleteAppHandler(SimpleHTTPRequestHandler):
             question = body.get("question", "")
             model = body.get("model", "gemini-3.8-flash-low")
             history = body.get("history", [])
-            custom_profile = body.get("custom_profile")
-            response = coach.answer_query(question, model=model, history=history, custom_profile=custom_profile)
+            response = coach.answer_query(question, model=model, history=history)
             self.send_json(200, response)
-        # 1.1. Kişiselleştirilmiş Antrenman ve Profil Planı Üretici
-        elif path == "/api/custom-profile/plan":
-            res = engine.generate_custom_plan(body)
-            self.send_json(200, res)
-        # 2. Özel Forma Girme Hesaplayıcısı
-        elif path == "/api/calculator":
-            target_kg = float(body.get("target_kg") or engine.get_target_weight())
-            weekly_pace_kg = float(body.get("weekly_pace_kg", 0.55))
-            res = engine.calculate_custom_projection(target_kg, weekly_pace_kg)
-            self.send_json(200, res)
         # 3. Garmin Veri Senkronizasyonu
         elif path == "/api/sync":
             res = sync_garmin_live()

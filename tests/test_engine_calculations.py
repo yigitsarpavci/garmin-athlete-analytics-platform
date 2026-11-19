@@ -40,26 +40,6 @@ class TestEngineCalculations(unittest.TestCase):
         expected_female_bmr = round(10 * w_f + 6.25 * h_f - 5 * a_f - 161)
         self.assertEqual(expected_female_bmr, 1399)
 
-    def test_tdee_and_macro_distribution(self):
-        """TDEE ve makro besin dağılımı hesaplamalarını test eder."""
-        plan = self.engine.generate_custom_plan({
-            "name": "Test Sporcu",
-            "age": 22,
-            "gender": "male",
-            "height_cm": 186.0,
-            "current_weight_kg": 87.0,
-            "target_weight_kg": 81.0,
-            "weekly_weight_loss_rate": 0.55,
-            "running_days": 2,
-            "gym_days": 2
-        })
-        metrics = plan["metrics"]
-        self.assertEqual(metrics["protein_g"], round(87.0 * 2.0)) # 174 g
-        self.assertEqual(metrics["fat_g"], round(87.0 * 0.85))    # 74 g
-        # Kalori dengesi: (Protein*4 + Karb*4 + Yağ*9) == target_calories (+/- 10 kcal yuvarlama)
-        total_macro_kcal = (metrics["protein_g"] * 4) + (metrics["carbs_g"] * 4) + (metrics["fat_g"] * 9)
-        self.assertAlmostEqual(total_macro_kcal, metrics["target_calories_kcal"], delta=15)
-
     def test_custom_projection_math(self):
         """Kilo projeksiyonunun gün ve hedef tarih matematiğini test eder."""
         from app.engine.morphology_health_mixin import _TR_FULL_MONTHS
@@ -441,91 +421,6 @@ class TestEngineCalculations(unittest.TestCase):
         self.assertEqual(morph["current"]["weight_kg"], 83.0)
         self.assertEqual(morph["stages"][1]["target_kg"], round(self.engine.get_target_weight() + 3.0, 1))
         self.assertGreater(morph["stages"][1]["days_remaining"], 0)
-
-    def test_adaptive_strength_progression_stall_deload_and_program_switch(self):
-        """Çok adımlı kilo progresyonu, takılma/deload yeniden planlaması ve Push/Pull geçişini doğrular."""
-        import tempfile, shutil
-        from unittest.mock import patch
-        # 1. Çok adımlı projeksiyonda Squat kilosunun artarak ilerlemesi (ör. 67.5 -> 70.0 -> 72.5)
-        sp = self.engine.get_sports_guidance()
-        upcoming = sp["strength"]["upcoming_sessions"]
-        self.assertGreaterEqual(len(upcoming), 3)
-        import re
-        squat_kg = [float(re.search(r"Squat ([\d.]+) kg", u["details"]).group(1)) for u in upcoming[:3]]
-        self.assertEqual([round(b - a, 1) for a, b in zip(squat_kg, squat_kg[1:])], [2.5, 2.5])
-
-        # 2. İzole geçici dizinde kısmi başarı (takılma) -> konsolidasyon -> 2. takılma -> %10 deload
-        with tempfile.TemporaryDirectory() as tmpdir:
-            src_gym = os.path.join(self.engine.data_dir, "raw_gym_exercise_sets.json")
-            if os.path.exists(src_gym):
-                shutil.copy2(src_gym, os.path.join(tmpdir, "raw_gym_exercise_sets.json"))
-            with patch.object(self.engine, "data_dir", tmpdir):
-                # 1. Takılma: Squat 67.5 kg'da 5/5/4/3/3 -> kilo 67.5 kg'da sabitlenmeli (CONSOLIDATE)
-                res1 = self.engine.log_gym_session_result({
-                    "date": "2026-11-20",
-                    "workout_type": "Workout B",
-                    "exercises": [{
-                        "name": "Back Squat",
-                        "sets": [
-                            {"weight_kg": 67.5, "reps": 5},
-                            {"weight_kg": 67.5, "reps": 5},
-                            {"weight_kg": 67.5, "reps": 4},
-                            {"weight_kg": 67.5, "reps": 3},
-                            {"weight_kg": 67.5, "reps": 3},
-                        ],
-                    }],
-                })
-                sq1 = res1["gym_history"]["progression"]["squat"]
-                self.assertEqual(sq1["decision"], "CONSOLIDATE")
-                self.assertEqual(sq1["next_kg"], 67.5)
-
-                # 2. Ardışık takılma: Squat 67.5 kg yine 5/4/4/3/2 -> %10 Deload (60.0 kg)
-                res2 = self.engine.log_gym_session_result({
-                    "date": "2026-11-23",
-                    "workout_type": "Workout A",
-                    "exercises": [{
-                        "name": "Back Squat",
-                        "sets": [
-                            {"weight_kg": 67.5, "reps": 5},
-                            {"weight_kg": 67.5, "reps": 4},
-                            {"weight_kg": 67.5, "reps": 4},
-                            {"weight_kg": 67.5, "reps": 3},
-                            {"weight_kg": 67.5, "reps": 2},
-                        ],
-                    }],
-                })
-                sq2 = res2["gym_history"]["progression"]["squat"]
-                self.assertEqual(sq2["decision"], "DELOAD_10PCT")
-                self.assertEqual(sq2["next_kg"], 60.0)
-                self.assertGreater(res2["gym_history"]["plateau_analysis"]["plateau_score"], 0)
-
-                # 3. Yeni hareket (Garmin'den gelen) progresyon kartında ve seans özetinde görünmeli
-                res3 = self.engine.log_gym_session_result({
-                    "date": "2026-11-24",
-                    "workout_type": "Workout A",
-                    "exercises": [{
-                        "name": "Incline Dumbbell Press",
-                        "sets": [{"weight_kg": 20.0, "reps": 10}] * 3,
-                    }],
-                })
-                prog3 = res3["gym_history"]["progression"]
-                self.assertIn("incline_dumbbell_press", prog3)
-                self.assertFalse(prog3["incline_dumbbell_press"]["is_core"])
-                self.assertEqual(prog3["incline_dumbbell_press"]["next_kg"], 22.5)
-                sp3 = self.engine.get_sports_guidance()["strength"]["upcoming_sessions"]
-                self.assertTrue(any("Incline Dumbbell Press 22.5 kg" in s["details"] for s in sp3))
-
-        # 4. Program seçimi otomatik: plato skoruna göre belirlenir (kullanıcı seçimi yok)
-        from app.engine.strength_progression import select_program_split, build_projected_gym_summary
-        self.assertEqual(select_program_split(10), "5x5_linear")
-        self.assertEqual(select_program_split(60), "push_pull")
-        self.assertEqual(select_program_split(80), "upper_lower")
-        self.assertEqual(select_program_split(95), "ppl")
-        prog = self.engine.get_gym_exercise_history()["progression"]
-        p_type, _, details = build_projected_gym_summary("push", prog, step_idx=0, active_split="push_pull")
-        self.assertEqual(p_type, "Push")
-        self.assertIn("Bench", details)
-
 
 if __name__ == "__main__":
     unittest.main()

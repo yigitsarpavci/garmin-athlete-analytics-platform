@@ -181,14 +181,11 @@ OK
 | `/api/status` | `GET` | Health check, demo/live flag, and rolling session JWT/lease metadata. |
 | `/api/session/keepalive` | `GET` / `POST` | Adaptive Garmin session keep-alive heartbeat and lease renewal. |
 | `/api/overview` | `GET` | Aggregated 93-day athlete overview, flexible weekly quota, weight, VO2 max, and sleep scores. |
-| `/api/garmin-expansion` | `GET` | High-resolution binary FIT (`1 Hz`) streams, 5-min HRV RMSSD, Running Dynamics, and respiration channels. |
 | `/api/post-workout-debrief` | `GET` | 5-point post-workout telemetry debrief with optional `?idx=` query selector. |
 | `/api/daily-protocols` | `GET` | 7-day integrated workout and nutritional prescriptions with progressive weights. |
 | `/api/gym-history` | `GET` | Exercise-level resistance history, volume metrics, and personal records (PRs). |
 | `/api/progression` | `GET` | Dynamic multi-tier progression assessment and deload recommendations. |
 | `/api/training-load` | `GET` | Acute load, chronic load, ACWR ratio, and Firstbeat training status. |
-| `/api/calculator` | `POST` | Custom calorie, BMR, TDEE, and macro nutrient distribution calculator. |
-| `/api/custom-profile/plan` | `POST` | Dynamic training schedule generation for custom athlete profiles. |
 | `/api/sync` | `POST` | Trigger Garmin Connect sync with rolling lease reload fallback. |
 | `/api/chat` | `POST` | Context-aware AI coach query execution (Gemini / OpenAI / Heuristic). |
 
@@ -256,7 +253,7 @@ The dashboard serves personal health data, so the server is locked down to the l
 ## Language & Conventions
 
 - **Code identifiers, API keys and file names are English.** Product copy that the athlete reads (UI text, coaching messages, docstrings and comments in the engine) is **Turkish** by design: the app is a personal coaching tool for a Turkish-speaking athlete. The English README exists for developers; [README_TR.md](README_TR.md) mirrors it.
-- Engine modules are mixins composed by `GarminAthleteEngine`; computation stays in the backend and the UI only renders (see `app/athlete_principles.py` as the single source of truth for training rules).
+- Engine modules are mixins composed by `GarminAthleteEngine`; computation stays in the backend and the UI only renders.
 - Any change must keep `python -B tests/run_tests.py` green. CI (`.github/workflows/tests.yml`) runs the suite on Python 3.10 and 3.12 against synthetic `sample_data/`.
 - Install dependencies with `pip install -r requirements.txt`.
 
@@ -275,7 +272,6 @@ garmin-athlete-analytics-platform/
 ├── app/                              # Web server, analytics engine & UI
 │   ├── server.py                     # REST API and static asset server
 │   ├── garmin_engine.py              # Sports science & ACWR orchestrator
-│   ├── athlete_principles.py         # Single source of truth training rules
 │   ├── ai_coach.py                   # Multi-provider LLM coaching service
 │   ├── engine/                       # Modular telemetry, quota & morphology mixins
 │   └── static/                       # Dark-mode modular web dashboard (vendor/: pinned offline libs & fonts)
@@ -290,7 +286,6 @@ garmin-athlete-analytics-platform/
 │   ├── test_engine_calculations.py
 │   ├── test_api_endpoints.py
 │   ├── test_data_integrity.py
-│   └── test_athlete_principles.py
 ├── .github/workflows/tests.yml       # CI: tests (Python 3.10 / 3.12) + JS syntax check
 ├── requirements.txt                  # pandas, numpy (+ optional AI / FIT extras)
 ├── Makefile                          # Unified run, test, and fetch shortcuts
