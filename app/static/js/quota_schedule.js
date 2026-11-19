@@ -68,7 +68,7 @@ function openQuotaItemRecipe(slotKind, dayCode) {
   if (typeof selectProtocolDay === 'function') selectProtocolDay(targetIdx);
 }
 
-function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
+function buildQuotaBucketCard(label, iconName, bucket, barColorClass, extraHtml = '') {
   const target = bucket.target ?? 0;
   const completed = bucket.completed ?? 0;
   const remaining = bucket.remaining ?? 0;
@@ -77,6 +77,7 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
   const completedLabels = Array.isArray(bucket.completed_labels) ? bucket.completed_labels : [];
   const remItems = Array.isArray(bucket.remaining_items) ? bucket.remaining_items : [];
   const remTypesText = remItems.map(i => i.short_label || i.type || i.badge).filter(Boolean).join(' + ');
+  const planSummary = bucket.plan_summary || '';
 
   const doneHtml = completedLabels.length
     ? `<div class="space-y-1 pt-1">
@@ -130,9 +131,11 @@ function buildQuotaBucketCard(label, iconName, bucket, barColorClass) {
         <div class="w-full bg-[var(--bg-surface-elevated)] h-1.5 overflow-hidden rounded-[1px]">
           <div class="${isDone ? 'bg-[var(--moss)]' : barColorClass} h-1.5 transition-all duration-500" style="width: ${pct}%"></div>
         </div>
+        ${planSummary ? `<p class="font-mono text-[10.5px] text-[var(--text-secondary)] leading-tight">${escapeHtml(planSummary)}</p>` : ''}
         ${doneHtml}
       </div>
       ${remHtml}
+      ${extraHtml}
     </div>
   `;
 }
@@ -224,7 +227,7 @@ function buildQuotaLedgerHtml(quota) {
             ${lucideSvg(hasMissedCarry ? 'refresh-cw' : 'check', `w-3 h-3 shrink-0 ${hasMissedCarry ? 'ochre-text' : 'moss-text'}`)}
             <span>Haftalık Kota Geçişi</span>
           </span>
-          ${adapt.monday_reset_enforced ? '<span class="font-mono text-[11px] text-[var(--text-secondary)] shrink-0">Pzt 0/2</span>' : ''}
+          ${adapt.monday_reset_enforced ? `<span class="font-mono text-[11px] text-[var(--text-secondary)] shrink-0">Pzt 0/${escapeHtml(run.target ?? 2)}</span>` : ''}
         </div>
         <p class="${hasMissedCarry ? 'ochre-text' : 'moss-text'} leading-snug">${escapeHtml(adapt.adaptation_note)}</p>
       </div>`
@@ -235,12 +238,27 @@ function buildQuotaLedgerHtml(quota) {
     : '';
 
   const restCount = Number((quota.rest_days || {}).count ?? ((quota.rest_days || {}).days || []).length ?? 0);
+  const predSteps = Array.isArray((quota.next_4_runs_prediction || {}).steps) ? quota.next_4_runs_prediction.steps : [];
+  const runShortMap = { interval: 'İnterval', zone2: 'Zone 2', tempo: 'Tempo', gym_overflow: 'Kuvvet' };
+  const runProjectionHtml = predSteps.length
+    ? `<div class="pt-1.5 border-t border-[var(--border-subtle)] space-y-1">
+        <p class="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Sıradaki ${predSteps.length} Koşu Projeksiyonu (Yük Barı)</p>
+        <div class="flex flex-wrap gap-1">
+          ${predSteps.map((s, idx) => {
+            const inWeek = idx < (run.target ?? 2);
+            const lbl = runShortMap[s.kind] || s.short_label || s.kind || 'Koşu';
+            const cls = inWeek ? 'stamp-accent' : 'bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]';
+            return `<span class="font-mono text-[10px] px-1.5 py-0.5 rounded-[2px] ${cls}" title="${escapeHtml(s.reason || '')}">${idx + 1}. ${escapeHtml(lbl)}</span>`;
+          }).join('')}
+        </div>
+      </div>`
+    : '';
 
   return `
     ${bannerRowHtml}
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-      ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[#4B8EC2]')}
+      ${buildQuotaBucketCard('Koşu Kotası', 'footprints', run, 'bg-[#4B8EC2]', runProjectionHtml)}
       ${buildQuotaBucketCard('Kuvvet Kotası', 'dumbbell', str, 'bg-[var(--moss)]')}
       ${buildSpontaneousCard(spont, restCount)}
     </div>

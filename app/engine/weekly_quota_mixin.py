@@ -89,6 +89,25 @@ _BASE_QUOTA_TEMPLATES: Dict[str, Dict[str, str]] = {
         "protocol_day_code": "saturday",
         "coaching_note": "Arka zincir ve omuz gelişimi için bacakların toparlandığı uygun bir günde uygula.",
     },
+    "gym_c": {
+        "category": "strength",
+        "type": "Legs",
+        "short_label": "Legs",
+        "title_prefix": "Legs (Alt Vücut & Kalça)",
+        "exercises_summary": "Back Squat (4x6-8) · RDL (3x8-10) · Bulgarian Split Squat (3x10) · Calf Raise (4x15)",
+        "duration": "55 dk",
+        "badge": "Legs",
+        "protocol_day_code": "saturday",
+        "coaching_note": "Alt vücut kuvvet ve hipertrofi seansı; ertesi gün sert interval koşusu koymamaya özen göster.",
+    },
+}
+
+
+_RUN_SHORT_LABELS: Dict[str, str] = {
+    "interval": "İnterval",
+    "zone2": "Zone 2",
+    "tempo": "Tempo",
+    "gym_overflow": "Ekstra Kuvvet",
 }
 
 
@@ -102,6 +121,8 @@ class _WeekState:
     planned_run_order: List[str]
     planned_gym_order: List[str]
     gym_type_by_date: Dict[str, str]
+    run_target: int = 2
+    gym_target: int = 2
     day_acts: List[List[Dict[str, Any]]] = field(default_factory=list)
     runs_done_list: List[Dict[str, Any]] = field(default_factory=list)
     gyms_done_list: List[Dict[str, Any]] = field(default_factory=list)
@@ -145,6 +166,7 @@ class WeeklyQuotaMixin:
             return {
                 "gym_a": _BASE_QUOTA_TEMPLATES["gym_a"]["exercises_summary"],
                 "gym_b": _BASE_QUOTA_TEMPLATES["gym_b"]["exercises_summary"],
+                "gym_c": _BASE_QUOTA_TEMPLATES["gym_c"]["exercises_summary"],
             }
 
         sq = prog.get("squat", {}).get("next_target", "--").split(" x ")[0]
@@ -159,6 +181,7 @@ class WeeklyQuotaMixin:
         return {
             "gym_a": f"Squat {sq} (5x5) · Bench {bp} (5x5) · Row {rw} (5x5) · Lateral {lr} (3x12) · Shrug {sh} (3x12)",
             "gym_b": f"Squat {sq} (5x5) · OHP {ohp} (5x5) · Deadlift {dl} (1x5) · Lat {lat} (4x12) · Lateral {lr} (3x12) · Shrug {sh} (3x12)",
+            "gym_c": f"Squat {sq} (4x6-8) · RDL/Deadlift {dl} (3x8) · Split Squat · Calf Raise (4x15)",
         }
 
     def _build_quota_remaining_item(self, slot_kind: str, ordinal: int, prioritized_reason: Optional[str] = None) -> Dict[str, Any]:
@@ -193,9 +216,13 @@ class WeeklyQuotaMixin:
                     gh = self.get_gym_exercise_history() or {}
                     active_split = (gh.get("program_state") or {}).get("active_split", "5x5_linear")
                     if active_split != "5x5_linear":
-                        from engine.strength_progression import PROGRAM_SPLIT_CATALOG, build_projected_gym_summary
+                        try:
+                            from engine.strength_progression import PROGRAM_SPLIT_CATALOG, build_projected_gym_summary
+                        except ImportError:
+                            from app.engine.strength_progression import PROGRAM_SPLIT_CATALOG, build_projected_gym_summary
                         slots = PROGRAM_SPLIT_CATALOG.get(active_split, {}).get("slots", ["push", "pull"])
-                        mapped_slot = slots[0] if slot_kind == "gym_a" else slots[min(1, len(slots) - 1)]
+                        slot_idx = {"gym_a": 0, "gym_b": 1, "gym_c": 2}.get(slot_kind, 0)
+                        mapped_slot = slots[slot_idx % len(slots)]
                         p_type, p_title, p_details = build_projected_gym_summary(
                             mapped_slot, gh.get("progression", {}), step_idx=0, active_split=active_split
                         )
@@ -208,16 +235,169 @@ class WeeklyQuotaMixin:
                     logger.warning("_build_quota_remaining_item: yedek davranış uygulandı", exc_info=True)
         return item
 
+    def compute_dynamic_weekly_targets(self, now: Optional[datetime] = None) -> Dict[str, Any]:
+        """Sporcu gelişmişlik seviyesi, aktif kuvvet split'i ve eksik Firstbeat yük barlarına göre
+        haftalık kuvvet/koşu gün sayılarını ve 4-6 seanslık koşu projeksiyonunu hesaplar.
+        """
+        ref_dt = now or datetime.now()
+        try:
+            from engine.strength_progression import PROGRAM_SPLIT_CATALOG
+        except ImportError:
+            from app.engine.strength_progression import PROGRAM_SPLIT_CATALOG
+
+        active_split = "5x5_linear"
+        recommended_split = "5x5_linear"
+        plateau_score = 0
+        if hasattr(self, "get_gym_exercise_history"):
+            try:
+                gh = self.get_gym_exercise_history() or {}
+                active_split = (gh.get("program_state") or {}).get("active_split", "5x5_linear")
+                pa = gh.get("plateau_analysis") or {}
+                recommended_split = pa.get("recommended_split", active_split)
+                plateau_score = int(pa.get("plateau_score") or 0)
+            except Exception:
+                logger.warning("compute_dynamic_weekly_targets gym_history fallback", exc_info=True)
+
+        chronic_load = 0.0
+        vo2max = 0.0
+        load_focus: Dict[str, Any] = {}
+        if hasattr(self, "get_training_load_analytics"):
+            try:
+                tl = self.get_training_load_analytics() or {}
+                cs = tl.get("current_status") or {}
+                chronic_load = float(cs.get("chronic_load") or 0.0)
+                vo2max = float(cs.get("vo2max") or 0.0)
+                load_focus = tl.get("load_focus") or {}
+            except Exception:
+                logger.warning("compute_dynamic_weekly_targets load_analytics fallback", exc_info=True)
+
+        # Son 28 günlük gerçek koşu / kuvvet sıklığı
+        cutoff_date = (ref_dt - timedelta(days=28)).date()
+        end_date = ref_dt.date()
+        runs_28d = 0
+        gyms_28d = 0
+        for act in getattr(self, "activities_all", []) or []:
+            d_raw = (act.get("startTimeLocal") or "")[:10]
+            if not d_raw:
+                continue
+            try:
+                d_val = datetime.strptime(d_raw, "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            if not (cutoff_date <= d_val <= end_date):
+                continue
+            sp_key = act.get("sport") or (act.get("activityType") or {}).get("typeKey") or ""
+            bucket = classify_sport_bucket(sp_key)
+            if bucket == "running":
+                runs_28d += 1
+            elif bucket == "strength":
+                gyms_28d += 1
+
+        runs_per_wk = runs_28d / 4.0
+        gyms_per_wk = gyms_28d / 4.0
+
+        # 1) Kuvvet programına ve gelişmişlik düzeyine göre gym gün sayısı (2-slot -> çift sayı, 3-slot -> 3'ün katı)
+        split_meta = PROGRAM_SPLIT_CATALOG.get(active_split, PROGRAM_SPLIT_CATALOG["5x5_linear"])
+        slots = split_meta.get("slots", ["gym_a", "gym_b"])
+        num_slots = max(2, len(slots))
+        slot_keys = ["gym_a", "gym_b", "gym_c"][:num_slots]
+
+        if num_slots == 2:
+            if active_split in ("push_pull", "upper_lower") and (
+                gyms_per_wk >= 3.2 or (chronic_load >= 420 and plateau_score >= 55)
+            ):
+                gym_target = 4
+            else:
+                gym_target = 2
+            gym_sequence = slot_keys * (gym_target // 2)
+        else:
+            cycles = 2 if (gyms_per_wk >= 4.8 and chronic_load >= 600) else 1
+            gym_target = num_slots * cycles
+            gym_sequence = slot_keys * cycles
+
+        # 2) Koşu gün sayısı (2, 3 veya 4) + eksik yük barlarından 4-6 seanslık projeksiyon
+        if (runs_per_wk >= 3.5 and chronic_load >= 450) or (runs_per_wk >= 3.75 and vo2max >= 52):
+            run_target = 4
+        elif runs_per_wk >= 2.6 or (chronic_load >= 360 and runs_per_wk >= 2.2) or (vo2max >= 50 and chronic_load >= 340):
+            run_target = 3
+        else:
+            run_target = 2
+
+        proj_n = max(4, min(6, run_target + 2))
+        run_prediction = None
+        if load_focus or getattr(self, "activities_all", None):
+            try:
+                run_prediction = predict_next_n_runs(load_focus, self.activities_all, n=proj_n, ref_dt=ref_dt)
+            except Exception:
+                logger.warning("compute_dynamic_weekly_targets predict_next_n_runs fallback", exc_info=True)
+
+        pred_seq = list((run_prediction or {}).get("sequence") or [])
+        fallback_runs = ["interval", "zone2"] * 3
+        run_sequence = pred_seq[:run_target]
+        while len(run_sequence) < run_target:
+            run_sequence.append(fallback_runs[len(run_sequence)])
+
+        # Bu haftaki koşu dağılım özeti ("Bu hafta 2 İnterval + 1 Zone 2")
+        run_counts: Dict[str, int] = {}
+        for rk in run_sequence:
+            run_counts[rk] = run_counts.get(rk, 0) + 1
+        run_dist_parts = [f"{cnt} {_RUN_SHORT_LABELS.get(rk, rk)}" for rk, cnt in run_counts.items()]
+        run_plan_summary = f"Bu hafta {run_target} Koşu: " + " + ".join(run_dist_parts)
+
+        # Kuvvet program özeti
+        split_short = split_meta.get("short_name", active_split)
+        if num_slots == 2:
+            per_slot = gym_target // 2
+            s0, s1 = slots[0].capitalize(), slots[1].capitalize()
+            if active_split == "5x5_linear":
+                s0, s1 = "A", "B"
+            gym_dist = f"{per_slot}x {s0} + {per_slot}x {s1}"
+        else:
+            per_slot = gym_target // num_slots
+            gym_dist = " + ".join(f"{per_slot}x {s.capitalize()}" for s in slots)
+        gym_plan_summary = f"Bu hafta {gym_target} Kuvvet ({gym_dist}) · {split_short}"
+
+        rec_meta = PROGRAM_SPLIT_CATALOG.get(recommended_split, split_meta)
+        athlete_level = (
+            "İleri" if (run_target >= 4 or gym_target >= 4 or active_split == "ppl")
+            else ("Orta" if (run_target >= 3 or active_split in ("push_pull", "upper_lower") or plateau_score >= 45)
+                  else "Temel / Gelişim")
+        )
+
+        return {
+            "athlete_level": athlete_level,
+            "run_target": run_target,
+            "gym_target": gym_target,
+            "total_target": run_target + gym_target,
+            "run_sequence": run_sequence,
+            "gym_sequence": gym_sequence,
+            "projection_horizon": proj_n,
+            "run_prediction": run_prediction,
+            "run_plan_summary": run_plan_summary,
+            "gym_plan_summary": gym_plan_summary,
+            "active_split": active_split,
+            "active_split_name": split_short,
+            "recommended_split": recommended_split,
+            "recommended_split_name": rec_meta.get("short_name", recommended_split),
+            "plateau_score": plateau_score,
+            "runs_28d_per_wk": round(runs_per_wk, 2),
+            "gyms_28d_per_wk": round(gyms_per_wk, 2),
+        }
+
     def _analyze_previous_week_carryover(
         self,
         monday_anchor: datetime,
         gym_type_by_date: Dict[str, str],
+        dyn: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Geçen Pzt-Paz haftasındaki eksik seansları analiz eder.
-        Pazartesi kotası daima temiz 0/2 açılır (borç eklenmez), ancak geçen hafta eksik kalan
+        Pazartesi kotası daima temiz 0/N açılır (borç eklenmez), ancak geçen hafta eksik kalan
         seans türü yeni haftanın ilk sırasına önceliklendirilir.
         """
+        dyn = dyn or self.compute_dynamic_weekly_targets(now=monday_anchor)
+        run_target = dyn["run_target"]
+        gym_target = dyn["gym_target"]
         prev_mon = monday_anchor - timedelta(days=7)
         prev_sun = monday_anchor - timedelta(days=1)
         prev_range = f"{prev_mon.day} {TR_MONTHS[prev_mon.month - 1]} – {prev_sun.day} {TR_MONTHS[prev_sun.month - 1]}"
@@ -245,71 +425,79 @@ class WeeklyQuotaMixin:
         prev_had_tempo = "tempo" in prev_run_kinds
 
         prev_gym_types = [gym_type_by_date.get((g.get("startTimeLocal") or "")[:10], "Kuvvet") for g in prev_gyms_sorted]
-        prev_had_a = any("Workout A" in wt for wt in prev_gym_types)
-        prev_had_b = any("Workout B" in wt for wt in prev_gym_types)
+        prev_had_a = any("Workout A" in wt or "Push" in wt or "Upper" in wt for wt in prev_gym_types)
+        prev_had_b = any("Workout B" in wt or "Pull" in wt or "Lower" in wt for wt in prev_gym_types)
 
         missed_sessions: List[str] = []
-        run_order = ["interval", "zone2"]
-        gym_order = ["gym_a", "gym_b"]
+        run_order = list(dyn["run_sequence"])
+        gym_order = list(dyn["gym_sequence"])
         run_priority_reason: Optional[str] = None
         gym_priority_reason: Optional[str] = None
 
         if len(prev_runs_sorted) == 1:
             if prev_had_tempo and not prev_had_interval and not prev_had_zone2:
                 missed_sessions.append("5K Hız İntervali (Geçen hafta Tempo koşuldu, AnTE 0.0)")
-                run_order = ["interval", "zone2"]
+                if "interval" in run_order:
+                    run_order.remove("interval")
+                    run_order.insert(0, "interval")
+                else:
+                    run_order[0] = "interval"
                 run_priority_reason = "Geçen hafta koşu Tempo (AnTE 0.0) yapıldığı için 5K Hız İntervali bu hafta ilk sıraya alındı."
             elif prev_had_zone2 and not prev_had_interval:
                 missed_sessions.append("5K Hız İntervali")
-                run_order = ["interval", "zone2"]
+                if "interval" in run_order:
+                    run_order.remove("interval")
+                    run_order.insert(0, "interval")
+                else:
+                    run_order[0] = "interval"
                 run_priority_reason = "Geçen hafta eksik kalan 5K Hız İntervali bu hafta ilk koşu önceliğine alındı."
             elif prev_had_interval and not prev_had_zone2:
                 missed_sessions.append("Zone 2 Koşu")
-                run_order = ["zone2", "interval"]
+                if "zone2" in run_order:
+                    run_order.remove("zone2")
+                    run_order.insert(0, "zone2")
+                else:
+                    run_order[0] = "zone2"
                 run_priority_reason = "Geçen hafta eksik kalan Zone 2 Koşu bu hafta ilk koşu önceliğine alındı."
             else:
                 missed_sessions.append("2. Koşu seansı")
         elif len(prev_runs_sorted) >= 2 and prev_had_tempo and not prev_had_interval and not prev_had_zone2:
             missed_sessions.append("5K Hız İntervali (Geçen hafta Tempo koşuldu, AnTE 0.0)")
-            run_order = ["interval", "zone2"]
+            if "interval" in run_order:
+                run_order.remove("interval")
+                run_order.insert(0, "interval")
+            else:
+                run_order[0] = "interval"
             run_priority_reason = "Geçen hafta koşular sürekli Tempo (AnTE 0.0) olarak yapıldığı ve Anaerobik yük eksik kaldığı için 5K Hız İntervali ilk önceliğe alındı."
         elif len(prev_runs_sorted) == 0 and any(True for _ in prev_gyms_sorted):
             missed_sessions.extend(["Zone 2 Koşu", "5K Hız İntervali"])
 
-        if len(prev_gyms_sorted) == 1:
+        if len(prev_gyms_sorted) == 1 and gym_target % 2 == 0:
             if prev_had_a and not prev_had_b:
                 missed_sessions.append("Workout B")
-                gym_order = ["gym_b", "gym_a"]
+                gym_order = ["gym_b", "gym_a"] * (gym_target // 2)
                 gym_priority_reason = "Geçen hafta yalnızca Workout A yapıldığı için eksik kalan Workout B bu hafta ilk kuvvet önceliğine alındı."
             elif prev_had_b and not prev_had_a:
                 missed_sessions.append("Workout A")
-                gym_order = ["gym_a", "gym_b"]
+                gym_order = ["gym_a", "gym_b"] * (gym_target // 2)
                 gym_priority_reason = "Geçen hafta yalnızca Workout B yapıldığı için eksik kalan Workout A bu hafta ilk kuvvet önceliğine alındı."
             else:
                 missed_sessions.append("2. Kuvvet seansı")
         elif len(prev_gyms_sorted) == 0 and any(True for _ in prev_runs_sorted):
             missed_sessions.extend(["Workout A", "Workout B"])
 
-        # Sıradaki 4 koşuyu son gerçek koşuların EPOC/TE katkılarıyla kapalı çevrim simüle et
-        run_prediction = None
-        if hasattr(self, "get_training_load_analytics"):
-            try:
-                tl = self.get_training_load_analytics() or {}
-                foc = tl.get("load_focus", {})
-                run_prediction = predict_next_n_runs(foc, self.activities_all, n=4)
-                if not run_priority_reason and len(run_prediction.get("sequence", [])) >= 2:
-                    run_order = run_prediction["sequence"][:2]
-                    s1 = run_prediction["steps"][0]
-                    run_priority_reason = s1["reason"]
-            except Exception:
-                logger.warning("_analyze_previous_week_carryover: yedek davranış uygulandı", exc_info=True)
+        # Sıradaki 4-6 koşuyu son gerçek koşuların EPOC/TE katkılarıyla kapalı çevrim simüle et
+        run_prediction = dyn.get("run_prediction")
+        if run_prediction and not run_priority_reason and len(run_prediction.get("steps", [])) >= 1:
+            s1 = run_prediction["steps"][0]
+            run_priority_reason = s1["reason"]
 
         has_prev_data = bool(prev_runs_sorted or prev_gyms_sorted)
         if not has_prev_data:
-            adaptation_note = "Geçen hafta bazlı ek kısıt saptanmadı — bu hafta temiz 2 Koşu + 2 Kuvvet kotasıyla başlar."
+            adaptation_note = f"Geçen hafta bazlı ek kısıt saptanmadı — bu hafta temiz {run_target} Koşu + {gym_target} Kuvvet kotasıyla başlar."
         elif missed_sessions:
             adaptation_note = (
-                f"Pazartesi 0/2 kotası borçsuz sıfırlandı ({prev_range}: {len(prev_runs_sorted)}/2 Koşu, {len(prev_gyms_sorted)}/2 Kuvvet). "
+                f"Pazartesi 0/{run_target} kotası borçsuz sıfırlandı ({prev_range}: {len(prev_runs_sorted)}/{run_target} Koşu, {len(prev_gyms_sorted)}/{gym_target} Kuvvet). "
                 f"Geçen hafta eksik kalan {', '.join(missed_sessions)} bu haftanın öncelik sırasına yerleştirildi."
             )
         else:
@@ -354,12 +542,17 @@ class WeeklyQuotaMixin:
             if s.get("date")
         }
 
-        carryover = self._analyze_previous_week_carryover(monday_anchor, gym_type_by_date)
+        dyn = self.compute_dynamic_weekly_targets(now=now)
+        run_target = dyn["run_target"]
+        gym_target = dyn["gym_target"]
+        carryover = self._analyze_previous_week_carryover(monday_anchor, gym_type_by_date, dyn=dyn)
         gym_summaries = self._get_dynamic_gym_summaries()
         st = _WeekState(
             planned_run_order=list(carryover["run_order"]),
             planned_gym_order=list(carryover["gym_order"]),
             gym_type_by_date=gym_type_by_date,
+            run_target=run_target,
+            gym_target=gym_target,
         )
 
         for d_date in week_dates:
@@ -386,8 +579,8 @@ class WeeklyQuotaMixin:
 
         runs_done = len(st.runs_done_list)
         gyms_done = len(st.gyms_done_list)
-        rem_runs = max(0, 2 - runs_done)
-        rem_gyms = max(0, 2 - gyms_done)
+        rem_runs = max(0, run_target - runs_done)
+        rem_gyms = max(0, gym_target - gyms_done)
         adapted_recovery_day_idx, assigned_slot, needed_gyms, needed_runs, post_tempo_adapted = self._plan_open_slots(st, carryover, gyms_done, now, rem_gyms, rem_runs, runs_done, week_dates)
 
         _format_completed_day = self._make_completed_day_formatter(st)
@@ -438,6 +631,9 @@ class WeeklyQuotaMixin:
 
         return schedule, {
             "week_range": week_range,
+            "run_target": run_target,
+            "gym_target": gym_target,
+            "dynamic_targets": dyn,
             "runs_done": runs_done,
             "gyms_done": gyms_done,
             "rem_runs": rem_runs,
@@ -461,37 +657,71 @@ class WeeklyQuotaMixin:
         post_tempo_adapted = False
 
         needed_runs: List[Tuple[str, int]] = []
-        if rem_runs == 2:
-            needed_runs = [(st.planned_run_order[0], 1), (st.planned_run_order[1], 2)]
-        elif rem_runs == 1:
-            if "tempo" in st.completed_run_kinds:
-                post_tempo_adapted = True
-                next_kind = st.planned_run_order[0] if st.planned_run_order[0] in ("zone2", "interval", "tempo") else "interval"
-                needed_runs = [(next_kind, runs_done + 1)]
-            elif st.planned_run_order[0] == "gym_overflow":
-                needed_runs = [("gym_overflow", runs_done + 1)]
-            elif len(st.planned_run_order) >= 2 and st.planned_run_order[0] == st.planned_run_order[1]:
-                needed_runs = [(st.planned_run_order[1], runs_done + 1)]
-            elif "interval" in st.completed_run_kinds and "zone2" not in st.completed_run_kinds:
-                needed_runs = [("zone2", runs_done + 1)]
-            elif "zone2" in st.completed_run_kinds and "interval" not in st.completed_run_kinds:
-                needed_runs = [("interval", runs_done + 1)]
+        if rem_runs >= 1:
+            if runs_done == 0:
+                needed_runs = [
+                    (st.planned_run_order[idx], idx + 1)
+                    for idx in range(min(rem_runs, len(st.planned_run_order)))
+                ]
+            elif rem_runs == 1 and st.run_target <= 2:
+                if "tempo" in st.completed_run_kinds:
+                    post_tempo_adapted = True
+                    next_kind = st.planned_run_order[0] if st.planned_run_order[0] in ("zone2", "interval", "tempo") else "interval"
+                    needed_runs = [(next_kind, runs_done + 1)]
+                elif st.planned_run_order[0] == "gym_overflow":
+                    needed_runs = [("gym_overflow", runs_done + 1)]
+                elif len(st.planned_run_order) >= 2 and st.planned_run_order[0] == st.planned_run_order[1]:
+                    needed_runs = [(st.planned_run_order[1], runs_done + 1)]
+                elif "interval" in st.completed_run_kinds and "zone2" not in st.completed_run_kinds:
+                    needed_runs = [("zone2", runs_done + 1)]
+                elif "zone2" in st.completed_run_kinds and "interval" not in st.completed_run_kinds:
+                    needed_runs = [("interval", runs_done + 1)]
+                else:
+                    post_tempo_adapted = True
+                    next_kind = st.planned_run_order[0] if st.planned_run_order[0] in ("zone2", "interval", "tempo") else "zone2"
+                    needed_runs = [(next_kind, runs_done + 1)]
             else:
-                post_tempo_adapted = True
-                next_kind = st.planned_run_order[0] if st.planned_run_order[0] in ("zone2", "interval", "tempo") else "zone2"
-                needed_runs = [(next_kind, runs_done + 1)]
+                pool = list(st.planned_run_order)
+                for ck in st.completed_run_kinds:
+                    if ck in pool:
+                        pool.remove(ck)
+                    elif ck == "tempo":
+                        post_tempo_adapted = True
+                        if "zone2" in pool:
+                            pool.remove("zone2")
+                        elif pool:
+                            pool.pop(0)
+                    elif pool:
+                        pool.pop(0)
+                while len(pool) < rem_runs:
+                    pool.append(st.planned_run_order[len(pool) % len(st.planned_run_order)])
+                needed_runs = [(pool[idx], runs_done + idx + 1) for idx in range(rem_runs)]
 
         needed_gyms: List[Tuple[str, int]] = []
-        if rem_gyms == 2:
-            needed_gyms = [(st.planned_gym_order[0], 1), (st.planned_gym_order[1], 2)]
-        elif rem_gyms == 1:
-            if "gym_a" in st.completed_gym_kinds and "gym_b" not in st.completed_gym_kinds:
-                next_gym = "gym_b"
-            elif "gym_b" in st.completed_gym_kinds and "gym_a" not in st.completed_gym_kinds:
-                next_gym = "gym_a"
+        if rem_gyms >= 1:
+            if gyms_done == 0:
+                needed_gyms = [
+                    (st.planned_gym_order[idx], idx + 1)
+                    for idx in range(min(rem_gyms, len(st.planned_gym_order)))
+                ]
+            elif rem_gyms == 1 and st.gym_target <= 2:
+                if "gym_a" in st.completed_gym_kinds and "gym_b" not in st.completed_gym_kinds:
+                    next_gym = "gym_b"
+                elif "gym_b" in st.completed_gym_kinds and "gym_a" not in st.completed_gym_kinds:
+                    next_gym = "gym_a"
+                else:
+                    next_gym = "gym_a" if st.last_gym_type and "Workout B" in st.last_gym_type else "gym_b"
+                needed_gyms = [(next_gym, gyms_done + 1)]
             else:
-                next_gym = "gym_a" if st.last_gym_type and "Workout B" in st.last_gym_type else "gym_b"
-            needed_gyms = [(next_gym, gyms_done + 1)]
+                g_pool = list(st.planned_gym_order)
+                for gk in st.completed_gym_kinds:
+                    if gk in g_pool:
+                        g_pool.remove(gk)
+                    elif g_pool:
+                        g_pool.pop(0)
+                while len(g_pool) < rem_gyms:
+                    g_pool.append(st.planned_gym_order[len(g_pool) % len(st.planned_gym_order)])
+                needed_gyms = [(g_pool[idx], gyms_done + idx + 1) for idx in range(rem_gyms)]
 
         needed_queue: List[Tuple[str, int]] = []
         for idx in range(max(len(needed_runs), len(needed_gyms))):
@@ -610,8 +840,8 @@ class WeeklyQuotaMixin:
     def _make_planned_slot_builder(self, st, carryover, gym_summaries, gyms_done, post_tempo_adapted, rem_gyms, rem_runs, runs_done):
         """Kalan kota seansları için planlanan slot satırı üreten fonksiyonu döner (kota durumu yakalanır)."""
         def _build_planned_slot(slot_kind: str, ordinal: int) -> Dict[str, str]:
-            is_last_run = (rem_runs == 1 and runs_done == 1)
-            is_last_gym = (rem_gyms == 1 and gyms_done == 1)
+            is_last_run = (rem_runs == 1 and runs_done == st.run_target - 1)
+            is_last_gym = (rem_gyms == 1 and gyms_done == st.gym_target - 1)
             prio_hint = ""
             if slot_kind in ("zone2", "interval") and post_tempo_adapted:
                 prio_hint = " (Tempo Sonrası Güncel Telafi)"
@@ -620,23 +850,15 @@ class WeeklyQuotaMixin:
             elif slot_kind == st.planned_gym_order[0] and carryover["gym_priority_reason"] and ordinal == 1:
                 prio_hint = " (Öncelikli)"
 
-            if slot_kind == "gym_a":
-                quota_lbl = "2/2 Son Salon Kotası" if is_last_gym else f"{rem_gyms} Kalan Kuvvet Kotası"
+            if slot_kind in ("gym_a", "gym_b", "gym_c"):
+                quota_lbl = f"{st.gym_target}/{st.gym_target} Son Salon Kotası" if is_last_gym else f"{rem_gyms} Kalan Kuvvet Kotası"
+                summary = gym_summaries.get(slot_kind, _BASE_QUOTA_TEMPLATES[slot_kind]["exercises_summary"])
                 return {
-                    "primary": f"Kuvvet #{ordinal} · Kalan Kota{prio_hint} · {gym_summaries['gym_a'].split(' · Lateral')[0]}",
-                    "secondary": f"Esnek Gün — Bu hafta geriye {rem_gyms} kuvvet kaldı ({quota_lbl}), istediğin uygun gün uygula • {gym_summaries['gym_a']}",
-                    "target": "115-128 bpm (Zone 1)",
-                    "calories": "~2.850 kcal",
-                    "macro": "2.450 kcal (175g P / 250g K / 80g Y)",
-                }
-            if slot_kind == "gym_b":
-                quota_lbl = "2/2 Son Salon Kotası" if is_last_gym else f"{rem_gyms} Kalan Kuvvet Kotası"
-                return {
-                    "primary": f"Kuvvet #{ordinal} · Kalan Kota{prio_hint} · {gym_summaries['gym_b'].split(' · Lateral')[0]}",
-                    "secondary": f"Esnek Gün — Bu hafta geriye {rem_gyms} kuvvet kaldı ({quota_lbl}), istediğin uygun gün uygula • {gym_summaries['gym_b']}",
-                    "target": "115-130 bpm (Zone 1)",
-                    "calories": "~2.900 kcal",
-                    "macro": "2.500 kcal (180g P / 270g K / 80g Y)",
+                    "primary": f"Kuvvet #{ordinal} · Kalan Kota{prio_hint} · {summary.split(' · Lateral')[0]}",
+                    "secondary": f"Esnek Gün — Bu hafta geriye {rem_gyms} kuvvet kaldı ({quota_lbl}), istediğin uygun gün uygula • {summary}",
+                    "target": "115-128 bpm (Zone 1)" if slot_kind == "gym_a" else "115-130 bpm (Zone 1)",
+                    "calories": "~2.850 kcal" if slot_kind == "gym_a" else "~2.900 kcal",
+                    "macro": "2.450 kcal (175g P / 250g K / 80g Y)" if slot_kind == "gym_a" else "2.500 kcal (180g P / 270g K / 80g Y)",
                 }
             if slot_kind == "gym_overflow":
                 alt_gym = "gym_a" if st.last_gym_type and "Workout B" in st.last_gym_type else "gym_b"
@@ -648,7 +870,7 @@ class WeeklyQuotaMixin:
                     "macro": "2.450 kcal (175g P / 250g K / 80g Y)",
                 }
             if slot_kind == "tempo":
-                quota_lbl = "2/2 Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
+                quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
                 return {
                     "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Yüksek Aerobik Tempo (30-35 dk)",
                     "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), Yüksek Aerobik barını doldurmak için uygula • 10 dk ısınma + 20 dk tempo",
@@ -657,7 +879,7 @@ class WeeklyQuotaMixin:
                     "macro": "2.550 kcal (175g P / 275g K / 80g Y)",
                 }
             if slot_kind == "zone2":
-                quota_lbl = "2/2 Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
+                quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
                 return {
                     "primary": f"Koşu #{ordinal} · Kalan Kota{prio_hint} · Zone 2 Rahat Taban (45-50 dk)",
                     "secondary": f"Esnek Gün — Bu hafta geriye {rem_runs} koşu kaldı ({quota_lbl}), toparlanmana uygun günde uygula • 160+ kadans, burundan nefes",
@@ -665,7 +887,7 @@ class WeeklyQuotaMixin:
                     "calories": "~2.950 kcal",
                     "macro": "2.550 kcal (175g P / 275g K / 80g Y)",
                 }
-            quota_lbl = "2/2 Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
+            quota_lbl = f"{st.run_target}/{st.run_target} Son Koşu Kotası" if is_last_run else f"{rem_runs} Kalan Koşu Kotası"
             extra_tempo_note = (
                 " · Planlanan İnterval yerine Tempo koşulduğu için Anaerobik (AnTE) hâlâ eksik"
                 if post_tempo_adapted else ""
@@ -933,9 +1155,13 @@ class WeeklyQuotaMixin:
 
         gym_status_text, headline, run_status_text, spont_status_text, spontaneous_items = self._build_quota_status_texts(gyms_done, post_tempo_adapted, rem_gym_items, rem_gyms, rem_run_items, rem_runs, runs_done, week_meta)
 
+        run_target = week_meta.get("run_target", 2)
+        gym_target = week_meta.get("gym_target", 2)
+        total_target = run_target + gym_target
+        dyn = week_meta.get("dynamic_targets") or {}
         total_done = runs_done + gyms_done
         total_rem = rem_runs + rem_gyms
-        capped_done = min(runs_done, 2) + min(gyms_done, 2)
+        capped_done = min(runs_done, run_target) + min(gyms_done, gym_target)
 
         return {
             "week_range": week_meta["week_range"],
@@ -943,6 +1169,19 @@ class WeeklyQuotaMixin:
             "flexibility_note": "",
             "plan_deviations": deviations,
             "post_tempo_adapted": post_tempo_adapted,
+            "dynamic_targets": {
+                "athlete_level": dyn.get("athlete_level", "Temel / Gelişim"),
+                "active_split": dyn.get("active_split", "5x5_linear"),
+                "active_split_name": dyn.get("active_split_name", "5x5 Doğrusal (A/B)"),
+                "recommended_split": dyn.get("recommended_split", "5x5_linear"),
+                "recommended_split_name": dyn.get("recommended_split_name", "5x5 Doğrusal (A/B)"),
+                "plateau_score": dyn.get("plateau_score", 0),
+                "run_target": run_target,
+                "gym_target": gym_target,
+                "projection_horizon": dyn.get("projection_horizon", 4),
+                "run_plan_summary": dyn.get("run_plan_summary", ""),
+                "gym_plan_summary": dyn.get("gym_plan_summary", ""),
+            },
             "last_week_adaptation": {
                 "prev_week_range": carry["prev_week_range"],
                 "prev_runs_done": carry["prev_runs_done"],
@@ -953,33 +1192,35 @@ class WeeklyQuotaMixin:
             },
             "next_4_runs_prediction": carry.get("next_4_runs_prediction"),
             "total": {
-                "target": 4,
+                "target": total_target,
                 "completed": total_done,
                 "remaining": total_rem,
-                "progress_pct": min(100, round((capped_done / 4) * 100)),
+                "progress_pct": min(100, round((capped_done / max(1, total_target)) * 100)),
                 "is_complete": (rem_runs == 0 and rem_gyms == 0),
             },
             "running": {
-                "target": 2,
+                "target": run_target,
                 "completed": runs_done,
                 "remaining": rem_runs,
                 "completed_kinds": week_meta["completed_run_kinds"],
-                "progress_pct": min(100, round((min(runs_done, 2) / 2) * 100)),
+                "progress_pct": min(100, round((min(runs_done, run_target) / max(1, run_target)) * 100)),
                 "completed_labels": [r["label"] for r in week_meta["runs_completed_items"]],
                 "completed_items": week_meta["runs_completed_items"],
                 "remaining_items": rem_run_items,
                 "status_text": run_status_text,
+                "plan_summary": dyn.get("run_plan_summary", ""),
             },
             "strength": {
-                "target": 2,
+                "target": gym_target,
                 "completed": gyms_done,
                 "remaining": rem_gyms,
                 "completed_kinds": week_meta["completed_gym_kinds"],
-                "progress_pct": min(100, round((min(gyms_done, 2) / 2) * 100)),
+                "progress_pct": min(100, round((min(gyms_done, gym_target) / max(1, gym_target)) * 100)),
                 "completed_labels": [g["label"] for g in week_meta["gyms_completed_items"]],
                 "completed_items": week_meta["gyms_completed_items"],
                 "remaining_items": rem_gym_items,
                 "status_text": gym_status_text,
+                "plan_summary": dyn.get("gym_plan_summary", ""),
             },
             "remaining_items": rem_run_items + rem_gym_items,
             "spontaneous": {
@@ -1011,6 +1252,9 @@ class WeeklyQuotaMixin:
 
     def _build_quota_status_texts(self, gyms_done, post_tempo_adapted, rem_gym_items, rem_gyms, rem_run_items, rem_runs, runs_done, week_meta):
         """Haftalık kota başlığını ve koşu / kuvvet / spontane durum metinlerini üretir."""
+        run_target = week_meta.get("run_target", 2)
+        gym_target = week_meta.get("gym_target", 2)
+        total_target = run_target + gym_target
         done_parts: List[str] = []
         if runs_done > 0:
             if post_tempo_adapted:
@@ -1022,31 +1266,31 @@ class WeeklyQuotaMixin:
         done_str = f"Bu hafta {' + '.join(done_parts)} tamamladın" if done_parts else "Bu hafta henüz planlı seans tamamlamadın"
 
         rem_parts: List[str] = []
-        if rem_runs == 2:
-            rem_parts.append("2 Koşu (" + " + ".join(i["short_label"] for i in rem_run_items) + ")")
+        if rem_runs >= 2:
+            rem_parts.append(f"{rem_runs} Koşu (" + " + ".join(i["short_label"] for i in rem_run_items) + ")")
         elif rem_runs == 1 and rem_run_items:
             rem_parts.append(f"1 {rem_run_items[0]['short_label']}")
-        if rem_gyms == 2:
-            rem_parts.append("2 Kuvvet (" + " + ".join(i["short_label"] for i in rem_gym_items) + ")")
+        if rem_gyms >= 2:
+            rem_parts.append(f"{rem_gyms} Kuvvet (" + " + ".join(i["short_label"] for i in rem_gym_items) + ")")
         elif rem_gyms == 1 and rem_gym_items:
             rem_parts.append(f"1 {rem_gym_items[0]['short_label']}")
 
         rem_str = (
-            "Haftalık 4/4 temel antrenman kotan tamamlandı!"
+            f"Haftalık {total_target}/{total_target} temel antrenman kotan tamamlandı!"
             if (rem_runs == 0 and rem_gyms == 0)
             else f"Geriye {' + '.join(rem_parts)} kaldı"
         )
         headline = f"{done_str} · {rem_str}"
 
         run_status_text = (
-            f"{runs_done}/2 Tamamlandı · Haftalık koşu kotası doldu"
+            f"{runs_done}/{run_target} Tamamlandı · Haftalık koşu kotası doldu"
             if rem_runs == 0
-            else f"{runs_done}/2 Tamamlandı · Geriye {rem_runs} ({' + '.join(i['short_label'] for i in rem_run_items)}) kaldı"
+            else f"{runs_done}/{run_target} Tamamlandı · Geriye {rem_runs} ({' + '.join(i['short_label'] for i in rem_run_items)}) kaldı"
         )
         gym_status_text = (
-            f"{gyms_done}/2 Tamamlandı · Haftalık kuvvet kotası doldu"
+            f"{gyms_done}/{gym_target} Tamamlandı · Haftalık kuvvet kotası doldu"
             if rem_gyms == 0
-            else f"{gyms_done}/2 Tamamlandı · Geriye {rem_gyms} ({' + '.join(i['short_label'] for i in rem_gym_items)}) kaldı"
+            else f"{gyms_done}/{gym_target} Tamamlandı · Geriye {rem_gyms} ({' + '.join(i['short_label'] for i in rem_gym_items)}) kaldı"
         )
         spontaneous_items = week_meta["spontaneous_items"]
         spont_status_text = (

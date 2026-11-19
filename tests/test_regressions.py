@@ -423,5 +423,73 @@ class TestDebriefLoadTunnelInterpretation(unittest.TestCase):
         self.assertIn("içindesiniz", blk_ok["interpretation"])
 
 
+class TestDynamicWeeklyQuota(unittest.TestCase):
+    def _make_stub(self, split="5x5_linear", plateau=30, chronic=270.0, vo2max=45.0, runs_28d=8, gyms_28d=8):
+        from datetime import datetime, timedelta
+        from app.engine.weekly_quota_mixin import WeeklyQuotaMixin
+        now = datetime(2026, 11, 19, 10, 0)
+        acts = []
+        for i in range(runs_28d):
+            d = (now - timedelta(days=(i * 2) % 27 + 1)).strftime("%Y-%m-%d %H:%M:%S")
+            acts.append({"sport": "running", "startTimeLocal": d, "duration": 2400, "distance": 5000, "averageHR": 160, "activityTrainingLoad": 90})
+        for i in range(gyms_28d):
+            d = (now - timedelta(days=(i * 2) % 27 + 1)).strftime("%Y-%m-%d %H:%M:%S")
+            acts.append({"sport": "strength_training", "startTimeLocal": d, "duration": 3300, "averageHR": 120})
+
+        class _Stub(WeeklyQuotaMixin):
+            def __init__(self):
+                self.activities_all = acts
+
+            def get_gym_exercise_history(self):
+                return {
+                    "program_state": {"active_split": split},
+                    "plateau_analysis": {"plateau_score": plateau, "recommended_split": split},
+                    "progression": {},
+                    "sessions": [],
+                }
+
+            def get_training_load_analytics(self):
+                return {
+                    "current_status": {"chronic_load": chronic, "vo2max": vo2max},
+                    "load_focus": {
+                        "targets_available": True,
+                        "aerobic_low": {"actual": 200.0, "target_max": 400.0},
+                        "aerobic_high": {"actual": 320.0, "target_max": 500.0},
+                        "anaerobic": {"actual": 90.0, "target_max": 250.0},
+                    },
+                }
+
+        return _Stub(), now
+
+    def test_two_slot_splits_always_get_even_gym_days_and_alternate(self):
+        for sp, gyms_28d, chronic, plateau, expected_g in [
+            ("5x5_linear", 8, 270.0, 30, 2),
+            ("push_pull", 8, 320.0, 50, 2),
+            ("push_pull", 14, 440.0, 60, 4),
+            ("upper_lower", 14, 450.0, 70, 4),
+        ]:
+            stub, now = self._make_stub(split=sp, plateau=plateau, chronic=chronic, gyms_28d=gyms_28d)
+            dyn = stub.compute_dynamic_weekly_targets(now=now)
+            self.assertEqual(dyn["gym_target"], expected_g)
+            self.assertEqual(dyn["gym_target"] % 2, 0)
+            self.assertEqual(dyn["gym_sequence"], ["gym_a", "gym_b"] * (expected_g // 2))
+
+    def test_three_slot_ppl_gets_three_distinct_days(self):
+        stub, now = self._make_stub(split="ppl", plateau=80, chronic=420.0, gyms_28d=12)
+        dyn = stub.compute_dynamic_weekly_targets(now=now)
+        self.assertEqual(dyn["gym_target"], 3)
+        self.assertEqual(dyn["gym_sequence"], ["gym_a", "gym_b", "gym_c"])
+        types = [stub._build_quota_remaining_item(k, idx + 1)["type"] for idx, k in enumerate(dyn["gym_sequence"])]
+        self.assertEqual(types, ["Push", "Pull", "Legs"])
+
+    def test_advanced_runner_scales_run_target_and_projection_horizon(self):
+        stub, now = self._make_stub(split="push_pull", plateau=58, chronic=480.0, vo2max=53.0, runs_28d=15, gyms_28d=10)
+        dyn = stub.compute_dynamic_weekly_targets(now=now)
+        self.assertEqual(dyn["run_target"], 4)
+        self.assertIn(dyn["projection_horizon"], (4, 5, 6))
+        self.assertEqual(len(dyn["run_prediction"]["steps"]), dyn["projection_horizon"])
+        self.assertIn("Bu hafta 4 Koşu:", dyn["run_plan_summary"])
+
+
 if __name__ == "__main__":
     unittest.main()
