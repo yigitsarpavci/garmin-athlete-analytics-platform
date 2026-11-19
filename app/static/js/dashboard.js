@@ -149,7 +149,7 @@ function renderFirstScreenTelemetryCards(data, vo2, curLoad, acuteVal, chronicVa
     : '0,0';
   setText('fs-vo2-val', fmtDec(vo2, 1));
   setText('fs-vo2-badge', `${vtArrow} ${vtLabel}`);
-  setText('fs-vo2-sub', `Trend: ${vtArrow} ${vtDelta} (${fmtDec(vt.prev ?? vo2Num, 1)}→${fmtDec(vo2Num, 1)}) · Hedef: 50+`);
+  setText('fs-vo2-sub', `Trend: ${vtArrow} ${vtDelta} (${fmtDec(vt.prev ?? vo2Num, 1)}→${fmtDec(vo2Num, 1)})`);
   _renderGarminGauge('fs-vo2-bar',
     [{ cls: 'seg-red' }, { cls: 'seg-amber' }, { cls: 'seg-green' }, { cls: 'seg-blue' }, { cls: 'seg-purple' }],
     vo2Active, vo2Pct, 'Zayıf', 'İyi', 'Üstün'
