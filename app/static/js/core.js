@@ -132,7 +132,7 @@ document.addEventListener('keydown', (e) => {
 /* Boş / hatalı durumlar için kullanıcıya ne yapacağını söyleyen şerit */
 function renderStatusBanner(overview) {
   const el = document.getElementById('statusBanner');
-  if (!el) return;
+  if (!el || el.dataset.sessionExpired === '1') return;
   const msgs = [];
   if (!overview) {
     msgs.push('Sunucuya ulaşılamadı. Uygulamanın çalıştığından emin olun (<code>make run</code>) ve sayfayı yenileyin.');
@@ -201,6 +201,21 @@ async function initApp() {
 let _lastDataVersion = null;
 let _dataWatchBusy = false;
 let _lastSyncKick = 0;
+/* Garmin oturumu dolduysa veri eşitlenemez (yeni antrenmanlar görünmez); bunu açıkça göster */
+function showSessionBanner(sess) {
+  const el = document.getElementById('statusBanner');
+  if (!el || !sess) return;
+  const expired = sess.session_valid === false && !sess.sync_in_progress;
+  if (expired) {
+    el.dataset.sessionExpired = '1';
+    el.innerHTML = 'Garmin oturumu doldu: yeni veriler çekilemiyor (son eşitleme eski). Claude/Antigravity\'de <code>garmin-login</code> ile yeniden giriş yap; uygulama kendiliğinden güncellenir.';
+    el.classList.remove('hidden');
+  } else if (el.dataset.sessionExpired === '1') {
+    delete el.dataset.sessionExpired;
+    el.classList.add('hidden');
+    el.innerHTML = '';
+  }
+}
 async function checkDataVersion() {
   if (_dataWatchBusy || document.hidden) return;
   _dataWatchBusy = true;
@@ -210,6 +225,7 @@ async function checkDataVersion() {
     if (!res.ok) return;
     const st = await res.json();
     syncing = Boolean(st && st.session && st.session.sync_in_progress);
+    showSessionBanner(st && st.session);
     const ver = st && st.data_version;
     if (!ver) return;
     if (_lastDataVersion !== null && ver !== _lastDataVersion) {
