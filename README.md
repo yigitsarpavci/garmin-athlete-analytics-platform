@@ -13,6 +13,16 @@ An end-to-end athletic performance intelligence and biometric telemetry platform
 
 ---
 
+## Quick Start
+
+```bash
+pip install -r requirements.txt
+python3 app/server.py --demo   # synthetic data, no Garmin account needed
+# open http://localhost:8085
+```
+
+---
+
 ## Table of Contents
 
 - [Problem Statement](#problem-statement)
