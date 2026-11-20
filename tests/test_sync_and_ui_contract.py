@@ -152,6 +152,21 @@ class TestUiJsContract(unittest.TestCase):
         for fn in sorted(called):
             self.assertRegex(js, rf"function\s+{fn}\s*\(", f"{fn}() tanımlı değil")
 
+    def test_every_dom_id_used_by_js_exists(self):
+        """JS'in getElementById ile aradığı her öğe HTML'de (veya JS'in ürettiği şablonlarda) bulunmalı; taşınan/silinen paneller sessizce kırılmasın."""
+        html = _read(os.path.join(self.STATIC, "index.html"))
+        js = self._js_text()
+        missing = [i for i in sorted(set(re.findall(r"getElementById\('([\w-]+)'\)", js)))
+                   if f'id="{i}"' not in html and f'id="{i}"' not in js]
+        self.assertEqual(missing, [])
+
+    def test_every_nav_tab_has_a_section(self):
+        html = _read(os.path.join(self.STATIC, "index.html"))
+        tabs = re.findall(r'id="nav-([\w-]+)"', html)
+        self.assertGreaterEqual(len(tabs), 3)
+        for t in tabs:
+            self.assertIn(f'id="section-{t}"', html, t)
+
     def test_csp_compatible_no_inline_scripts(self):
         html = _read(os.path.join(self.STATIC, "index.html"))
         self.assertEqual(re.findall(r"<script(?![^>]*\ssrc=)[^>]*>", html), [])
