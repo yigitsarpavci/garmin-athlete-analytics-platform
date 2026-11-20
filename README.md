@@ -23,6 +23,19 @@ python3 app/server.py --demo   # synthetic data, no Garmin account needed
 
 ---
 
+## Screenshots
+
+![Tour](docs/screenshots/tour.gif)
+
+| | |
+|---|---|
+| ![Overview: HRV, VO2 max, ACWR load, weekly quotas](docs/screenshots/overview.jpg) | ![Per-sport breakdown](docs/screenshots/sports.jpg) |
+| *Overview: HRV, VO2 max, ACWR load, weekly quotas* | *Per-sport breakdown* |
+| ![Workout history](docs/screenshots/history.jpg) | ![Analytics: correlations and 93-day ranges](docs/screenshots/analytics.jpg) |
+| *Workout history* | *Analytics: correlations and 93-day ranges* |
+
+---
+
 ## Table of Contents
 
 - [Problem Statement](#problem-statement)
