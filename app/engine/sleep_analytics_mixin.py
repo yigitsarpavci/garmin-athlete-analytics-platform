@@ -16,36 +16,86 @@ logger = logging.getLogger(__name__)
 class SleepAnalyticsMixin:
     """Uyku analitigi, istatistiksel korelasyonlar, dinamik donem ozetleri ve saat yapilandirma denetimi."""
 
-    # (sütun1, sütun2, etiket1, etiket2, negatif ilişki yorumu, pozitif ilişki yorumu)
-    _CORR_PAIRS = [
-        ("hrv_night", "rhr", "Gece HRV", "Dinlenik Nabız (RHR)",
-         "Gece HRV yükseldikçe dinlenik nabız düşüyor (beklenen toparlanma ilişkisi).",
-         "Gece HRV ile dinlenik nabız birlikte artıyor (beklenenin tersi; ölçüm veya hastalık etkisi olabilir)."),
-        ("avg_stress", "bb_charged", "Günlük Stres", "Body Battery Şarj",
-         "Stresli günlerde uyku sırasındaki enerji toparlanması azalıyor.",
-         "Stres arttıkça Body Battery şarjı da artıyor (beklenenin tersi)."),
-        ("sleep_h", "sleep_score", "Uyku Süresi", "Garmin Uyku Puanı",
-         "Uyku süresi arttıkça Garmin uyku puanı düşüyor (beklenenin tersi).",
-         "Uyku süresi arttıkça Garmin uyku puanı yükseliyor."),
-        ("hrv_night", "avg_stress", "Gece HRV", "Günlük Stres",
-         "Düşük HRV ile uyanılan günlerde gün içi stres skoru yüksek.",
-         "HRV yükseldikçe gün içi stres de yükseliyor (beklenenin tersi)."),
-        ("hrv_night", "readiness_score", "Gece HRV", "Antrenman Hazırlığı",
-         "Gece HRV yükseldikçe hazırlık puanı düşüyor (beklenenin tersi).",
-         "Gece HRV yükseldikçe sabah antrenman hazırlığı da yükseliyor."),
-        ("rhr", "avg_stress", "Dinlenik Nabız", "Günlük Stres",
-         "Dinlenik nabız arttıkça gün içi stres azalıyor (beklenenin tersi).",
-         "Dinlenik nabız taban üstüne çıktığında gün içi sempatik stres artıyor."),
-        ("sleep_start_hr", "sleep_h", "Yatış Saati", "Toplam Uyku",
-         "Yatış saati geciktikçe toplam uyku süresi kısalıyor.",
-         "Yatış saati geciktikçe toplam uyku süresi uzuyor (beklenenin tersi)."),
-        ("sleep_start_hr", "rem_h", "Yatış Saati", "REM Uykusu",
-         "Yatış saati geciktikçe REM uykusu azalıyor.",
-         "Yatış saati geciktikçe REM uykusu artıyor (beklenenin tersi)."),
-        ("acute_load", "readiness_score", "Haftalık Akut Yük", "Hazırlık Puanı",
-         "Akut yük arttıkça hazırlık puanı düşüyor (toparlanma ihtiyacı artıyor).",
-         "Akut yük arttıkça hazırlık puanı da yükseliyor (beklenenin tersi)."),
+    # Korelasyon keşfi için günlük metrik sözlüğü: (sütun, etiket, aile)
+    # Aynı aile içindeki döngüsel/türev çiftler (örn. sleep_h <-> deep_h, bb_charged <-> bb_wake) filtrelenir.
+    _CORR_METRICS = [
+        ("hrv_night", "Gece HRV", "hrv"),
+        ("rhr", "Dinlenik Nabız (RHR)", "rhr"),
+        ("avg_stress", "Günlük Stres", "stress"),
+        ("bb_charged", "Body Battery Şarj", "bb"),
+        ("bb_wake", "Uyanış Body Battery", "bb"),
+        ("bb_drained", "Body Battery Tüketimi", "bb"),
+        ("sleep_score", "Garmin Uyku Puanı", "sleep_score"),
+        ("sleep_h", "Uyku Süresi", "sleep_dur"),
+        ("deep_h", "Derin Uyku", "sleep_dur"),
+        ("rem_h", "REM Uykusu", "sleep_dur"),
+        ("sleep_start_hr", "Yatış Saati", "sleep_time"),
+        ("readiness_score", "Antrenman Hazırlığı", "readiness"),
+        ("acute_load", "Haftalık Akut Yük", "load"),
+        ("recovery_time_min", "Toparlanma Süresi", "load"),
+        ("active_h", "Aktif Süre", "activity"),
+        ("sedentary_h", "Hareketsiz Süre", "activity"),
+        ("resp_sleep", "Uyku Solunum Hızı", "resp"),
     ]
+
+    # Bilinen çiftler için özel fizyolojik yorumlar (negatif, pozitif)
+    _PAIR_INTERPRETATIONS = {
+        ("hrv_night", "rhr"): (
+            "Gece HRV yükseldikçe dinlenik nabız düşüyor (beklenen toparlanma ilişkisi).",
+            "Gece HRV ile dinlenik nabız birlikte artıyor (beklenenin tersi; ölçüm veya hastalık etkisi olabilir).",
+        ),
+        ("avg_stress", "bb_charged"): (
+            "Stresli günlerde uyku sırasındaki enerji toparlanması azalıyor.",
+            "Stres arttıkça Body Battery şarjı da artıyor (beklenenin tersi).",
+        ),
+        ("sleep_h", "sleep_score"): (
+            "Uyku süresi arttıkça Garmin uyku puanı düşüyor (beklenenin tersi).",
+            "Uyku süresi arttıkça Garmin uyku puanı yükseliyor.",
+        ),
+        ("hrv_night", "avg_stress"): (
+            "Düşük HRV ile uyanılan günlerde gün içi stres skoru yüksek.",
+            "HRV yükseldikçe gün içi stres de yükseliyor (beklenenin tersi).",
+        ),
+        ("hrv_night", "readiness_score"): (
+            "Gece HRV yükseldikçe hazırlık puanı düşüyor (beklenenin tersi).",
+            "Gece HRV yükseldikçe sabah antrenman hazırlığı da yükseliyor.",
+        ),
+        ("rhr", "avg_stress"): (
+            "Dinlenik nabız arttıkça gün içi stres azalıyor (beklenenin tersi).",
+            "Dinlenik nabız taban üstüne çıktığında gün içi sempatik stres artıyor.",
+        ),
+        ("sleep_start_hr", "sleep_h"): (
+            "Yatış saati geciktikçe toplam uyku süresi kısalıyor.",
+            "Yatış saati geciktikçe toplam uyku süresi uzuyor (beklenenin tersi).",
+        ),
+        ("sleep_start_hr", "rem_h"): (
+            "Yatış saati geciktikçe REM uykusu azalıyor.",
+            "Yatış saati geciktikçe REM uykusu artıyor (beklenenin tersi).",
+        ),
+        ("acute_load", "readiness_score"): (
+            "Akut yük arttıkça hazırlık puanı düşüyor (toparlanma ihtiyacı artıyor).",
+            "Akut yük arttıkça hazırlık puanı da yükseliyor (beklenenin tersi).",
+        ),
+    }
+
+    @classmethod
+    def _build_dynamic_insight(
+        cls, c1: str, c2: str, l1: str, l2: str, r_val: float, strength: str, significant: bool
+    ) -> str:
+        """Korelasyon çifti için yön ve güç bazlı dinamik Türkçe açıklama üretir."""
+        if not significant:
+            return "Anlamlı bir ilişki saptanmadı."
+        if (c1, c2) in cls._PAIR_INTERPRETATIONS:
+            neg_txt, pos_txt = cls._PAIR_INTERPRETATIONS[(c1, c2)]
+            return neg_txt if r_val < 0 else pos_txt
+        if (c2, c1) in cls._PAIR_INTERPRETATIONS:
+            neg_txt, pos_txt = cls._PAIR_INTERPRETATIONS[(c2, c1)]
+            return neg_txt if r_val < 0 else pos_txt
+
+        l1_action = "geciktikçe" if c1 == "sleep_start_hr" else "arttıkça"
+        if r_val < 0:
+            return f"{l1} {l1_action} {l2.lower()} düşüyor (ters yönlü {strength} ilişki)."
+        return f"{l1} {l1_action} {l2.lower()} da yükseliyor (aynı yönlü {strength} ilişki)."
 
     @staticmethod
     def _student_t_p_two_sided(t_val: float, dof: int) -> float:
@@ -96,45 +146,49 @@ class SleepAnalyticsMixin:
         a = abs(r)
         return "çok zayıf" if a < 0.2 else "zayıf" if a < 0.4 else "orta" if a < 0.6 else "güçlü" if a < 0.8 else "çok güçlü"
 
-    def get_correlations(self) -> List[Dict[str, Any]]:
+    def get_correlations(self, top_n: int = 9) -> List[Dict[str, Any]]:
         """
-        Günlük fizyolojik zaman serilerinde çift değişkenli Pearson korelasyonu: r, t, gerçek Student-t p-değeri, güç ve yön.
-        Yorum metni hesaplanan r'ın işaretinden ve gücünden üretilir (hazır cümle değildir). Ardışık günler tam bağımsız
-        olmadığı için p-değerleri iyimser kabul edilmelidir; bu yüzden anlamlılık için p < 0,01 ve |r| ≥ 0,3 aranır.
+        Günlük fizyolojik zaman serilerinde tüm anlamlı metrik çiftleri arasında Pearson korelasyonu hesaplar,
+        |r| büyüklüğüne göre sıralar ve en güçlü top_n (varsayılan 9) korelasyonu dinamik açıklamayla döner.
         """
         results: List[Dict[str, Any]] = []
-        for c1, c2, l1, l2, neg_txt, pos_txt in self._CORR_PAIRS:
-            if c1 not in self.df.columns or c2 not in self.df.columns:
+        n_metrics = len(self._CORR_METRICS)
+        for i in range(n_metrics):
+            c1, l1, fam1 = self._CORR_METRICS[i]
+            if c1 not in self.df.columns:
                 continue
-            sub = self.df[[c1, c2]].apply(pd.to_numeric, errors="coerce").dropna()
-            if len(sub) <= 5 or sub[c1].std() <= 0 or sub[c2].std() <= 0:
-                continue
-            r_val = float(sub[c1].corr(sub[c2]))
-            if math.isnan(r_val):
-                continue
-            n_c = len(sub)
-            t_val = r_val * math.sqrt((n_c - 2) / max(1e-9, 1.0 - r_val ** 2))
-            p_val = self._student_t_p_two_sided(t_val, n_c - 2)
-            significant = p_val < 0.01 and abs(r_val) >= 0.3
-            strength = self._corr_strength(r_val)
-            p_str = "< 0,0001" if p_val < 0.0001 else f"{p_val:.4f}".replace(".", ",")
-            if significant:
-                insight = f"{neg_txt if r_val < 0 else pos_txt}"
-            else:
-                insight = "Anlamlı bir ilişki saptanmadı."
-            results.append({
-                "pair": f"{l1} ↔ {l2}",
-                "r": round(r_val, 3),
-                "t": round(t_val, 2),
-                "p": p_str,
-                "p_value": round(p_val, 6),
-                "n": n_c,
-                "strength": strength,
-                "direction": "negatif" if r_val < 0 else "pozitif",
-                "significant": significant,
-                "insight": insight,
-            })
-        return results
+            for j in range(i + 1, n_metrics):
+                c2, l2, fam2 = self._CORR_METRICS[j]
+                if fam1 == fam2 or c2 not in self.df.columns:
+                    continue
+                sub = self.df[[c1, c2]].apply(pd.to_numeric, errors="coerce").dropna()
+                if len(sub) <= 5 or sub[c1].std() <= 0 or sub[c2].std() <= 0:
+                    continue
+                r_val = float(sub[c1].corr(sub[c2]))
+                if math.isnan(r_val):
+                    continue
+                n_c = len(sub)
+                t_val = r_val * math.sqrt((n_c - 2) / max(1e-9, 1.0 - r_val ** 2))
+                p_val = self._student_t_p_two_sided(t_val, n_c - 2)
+                significant = p_val < 0.01 and abs(r_val) >= 0.3
+                strength = self._corr_strength(r_val)
+                p_str = "< 0,0001" if p_val < 0.0001 else f"{p_val:.4f}".replace(".", ",")
+                insight = self._build_dynamic_insight(c1, c2, l1, l2, r_val, strength, significant)
+                results.append({
+                    "pair": f"{l1} ↔ {l2}",
+                    "r": round(r_val, 3),
+                    "t": round(t_val, 2),
+                    "p": p_str,
+                    "p_value": round(p_val, 6),
+                    "n": n_c,
+                    "strength": strength,
+                    "direction": "negatif" if r_val < 0 else "pozitif",
+                    "significant": significant,
+                    "insight": insight,
+                })
+
+        results.sort(key=lambda item: (1 if item["significant"] else 0, abs(item["r"])), reverse=True)
+        return results[:max(1, top_n)]
 
     def get_all_activities(self) -> List[Dict[str, Any]]:
         """Tüm kayıtlı antrenmanların detaylı listesini döner."""
