@@ -44,30 +44,10 @@ async function safeFetchJson(url) {
 }
 
 const STORAGE_TAB_KEY = 'garmin_active_tab';
-const STORAGE_SUBTABS_KEY = 'garmin_active_subtabs';
-
-function saveActiveSubTab(group, paneKey) {
-  try {
-    const raw = localStorage.getItem(STORAGE_SUBTABS_KEY);
-    const map = raw ? JSON.parse(raw) : {};
-    map[group] = paneKey;
-    localStorage.setItem(STORAGE_SUBTABS_KEY, JSON.stringify(map));
-  } catch (_) {}
-}
 
 function restoreSavedNavigation() {
   try {
     const savedTab = localStorage.getItem(STORAGE_TAB_KEY);
-    const rawSubs = localStorage.getItem(STORAGE_SUBTABS_KEY);
-    const subMap = rawSubs ? JSON.parse(rawSubs) : {};
-
-    if (subMap && typeof subMap === 'object') {
-      Object.entries(subMap).forEach(([group, paneKey]) => {
-        if (document.querySelector(`[data-subpane-group="${group}"][data-subpane="${paneKey}"]`)) {
-          setSubTab(group, paneKey, false);
-        }
-      });
-    }
     if (savedTab && document.getElementById('section-' + savedTab)) {
       setTab(savedTab, false);
     }
@@ -143,77 +123,12 @@ function setTab(tabId, persist = true) {
 
 }
 
-function closeAllNavDropdowns() {
-  document.querySelectorAll('.nav-dropdown.is-open').forEach(el => {
-    el.classList.remove('is-open');
-  });
-  document.querySelectorAll('.nav-dropdown > .nav-tab[aria-haspopup]').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
-}
-
-function toggleNavDropdown(tabId, ev) {
-  if (ev) ev.stopPropagation();
-  const wrap = document.querySelector(`.nav-dropdown[data-nav-dropdown="${tabId}"]`);
-  const wasOpen = wrap ? wrap.classList.contains('is-open') : false;
-  closeAllNavDropdowns();
-  setTab(tabId);
-  if (wrap && !wasOpen) {
-    wrap.classList.add('is-open');
-    const trigger = wrap.querySelector(':scope > .nav-tab');
-    if (trigger) trigger.setAttribute('aria-expanded', 'true');
-  }
-}
-
-function selectNavSubTab(tabId, subTabId, ev) {
-  if (ev) ev.stopPropagation();
-  setTab(tabId);
-  setSubTab(tabId, subTabId);
-  closeAllNavDropdowns();
-  if (document.activeElement && typeof document.activeElement.blur === 'function') {
-    document.activeElement.blur();
-  }
-}
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.nav-dropdown')) {
-    closeAllNavDropdowns();
-  }
-});
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  closeAllNavDropdowns();
   // Açık <dialog> varsa tarayıcı Esc'i kendisi işler; yoksa AI koç paneli kapatılır ve odak tetikleyiciye döner
   const flyout = document.getElementById('aiCoachFlyout');
   if (flyout && !flyout.classList.contains('hidden') && !document.querySelector('dialog[open]')) toggleAICoach();
 });
-document.querySelectorAll('.nav-dropdown').forEach(wrap => {
-  wrap.addEventListener('mouseenter', () => {
-    document.querySelectorAll('.nav-dropdown.is-open').forEach(openEl => {
-      if (openEl !== wrap) openEl.classList.remove('is-open');
-    });
-    const active = document.activeElement;
-    if (active && active.closest('.nav-dropdown') && active.closest('.nav-dropdown') !== wrap && typeof active.blur === 'function') {
-      active.blur();
-    }
-  });
-});
-
-function setSubTab(group, paneKey, persist = true) {
-  document.querySelectorAll(`[data-subpane-group="${group}"]`).forEach(el => {
-    el.classList.toggle('hidden', el.dataset.subpane !== paneKey);
-  });
-  document.querySelectorAll(`[data-subtab-group="${group}"]`).forEach(btn => {
-    const active = btn.dataset.subtab === paneKey;
-    if (btn.classList.contains('nav-dropdown-item')) {
-      btn.className = active ? 'nav-dropdown-item nav-dropdown-item-active' : 'nav-dropdown-item';
-    } else {
-      btn.className = active ? 'subtab-btn subtab-btn-active' : 'subtab-btn';
-    }
-    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-  });
-  if (persist) saveActiveSubTab(group, paneKey);
-  scheduleOverviewFit();
-}
-
 /* Boş / hatalı durumlar için kullanıcıya ne yapacağını söyleyen şerit */
 function renderStatusBanner(overview) {
   const el = document.getElementById('statusBanner');
@@ -238,7 +153,6 @@ async function initApp() {
     const [
       overview,
       gymData,
-      tlData,
       activities,
       corrData,
       progData,
@@ -246,7 +160,6 @@ async function initApp() {
     ] = await Promise.all([
       safeFetchJson('/api/overview'),
       safeFetchJson('/api/gym-history'),
-      safeFetchJson('/api/training-load'),
       safeFetchJson('/api/activities'),
       safeFetchJson('/api/correlations'),
       safeFetchJson('/api/progression'),

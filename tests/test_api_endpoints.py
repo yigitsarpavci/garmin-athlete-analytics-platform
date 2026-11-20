@@ -160,14 +160,6 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertGreaterEqual(data["workouts_7d"]["count"], 0)  # sample_data tarihleri sabittir; 7G penceresi boş olabilir
         self.assertIn("anaerobic_pct", data["load_focus_summary"])
 
-    def test_training_load_endpoint(self):
-        """GET /api/training-load endpointini test eder."""
-        data = self.get_json("/api/training-load")
-        self.assertIn("current_status", data)
-        self.assertIn("acute_load", data["current_status"])
-        self.assertIn("chronic_load", data["current_status"])
-        self.assertIn("load_focus", data)
-
     def test_gym_history_endpoint(self):
         """GET /api/gym-history endpointini test eder."""
         data = self.get_json("/api/gym-history")

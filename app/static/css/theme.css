@@ -382,77 +382,9 @@ select:focus-visible,
   overflow: visible;
 }
 
-/* Header Nav Dropdowns (hover & click-open sub-navigation) */
-.nav-dropdown {
-  position: relative;
-  display: inline-flex;
-  align-items: stretch;
-}
-.nav-dropdown-chevron {
-  width: 0.7rem;
-  height: 0.7rem;
-  opacity: 0.55;
-  transition: transform 150ms ease, opacity 150ms ease;
-}
-.nav-dropdown:hover .nav-dropdown-chevron,
-.nav-dropdown.is-open .nav-dropdown-chevron {
-  opacity: 0.95;
-  transform: rotate(180deg);
-}
-.nav-dropdown-menu {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  min-width: 13.5rem;
-  padding: 0.3rem;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-medium);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
-  z-index: 60;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-.nav-dropdown:hover .nav-dropdown-menu,
-.nav-dropdown:focus-within .nav-dropdown-menu,
-.nav-dropdown.is-open .nav-dropdown-menu {
-  display: flex;
-}
-nav:has(.nav-dropdown:hover) .nav-dropdown:not(:hover) .nav-dropdown-menu {
-  display: none;
-}
-
 html.macos-app .site-header > div {
   padding-left: 5.25rem;
 }
-.nav-dropdown-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  text-align: left;
-  padding: 0.42rem 0.65rem;
-  border-radius: 7px;
-  font-size: 0.74rem;
-  font-weight: 500;
-  white-space: nowrap;
-  color: var(--text-secondary);
-  background: transparent;
-  border: 1px solid transparent;
-  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
-}
-.nav-dropdown-item:hover {
-  background-color: var(--bg-subtle);
-  color: var(--text-primary);
-}
-.nav-dropdown-item-active {
-  background-color: var(--bg-surface-elevated);
-  color: var(--text-primary) !important;
-  font-weight: 600;
-  border-color: var(--border-medium);
-}
-
 .nav-tab {
   position: relative;
   display: inline-flex;
@@ -941,17 +873,11 @@ html.dark .text-emerald-300 {
     flex: none;
   }
   .site-header .nav-tablist { width: 100%; gap: 0; justify-content: space-between; }
-  .site-header .nav-tablist > .nav-tab,
-  .site-header .nav-dropdown { flex: 1 1 0; min-width: 0; }
-  .site-header .nav-dropdown > .nav-tab { width: 100%; }
+  .site-header .nav-tablist > .nav-tab { flex: 1 1 0; min-width: 0; }
   .site-header .nav-tab { justify-content: center; padding: 0.8rem 0.15rem; font-size: 0.75rem; }
   .nav-full { display: none; }
   .nav-short { display: inline; }
   .nav-tab-active::after, .nav-tab[aria-current="page"]::after { inset: 0 0.5rem auto; border-block-end: 0; border-block-start: 2px solid var(--accent); }
-  .nav-dropdown-menu { top: auto; bottom: 100%; left: 0; min-width: 12rem; }
-  .nav-dropdown:last-child .nav-dropdown-menu { left: auto; right: 0; }
-  .nav-dropdown:hover .nav-dropdown-menu { display: none; }
-  .nav-dropdown.is-open .nav-dropdown-menu, .nav-dropdown:focus-within .nav-dropdown-menu { display: flex; }
   .single-screen-main { padding-bottom: 3.75rem; }
   #aiCoachFlyout { bottom: 4.25rem !important; right: 0.5rem !important; }
   #aiCoachLauncherBtn { bottom: 4.25rem !important; }

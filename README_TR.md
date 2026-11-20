@@ -100,7 +100,6 @@ garmin-athlete-analytics-platform/
 | Uç Nokta | Metot | Açıklama |
 | :--- | :--- | :--- |
 | `/api/overview` | `GET` | Sporcu temel KPI'ları, bugünkü antrenman durumu ve haftalık kota. |
-| `/api/training-load` | `GET` | Firstbeat akut yük, kronik yük, ACWR oranı ve yük odak dengesi. |
 | `/api/gym-history` | `GET` | Kasım ayı 5 salon seansının tüm set, tekrar ve ağırlık dökümü. |
 | `/api/daily-protocols` | `GET` | 7 günlük derinlemesine egzersiz, set, tekrar, kilo hedefi ve beslenme reçetesi. |
 | `/api/progression` | `GET` | Dogmatik olmayan seviye atlama, gün artırma ve stil geçiş analizi. |

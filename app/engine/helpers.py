@@ -215,28 +215,6 @@ def fmt_pace_sec(sec: Optional[float]) -> str:
         s = 0
     return f"{m}:{s:02d}"
 
-def fmt_clock(hr_val: Optional[float]) -> str:
-    """
-    Kayan noktalı saat değerini (-24.0 ile 24.0) 24 saatlik 'SS:DD' zaman formatına dönüştürür.
-
-    Args:
-        hr_val (Optional[float]): Saat cinsinden zaman değeri (örn. 0.5 = 00:30, -0.25 = 23:45).
-
-    Returns:
-        str: 24 saatlik formatlanmış zaman dizisi ('00:30' veya '--').
-    """
-    if hr_val is None or np.isnan(hr_val):
-        return "--"
-    h = hr_val + 24.0 if hr_val < 0 else hr_val
-    hh = int(h) % 24
-    mm = int(round((h - int(h)) * 60))
-    if mm == 60:
-        hh = (hh + 1) % 24
-        mm = 0
-    return f"{hh:02d}:{mm:02d}"
-
-
-
 def zone_text(fn):
     """Metodun sonucundaki [[Z2_HR]] gibi şablon belirteçlerini sporcunun kendi nabız/tempo bölgeleriyle doldurur."""
     @functools.wraps(fn)

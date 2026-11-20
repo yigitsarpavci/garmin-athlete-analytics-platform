@@ -9,58 +9,6 @@ function escapeHtml(val) {
     .replace(/'/g, '&#39;');
 }
 
-function resolveProtocolIndex(slotKind, dayCode, fallbackText = '', fallbackIdx = 0) {
-  if (typeof cachedDailyProtocols === 'undefined' || !Array.isArray(cachedDailyProtocols) || !cachedDailyProtocols.length) {
-    return fallbackIdx;
-  }
-  if (dayCode) {
-    const byCode = cachedDailyProtocols.findIndex(p => p.day_code === dayCode);
-    if (byCode >= 0) return byCode;
-  }
-  const kindToCode = {
-    gym_a: 'tuesday',
-    gym: 'tuesday',
-    gym_b: 'saturday',
-    zone2: 'thursday',
-    run: 'thursday',
-    interval: 'monday',
-    tempo: 'monday',
-    active_recovery: 'sunday',
-    rest: 'wednesday'
-  };
-  if (slotKind && kindToCode[slotKind]) {
-    const mapped = cachedDailyProtocols.findIndex(p => p.day_code === kindToCode[slotKind]);
-    if (mapped >= 0) return mapped;
-  }
-  const lower = (fallbackText || '').toLowerCase();
-  if (lower.includes('workout b')) {
-    const bIdx = cachedDailyProtocols.findIndex(p => p.day_code === 'saturday');
-    if (bIdx >= 0) return bIdx;
-  }
-  if (lower.includes('workout a')) {
-    const aIdx = cachedDailyProtocols.findIndex(p => p.day_code === 'tuesday');
-    if (aIdx >= 0) return aIdx;
-  }
-  if (lower.includes('zone 2')) {
-    const zIdx = cachedDailyProtocols.findIndex(p => p.day_code === 'thursday');
-    if (zIdx >= 0) return zIdx;
-  }
-  if (lower.includes('interval') || lower.includes('interva') || lower.includes('hız')) {
-    const iIdx = cachedDailyProtocols.findIndex(p => p.day_code === 'monday');
-    if (iIdx >= 0) return iIdx;
-  }
-  const dayMap = [
-    ['pzt', 'monday'], ['sal', 'tuesday'], ['çar', 'wednesday'],
-    ['per', 'thursday'], ['cum', 'friday'], ['cmt', 'saturday'], ['paz', 'sunday']
-  ];
-  const matched = dayMap.find(([trCode]) => lower.includes(trCode));
-  if (matched) {
-    const found = cachedDailyProtocols.findIndex(p => p.day_code === matched[1]);
-    if (found >= 0) return found;
-  }
-  return fallbackIdx;
-}
-
 function buildQuotaBucketCard(label, iconName, bucket, barColorClass, extraHtml = '') {
   const isRunCard = iconName === 'footprints';
   const target = bucket.target ?? 0;

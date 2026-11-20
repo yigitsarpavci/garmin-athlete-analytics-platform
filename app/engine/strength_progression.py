@@ -8,9 +8,7 @@ Plato Tabanlı Program Evrimi (5x5 -> Push/Pull -> Upper/Lower -> PPL) Motoru.
 
 from __future__ import annotations
 
-import json
 import logging
-import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -269,14 +267,6 @@ def evaluate_session_lift(
         "outcome": outcome,
         "reps_pattern": "/".join(str(r) for r in reps_list),
     }
-
-
-def _write_json_atomic(path: str, payload: Any) -> None:
-    """JSON'u geçici dosyaya yazıp os.replace ile atomik olarak yerine koyar."""
-    tmp_path = f"{path}.{os.getpid()}.tmp"
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-    os.replace(tmp_path, path)
 
 
 _COMPOUND_KEYWORDS = ("squat", "press", "deadlift", "row", "pull", "lunge", "dip", "bench", "clean", "thrust", "chin")

@@ -185,7 +185,6 @@ OK
 | `/api/daily-protocols` | `GET` | 7-day integrated workout and nutritional prescriptions with progressive weights. |
 | `/api/gym-history` | `GET` | Exercise-level resistance history, volume metrics, and personal records (PRs). |
 | `/api/progression` | `GET` | Dynamic multi-tier progression assessment and deload recommendations. |
-| `/api/training-load` | `GET` | Acute load, chronic load, ACWR ratio, and Firstbeat training status. |
 | `/api/sync` | `POST` | Trigger Garmin Connect sync with rolling lease reload fallback. |
 | `/api/chat` | `POST` | Context-aware AI coach query execution (Gemini / OpenAI / Heuristic). |
 
