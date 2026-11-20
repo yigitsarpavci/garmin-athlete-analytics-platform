@@ -246,3 +246,26 @@ class TestSyncResilience(unittest.TestCase):
             os.remove(lock)
         self.assertEqual(res.returncode, 3)
         self.assertIn('"already_running":true', res.stdout)
+
+
+class TestSyncInProgressFlag(unittest.TestCase):
+    def test_flag_is_set_during_sync_and_cleared_after(self):
+        seen = {}
+
+        def fake_impl():
+            seen["during"] = server.SYNC_STATE["sync_in_progress"]
+            return {"success": True}
+
+        with patch.object(server, "_sync_garmin_live_impl", fake_impl):
+            server.sync_garmin_live()
+        self.assertTrue(seen["during"])
+        self.assertFalse(server.SYNC_STATE["sync_in_progress"])
+
+    def test_flag_is_cleared_even_when_sync_raises(self):
+        def boom():
+            raise RuntimeError("x")
+
+        with patch.object(server, "_sync_garmin_live_impl", boom):
+            with self.assertRaises(RuntimeError):
+                server.sync_garmin_live()
+        self.assertFalse(server.SYNC_STATE["sync_in_progress"])

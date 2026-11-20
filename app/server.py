@@ -69,6 +69,7 @@ QUICK_RETRY_MAX = 8
 
 SYNC_STATE: Dict[str, Any] = {
     "last_sync_at": None,
+    "sync_in_progress": False,
     "session_valid": True,
     "last_error": None,
     "auto_sync_interval_sec": AUTO_SYNC_INTERVAL_SEC,
@@ -175,7 +176,7 @@ def _sync_is_complete() -> bool:
     return not bool(getattr(engine, "training_status_is_fallback", False)) and bool(getattr(engine, "training_status_latest", None))
 
 
-def sync_garmin_live() -> Dict[str, Any]:
+def _sync_garmin_live_impl() -> Dict[str, Any]:
     """Garmin Connect verilerini canlı çeker ve motoru tazeler; 401 durumunda yerel telemetri ve oturum kirasını korur."""
     fetch_script = os.path.join(BASE_DIR, "scripts", "fetch_garmin_data.mjs")
     # Demo modunda gerçek Garmin hesabına bağlanılmaz ve data/ klasörüne yazılmaz
@@ -250,6 +251,15 @@ def sync_garmin_live() -> Dict[str, Any]:
                 "last_sync_at": SYNC_STATE["last_sync_at"],
                 "message": f"Garmin senkronizasyon hatası: {exc}",
             }
+
+
+def sync_garmin_live() -> Dict[str, Any]:
+    """Eşitleme sarmalayıcısı: sürerken SYNC_STATE["sync_in_progress"] açık kalır (arayüz bu sürede sık yoklar)."""
+    SYNC_STATE["sync_in_progress"] = True
+    try:
+        return _sync_garmin_live_impl()
+    finally:
+        SYNC_STATE["sync_in_progress"] = False
 
 
 def keepalive_garmin_session() -> Dict[str, Any]:
@@ -371,13 +381,11 @@ def _auto_sync_loop(interval_sec: int = 3600) -> None:
     """Sunucu çalışırken belirli aralıklarla Garmin telemetrisini otomatik yeniler."""
     if IS_DEMO_MODE:
         return
-    daily_file = os.path.join(BASE_DIR, "data", "raw_daily_93d.json")
+    # Uygulama her açıldığında hemen bir eşitleme yap (veri ne kadar taze görünürse görünsün); bitince arayüz kendiliğinden yenilenir.
     try:
-        age_sec = time.time() - os.path.getmtime(daily_file) if os.path.exists(daily_file) else interval_sec + 1
-        if age_sec > interval_sec:
-            sync_garmin_live()
+        sync_garmin_live()
     except Exception:
-        logger.warning("_auto_sync_loop: yedek davranış uygulandı", exc_info=True)
+        logger.warning("_auto_sync_loop: açılış eşitlemesi başarısız", exc_info=True)
     retries = 0
     while True:
         # Veri eksikse (Garmin bugünün durumunu henüz üretmedi) kısa aralıkla tekrar dene; tamamsa normal aralık

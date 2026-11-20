@@ -200,13 +200,16 @@ async function initApp() {
 /* Veri izleyici: sunucu diskte yeni Garmin verisi görünce (otomatik sync veya elle make fetch) data_version değişir; sayfa kendiliğinden yenilenir */
 let _lastDataVersion = null;
 let _dataWatchBusy = false;
+let _lastSyncKick = 0;
 async function checkDataVersion() {
   if (_dataWatchBusy || document.hidden) return;
   _dataWatchBusy = true;
+  let syncing = false;
   try {
     const res = await fetch('/api/status', { cache: 'no-store' });
     if (!res.ok) return;
     const st = await res.json();
+    syncing = Boolean(st && st.session && st.session.sync_in_progress);
     const ver = st && st.data_version;
     if (!ver) return;
     if (_lastDataVersion !== null && ver !== _lastDataVersion) {
@@ -219,12 +222,21 @@ async function checkDataVersion() {
     /* sunucuya geçici ulaşılamadı: bir sonraki turda tekrar denenir */
   } finally {
     _dataWatchBusy = false;
+    // Eşitleme sürerken (uygulama yeni açıldığında) 3 sn'de bir yokla; bitince veri sürümü değişir ve sayfa yenilenir
+    if (syncing) setTimeout(checkDataVersion, 3000);
   }
+}
+/* Pencereye dönüldüğünde veri 5 dakikadan eskiyse sunucudan eşitleme iste (sunucu zaten 15 dk'da bir kendisi yapar) */
+function kickSyncIfStale() {
+  if (document.hidden || Date.now() - _lastSyncKick < 300000) return;
+  _lastSyncKick = Date.now();
+  fetch('/api/sync', { method: 'POST' }).catch(() => {});
+  setTimeout(checkDataVersion, 2000);
 }
 window.addEventListener('DOMContentLoaded', () => {
   checkDataVersion();
   setInterval(checkDataVersion, 60000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDataVersion(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkDataVersion(); kickSyncIfStale(); } });
 });
 
 function getSportLucideIcon(sportStr) {
