@@ -50,7 +50,7 @@ Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve First
   http://localhost:8085
   ```
 
-### 2. Test Süitini Çalıştırma (`99/99` Test)
+### 2. Test Süitini Çalıştırma (`101/101` Test)
 ```bash
 make test           # veya python3 tests/run_tests.py
 ```

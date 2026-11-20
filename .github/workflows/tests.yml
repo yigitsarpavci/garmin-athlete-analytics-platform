@@ -37,6 +37,15 @@ jobs:
           GARMIN_DEMO_MODE: "1"
         run: python -B tests/run_tests.py
 
+      - name: Coverage gate (3.12)
+        if: matrix.python-version == '3.12'
+        env:
+          GARMIN_DEMO_MODE: "1"
+        run: |
+          pip install coverage
+          python -B -m coverage run --source=app tests/run_tests.py
+          python -m coverage report --fail-under=70
+
   frontend-build:
     runs-on: ubuntu-latest
     steps:

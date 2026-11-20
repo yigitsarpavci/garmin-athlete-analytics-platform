@@ -3,6 +3,7 @@
 [![Security: CodeQL | Dependabot](https://img.shields.io/badge/Security-CodeQL%20%7C%20Dependabot%20%7C%20Secret%20scanning-success?logo=github)](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![Coverage](https://img.shields.io/badge/coverage-76%25-yellowgreen)](#verification--test-suite)
 [![Tests](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml/badge.svg)](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml)
 [![Architecture: MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-purple)](https://modelcontextprotocol.io)
 
@@ -146,7 +147,7 @@ Following every session, the platform benchmarks live telemetry against baseline
 
 ## Verification & Test Suite
 
-The platform includes a comprehensive test suite of **99 unit, integration, security and UI-contract tests** guaranteeing calculation accuracy, FIT/high-res stream parsing, flexible weekly quota transitions, sample-data parity, and endpoint reliability:
+The platform includes a comprehensive test suite of **100+ unit, integration, security and UI-contract tests** (101 at the time of writing, 76% line coverage of `app/`, enforced at 70% in CI) guaranteeing calculation accuracy, FIT/high-res stream parsing, flexible weekly quota transitions, sample-data parity, and endpoint reliability:
 
 ```bash
 python3 tests/run_tests.py
@@ -165,7 +166,7 @@ test_weekly_quota_summary_states ............................... ok
 test_weekly_schedule_respects_completed_quota .................. ok
 ... (+30 API, data-integrity, and sports-science tests) ......... ok
 ----------------------------------------------------------------------
-Ran 99 tests
+Ran 101 tests
 
 OK
 🎉 TÜM TESTLER BAŞARIYLA TAMAMLANDI! (%100 Geçti)
@@ -261,7 +262,7 @@ The dashboard serves personal health data, so the server is locked down to the l
 ```bash
 make css      # rebuild app/static/css/tailwind.css (Tailwind 3.4.17 CLI via npx; no runtime compiler in the browser)
 make lint     # ruff (pyflakes rules) over app/, tests/, scripts/
-make test     # 99 tests
+make test     # 101 tests
 ```
 CI also fails when `css/tailwind.css` is stale. The Garmin sync is **incremental** (finalised days are cached; `node scripts/fetch_garmin_data.mjs --full` forces a complete refresh).
 
