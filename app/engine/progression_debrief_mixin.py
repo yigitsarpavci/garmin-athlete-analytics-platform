@@ -199,6 +199,7 @@ class ProgressionDebriefMixin:
                 "is_plan_deviation": is_plan_dev,
                 "date": act_date,
                 "time": act.get("time", ""),
+                "distance_km": round(float(act.get("dist_km") or 0), 2),
                 "duration_min": round(act.get("dur_m") or 0, 1),
                 "calories": act.get("cal", 0),
                 "avg_hr": act.get("avg_hr"),

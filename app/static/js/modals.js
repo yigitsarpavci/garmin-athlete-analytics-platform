@@ -180,7 +180,8 @@ function renderDebriefModalContent(d, idx) {
   }
   document.getElementById('debriefTitle').textContent = `${a.name} Seans Debrief Raporu`;
   document.getElementById('debriefBadge').textContent = a.sport === 'strength_training' ? (gym.workout_type || 'Kuvvet') : (a.workout_type || a.sport_tr || (a.sport === 'running' ? 'Koşu' : 'Branş'));
-  document.getElementById('debriefSub').textContent = `${a.date} · ${a.time || ''} · ${a.duration_min} dk Seans · ${a.calories} kcal`;
+  const distPart = (a.distance_km && Number(a.distance_km) > 0) ? `${Number(a.distance_km).toFixed(2)} km` : null;
+  document.getElementById('debriefSub').textContent = [a.date, a.time || null, distPart, `${a.duration_min} dk Seans`, `${a.calories} kcal`].filter(Boolean).join(' · ');
 
   document.getElementById('debriefSessionLoad').textContent = tl.session_epoc_load || a.load;
   document.getElementById('debriefAcuteChronic').textContent = `${tl.acute_load} / ${tl.chronic_load}`;
