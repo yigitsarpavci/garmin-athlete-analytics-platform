@@ -50,7 +50,10 @@ class AthleteAICoach:
             engine (GarminAthleteEngine): Telemetri ve analitik veri motoru örneği.
         """
         self.engine = engine
-        self.agy_path = os.environ.get("ANTIGRAVITY_AGENTAPI_EXE") or shutil.which("agy") or os.path.expanduser("~/.gemini/bin/agy")
+        candidate = os.environ.get("ANTIGRAVITY_AGENTAPI_EXE") or shutil.which("agy") or os.path.expanduser("~/.gemini/bin/agy")
+        # Only ever execute an existing, executable regular file (resolved to an absolute path).
+        resolved = os.path.realpath(candidate) if candidate else ""
+        self.agy_path = resolved if resolved and os.path.isfile(resolved) and os.access(resolved, os.X_OK) else None
         self.default_model = "gemini-3.8-flash-low"
         self.active_provider = "gemini_cli" # gemini_cli | google_genai | openai
 

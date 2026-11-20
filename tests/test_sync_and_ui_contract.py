@@ -6,6 +6,7 @@ import base64
 import json
 import os
 import re
+from html.parser import HTMLParser
 import subprocess
 import sys
 import tempfile
@@ -169,7 +170,15 @@ class TestUiJsContract(unittest.TestCase):
 
     def test_csp_compatible_no_inline_scripts(self):
         html = _read(os.path.join(self.STATIC, "index.html"))
-        self.assertEqual(re.findall(r"<script(?![^>]*\ssrc=)[^>]*>", html), [])
+        inline = []
+
+        class _ScriptFinder(HTMLParser):
+            def handle_starttag(self, tag, attrs):
+                if tag == "script" and "src" not in dict(attrs):
+                    inline.append(self.getpos())
+
+        _ScriptFinder().feed(html)
+        self.assertEqual(inline, [])
 
     def test_mobile_nav_and_status_markup_present(self):
         html = _read(os.path.join(self.STATIC, "index.html"))
