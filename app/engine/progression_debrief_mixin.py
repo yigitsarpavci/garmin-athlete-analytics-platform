@@ -136,13 +136,31 @@ class ProgressionDebriefMixin:
         sport_tr = format_sport_tr(sport, act.get("name") or "")
         act_date = act.get("date")
 
-        prev_same = next((a for a in acts[idx + 1:] if a.get("sport") == sport), None)
+        run_cls = classify_run_workout(act) if sport == "running" else None
+        prev_cls = None
+        is_similar_kind = True
+        if sport == "running" and run_cls:
+            target_kind = run_cls["kind"]
+            prev_same = next(
+                (a for a in acts[idx + 1:] if a.get("sport") == "running" and classify_run_workout(a)["kind"] == target_kind),
+                None,
+            )
+            if prev_same is None:
+                is_similar_kind = False
+                prev_same = next((a for a in acts[idx + 1:] if a.get("sport") == "running"), None)
+            if prev_same is not None:
+                prev_cls = classify_run_workout(prev_same)
+        else:
+            prev_same = next((a for a in acts[idx + 1:] if a.get("sport") == sport), None)
+
         tl = self.get_training_load_analytics()
         cur_status = tl.get("current_status", {})
         load_focus = tl.get("load_focus", {})
         daily = self.get_latest_metrics()
 
-        hr_comparison = self._compare_with_previous_same_sport(act, prev_same, sport, sport_tr)
+        hr_comparison = self._compare_with_previous_same_sport(
+            act, prev_same, sport, sport_tr, prev_cls=prev_cls, is_similar_kind=is_similar_kind
+        )
 
         gym_prog = self._build_gym_volume_progression(act_date, sport)
 
@@ -163,7 +181,6 @@ class ProgressionDebriefMixin:
         cur_w = float(daily.get("weight") or self.get_current_weight())
         prot_g = round(cur_w * 2.0)
 
-        run_cls = classify_run_workout(act) if sport == "running" else None
         workout_type_label = run_cls["label_tr"] if run_cls else (gym_prog.get("workout_type") or sport_tr)
         is_plan_dev = bool(run_cls and not run_cls["is_planned_archetype"])
         verdict_txt = (
@@ -235,8 +252,8 @@ class ProgressionDebriefMixin:
             },
         }
 
-    def _compare_with_previous_same_sport(self, act, prev_same, sport, sport_tr):
-        """Seansı aynı branştaki önceki seansla (nabız, tempo, EF) karşılaştırır."""
+    def _compare_with_previous_same_sport(self, act, prev_same, sport, sport_tr, prev_cls=None, is_similar_kind=True):
+        """Seansı aynı branştaki (koşuda aynı tür: Zone 2 / Tempo / İnterval) önceki seansla karşılaştırır."""
         hr_comparison: Dict[str, Any] = {}
         if prev_same:
             avg_diff = int((act.get("avg_hr") or 0) - (prev_same.get("avg_hr") or 0))
@@ -254,11 +271,17 @@ class ProgressionDebriefMixin:
                     f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm); antrenman yoğunluğu daha yüksekti."
                 )
             elif sport == "running":
+                prev_kind_label = prev_cls["short_label"] if prev_cls else "koşu"
+                prefix = (
+                    f"Önceki {prev_kind_label} koşuya ({prev_same.get('date')}) göre"
+                    if is_similar_kind
+                    else f"Aynı türde önceki koşu yok; en son {prev_kind_label} koşuya ({prev_same.get('date')}) göre"
+                )
                 insight = (
-                    f"Önceki koşuya ({prev_same.get('date')}) göre ortalama nabız {abs(avg_diff)} bpm daha düşük "
+                    f"{prefix} ortalama nabız {abs(avg_diff)} bpm daha düşük "
                     f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm){ef_txt}."
                     if avg_diff <= 0 else
-                    f"Önceki koşuya ({prev_same.get('date')}) göre ortalama nabız {avg_diff} bpm daha yüksek "
+                    f"{prefix} ortalama nabız {avg_diff} bpm daha yüksek "
                     f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm){ef_txt}."
                 )
             else:
@@ -267,6 +290,8 @@ class ProgressionDebriefMixin:
             hr_comparison = {
                 "previous_date": prev_same.get("date"),
                 "previous_name": prev_same.get("name"),
+                "previous_workout_type": prev_cls["short_label"] if prev_cls else None,
+                "is_similar_kind": is_similar_kind,
                 "previous_avg_hr": prev_same.get("avg_hr"),
                 "previous_max_hr": prev_same.get("max_hr"),
                 "previous_dur_m": round(prev_same.get("dur_m") or 0, 1),

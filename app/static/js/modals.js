@@ -213,7 +213,8 @@ function renderDebriefModalContent(d, idx) {
 
   document.getElementById('debriefCurHr').textContent = `${a.avg_hr} / ${a.max_hr} bpm`;
   document.getElementById('debriefCurDur').textContent = `${a.duration_min} dk seans`;
-  document.getElementById('debriefPrevHrDate').textContent = `Önceki Seans (${hrComp.previous_date || 'Geçmiş'})`;
+  const prevLabel = hrComp.previous_workout_type ? `Önceki ${hrComp.previous_workout_type}` : 'Önceki Seans';
+  document.getElementById('debriefPrevHrDate').textContent = `${prevLabel} (${hrComp.previous_date || 'Geçmiş'})`;
   document.getElementById('debriefPrevHr').textContent = `${hrComp.previous_avg_hr || '--'} / ${hrComp.previous_max_hr || '--'} bpm`;
   document.getElementById('debriefPrevDur').textContent = `${hrComp.previous_dur_m || '--'} dk seans`;
   document.getElementById('debriefHrInsight').textContent = hrComp.insight || '';
