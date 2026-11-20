@@ -99,11 +99,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     }
 
     private func resolveProjectDir() -> String {
+        let serverPath = "/app/server.py"
+        let fm = FileManager.default
         if let dir = Bundle.main.infoDictionary?["ProjectDir"] as? String,
-           FileManager.default.fileExists(atPath: dir + "/app/server.py") {
+           fm.fileExists(atPath: dir + serverPath) {
             return dir
         }
-        return FileManager.default.currentDirectoryPath
+        // Prebuilt copies (e.g. the GitHub release zip) are not tied to the build machine:
+        // remember the folder of the repository checkout the user picks once.
+        let key = "ProjectDirOverride"
+        if let saved = UserDefaults.standard.string(forKey: key),
+           fm.fileExists(atPath: saved + serverPath) {
+            return saved
+        }
+        let panel = NSOpenPanel()
+        panel.title = "Garmin 2.0"
+        panel.message = "Garmin analiz projesinin klasörünü seçin (app/server.py içeren klasör)"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        while panel.runModal() == .OK, let url = panel.url {
+            if fm.fileExists(atPath: url.path + serverPath) {
+                UserDefaults.standard.set(url.path, forKey: key)
+                return url.path
+            }
+            showErrorAlert("Geçersiz klasör", message: "Seçilen klasörde app/server.py bulunamadı.")
+        }
+        return fm.currentDirectoryPath
     }
 
     private func isPortFree(_ port: UInt16) -> Bool {

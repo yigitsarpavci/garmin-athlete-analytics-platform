@@ -233,7 +233,7 @@ OK
   ```bash
   bash macos/build_app.sh
   ```
-  Installs the native macOS desktop app (`Garmin 2.0.app`) to `~/Desktop` and `~/Applications`. Clicking the app starts the local server automatically, keeps data synced while open, and terminates the background server cleanly when closed.
+  Installs the native macOS desktop app (`Garmin 2.0.app`) to `~/Desktop` and `~/Applications`. A prebuilt, ad-hoc-signed Apple Silicon build is attached to the [v1.0.0 release](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/releases/tag/v1.0.0): on first launch it asks for the repository folder (it runs the local Python server), and macOS may require right-click → Open because the app is not notarized. Clicking the app starts the local server automatically, keeps data synced while open, and terminates the background server cleanly when closed.
 - **Web Dashboard (macOS / Linux / Windows):**
   ```bash
   make run                       # Live telemetry (or ./scripts/run_app.sh)

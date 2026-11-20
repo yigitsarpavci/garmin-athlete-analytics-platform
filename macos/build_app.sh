@@ -66,6 +66,11 @@ PLIST
 
 codesign --force --deep --sign - "$APP_BUNDLE" >/dev/null 2>&1 || true
 
+if [ "${NO_INSTALL:-0}" = "1" ]; then
+  echo "Built (not installed): $APP_BUNDLE"
+  exit 0
+fi
+
 echo "4/4 Installing to Desktop and ~/Applications (cleaning old versions)..."
 mkdir -p "$HOME/Desktop" "$HOME/Applications"
 rm -rf "$HOME/Desktop/Garmin Sporcu Paneli.app" "$HOME/Applications/Garmin Sporcu Paneli.app"
