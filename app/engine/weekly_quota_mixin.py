@@ -875,6 +875,7 @@ class WeeklyQuotaMixin:
         st.run_cls_by_id[id(act)] = r_cls
 
         dist_km = round(dist_m / 1000.0, 2) if dist_m > 0 else 0.0
+        dist_txt = f" · {dist_km:.2f} km" if dist_km > 0 else ""
         st.runs_completed_items.append({
             "date": d_str,
             "day_label": day_short,
@@ -887,7 +888,7 @@ class WeeklyQuotaMixin:
             "duration_min": dur_m,
             "avg_hr": avg_hr,
             "calories": cal,
-            "label": day_short,
+            "label": f"{day_short} ({dur_m} dk{dist_txt}{hr_txt})",
         })
 
 
@@ -908,7 +909,7 @@ class WeeklyQuotaMixin:
             "duration_min": dur_m,
             "avg_hr": avg_hr,
             "calories": cal,
-            "label": f"{day_short} · {w_type} ({dur_m} dk{hr_txt})",
+            "label": f"{day_short} ({dur_m} dk{hr_txt})",
         })
         return st.last_gym_type
 
