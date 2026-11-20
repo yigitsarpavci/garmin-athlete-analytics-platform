@@ -260,7 +260,13 @@ class ProgressionDebriefMixin:
             max_diff = int((act.get("max_hr") or 0) - (prev_same.get("max_hr") or 0))
             dur_diff = round((act.get("dur_m") or 0) - (prev_same.get("dur_m") or 0), 1)
             load_diff = round((act.get("load") or 0) - (prev_same.get("load") or 0), 1)
-            ef_txt = f" (Kardiyak Verimlilik EF: {act.get('ef_spd')} m/atım)" if act.get("ef_spd") else ""
+            cur_ef = act.get("ef_spd")
+            prev_ef = prev_same.get("ef_spd")
+            ef_diff = round(cur_ef - prev_ef, 3) if (cur_ef and prev_ef) else None
+            ef_diff_pct = round(((cur_ef - prev_ef) / prev_ef) * 100.0, 1) if (cur_ef and prev_ef and prev_ef > 0) else None
+            cur_pace = act.get("pace_str")
+            prev_pace = prev_same.get("pace_str")
+            ef_txt = f" (Kardiyak Verimlilik EF: {cur_ef} m/atım)" if cur_ef else ""
 
             if sport == "strength_training":
                 insight = (
@@ -277,13 +283,27 @@ class ProgressionDebriefMixin:
                     if is_similar_kind
                     else f"Aynı türde önceki koşu yok; en son {prev_kind_label} koşuya ({prev_same.get('date')}) göre"
                 )
-                insight = (
-                    f"{prefix} ortalama nabız {abs(avg_diff)} bpm daha düşük "
-                    f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm){ef_txt}."
-                    if avg_diff <= 0 else
-                    f"{prefix} ortalama nabız {avg_diff} bpm daha yüksek "
-                    f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm){ef_txt}."
-                )
+                if ef_diff_pct is not None:
+                    if ef_diff_pct > 0.5:
+                        ef_verdict = f"kardiyak verimlilik (EF) %{ef_diff_pct:.1f} arttı ({cur_ef:.3f} vs {prev_ef:.3f} m/atım)"
+                    elif ef_diff_pct < -0.5:
+                        ef_verdict = f"kardiyak verimlilik (EF) %{abs(ef_diff_pct):.1f} düştü ({cur_ef:.3f} vs {prev_ef:.3f} m/atım)"
+                    else:
+                        ef_verdict = f"kardiyak verimlilik (EF) benzer kaldı ({cur_ef:.3f} vs {prev_ef:.3f} m/atım)"
+                    pace_cmp = (
+                        f" — {cur_pace} @ {act.get('avg_hr')} bpm vs {prev_pace} @ {prev_same.get('avg_hr')} bpm"
+                        if (cur_pace and prev_pace) else
+                        f" ({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm)"
+                    )
+                    insight = f"{prefix} {ef_verdict}{pace_cmp}."
+                else:
+                    insight = (
+                        f"{prefix} ortalama nabız {abs(avg_diff)} bpm daha düşük "
+                        f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm){ef_txt}."
+                        if avg_diff <= 0 else
+                        f"{prefix} ortalama nabız {avg_diff} bpm daha yüksek "
+                        f"({act.get('avg_hr')} vs {prev_same.get('avg_hr')} bpm){ef_txt}."
+                    )
             else:
                 insight = f"Önceki {sport_tr} seansına ({prev_same.get('date')}) kıyasla ortalama nabız farkı: {avg_diff:+d} bpm."
 
@@ -296,6 +316,12 @@ class ProgressionDebriefMixin:
                 "previous_max_hr": prev_same.get("max_hr"),
                 "previous_dur_m": round(prev_same.get("dur_m") or 0, 1),
                 "previous_load": round(prev_same.get("load") or 0, 1),
+                "ef": cur_ef,
+                "previous_ef": prev_ef,
+                "ef_diff": ef_diff,
+                "ef_diff_pct": ef_diff_pct,
+                "pace_str": cur_pace,
+                "previous_pace_str": prev_pace,
                 "avg_hr_diff": avg_diff,
                 "max_hr_diff": max_diff,
                 "dur_diff_min": dur_diff,

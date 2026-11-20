@@ -203,7 +203,13 @@ function renderDebriefModalContent(d, idx) {
   const avgDiff = hrComp.avg_hr_diff !== undefined ? hrComp.avg_hr_diff : 0;
   const diffSign = avgDiff > 0 ? `+${avgDiff}` : `${avgDiff}`;
   const hrBadge = document.getElementById('debriefHrDiffBadge');
-  if (avgDiff <= 0) {
+  const hasEf = a.sport === 'running' && hrComp.ef_diff_pct != null;
+  if (hasEf) {
+    const efPct = Number(hrComp.ef_diff_pct);
+    const efSign = efPct > 0 ? `+${efPct.toFixed(1)}` : efPct.toFixed(1);
+    hrBadge.textContent = `${efSign}% EF VERİMLİLİK`;
+    hrBadge.className = efPct >= 0 ? "stamp-tag stamp-moss" : "stamp-tag stamp-crimson";
+  } else if (avgDiff <= 0) {
     hrBadge.textContent = `${diffSign} bpm TASARRUF`;
     hrBadge.className = "stamp-tag stamp-moss";
   } else {
@@ -212,11 +218,15 @@ function renderDebriefModalContent(d, idx) {
   }
 
   document.getElementById('debriefCurHr').textContent = `${a.avg_hr} / ${a.max_hr} bpm`;
-  document.getElementById('debriefCurDur').textContent = `${a.duration_min} dk seans`;
+  document.getElementById('debriefCurDur').textContent = (a.sport === 'running' && hrComp.ef != null)
+    ? `${a.duration_min} dk · ${hrComp.pace_str || '--'} · EF ${hrComp.ef}`
+    : `${a.duration_min} dk seans`;
   const prevLabel = hrComp.previous_workout_type ? `Önceki ${hrComp.previous_workout_type}` : 'Önceki Seans';
   document.getElementById('debriefPrevHrDate').textContent = `${prevLabel} (${hrComp.previous_date || 'Geçmiş'})`;
   document.getElementById('debriefPrevHr').textContent = `${hrComp.previous_avg_hr || '--'} / ${hrComp.previous_max_hr || '--'} bpm`;
-  document.getElementById('debriefPrevDur').textContent = `${hrComp.previous_dur_m || '--'} dk seans`;
+  document.getElementById('debriefPrevDur').textContent = (a.sport === 'running' && hrComp.previous_ef != null)
+    ? `${hrComp.previous_dur_m || '--'} dk · ${hrComp.previous_pace_str || '--'} · EF ${hrComp.previous_ef}`
+    : `${hrComp.previous_dur_m || '--'} dk seans`;
   document.getElementById('debriefHrInsight').textContent = hrComp.insight || '';
 
   const gymSec = document.getElementById('debriefGymSection');
