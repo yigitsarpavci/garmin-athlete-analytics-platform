@@ -10,24 +10,21 @@ Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve First
    - **Arka Planda:** Firstbeat Akut/Kronik Antrenman Yükü (ACWR / Gabbett modeli), Kardiyak Verimlilik Faktörü ($EF = \text{Hız} / \text{Nabız}$ m/atım), Mifflin-St Jeor BMR, dinamik TDEE, makro bölüşümleri ve Pearson korelasyon matrisi en derin matematiksel hassasiyetle hesaplanır.
    - **Ön Planda:** Sporcuya ara formüller yerine doğrudan **Net Sonuç** ve **Yapılması Gereken Eylemler** pratik bir dille aktarılır.
 
-2. **Dogmatik Olmayan Çok Seviyeli Antrenman Mimarisi:**
-   - Antrenman programları taşa kazınmış sabit kalıplar değildir; sporcunun seviyesine göre 4 kademeli bilimsel çerçeve sunulur:
-     * **Başlangıç (Beginner):** Koş-Yürü (Run/Walk) / Saf Zone 1-2 + Vücut ağırlığı temel kalıplar (2-3 gün/hf).
-     * **Orta Seviye (Intermediate):** 80/20 Polarize koşu (1 Zone 2 + 1 5K Hız İntervali) + A/B Full Body 5x5 bileşik kuvvet (4 gün/hf).
-     * **İleri Seviye (Advanced):** Piramidal / Laktat Eşik koşusu + Üst/Alt Vücut (Upper/Lower Split 4 gün) veya PPL (5 gün/hf).
-     * **Elit (Elite):** Blok periyodizasyonu, çift seanslar ve patlayıcı pliometri (5-6 gün/hf).
-   - **Dinamik Progresyon Tetikleyicileri:** ACWR stabil seyrettiğinde gün artırma (2 $\rightarrow$ 3 koşu), 5x5 lineer artışı doyduğunda Üst/Alt Vücut bölünmesine geçiş ve yorgunluk sinyallerinde (düşük HRV, yüksek RHR) deload esnekliği anlık telemetriyle otomatik önerilir.
+2. **Kural Tabanlı Haftalık Dönemleme:**
+   - **Kuvvet:** her zaman haftada 2 seans, Workout A / Workout B (tam vücut 5x5 bileşik hareketler) dönüşümlü; ilerleme hedefleri sporcunun kendi Garmin set geçmişinden türetilir.
+   - **Koşu:** haftada 2-3 koşu tabanı. Tüm Firstbeat yük çubukları dolduğunda haftalık hedef bilinçli olarak 0-1'e düşebilir (aşırı yüklenme koruması).
+   - **Fazladan hacim yerine deload:** tüm çubuklar doluysa ve Pazar'a kadar azalmayacaksa hafta sonuna kadar deload önerilir, ekstra salon seansı asla eklenmez.
+   - **Koşu dili:** koşu önerileri Garmin Quick Workout isimleriyle (**İnterval**, **Tempo**, **Zone 2**) ve sporcunun kendi maksimum nabzının yüzdesi olarak türetilen nabız bantlarıyla verilir.
 
 3. **7 Günlük Ayrıntılı Egzersiz, Set, Tekrar ve Ağırlık Reçetesi:**
    - Her günün amacı, ısınma protokolü, set/tekrar sayıları, Garmin telemetrisinden hesaplanan Progressive Overload kilo hedefleri (+2.5 kg üst vücut, +2.5-5.0 kg alt vücut), dinlenme süreleri, hedef RPE, koşu nabız/tempoları, soğuma ve günlük makro beslenme hedefleri.
-   - **Lateral Raise ve Shrug Dahil:** V-Taper omuz genişliği ve yelken/deadlift tutuş gücü için Workout A ve B'ye eksiksiz entegre edilmiştir.
 
 4. **Gerçek LLM Entegreli AI Sporcu Koçu:**
    - Garmin telemetrisiyle anlık beslenen ve sporcunun profil geçmişini bağlam olarak alan interaktif yapay zeka danışmanı.
 
 5. **Yüksek Çözünürlüklü İkili FIT (`1 Hz`), Adaptif Oturum Koruma ve Demo Modu:**
    - **İkili FIT & 5dk HRV (`app/engine/fit_stream_parser.py`):** `1 Hz` nabız, kadans, adım uzunluğu, Running Dynamics (`GCT`, dikey salınım/oran) ve 5 dakikalık gece HRV RMSSD kanalları `/api/garmin-expansion` üzerinden sunulur.
-   - **Kesintisiz Oturum & Tek Ekran Arayüz:** 4 dakikalık adaptif keep-alive döngüsü (`/api/session/keepalive`) ile oturum kirasını korur; tüm 19 görünüm `100vh` kaydırmasız koyu orman yeşili arayüzde sunulur.
+   - **Kesintisiz Oturum & Tek Ekran Arayüz:** 4 dakikalık adaptif keep-alive döngüsü (`/api/session/keepalive`) ile oturum kirasını korur; tüm sayfalar (Genel Bakış, Branşlar, Geçmiş, Analizler) `100vh` kaydırmasız koyu orman yeşili arayüzde sunulur.
    - **Sentetik Demo Modu:** Canlı Garmin oturumu olmadan denemek için `GARMIN_DEMO_MODE=1` veya `--demo` bayrağıyla `sample_data/` üzerinden çalıştırılabilir.
 
 ---
@@ -53,7 +50,7 @@ Bu platform, Garmin Connect ekosisteminden (biyometrik saat sensörleri ve First
   http://localhost:8085
   ```
 
-### 2. Test Süitini Çalıştırma (`36/36` Test — %100 Kapsam)
+### 2. Test Süitini Çalıştırma (`99/99` Test)
 ```bash
 make test           # veya python3 tests/run_tests.py
 ```

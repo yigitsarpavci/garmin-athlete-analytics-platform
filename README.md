@@ -1,7 +1,7 @@
 # Garmin Athlete Analytics Platform: MCP Telemetry & Exercise Science Engine
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Tests](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml/badge.svg)](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml)
 [![Architecture: MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-purple)](https://modelcontextprotocol.io)
 
@@ -32,7 +32,7 @@ An end-to-end athletic performance intelligence and biometric telemetry platform
 
 ## Problem Statement
 
-Commercial fitness trackers generate massive streams of biometric telemetry (heart rate variability, excess post-exercise oxygen consumption, cadence, sleep architecture), yet companion mobile apps present this data through fragmented, superficial scores without actionable training periodization. Conversely, academic exercise physiology frameworks (Gabbett ACWR, polarized 80/20 endurance splits, linear progressive overload) require labor-intensive manual logging.
+Commercial fitness trackers generate massive streams of biometric telemetry (heart rate variability, excess post-exercise oxygen consumption, cadence, sleep architecture), yet companion mobile apps present this data through fragmented, superficial scores without actionable training periodization. Conversely, academic exercise physiology frameworks (Gabbett ACWR, Firstbeat training status, linear progressive overload) require labor-intensive manual logging.
 
 **Garmin Athlete Analytics Platform** bridges this gap:
 1. **IoT Sensor Ingestion & High-Res FIT Parsing:** Connects directly to Garmin Connect via the Model Context Protocol (MCP) to extract raw 93-day activity, sleep, 5-minute overnight HRV (RMSSD), Running Dynamics (`GCT`, vertical oscillation/ratio, power), body weight, and `1 Hz` binary `.fit` streams (`app/engine/fit_stream_parser.py`).
@@ -48,16 +48,14 @@ Commercial fitness trackers generate massive streams of biometric telemetry (hea
   $$\text{ACWR} = \frac{\text{Acute Load (7-day rolling mean)}}{\text{Chronic Load (28-day rolling mean)}}$$
 - Enforces the **Sweet Spot ($0.80 \le \text{ACWR} \le 1.30$)** to maximize training adaptation while keeping soft-tissue injury risk under $5\%$. Triggers proactive deload warnings whenever $\text{ACWR} \ge 1.50$ (the *"Danger Zone"*).
 
-### 2. Non-Dogmatic Multi-Tier Athletic Periodization
-- Rejects rigid static templates; evaluates individual telemetry to classify athlete status across 4 progressive frameworks:
-  - **Beginner (Temel):** Run/Walk intervals, pure Zone 1–2 aerobic building, bodyweight fundamentals.
-  - **Intermediate (Gelişim - Current Profile):** Polarized 80/20 endurance (Zone 2 Base + 5K Speed Intervals) + A/B Full-Body 5x5 compound strength.
-  - **Advanced (Performans):** Pyramidal lactate threshold runs + Upper/Lower or Push-Pull-Legs (PPL) hypertrophy splits.
-  - **Elite (Yarışma):** Block periodization, explosive plyometrics, and intra-day double sessions.
+### 2. Rule-Based Weekly Periodization
+- **Strength:** always 2 sessions per week, alternating full-body **Workout A / Workout B** (5x5 compound lifts), with progressive-overload targets derived from the athlete's own Garmin set history.
+- **Running:** a base of 2-3 runs per week. The weekly target may intentionally drop to 0-1 when all Firstbeat load bars are already full (overload guard).
+- **Deload instead of extra volume:** when every bar is full and will not decay by Sunday, the platform recommends a deload until the end of the week and never adds an extra gym session.
+- **Run vocabulary:** run advice uses Garmin Quick Workout names (**Interval**, **Tempo**, **Zone 2**) and heart-rate bands derived as percentages of the athlete's own max HR.
 
 ### 3. Precision 7-Day Workout Prescription
-- Delivers exact session objectives, warmup/cooldown protocols, target RPE, heart rate zones, rest intervals, and **Progressive Overload** target weights (+2.5 kg upper body, +2.5–5.0 kg lower body).
-- Fully integrates critical accessory movements: **Dumbbell Lateral Raises (20–25 kg)** for V-taper lateral deltoid hypertrophy and **Shrugs (45 kg)** for neck/trap injury prevention during nautical hiking and deadlift locks.
+- Delivers session objectives, warmup/cooldown protocols, target RPE, heart-rate zones, rest intervals, and **Progressive Overload** target weights computed from the athlete's own set history.
 
 ### 4. 5-Point Automated Post-Workout Debrief
 - Instantly benchmarks every completed session against the athlete's 5 core post-workout inspection criteria:
@@ -112,7 +110,7 @@ flowchart TD
 | **ACWR** | $\text{ACWR} = \frac{\text{Acute Load (7-Day)}}{\text{Chronic Load (28-Day)}}$ | **Sweet Spot:** $0.80 - 1.30$. Prevents overtraining and soft-tissue injury. |
 | **Cardiac Efficiency (EF)** | $\text{EF} = \frac{\text{Speed (m/min)}}{\text{Average Heart Rate (bpm)}}$ | Measures stroke volume and mitochondrial density. Increasing EF indicates aerobic adaptation. |
 | **Basal Metabolic Rate** | $\text{BMR} = 10W + 6.25H - 5A + 5$ | Mifflin-St Jeor equation ($W$ in kg, $H$ in cm, $A$ in years) for lean mass preservation. |
-| **Dynamic TDEE** | $\text{TDEE} = \text{BMR} \times \text{PAL} + \text{EPOC}_{\text{session}}$ | Dynamically calibrates daily caloric deficit ($400 - 550\text{ kcal}$) to reach ideal weight ($81.0\text{ kg}$). |
+| **Dynamic TDEE** | $\text{TDEE} = \text{BMR} \times \text{PAL} + \text{EPOC}_{\text{session}}$ | Dynamically calibrates daily caloric deficit ($400 - 550\text{ kcal}$) toward the `target_weight_kg` set in the athlete profile. |
 
 ---
 
@@ -122,14 +120,14 @@ Following every session, the platform benchmarks live telemetry against baseline
 
 ```
 ======================================================================
-📋 5-POINT POST-WORKOUT ATHLETIC DEBRIEF (17 Nov 2026 Session)
+📋 5-POINT POST-WORKOUT ATHLETIC DEBRIEF (synthetic demo data)
 ======================================================================
 [1] Training Load & ACWR   : EPOC: 14.6 | Acute: 279 | Chronic: 279 | ACWR: 1.00 (Sweet Spot)
-[2] Productive Status      : Maintaining (VO2 Max: 45.4 ml/kg/min, Stabil)
-[3] 24h Daily Biometrics   : Weight: 87.0 kg | RHR: 54 bpm (-8 bpm vs Aug) | HRV: 43 ms | Sleep: 82/100 | BB: 78
-[4] Same-Sport HR Delta    : Avg: 112 bpm (-6 bpm vs 10 Nov Workout A) | Max: 148 bpm (Cardiovascular Economy)
-[5] Gym Tonnage & PRs      : Total Volume: 7,430 kg (+363 kg vs 10 Nov)
-                             Squat 65.0 kg 5x5 PR (+20 kg record), Bench 50.0 kg 5x5 PR, Row 60.0 kg 5x5 PR
+[2] Productive Status      : Maintaining (VO2 Max: 48.0 ml/kg/min, Stabil)
+[3] 24h Daily Biometrics   : Weight: 78.0 kg | RHR: 55 bpm (-5 bpm vs 4w ago) | HRV: 48 ms | Sleep: 80/100 | BB: 74
+[4] Same-Sport HR Delta    : Avg: 112 bpm (-6 bpm vs last Workout A) | Max: 148 bpm (Cardiovascular Economy)
+[5] Gym Tonnage & PRs      : Total Volume: 7,430 kg (+300 kg vs last Workout A)
+                             Squat 70.0 kg 5x5 PR, Bench 50.0 kg 5x5 PR, Row 55.0 kg 5x5 PR
 ======================================================================
 ```
 
@@ -147,7 +145,7 @@ Following every session, the platform benchmarks live telemetry against baseline
 
 ## Verification & Test Suite
 
-The platform includes a comprehensive test suite of **96 unit, integration, security and UI-contract tests** guaranteeing calculation accuracy, FIT/high-res stream parsing, flexible weekly quota transitions, sample-data parity, and endpoint reliability:
+The platform includes a comprehensive test suite of **99 unit, integration, security and UI-contract tests** guaranteeing calculation accuracy, FIT/high-res stream parsing, flexible weekly quota transitions, sample-data parity, and endpoint reliability:
 
 ```bash
 python3 tests/run_tests.py
@@ -166,7 +164,7 @@ test_weekly_quota_summary_states ............................... ok
 test_weekly_schedule_respects_completed_quota .................. ok
 ... (+30 API, data-integrity, and sports-science tests) ......... ok
 ----------------------------------------------------------------------
-Ran 96 tests
+Ran 99 tests
 
 OK
 🎉 TÜM TESTLER BAŞARIYLA TAMAMLANDI! (%100 Geçti)
@@ -184,6 +182,8 @@ OK
 | `/api/post-workout-debrief` | `GET` | 5-point post-workout telemetry debrief with optional `?idx=` query selector. |
 | `/api/daily-protocols` | `GET` | 7-day integrated workout and nutritional prescriptions with progressive weights. |
 | `/api/gym-history` | `GET` | Exercise-level resistance history, volume metrics, and personal records (PRs). |
+| `/api/activities` | `GET` | All recorded Garmin activities (sport filter supported). |
+| `/api/correlations` | `GET` | Pearson correlation matrix with p-values. |
 | `/api/progression` | `GET` | Dynamic multi-tier progression assessment and deload recommendations. |
 | `/api/sync` | `POST` | Trigger Garmin Connect sync with rolling lease reload fallback. |
 | `/api/chat` | `POST` | Context-aware AI coach query execution (Gemini / OpenAI / Heuristic). |
@@ -260,7 +260,7 @@ The dashboard serves personal health data, so the server is locked down to the l
 ```bash
 make css      # rebuild app/static/css/tailwind.css (Tailwind 3.4.17 CLI via npx; no runtime compiler in the browser)
 make lint     # ruff (pyflakes rules) over app/, tests/, scripts/
-make test     # 96 tests
+make test     # 99 tests
 ```
 CI also fails when `css/tailwind.css` is stale. The Garmin sync is **incremental** (finalised days are cached; `node scripts/fetch_garmin_data.mjs --full` forces a complete refresh).
 
