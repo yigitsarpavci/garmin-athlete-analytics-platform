@@ -1,5 +1,6 @@
 # Garmin Athlete Analytics Platform: MCP Telemetry & Exercise Science Engine
 
+[![Security: CodeQL | Dependabot](https://img.shields.io/badge/Security-CodeQL%20%7C%20Dependabot%20%7C%20Secret%20scanning-success?logo=github)](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Tests](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml/badge.svg)](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml)
