@@ -37,3 +37,5 @@ AGENTS.md
 
 # Linter önbelleği
 .ruff_cache/
+
+.coverage
