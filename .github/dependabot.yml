@@ -5,6 +5,11 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    # requirements.txt holds minimum versions on purpose: the project supports Python 3.10+,
+    # and raising the pandas/numpy floors would silently drop 3.10/3.11.
+    ignore:
+      - dependency-name: "pandas"
+      - dependency-name: "numpy"
     open-pull-requests-limit: 3
     groups:
       all-updates:
