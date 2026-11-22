@@ -1,13 +1,10 @@
-# Garmin Athlete Analytics Platform: MCP Telemetry & Exercise Science Engine
+# Garmin Athlete Analytics Platform
 
-[![Security: CodeQL | Dependabot](https://img.shields.io/badge/Security-CodeQL%20%7C%20Dependabot%20%7C%20Secret%20scanning-success?logo=github)](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/security)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
-[![Coverage](https://img.shields.io/badge/coverage-76%25-yellowgreen)](#verification--test-suite)
 [![Tests](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml/badge.svg)](https://github.com/yigitsarpavci/garmin-athlete-analytics-platform/actions/workflows/tests.yml)
-[![Architecture: MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-purple)](https://modelcontextprotocol.io)
+[![Coverage](https://img.shields.io/badge/coverage-76%25-yellowgreen)](#tests)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-An end-to-end athletic performance intelligence and biometric telemetry platform. It ingests 93 days ($N=93$ days, 49+ multi-sport activities, 88+ sleep/HRV nights, and resistance sets) of raw Garmin Connect sensor data via the **Model Context Protocol (MCP)**, executing Tim Gabbett Acute:Chronic Workload Ratio (ACWR) injury risk modeling, Firstbeat training status algorithms, dynamic multi-sport weekly quota adaptation, and live dark-mode physiological analytics.
+A personal training-analytics app built on my own Garmin data. A Node script pulls 93 days of activities, sleep, overnight HRV, body weight, strength sets and 1 Hz `.fit` streams from Garmin Connect through an MCP server; a Python engine turns them into training-load (ACWR) guidance, a weekly plan, post-workout debriefs and an AI coach; and a local dashboard (also packaged as a native macOS app) shows it on one screen.
 
 > **Turkish Documentation:** Detaylı Türkçe dokümantasyon için [README_TR.md](README_TR.md) dosyasına göz atabilirsiniz.
 
@@ -36,67 +33,15 @@ python3 app/server.py --demo   # synthetic data, no Garmin account needed
 
 ---
 
-## Table of Contents
+## What It Does
 
-- [Problem Statement](#problem-statement)
-- [Key Features](#key-features)
-- [System Architecture](#system-architecture)
-- [Scientific & Mathematical Formulations](#scientific--mathematical-formulations)
-- [5-Point Post-Workout Debrief Protocol](#5-point-post-workout-debrief-protocol)
-- [Tech Stack](#tech-stack)
-- [Athlete Profile](#athlete-profile-nothing-personal-lives-in-the-code)
-- [Security & Privacy](#security--privacy)
-- [Language & Conventions](#language--conventions)
-- [Verification & Test Suite](#verification--test-suite)
-- [REST API Reference](#rest-api-reference)
-- [Local Setup & Quickstart](#local-setup--quickstart)
-- [Project Structure](#project-structure)
-- [License](#license)
-
----
-
-## Problem Statement
-
-Commercial fitness trackers generate massive streams of biometric telemetry (heart rate variability, excess post-exercise oxygen consumption, cadence, sleep architecture), yet companion mobile apps present this data through fragmented, superficial scores without actionable training periodization. Conversely, academic exercise physiology frameworks (Gabbett ACWR, Firstbeat training status, linear progressive overload) require labor-intensive manual logging.
-
-**Garmin Athlete Analytics Platform** bridges this gap:
-1. **IoT Sensor Ingestion & High-Res FIT Parsing:** Connects directly to Garmin Connect via the Model Context Protocol (MCP) to extract raw 93-day activity, sleep, 5-minute overnight HRV (RMSSD), Running Dynamics (`GCT`, vertical oscillation/ratio, power), body weight, and `1 Hz` binary `.fit` streams (`app/engine/fit_stream_parser.py`).
-2. **Deterministic Physiology & Flexible Quota Engine:** Computes acute and chronic workload ratios, cardiac efficiency factors, energy expenditure, dynamic morphology projections, progressive overload weights, and Monday-reset flexible weekly quotas without heuristic guesswork.
-3. **Single-Screen Forest-Dark Telemetry Workspace:** Serves a zero-scroll (`100vh`) deep-forest dark-mode web dashboard backed by modular Python analytics engines, incremental Garmin sync every 15 min with quick retries when Garmin data is incomplete (`GARMIN_SYNC_INTERVAL_SEC`), automatic reload when data files change on disk, and a cross-process fetch lock, 4-minute adaptive SSO keep-alive (`GET /api/session/keepalive`), and an offline synthetic demo mode (`GARMIN_DEMO_MODE=1` / `--demo`).
-
----
-
-## Key Features
-
-### 1. Gabbett ACWR & Training Load Monitoring
-- Implements Dr. Tim Gabbett's **Acute:Chronic Workload Ratio (ACWR)** model:
-  $$\text{ACWR} = \frac{\text{Acute Load (7-day rolling mean)}}{\text{Chronic Load (28-day rolling mean)}}$$
-- Enforces the **Sweet Spot ($0.80 \le \text{ACWR} \le 1.30$)** to maximize training adaptation while keeping soft-tissue injury risk under $5\%$. Triggers proactive deload warnings whenever $\text{ACWR} \ge 1.50$ (the *"Danger Zone"*).
-
-### 2. Rule-Based Weekly Periodization
-- **Strength:** always 2 sessions per week, alternating full-body **Workout A / Workout B** (5x5 compound lifts), with progressive-overload targets derived from the athlete's own Garmin set history.
-- **Running:** a base of 2-3 runs per week. The weekly target may intentionally drop to 0-1 when all Firstbeat load bars are already full (overload guard).
-- **Deload instead of extra volume:** when every bar is full and will not decay by Sunday, the platform recommends a deload until the end of the week and never adds an extra gym session.
-- **Run vocabulary:** run advice uses Garmin Quick Workout names (**Interval**, **Tempo**, **Zone 2**) and heart-rate bands derived as percentages of the athlete's own max HR.
-
-### 3. Precision 7-Day Workout Prescription
-- Delivers session objectives, warmup/cooldown protocols, target RPE, heart-rate zones, rest intervals, and **Progressive Overload** target weights computed from the athlete's own set history.
-
-### 4. 5-Point Automated Post-Workout Debrief
-- Instantly benchmarks every completed session against the athlete's 5 core post-workout inspection criteria:
-  1. **Training Load & ACWR:** Session EPOC contribution and acute/chronic ratio verification.
-  2. **Productive Status:** Garmin Firstbeat training status alignment ($\text{VO}_2\text{ Max}$ trend vs. load tunnel).
-  3. **24h Daily Biometrics:** Body weight, resting heart rate (RHR), overnight HRV balance, sleep score, and morning Body Battery.
-  4. **Sport-Matched Cardiac Efficiency:** Compares average/maximum heart rate against previous identical sessions (e.g., Workout A vs. Workout A; Zone 2 vs. Zone 2) to quantify cardiovascular economy.
-  5. **Gym Tonnage Progression:** Computes total session tonnage and tracks individual compound PRs.
-
-### 5. Dual-Provider AI Athletic Coach
-- Features a real-time conversational sports coach powered by **Google GenAI (Gemini 2.5 Flash)** with automatic fallback to **OpenAI (GPT-4o-mini)** or deterministic sports science heuristics when API keys are absent.
-
-### 6. High-Res Binary FIT Streams, Session Keep-Alive & Demo Mode
-- **Binary `.fit` Decoder (`app/engine/fit_stream_parser.py`):** Decodes native Garmin FIT binary frames (`1 Hz` heart rate, cadence, stride length, ground contact time, and vertical oscillation) plus 5-minute overnight HRV and respiration series exposed via `GET /api/garmin-expansion`.
-- **Adaptive Session Continuity:** Runs a background 4-minute keep-alive loop (`GET /api/session/keepalive`) and rolling session lease fallback so `/api/sync` stays responsive and refreshes local telemetry cleanly without interrupting dashboard sessions.
-- **Portable Demo Mode:** Launch with `GARMIN_DEMO_MODE=1` or `--demo` to run seamlessly against synthetic telemetry in `sample_data/`.
+- **Training load.** Reads Garmin's acute (7-day) and chronic (28-day) load and applies Gabbett's acute:chronic workload ratio bands: 0.80–1.30 is the target range, above 1.30 the plan stops adding runs, and from 1.50 it recommends a deload.
+- **Weekly plan.** Two full-body strength sessions (alternating Workout A / B, 5×5) and two to three runs, named after Garmin Quick Workouts (Interval, Tempo, Zone 2) with heart-rate bands from the athlete's own max HR. When Garmin's three load-focus bars are already full, the run target drops and a deload is suggested instead of extra volume. Lift targets come from the athlete's own set history.
+- **Post-workout debrief.** Each session is compared on five points: load and ACWR, Garmin training status and VO₂ max trend, the last 24 h of biometrics (weight, resting HR, HRV, sleep, Body Battery), heart rate against the previous session of the same type, and strength tonnage and PRs.
+- **High-resolution data.** A binary `.fit` decoder extracts 1 Hz heart rate, cadence, stride length, ground contact time and vertical oscillation; 5-minute overnight HRV and respiration series are exposed by the API.
+- **AI coach.** Chat backed by Gemini with OpenAI (`gpt-4o-mini`) as a second provider, and deterministic rule-based answers when no key is set. The prompt carries the current load, plan and recent sessions.
+- **Sync.** Incremental Garmin sync every 15 minutes (`GARMIN_SYNC_INTERVAL_SEC`), quick retries when Garmin data is incomplete, a cross-process fetch lock, a 4-minute session keep-alive, and automatic reload when data files change.
+- **Demo mode.** `--demo` (or `GARMIN_DEMO_MODE=1`) runs everything on synthetic data in `sample_data/` without a Garmin account.
 
 ---
 
@@ -128,16 +73,14 @@ flowchart TD
 
 ---
 
-## Scientific & Mathematical Formulations
+## Formulas
 
-| Metric | Scientific Formula | Purpose & Thresholds |
+| Metric | Formula | Used for |
 | :--- | :--- | :--- |
-| **ACWR** | $\text{ACWR} = \frac{\text{Acute Load (7-Day)}}{\text{Chronic Load (28-Day)}}$ | **Sweet Spot:** $0.80 - 1.30$. Prevents overtraining and soft-tissue injury. |
-| **Cardiac Efficiency (EF)** | $\text{EF} = \frac{\text{Speed (m/min)}}{\text{Average Heart Rate (bpm)}}$ | Measures stroke volume and mitochondrial density. Increasing EF indicates aerobic adaptation. |
-| **Basal Metabolic Rate** | $\text{BMR} = 10W + 6.25H - 5A + 5$ | Mifflin-St Jeor equation ($W$ in kg, $H$ in cm, $A$ in years) for lean mass preservation. |
-| **Dynamic TDEE** | $\text{TDEE} = \text{BMR} \times \text{PAL} + \text{EPOC}_{\text{session}}$ | Dynamically calibrates daily caloric deficit ($400 - 550\text{ kcal}$) toward the `target_weight_kg` set in the athlete profile. |
-
----
+| **ACWR** | acute load ÷ chronic load (Garmin's 7-day and 28-day values) | Target 0.80–1.30; above 1.30 no extra runs; ≥ 1.50 deload |
+| **Efficiency factor** | speed (m/min) ÷ average heart rate | Aerobic trend between comparable runs; Zone 2 pace |
+| **BMR** | Mifflin-St Jeor, 10W + 6.25H − 5A + 5 | Energy estimate (W kg, H cm, A years) |
+| **TDEE** | BMR × activity factor + session energy | Daily calorie target toward `target_weight_kg` |
 
 ## 5-Point Post-Workout Debrief Protocol
 
@@ -158,42 +101,31 @@ Following every session, the platform benchmarks live telemetry against baseline
 
 ---
 
-## Tech Stack
+## Tests
 
-- **Backend & API:** Python 3.10+, Modular Telemetry & Quota Engine, multi-threaded Standard Library HTTP Server (`ThreadingHTTPServer`).
-- **Data Ingestion:** Model Context Protocol (MCP), `@etweisberg/garmin-connect-mcp`, live weight & exercise sets ingestion.
-- **Analytics & Math:** NumPy, Pandas, Gabbett ACWR, Dynamic Morphology & Exercise Physiology Engine.
-- **Frontend & Visualization:** Semantic HTML5, Vanilla ES6+ Modules, Tailwind (precompiled), Dark-Mode Telemetry Design System.
-- **Testing & QA:** Python `unittest`, Playwright Browser Automation.
+```bash
+make test   # or python3 tests/run_tests.py
+```
+
+101 tests (unit, API, data-integrity, security and UI-contract) cover the load and quota calculations, weekly-plan transitions (Monday reset, carrying over a deficit, off-plan runs), `.fit` and high-resolution stream parsing, the API endpoints, the security headers and host checks, and parity between the engine on real-shaped and synthetic data. Line coverage of `app/` is 76% and CI fails below 70%. CI runs on Python 3.10 and 3.12, lints with ruff, and fails if the precompiled Tailwind CSS is stale.
 
 ---
 
-## Verification & Test Suite
+## Design Decisions & Trade-offs
 
-The platform includes a comprehensive test suite of **100+ unit, integration, security and UI-contract tests** (101 at the time of writing, 76% line coverage of `app/`, enforced at 70% in CI) guaranteeing calculation accuracy, FIT/high-res stream parsing, flexible weekly quota transitions, sample-data parity, and endpoint reliability:
+- **Standard-library HTTP server.** `ThreadingHTTPServer` plus a small router keeps the runtime to Python, pandas and NumPy, which matters for a desktop app that starts its own server. The cost is hand-written routing, headers and request limits that a framework would provide.
+- **Garmin's load values, not a re-implementation.** Acute/chronic load and training status come from Garmin (Firstbeat) rather than being recomputed, so the dashboard agrees with the watch; the engine adds the decisions on top (ACWR bands, plan, deload).
+- **Local-only by design.** Health data never leaves the machine: the server binds to `127.0.0.1`, rejects foreign hosts and origins, and vendors its UI libraries so no CDN is contacted.
+- **Rules first, LLM second.** Plans, thresholds and debriefs are deterministic and tested; the AI coach only explains them, and works without a key.
+- **Mixins over one engine class.** `GarminAthleteEngine` is composed from focused mixins (load, quota, sleep, strength, debrief), which keeps files small but couples them through shared state.
 
-```bash
-python3 tests/run_tests.py
-```
+## Known Limitations
 
-```
-======================================================================
-🏃 Garmin Sporcu Platformu Test Süiti Başlatılıyor
-======================================================================
-test_garmin_expansion_high_res_endpoint ........................ ok
-test_sample_data_mock_engine_parity ............................ ok
-test_monday_reset_with_last_week_deficit_adaptation ............ ok
-test_off_plan_tempo_run_not_counted_as_interval_and_replans_week ok
-test_unknown_sport_dynamic_weight_and_anaerobic_focus .......... ok
-test_weekly_quota_summary_states ............................... ok
-test_weekly_schedule_respects_completed_quota .................. ok
-... (+30 API, data-integrity, and sports-science tests) ......... ok
-----------------------------------------------------------------------
-Ran 101 tests
-
-OK
-🎉 TÜM TESTLER BAŞARIYLA TAMAMLANDI! (%100 Geçti)
-```
+- **Single athlete.** One profile and one data folder; there is no multi-user support.
+- **Depends on an unofficial Garmin API.** Sync goes through a community MCP server and Garmin Connect's web session; Garmin changes can break it (demo mode keeps working).
+- **Guidance, not medical advice.** The thresholds are population-level heuristics from the literature, not individual injury predictions.
+- **Turkish product copy.** UI text, coaching messages and engine comments are Turkish (see below); the code identifiers and this README are English.
+- **The macOS app is unsigned** (ad-hoc) and Apple Silicon only.
 
 ---
 
@@ -320,18 +252,10 @@ garmin-athlete-analytics-platform/
 
 ---
 
+## Stack
+
+Python 3.10+ (standard-library HTTP server, pandas, NumPy) · Node.js MCP client for Garmin Connect · vanilla ES modules with hand-built SVG/CSS charts, precompiled Tailwind · Swift / WKWebView macOS wrapper · unittest, ruff, GitHub Actions, CodeQL, Dependabot.
+
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-## Author
-
-**Yiğit Sarp Avcı**  
-Computer Engineering Student @ Boğaziçi University  
-[GitHub Profile](https://github.com/yigitsarpavci) · [LinkedIn](https://www.linkedin.com/in/yigitsarpavci)
-
----
-
-*Developed by Yiğit Sarp Avcı*
+[MIT](LICENSE) · Yiğit Sarp Avcı · [GitHub](https://github.com/yigitsarpavci) · [LinkedIn](https://www.linkedin.com/in/yigitsarpavci)
