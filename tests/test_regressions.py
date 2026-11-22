@@ -693,7 +693,9 @@ class TestFullBarsDeloadInsteadOfExtraGym(unittest.TestCase):
 
     def test_full_bars_that_will_decay_below_85_recommend_lowest_bar_run(self):
         from datetime import datetime, timedelta
-        old = (datetime.now() - timedelta(days=27)).strftime("%Y-%m-%d 08:00:00")
+        # 28 days old: always inside the "expires before Sunday" window [today-28, sunday-27),
+        # including on Sundays (27 days old made this test fail every Sunday).
+        old = (datetime.now() - timedelta(days=28)).strftime("%Y-%m-%d 08:00:00")
         acts = [{"sport": "running", "startTimeLocal": old, "duration": 3000, "distance": 8000, "averageHR": 150,
                  "activityTrainingLoad": 400, "aerobicTrainingEffect": 4.0, "anaerobicTrainingEffect": 3.0}]
         lf = self._engine_with_full_bars(acts).get_training_load_analytics()["load_focus"]
